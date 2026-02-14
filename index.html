@@ -140,6 +140,78 @@
                 return true;
             },
             
+            async getAllEvents() {
+                if (isFirebaseConfigured && db) {
+                    try {
+                        const snapshot = await db.collection('events').get();
+                        return snapshot.docs.map(doc => doc.data());
+                    } catch (error) {
+                        console.error("Firebase getAllEvents failed:", error);
+                    }
+                }
+                
+                // Fallback to localStorage
+                const events = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('event:')) {
+                        const data = JSON.parse(localStorage.getItem(key));
+                        events.push(data);
+                    }
+                }
+                return events;
+            },
+            
+            async saveEvent(eventData) {
+                if (isFirebaseConfigured && db) {
+                    try {
+                        await db.collection('events').doc(eventData.id.toString()).set(eventData);
+                        return true;
+                    } catch (error) {
+                        console.error("Firebase saveEvent failed:", error);
+                    }
+                }
+                // Fallback to localStorage
+                localStorage.setItem(`event:${eventData.id}`, JSON.stringify(eventData));
+                return true;
+            },
+            
+            async getAllCourts() {
+                if (isFirebaseConfigured && db) {
+                    try {
+                        const snapshot = await db.collection('courts').get();
+                        return snapshot.docs.map(doc => doc.data());
+                    } catch (error) {
+                        console.error("Firebase getAllCourts failed:", error);
+                    }
+                }
+                
+                // Fallback to localStorage
+                const courts = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('court:')) {
+                        const data = JSON.parse(localStorage.getItem(key));
+                        courts.push(data);
+                    }
+                }
+                return courts;
+            },
+            
+            async saveCourt(courtData) {
+                if (isFirebaseConfigured && db) {
+                    try {
+                        await db.collection('courts').doc(courtData.id.toString()).set(courtData);
+                        return true;
+                    } catch (error) {
+                        console.error("Firebase saveCourt failed:", error);
+                    }
+                }
+                // Fallback to localStorage
+                localStorage.setItem(`court:${courtData.id}`, JSON.stringify(courtData));
+                return true;
+            },
+            
             async listenToTournament(id, callback) {
                 if (isFirebaseConfigured && db) {
                     return db.collection('tournaments').doc(id).onSnapshot(doc => {
@@ -196,7 +268,7 @@
                                 name: user.displayName || user.email.split('@')[0],
                                 skillLevel: 'Intermediate (3.0-3.5)',
                                 gamesPlayed: 0,
-                                avatar: '🎾'
+                                avatar: '🏸'
                             });
                         } else {
                             setCurrentUser(null);
@@ -210,7 +282,7 @@
                         email: 'guest@local',
                         skillLevel: 'Intermediate (3.0-3.5)',
                         gamesPlayed: 0,
-                        avatar: '🎾'
+                        avatar: '🏸'
                     });
                 }
             }, []);
@@ -235,7 +307,7 @@
                         <div className="max-w-7xl mx-auto px-4 py-3">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setCurrentView('home')}>
-                                    <span className="text-2xl md:text-3xl">🏓</span>
+                                    <span className="text-2xl md:text-3xl">🥒</span>
                                     <span className="text-xl md:text-2xl font-bold text-green-600">PickleConnect</span>
                                 </div>
                                 
@@ -439,7 +511,7 @@
                 <div className="space-y-8">
                     {/* Hero Section */}
                     <div className="bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl p-8 text-white shadow-xl">
-                        <h1 className="text-4xl font-bold mb-4">Welcome to PickleConnect! 🏓</h1>
+                        <h1 className="text-4xl font-bold mb-4">Welcome to PickleConnect! 🥒🏸</h1>
                         <p className="text-xl mb-6">Find courts, organize games, and connect with players in your area</p>
                         <div className="flex space-x-4">
                             <button 
@@ -511,31 +583,175 @@
         function CourtsView({ setCurrentView }) {
             const mapRef = useRef(null);
             const mapInstanceRef = useRef(null);
+            const [courts, setCourts] = useState(SAMPLE_COURTS);
             const [selectedCourt, setSelectedCourt] = useState(null);
             const [searchTerm, setSearchTerm] = useState('');
+            const [showAddCourt, setShowAddCourt] = useState(false);
+            const [newCourt, setNewCourt] = useState({
+                name: '',
+                address: '',
+                courts: 4,
+                indoor: false,
+                outdoor: true,
+                rating: 4.0
+            });
+
+            // Load courts from storage
+            useEffect(() => {
+                loadCourts();
+            }, []);
+
+            const loadCourts = async () => {
+                try {
+                    const savedCourts = await storage.getAllCourts();
+                    if (savedCourts && savedCourts.length > 0) {
+                        setCourts([...SAMPLE_COURTS, ...savedCourts]);
+                    }
+                } catch (error) {
+                    console.log('No saved courts yet');
+                }
+            };
+
+            const handleAddCourt = async () => {
+                if (!newCourt.name || !newCourt.address) {
+                    alert('Please fill in court name and address');
+                    return;
+                }
+
+                // Geocode address (in production, use Google Maps Geocoding API)
+                // For now, use approximate coordinates
+                const court = {
+                    id: Date.now(),
+                    ...newCourt,
+                    lat: 38.8106 + (Math.random() - 0.5) * 0.1,
+                    lng: -90.7104 + (Math.random() - 0.5) * 0.1
+                };
+
+                try {
+                    await storage.saveCourt(court);
+                    setCourts([...courts, court]);
+                    setShowAddCourt(false);
+                    setNewCourt({
+                        name: '',
+                        address: '',
+                        courts: 4,
+                        indoor: false,
+                        outdoor: true,
+                        rating: 4.0
+                    });
+                    
+                    // Reload map
+                    if (mapInstanceRef.current) {
+                        mapInstanceRef.current.remove();
+                        mapInstanceRef.current = null;
+                    }
+                } catch (error) {
+                    console.error('Failed to add court:', error);
+                    alert('Failed to add court');
+                }
+            };
 
             useEffect(() => {
-                if (mapRef.current && !mapInstanceRef.current) {
+                if (mapRef.current && !mapInstanceRef.current && courts.length > 0) {
                     const map = L.map(mapRef.current).setView([38.8106, -90.7104], 12);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '© OpenStreetMap contributors'
                     }).addTo(map);
-                    SAMPLE_COURTS.forEach(court => {
+                    
+                    courts.forEach(court => {
                         const marker = L.marker([court.lat, court.lng]).addTo(map);
                         marker.bindPopup(`<strong>${court.name}</strong><br/>${court.courts} courts`);
                         marker.on('click', () => setSelectedCourt(court));
                     });
+                    
                     mapInstanceRef.current = map;
                 }
-            }, []);
+            }, [courts]);
 
-            const filteredCourts = SAMPLE_COURTS.filter(court =>
-                court.name.toLowerCase().includes(searchTerm.toLowerCase())
+            const filteredCourts = courts.filter(court =>
+                court.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                court.address.toLowerCase().includes(searchTerm.toLowerCase())
             );
 
             return (
-                <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h2 className="text-3xl font-bold text-gray-800 mb-4">Find Courts 📍</h2>
+                <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-4">
+                        <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Find Courts 📍</h2>
+                        <button
+                            onClick={() => setShowAddCourt(!showAddCourt)}
+                            className="bg-green-600 text-white px-4 md:px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-all"
+                        >
+                            {showAddCourt ? 'Cancel' : '+ Add Court'}
+                        </button>
+                    </div>
+
+                    {showAddCourt && (
+                        <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 md:p-6 mb-6">
+                            <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4">Add New Court</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Court Name *</label>
+                                    <input
+                                        type="text"
+                                        value={newCourt.name}
+                                        onChange={(e) => setNewCourt({...newCourt, name: e.target.value})}
+                                        placeholder="e.g., Springfield Park"
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
+                                    <input
+                                        type="text"
+                                        value={newCourt.address}
+                                        onChange={(e) => setNewCourt({...newCourt, address: e.target.value})}
+                                        placeholder="123 Main St, City, State"
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Number of Courts</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={newCourt.courts}
+                                        onChange={(e) => setNewCourt({...newCourt, courts: parseInt(e.target.value) || 1})}
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                                    <div className="flex space-x-4">
+                                        <label className="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={newCourt.indoor}
+                                                onChange={(e) => setNewCourt({...newCourt, indoor: e.target.checked})}
+                                                className="w-4 h-4"
+                                            />
+                                            <span>Indoor</span>
+                                        </label>
+                                        <label className="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={newCourt.outdoor}
+                                                onChange={(e) => setNewCourt({...newCourt, outdoor: e.target.checked})}
+                                                className="w-4 h-4"
+                                            />
+                                            <span>Outdoor</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleAddCourt}
+                                className="w-full mt-4 bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition-all"
+                            >
+                                Add Court
+                            </button>
+                        </div>
+                    )}
+
                     <input
                         type="text"
                         placeholder="Search courts..."
@@ -543,17 +759,37 @@
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none mb-6"
                     />
+                    
                     <div className="rounded-lg overflow-hidden shadow-lg mb-6" style={{ height: '400px' }}>
                         <div ref={mapRef} style={{ height: '100%', width: '100%' }}></div>
                     </div>
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {filteredCourts.map(court => (
                             <div key={court.id} className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4">
                                 <h4 className="font-bold text-lg mb-2">{court.name}</h4>
                                 <p className="text-sm text-gray-600 mb-2">{court.address}</p>
-                                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-                                    {court.courts} courts
-                                </span>
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
+                                        {court.courts} courts
+                                    </span>
+                                    {court.indoor && (
+                                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+                                            Indoor
+                                        </span>
+                                    )}
+                                    {court.outdoor && (
+                                        <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">
+                                            Outdoor
+                                        </span>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => setSelectedCourt(court)}
+                                    className="w-full bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-all text-sm"
+                                >
+                                    Create Event Here
+                                </button>
                             </div>
                         ))}
                     </div>
@@ -561,11 +797,307 @@
             );
         }
 
-        function GamesView({ games }) {
+        function GamesView({ games, setGames, setCurrentView, currentUser }) {
+            const [events, setEvents] = useState([]);
+            const [showCreateForm, setShowCreateForm] = useState(false);
+            const [formData, setFormData] = useState({
+                court: SAMPLE_COURTS[0].id,
+                date: '2026-02-15',
+                time: '14:00',
+                skillLevel: 'All Levels',
+                maxPlayers: 8,
+                description: ''
+            });
+
+            useEffect(() => {
+                loadEvents();
+            }, []);
+
+            const loadEvents = async () => {
+                try {
+                    const allEvents = await storage.getAllEvents();
+                    setEvents(allEvents.sort((a, b) => new Date(a.date) - new Date(b.date)));
+                } catch (error) {
+                    console.error('Error loading events:', error);
+                }
+            };
+
+            const handleCreateEvent = async (e) => {
+                e.preventDefault();
+                const selectedCourt = SAMPLE_COURTS.find(c => c.id === parseInt(formData.court));
+                
+                const newEvent = {
+                    id: Date.now(),
+                    court: selectedCourt,
+                    date: formData.date,
+                    time: formData.time,
+                    skillLevel: formData.skillLevel,
+                    maxPlayers: parseInt(formData.maxPlayers),
+                    description: formData.description,
+                    attendees: [currentUser?.name || 'Guest'],
+                    interested: [],
+                    organizer: currentUser?.name || 'Guest',
+                    createdAt: Date.now()
+                };
+
+                try {
+                    await storage.saveEvent(newEvent);
+                    setEvents([...events, newEvent].sort((a, b) => new Date(a.date) - new Date(b.date)));
+                    setShowCreateForm(false);
+                    setFormData({
+                        court: SAMPLE_COURTS[0].id,
+                        date: '2026-02-15',
+                        time: '14:00',
+                        skillLevel: 'All Levels',
+                        maxPlayers: 8,
+                        description: ''
+                    });
+                } catch (error) {
+                    console.error('Error creating event:', error);
+                    alert('Failed to create event');
+                }
+            };
+
+            const handleRSVP = async (eventId, status) => {
+                const userName = currentUser?.name || prompt('Enter your name to RSVP:');
+                if (!userName) return;
+
+                const updatedEvents = events.map(event => {
+                    if (event.id === eventId) {
+                        let newAttendees = [...event.attendees];
+                        let newInterested = [...event.interested];
+
+                        // Remove from both lists first
+                        newAttendees = newAttendees.filter(name => name !== userName);
+                        newInterested = newInterested.filter(name => name !== userName);
+
+                        // Add to appropriate list
+                        if (status === 'going' && newAttendees.length < event.maxPlayers) {
+                            newAttendees.push(userName);
+                        } else if (status === 'interested') {
+                            newInterested.push(userName);
+                        }
+
+                        const updated = {...event, attendees: newAttendees, interested: newInterested};
+                        storage.saveEvent(updated);
+                        return updated;
+                    }
+                    return event;
+                });
+
+                setEvents(updatedEvents);
+            };
+
+            const upcomingEvents = events.filter(e => new Date(e.date + ' ' + e.time) >= new Date());
+            const pastEvents = events.filter(e => new Date(e.date + ' ' + e.time) < new Date());
+
             return (
-                <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h2 className="text-3xl font-bold text-gray-800 mb-6">Games & Events 🎮</h2>
-                    <p className="text-gray-600">Game scheduling coming soon! For now, use Round Robin to create tournaments.</p>
+                <div className="space-y-6">
+                    <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+                            <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Events & Meetups 🎮</h2>
+                            <button 
+                                onClick={() => setShowCreateForm(!showCreateForm)}
+                                className="bg-green-600 text-white px-4 md:px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition-all shadow-lg"
+                            >
+                                {showCreateForm ? 'Cancel' : '+ Create Event'}
+                            </button>
+                        </div>
+
+                        {showCreateForm && (
+                            <form onSubmit={handleCreateEvent} className="bg-green-50 border-2 border-green-200 rounded-lg p-4 md:p-6 mb-6">
+                                <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4">Create New Event</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Court</label>
+                                        <select 
+                                            value={formData.court}
+                                            onChange={(e) => setFormData({...formData, court: e.target.value})}
+                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                            required
+                                        >
+                                            {SAMPLE_COURTS.map(court => (
+                                                <option key={court.id} value={court.id}>{court.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                                        <input 
+                                            type="date"
+                                            value={formData.date}
+                                            onChange={(e) => setFormData({...formData, date: e.target.value})}
+                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Time</label>
+                                        <input 
+                                            type="time"
+                                            value={formData.time}
+                                            onChange={(e) => setFormData({...formData, time: e.target.value})}
+                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Skill Level</label>
+                                        <select 
+                                            value={formData.skillLevel}
+                                            onChange={(e) => setFormData({...formData, skillLevel: e.target.value})}
+                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                        >
+                                            <option>All Levels</option>
+                                            {SKILL_LEVELS.map(level => (
+                                                <option key={level}>{level}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Max Players</label>
+                                        <select 
+                                            value={formData.maxPlayers}
+                                            onChange={(e) => setFormData({...formData, maxPlayers: e.target.value})}
+                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                        >
+                                            {[4, 6, 8, 10, 12, 16, 20].map(n => (
+                                                <option key={n} value={n}>{n} players</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
+                                        <textarea
+                                            value={formData.description}
+                                            onChange={(e) => setFormData({...formData, description: e.target.value})}
+                                            placeholder="Add any details about the event..."
+                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                            rows="3"
+                                        />
+                                    </div>
+                                </div>
+                                <button 
+                                    type="submit"
+                                    className="w-full mt-4 bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition-all"
+                                >
+                                    Create Event
+                                </button>
+                            </form>
+                        )}
+
+                        {/* Upcoming Events */}
+                        <div className="mb-8">
+                            <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4">Upcoming Events ({upcomingEvents.length})</h3>
+                            {upcomingEvents.length === 0 ? (
+                                <div className="text-center py-8 text-gray-500">
+                                    <p className="text-lg mb-2">No upcoming events</p>
+                                    <p>Create one to start playing!</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {upcomingEvents.map(event => (
+                                        <EventCard key={event.id} event={event} handleRSVP={handleRSVP} currentUser={currentUser} />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Past Events */}
+                        {pastEvents.length > 0 && (
+                            <div>
+                                <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4">Past Events ({pastEvents.length})</h3>
+                                <div className="space-y-4 opacity-60">
+                                    {pastEvents.map(event => (
+                                        <EventCard key={event.id} event={event} handleRSVP={handleRSVP} currentUser={currentUser} isPast={true} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function EventCard({ event, handleRSVP, currentUser, isPast = false }) {
+            const userName = currentUser?.name || 'Guest';
+            const isGoing = event.attendees.includes(userName);
+            const isInterested = event.interested.includes(userName);
+            const spotsLeft = event.maxPlayers - event.attendees.length;
+
+            return (
+                <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 hover:border-green-300 transition-all">
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+                        <div className="flex-1">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <h4 className="font-bold text-gray-800 text-lg">{event.court.name}</h4>
+                                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
+                                    {event.skillLevel}
+                                </span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 mb-2">
+                                <span>📅 {new Date(event.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                                <span>🕒 {event.time}</span>
+                                <span>👤 Organized by {event.organizer}</span>
+                            </div>
+                            {event.description && (
+                                <p className="text-sm text-gray-600 mb-2">{event.description}</p>
+                            )}
+                            <div className="flex flex-wrap gap-2 text-sm">
+                                <span className="font-medium">
+                                    ✓ Going ({event.attendees.length}/{event.maxPlayers}):
+                                </span>
+                                {event.attendees.map((name, idx) => (
+                                    <span key={idx} className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">
+                                        {name}
+                                    </span>
+                                ))}
+                            </div>
+                            {event.interested.length > 0 && (
+                                <div className="flex flex-wrap gap-2 text-sm mt-2">
+                                    <span className="font-medium">
+                                        ⭐ Interested ({event.interested.length}):
+                                    </span>
+                                    {event.interested.map((name, idx) => (
+                                        <span key={idx} className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs">
+                                            {name}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        
+                        {!isPast && (
+                            <div className="flex flex-col gap-2 min-w-[140px]">
+                                {spotsLeft > 0 ? (
+                                    <button
+                                        onClick={() => handleRSVP(event.id, 'going')}
+                                        className={`px-4 py-2 rounded-lg font-medium transition-all text-sm ${
+                                            isGoing
+                                                ? 'bg-green-600 text-white'
+                                                : 'bg-white border-2 border-green-600 text-green-600 hover:bg-green-50'
+                                        }`}
+                                    >
+                                        {isGoing ? '✓ Going' : `Join (${spotsLeft} spots)`}
+                                    </button>
+                                ) : (
+                                    <div className="px-4 py-2 bg-gray-300 text-gray-600 rounded-lg font-medium text-center text-sm">
+                                        Full
+                                    </div>
+                                )}
+                                <button
+                                    onClick={() => handleRSVP(event.id, 'interested')}
+                                    className={`px-4 py-2 rounded-lg font-medium transition-all text-sm ${
+                                        isInterested
+                                            ? 'bg-yellow-500 text-white'
+                                            : 'bg-white border-2 border-yellow-500 text-yellow-600 hover:bg-yellow-50'
+                                    }`}
+                                >
+                                    {isInterested ? '⭐ Interested' : 'Interested'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             );
         }
@@ -574,32 +1106,171 @@
             const [isEditing, setIsEditing] = useState(false);
             const [editForm, setEditForm] = useState(currentUser || {});
 
+            useEffect(() => {
+                if (currentUser) {
+                    setEditForm(currentUser);
+                }
+            }, [currentUser]);
+
             const handleSave = () => {
                 setCurrentUser(editForm);
                 setIsEditing(false);
+                // TODO: Save to Firebase/localStorage
+            };
+
+            const handleLogout = async () => {
+                if (confirm('Are you sure you want to logout?')) {
+                    if (isFirebaseConfigured && auth) {
+                        try {
+                            await auth.signOut();
+                        } catch (error) {
+                            console.error('Logout error:', error);
+                        }
+                    }
+                    setCurrentUser(null);
+                    window.location.reload();
+                }
             };
 
             if (!currentUser) {
                 return (
                     <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+                        <div className="text-6xl mb-4">🏸</div>
                         <h2 className="text-2xl font-bold text-gray-800 mb-4">Please login to view your profile</h2>
+                        <p className="text-gray-600 mb-6">Create an account to track your games, tournaments, and connect with players!</p>
                     </div>
                 );
             }
 
             return (
                 <div className="max-w-3xl mx-auto">
-                    <div className="bg-white rounded-xl shadow-lg p-8">
-                        <div className="flex items-center space-x-6 mb-8">
-                            <div className="text-6xl bg-green-100 w-24 h-24 rounded-full flex items-center justify-center">
+                    <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                        <div className="flex flex-col md:flex-row md:items-center md:space-x-6 mb-8">
+                            <div className="text-6xl bg-green-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto md:mx-0 mb-4 md:mb-0">
                                 {currentUser.avatar}
                             </div>
-                            <div className="flex-1">
-                                <h2 className="text-3xl font-bold text-gray-800 mb-2">{currentUser.name}</h2>
-                                <p className="text-gray-600">{currentUser.email}</p>
-                                <p className="text-gray-600">{currentUser.skillLevel}</p>
+                            <div className="flex-1 text-center md:text-left">
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        value={editForm.name}
+                                        onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                                        className="text-2xl md:text-3xl font-bold text-gray-800 mb-2 w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                    />
+                                ) : (
+                                    <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">{currentUser.name}</h2>
+                                )}
+                                <p className="text-gray-600 mb-1">{currentUser.email}</p>
+                                {isEditing ? (
+                                    <select
+                                        value={editForm.skillLevel}
+                                        onChange={(e) => setEditForm({...editForm, skillLevel: e.target.value})}
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                    >
+                                        {SKILL_LEVELS.map(level => (
+                                            <option key={level}>{level}</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <p className="text-gray-600">{currentUser.skillLevel}</p>
+                                )}
+                            </div>
+                            <div className="flex flex-col space-y-2 mt-4 md:mt-0">
+                                {isEditing ? (
+                                    <>
+                                        <button 
+                                            onClick={handleSave}
+                                            className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-all"
+                                        >
+                                            ✓ Save
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                setIsEditing(false);
+                                                setEditForm(currentUser);
+                                            }}
+                                            className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-400 transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button 
+                                            onClick={() => setIsEditing(true)}
+                                            className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-all"
+                                        >
+                                            ✏️ Edit Profile
+                                        </button>
+                                        <button 
+                                            onClick={handleLogout}
+                                            className="bg-red-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-red-600 transition-all"
+                                        >
+                                            🚪 Logout
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
+
+                        {isEditing && (
+                            <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4">
+                                <h3 className="font-bold mb-2">Choose Avatar</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {['🏸', '🥒', '🎾', '🏓', '⚾', '🏀', '⚽', '🎯', '🏅', '🔥', '⭐', '🌟'].map(emoji => (
+                                        <button
+                                            key={emoji}
+                                            onClick={() => setEditForm({...editForm, avatar: emoji})}
+                                            className={`text-3xl p-2 rounded-lg transition-all ${
+                                                editForm.avatar === emoji ? 'bg-green-500 scale-110' : 'bg-white hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            {emoji}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {!isEditing && (
+                            <>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                    <div className="bg-green-50 rounded-lg p-6 text-center">
+                                        <div className="text-3xl font-bold text-green-600 mb-2">{currentUser.gamesPlayed || 0}</div>
+                                        <div className="text-gray-600">Games Played</div>
+                                    </div>
+                                    <div className="bg-blue-50 rounded-lg p-6 text-center">
+                                        <div className="text-3xl font-bold text-blue-600 mb-2">4.2</div>
+                                        <div className="text-gray-600">DUPR Rating</div>
+                                    </div>
+                                    <div className="bg-purple-50 rounded-lg p-6 text-center">
+                                        <div className="text-3xl font-bold text-purple-600 mb-2">12</div>
+                                        <div className="text-gray-600">Upcoming Games</div>
+                                    </div>
+                                </div>
+
+                                <div className="pt-8 border-t-2 border-gray-200">
+                                    <h3 className="text-xl font-bold text-gray-800 mb-4">Recent Activity</h3>
+                                    <div className="space-y-3">
+                                        <ActivityItem 
+                                            icon="🎮" 
+                                            text="Joined tournament at O'Fallon Community Center" 
+                                            time="2 hours ago"
+                                        />
+                                        <ActivityItem 
+                                            icon="⭐" 
+                                            text="Rated Westhoff Park 5 stars" 
+                                            time="1 day ago"
+                                        />
+                                        <ActivityItem 
+                                            icon="🏆" 
+                                            text="Won tournament at Fort Zumwalt Park" 
+                                            time="3 days ago"
+                                        />
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             );
