@@ -638,7 +638,12 @@
                             setScores(data.scores);
                         }
                     });
-                    return unsubscribe;
+                    // Return cleanup function properly
+                    return () => {
+                        if (typeof unsubscribe === 'function') {
+                            unsubscribe();
+                        }
+                    };
                 }
             }, [tournamentId]);
 
@@ -1181,47 +1186,49 @@
                                 </div>
 
                                 {showLeaderboard && (
-                                    <div className="mb-8 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-xl p-6">
-                                        <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                                    <div className="mb-8 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-xl p-4 md:p-6">
+                                        <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 flex items-center">
                                             🏆 Overall Leaderboard
                                         </h3>
                                         <div className="space-y-2">
                                             {leaderboard.map((player, index) => (
                                                 <div 
                                                     key={player.name} 
-                                                    className={`bg-white rounded-lg p-4 flex items-center justify-between ${
+                                                    className={`bg-white rounded-lg p-3 md:p-4 ${
                                                         index === 0 ? 'border-4 border-yellow-400 shadow-lg' : 'border-2 border-gray-200'
                                                     }`}
                                                 >
-                                                    <div className="flex items-center space-x-4">
-                                                        <span className={`text-2xl font-bold ${
-                                                            index === 0 ? 'text-yellow-500' :
-                                                            index === 1 ? 'text-gray-400' :
-                                                            index === 2 ? 'text-orange-600' :
-                                                            'text-gray-600'
-                                                        }`}>
-                                                            {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
-                                                        </span>
-                                                        <span className={`font-bold ${index === 0 ? 'text-xl' : 'text-lg'}`}>
-                                                            {player.name}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center space-x-6 text-sm">
-                                                        <div className="text-center">
-                                                            <div className="text-gray-500">Record</div>
-                                                            <div className="font-bold text-gray-800">{player.wins}-{player.losses}</div>
-                                                        </div>
-                                                        <div className="text-center">
-                                                            <div className="text-gray-500">Points</div>
-                                                            <div className="font-bold text-green-600">{player.pointsFor}</div>
-                                                        </div>
-                                                        <div className="text-center">
-                                                            <div className="text-gray-500">Differential</div>
-                                                            <div className={`font-bold ${
-                                                                (player.pointsFor - player.pointsAgainst) > 0 ? 'text-green-600' : 'text-red-600'
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
+                                                            <span className={`text-xl md:text-2xl font-bold flex-shrink-0 ${
+                                                                index === 0 ? 'text-yellow-500' :
+                                                                index === 1 ? 'text-gray-400' :
+                                                                index === 2 ? 'text-orange-600' :
+                                                                'text-gray-600'
                                                             }`}>
-                                                                {player.pointsFor - player.pointsAgainst > 0 ? '+' : ''}
-                                                                {player.pointsFor - player.pointsAgainst}
+                                                                {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                                                            </span>
+                                                            <span className={`font-bold truncate ${index === 0 ? 'text-base md:text-xl' : 'text-sm md:text-lg'}`}>
+                                                                {player.name}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex gap-3 md:gap-6 text-xs md:text-sm flex-shrink-0">
+                                                            <div className="text-center">
+                                                                <div className="text-gray-500 text-xs">Record</div>
+                                                                <div className="font-bold text-gray-800">{player.wins}-{player.losses}</div>
+                                                            </div>
+                                                            <div className="text-center">
+                                                                <div className="text-gray-500 text-xs">Pts</div>
+                                                                <div className="font-bold text-green-600">{player.pointsFor}</div>
+                                                            </div>
+                                                            <div className="text-center">
+                                                                <div className="text-gray-500 text-xs">Diff</div>
+                                                                <div className={`font-bold ${
+                                                                    (player.pointsFor - player.pointsAgainst) > 0 ? 'text-green-600' : 'text-red-600'
+                                                                }`}>
+                                                                    {player.pointsFor - player.pointsAgainst > 0 ? '+' : ''}
+                                                                    {player.pointsFor - player.pointsAgainst}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1232,17 +1239,17 @@
                                 )}
 
                                 <div className="space-y-6">
-                                    <h3 className="text-2xl font-bold text-gray-800">Rounds & Scores</h3>
+                                    <h3 className="text-xl md:text-2xl font-bold text-gray-800">Rounds & Scores</h3>
                                     {schedule.map((round, roundIndex) => {
                                         const roundWinner = getRoundWinner(round);
                                         return (
-                                            <div key={roundIndex} className="bg-green-50 border-2 border-green-200 rounded-lg p-6">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <h4 className="text-xl font-bold text-gray-800">Round {roundIndex + 1}</h4>
+                                            <div key={roundIndex} className="bg-green-50 border-2 border-green-200 rounded-lg p-4 md:p-6">
+                                                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
+                                                    <h4 className="text-lg md:text-xl font-bold text-gray-800">Round {roundIndex + 1}</h4>
                                                     {roundWinner && (
-                                                        <span className="bg-yellow-400 text-gray-800 px-4 py-2 rounded-full font-bold flex items-center space-x-2">
+                                                        <span className="bg-yellow-400 text-gray-800 px-3 py-2 rounded-full font-bold flex items-center space-x-2 text-xs md:text-sm w-fit">
                                                             <span>🏆</span>
-                                                            <span>Round Winner: {roundWinner}</span>
+                                                            <span className="truncate">Winner: {roundWinner}</span>
                                                         </span>
                                                     )}
                                                 </div>
@@ -1250,25 +1257,60 @@
                                                     {round.map((match) => {
                                                         const matchScore = scores[match.id];
                                                         const hasScore = matchScore && matchScore.team1 !== undefined && matchScore.team2 !== undefined;
-                                                        const winner = hasScore ? (matchScore.team1 > matchScore.team2 ? match.team1[0] : matchScore.team2 > matchScore.team1 ? match.team2[0] : null) : null;
+                                                        const winner = hasScore ? (matchScore.team1 > matchScore.team2 ? match.team1.join(', ') : matchScore.team2 > matchScore.team1 ? match.team2.join(', ') : null) : null;
                                                         
                                                         return (
-                                                            <div key={match.id} className="bg-white rounded-lg p-4">
-                                                                <div className="flex items-center justify-between mb-3">
-                                                                    <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+                                                            <div key={match.id} className="bg-white rounded-lg p-3 md:p-4">
+                                                                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 gap-2">
+                                                                    <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs md:text-sm font-medium w-fit">
                                                                         Court {match.court}
                                                                     </span>
                                                                     {winner && (
-                                                                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
+                                                                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs md:text-sm font-medium w-fit truncate">
                                                                             ✓ Winner: {winner}
                                                                         </span>
                                                                     )}
                                                                 </div>
-                                                                <div className="grid grid-cols-3 gap-4 items-center">
-                                                                    <div className="text-right">
-                                                                        <span className={`font-medium text-lg ${winner === match.team1[0] ? 'text-green-600 font-bold' : ''}`}>
+                                                                
+                                                                {/* Mobile Layout */}
+                                                                <div className="md:hidden space-y-3">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <span className={`font-medium text-sm flex-1 truncate ${winner === match.team1.join(', ') ? 'text-green-600 font-bold' : ''}`}>
+                                                                            {winner === match.team1.join(', ') && '🏆 '}
                                                                             {match.team1.join(', ')}
-                                                                            {winner === match.team1[0] && ' 🏆'}
+                                                                        </span>
+                                                                        <input 
+                                                                            type="number"
+                                                                            min="0"
+                                                                            value={scores[match.id]?.team1 || ''}
+                                                                            onChange={(e) => updateScore(match.id, 'team1', e.target.value)}
+                                                                            placeholder="0"
+                                                                            className="w-14 px-2 py-2 border-2 border-gray-300 rounded-lg text-center font-bold focus:border-green-500 focus:outline-none ml-2"
+                                                                        />
+                                                                    </div>
+                                                                    <div className="text-center text-gray-400 text-xs">VS</div>
+                                                                    <div className="flex items-center justify-between">
+                                                                        <span className={`font-medium text-sm flex-1 truncate ${winner === match.team2.join(', ') ? 'text-green-600 font-bold' : ''}`}>
+                                                                            {winner === match.team2.join(', ') && '🏆 '}
+                                                                            {match.team2.join(', ')}
+                                                                        </span>
+                                                                        <input 
+                                                                            type="number"
+                                                                            min="0"
+                                                                            value={scores[match.id]?.team2 || ''}
+                                                                            onChange={(e) => updateScore(match.id, 'team2', e.target.value)}
+                                                                            placeholder="0"
+                                                                            className="w-14 px-2 py-2 border-2 border-gray-300 rounded-lg text-center font-bold focus:border-green-500 focus:outline-none ml-2"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                {/* Desktop Layout */}
+                                                                <div className="hidden md:grid md:grid-cols-3 gap-4 items-center">
+                                                                    <div className="text-right">
+                                                                        <span className={`font-medium text-lg ${winner === match.team1.join(', ') ? 'text-green-600 font-bold' : ''}`}>
+                                                                            {match.team1.join(', ')}
+                                                                            {winner === match.team1.join(', ') && ' 🏆'}
                                                                         </span>
                                                                     </div>
                                                                     <div className="flex items-center justify-center space-x-3">
@@ -1291,8 +1333,8 @@
                                                                         />
                                                                     </div>
                                                                     <div className="text-left">
-                                                                        <span className={`font-medium text-lg ${winner === match.team2[0] ? 'text-green-600 font-bold' : ''}`}>
-                                                                            {winner === match.team2[0] && '🏆 '}
+                                                                        <span className={`font-medium text-lg ${winner === match.team2.join(', ') ? 'text-green-600 font-bold' : ''}`}>
+                                                                            {winner === match.team2.join(', ') && '🏆 '}
                                                                             {match.team2.join(', ')}
                                                                         </span>
                                                                     </div>
