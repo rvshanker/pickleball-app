@@ -146,7 +146,7 @@
                         const snapshot = await db.collection('events').get();
                         return snapshot.docs.map(doc => doc.data());
                     } catch (error) {
-                        console.error("Firebase getAllEvents failed:", error);
+                        console.log("Using localStorage for events (Firebase permissions not set)");
                     }
                 }
                 
@@ -168,7 +168,7 @@
                         await db.collection('events').doc(eventData.id.toString()).set(eventData);
                         return true;
                     } catch (error) {
-                        console.error("Firebase saveEvent failed:", error);
+                        console.log("Using localStorage for events (Firebase permissions not set)");
                     }
                 }
                 // Fallback to localStorage
@@ -182,7 +182,7 @@
                         const snapshot = await db.collection('courts').get();
                         return snapshot.docs.map(doc => doc.data());
                     } catch (error) {
-                        console.error("Firebase getAllCourts failed:", error);
+                        console.log("Using localStorage for courts (Firebase permissions not set)");
                     }
                 }
                 
@@ -268,7 +268,7 @@
                                 name: user.displayName || user.email.split('@')[0],
                                 skillLevel: 'Intermediate (3.0-3.5)',
                                 gamesPlayed: 0,
-                                avatar: '🏸'
+                                avatar: '🏓'
                             });
                         } else {
                             setCurrentUser(null);
@@ -282,7 +282,7 @@
                         email: 'guest@local',
                         skillLevel: 'Intermediate (3.0-3.5)',
                         gamesPlayed: 0,
-                        avatar: '🏸'
+                        avatar: '🏓'
                     });
                 }
             }, []);
@@ -307,7 +307,7 @@
                         <div className="max-w-7xl mx-auto px-4 py-3">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setCurrentView('home')}>
-                                    <span className="text-2xl md:text-3xl">🥒</span>
+                                    <span className="text-2xl md:text-3xl">🏸🥎</span>
                                     <span className="text-xl md:text-2xl font-bold text-green-600">PickleConnect</span>
                                 </div>
                                 
@@ -511,7 +511,7 @@
                 <div className="space-y-8">
                     {/* Hero Section */}
                     <div className="bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl p-8 text-white shadow-xl">
-                        <h1 className="text-4xl font-bold mb-4">Welcome to PickleConnect! 🥒🏸</h1>
+                        <h1 className="text-4xl font-bold mb-4">Welcome to PickleConnect! 🏸🥎</h1>
                         <p className="text-xl mb-6">Find courts, organize games, and connect with players in your area</p>
                         <div className="flex space-x-4">
                             <button 
@@ -629,7 +629,8 @@
 
                 try {
                     await storage.saveCourt(court);
-                    setCourts([...courts, court]);
+                    const updatedCourts = [...courts, court];
+                    setCourts(updatedCourts);
                     setShowAddCourt(false);
                     setNewCourt({
                         name: '',
@@ -640,10 +641,13 @@
                         rating: 4.0
                     });
                     
-                    // Reload map
+                    // Force reload map with new court
                     if (mapInstanceRef.current) {
                         mapInstanceRef.current.remove();
                         mapInstanceRef.current = null;
+                        setTimeout(() => {
+                            initializeMap(updatedCourts);
+                        }, 100);
                     }
                 } catch (error) {
                     console.error('Failed to add court:', error);
@@ -651,20 +655,26 @@
                 }
             };
 
-            useEffect(() => {
-                if (mapRef.current && !mapInstanceRef.current && courts.length > 0) {
+            const initializeMap = (courtsList) => {
+                if (mapRef.current && courtsList.length > 0) {
                     const map = L.map(mapRef.current).setView([38.8106, -90.7104], 12);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '© OpenStreetMap contributors'
                     }).addTo(map);
                     
-                    courts.forEach(court => {
+                    courtsList.forEach(court => {
                         const marker = L.marker([court.lat, court.lng]).addTo(map);
                         marker.bindPopup(`<strong>${court.name}</strong><br/>${court.courts} courts`);
                         marker.on('click', () => setSelectedCourt(court));
                     });
                     
                     mapInstanceRef.current = map;
+                }
+            };
+
+            useEffect(() => {
+                if (!mapInstanceRef.current && courts.length > 0) {
+                    initializeMap(courts);
                 }
             }, [courts]);
 
@@ -1102,6 +1112,18 @@
             );
         }
 
+        function ActivityItem({ icon, text, time }) {
+            return (
+                <div className="flex items-center space-x-3 py-3 border-b border-gray-100">
+                    <span className="text-2xl">{icon}</span>
+                    <div className="flex-1">
+                        <p className="text-gray-800">{text}</p>
+                        <p className="text-sm text-gray-500">{time}</p>
+                    </div>
+                </div>
+            );
+        }
+
         function ProfileView({ currentUser, setCurrentUser }) {
             const [isEditing, setIsEditing] = useState(false);
             const [editForm, setEditForm] = useState(currentUser || {});
@@ -1135,7 +1157,7 @@
             if (!currentUser) {
                 return (
                     <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-                        <div className="text-6xl mb-4">🏸</div>
+                        <div className="text-6xl mb-4">🏓</div>
                         <h2 className="text-2xl font-bold text-gray-800 mb-4">Please login to view your profile</h2>
                         <p className="text-gray-600 mb-6">Create an account to track your games, tournaments, and connect with players!</p>
                     </div>
@@ -1217,7 +1239,7 @@
                             <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4">
                                 <h3 className="font-bold mb-2">Choose Avatar</h3>
                                 <div className="flex flex-wrap gap-2">
-                                    {['🏸', '🥒', '🎾', '🏓', '⚾', '🏀', '⚽', '🎯', '🏅', '🔥', '⭐', '🌟'].map(emoji => (
+                                    {['🏓', '🏸', '🥎', '🎾', '⚾', '🏀', '⚽', '🎯', '🏅', '🔥', '⭐', '🌟'].map(emoji => (
                                         <button
                                             key={emoji}
                                             onClick={() => setEditForm({...editForm, avatar: emoji})}
