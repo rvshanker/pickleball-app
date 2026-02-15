@@ -1,57 +1,61 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Pickleball Round Robin Pro</title>
-    <style>
-        body { font-family: Arial; margin: 20px; background:#f4f6f8;}
-        h2 { margin-top:30px;}
-        input, select, button { padding:8px; margin:5px;}
-        table { border-collapse: collapse; width:100%; margin-top:10px; background:white;}
-        th, td { border:1px solid #ddd; padding:8px; text-align:center;}
-        th { background:#2c3e50; color:white;}
-        .card { background:white; padding:15px; border-radius:8px; margin-bottom:20px;}
-        button { background:#2c3e50; color:white; border:none; cursor:pointer;}
-        button:hover { background:#1a242f;}
-    </style>
+<meta charset="UTF-8">
+<title>Pickleball Round Robin Pro</title>
+
+<style>
+body { font-family: Arial; margin:20px; background:#f4f6f8;}
+h2 { margin-top:30px;}
+input, select, button, textarea { padding:8px; margin:5px;}
+table { border-collapse: collapse; width:100%; margin-top:10px; background:white;}
+th, td { border:1px solid #ddd; padding:8px; text-align:center;}
+th { background:#2c3e50; color:white;}
+.card { background:white; padding:15px; border-radius:8px; margin-bottom:20px;}
+button { background:#2c3e50; color:white; border:none; cursor:pointer;}
+button:hover { background:#1a242f;}
+.roundHeader { background:#eee; padding:5px; margin-top:10px; font-weight:bold;}
+</style>
 </head>
+
 <body>
 
 <h1>🏓 Pickleball Round Robin Pro</h1>
 
 <div class="card">
-    <h2>Setup Tournament</h2>
+<h2>Setup Tournament</h2>
 
-    <label>Format:</label>
-    <select id="format">
-        <option value="singles">Singles</option>
-        <option value="doubles-fixed">Doubles (Fixed Partners)</option>
-        <option value="doubles-rotating">Doubles (Rotating Partners)</option>
-    </select>
+<label>Format:</label>
+<select id="format">
+<option value="singles">Singles</option>
+<option value="doubles-fixed">Doubles (Fixed Partners)</option>
+<option value="doubles-rotating">Doubles (Rotating Partners)</option>
+</select>
+<br>
 
-    <br>
+<label>Number of Courts:</label>
+<input type="number" id="courts" value="2" min="1">
+<br>
 
-    <label>Number of Courts:</label>
-    <input type="number" id="courts" value="2">
+<label>Number of Rounds:</label>
+<input type="number" id="rounds" value="1" min="1">
+<br>
 
-    <br>
+<label>Players (comma separated):</label><br>
+<textarea id="playersInput" rows="4" cols="50"></textarea>
+<br>
 
-    <label>Players (comma separated):</label>
-    <br>
-    <textarea id="playersInput" rows="4" cols="50"></textarea>
-    <br>
-
-    <button onclick="generateTournament()">Generate Tournament</button>
+<button onclick="generateTournament()">Generate Tournament</button>
 </div>
 
 <div class="card">
-    <h2>Matches</h2>
-    <div id="matches"></div>
+<h2>Matches</h2>
+<div id="matches"></div>
 </div>
 
 <div class="card">
-    <h2>Leaderboard</h2>
-    <div id="leaderboard"></div>
+<h2>Leaderboard</h2>
+<div id="leaderboard"></div>
 </div>
 
 <!-- Firebase -->
@@ -60,13 +64,13 @@
 
 <script>
 const firebaseConfig = {
-    apiKey: "AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
-    authDomain: "pickleball-app-1bba7.firebaseapp.com",
-    projectId: "pickleball-app-1bba7",
-    storageBucket: "pickleball-app-1bba7.firebasestorage.app",
-    messagingSenderId: "645604154338",
-    appId: "1:645604154338:web:b92f87c2cd11d950b737bb",
-    measurementId: "G-WM2DMSZM7F"
+apiKey: "AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
+authDomain: "pickleball-app-1bba7.firebaseapp.com",
+projectId: "pickleball-app-1bba7",
+storageBucket: "pickleball-app-1bba7.firebasestorage.app",
+messagingSenderId: "645604154338",
+appId: "1:645604154338:web:b92f87c2cd11d950b737bb",
+measurementId: "G-WM2DMSZM7F"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -77,204 +81,208 @@ let playersList = [];
 let leaderboardData = {};
 
 function generateTournament() {
-    const format = document.getElementById("format").value;
-    const courts = parseInt(document.getElementById("courts").value);
-    playersList = document.getElementById("playersInput").value
-        .split(",")
-        .map(p => p.trim())
-        .filter(p => p !== "");
+const format = document.getElementById("format").value;
+const courts = parseInt(document.getElementById("courts").value);
+const roundsLimit = parseInt(document.getElementById("rounds").value);
 
-    if (playersList.length < 2) {
-        alert("Enter at least 2 players");
-        return;
-    }
+playersList = document.getElementById("playersInput").value
+.split(",")
+.map(p => p.trim())
+.filter(p => p !== "");
 
-    if (format === "singles") {
-        tournamentData = generateSingles(playersList);
-    } else if (format === "doubles-fixed") {
-        tournamentData = generateDoublesFixed(playersList);
-    } else {
-        tournamentData = generateDoublesRotating(playersList);
-    }
-
-    assignCourts(courts);
-    initLeaderboard();
-    renderMatches();
-    renderLeaderboard();
+if (playersList.length < 2) {
+alert("Enter at least 2 players");
+return;
 }
 
-function generateSingles(players) {
-    let list = [...players];
-    if (list.length % 2 !== 0) list.push("BYE");
-
-    const rounds = list.length - 1;
-    const matches = [];
-
-    for (let r = 0; r < rounds; r++) {
-        for (let i = 0; i < list.length / 2; i++) {
-            const p1 = list[i];
-            const p2 = list[list.length - 1 - i];
-            if (p1 !== "BYE" && p2 !== "BYE") {
-                matches.push({ team1: [p1], team2: [p2] });
-            }
-        }
-        list.splice(1, 0, list.pop());
-    }
-
-    return matches;
+if (format === "singles") {
+tournamentData = generateSingles(playersList, roundsLimit);
+} else if (format === "doubles-fixed") {
+tournamentData = generateDoublesFixed(playersList, roundsLimit);
+} else {
+tournamentData = generateDoublesRotating(playersList, roundsLimit);
 }
 
-function generateDoublesFixed(players) {
-    if (players.length % 4 !== 0) {
-        alert("Players must be multiple of 4 for fixed doubles.");
-        return [];
-    }
-
-    let teams = [];
-    for (let i = 0; i < players.length; i += 2) {
-        teams.push([players[i], players[i+1]]);
-    }
-
-    return generateSingles(teams).map(m => ({
-        team1: m.team1[0],
-        team2: m.team2[0]
-    }));
+assignCourts(courts);
+initLeaderboard();
+renderMatches();
+renderLeaderboard();
+saveTournament();
 }
 
-function generateDoublesRotating(players) {
-    let matches = [];
-    let teammateHistory = {};
+function generateSingles(players, roundsLimit) {
+let list = [...players];
+if (list.length % 2 !== 0) list.push("BYE");
 
-    players.forEach(p => teammateHistory[p] = new Set());
+const maxRounds = list.length - 1;
+const totalRounds = Math.min(roundsLimit, maxRounds);
 
-    for (let i = 0; i < players.length; i++) {
-        for (let j = i + 1; j < players.length; j++) {
-            if (!teammateHistory[players[i]].has(players[j])) {
-                matches.push({
-                    team1: [players[i], players[j]],
-                    team2: []
-                });
-                teammateHistory[players[i]].add(players[j]);
-                teammateHistory[players[j]].add(players[i]);
-            }
-        }
-    }
+const matches = [];
 
-    // pair matches into full doubles matches
-    let finalMatches = [];
-    for (let i = 0; i < matches.length; i += 2) {
-        if (matches[i+1]) {
-            finalMatches.push({
-                team1: matches[i].team1,
-                team2: matches[i+1].team1
-            });
-        }
-    }
+for (let r = 0; r < totalRounds; r++) {
+for (let i = 0; i < list.length / 2; i++) {
+const p1 = list[i];
+const p2 = list[list.length - 1 - i];
+if (p1 !== "BYE" && p2 !== "BYE") {
+matches.push({ team1: [p1], team2: [p2], round: r + 1 });
+}
+}
+list.splice(1, 0, list.pop());
+}
 
-    return finalMatches;
+return matches;
+}
+
+function generateDoublesFixed(players, roundsLimit) {
+if (players.length % 4 !== 0) {
+alert("Players must be multiple of 4 for fixed doubles.");
+return [];
+}
+
+let teams = [];
+for (let i = 0; i < players.length; i += 2) {
+teams.push([players[i], players[i+1]]);
+}
+
+const teamMatches = generateSingles(teams, roundsLimit);
+
+return teamMatches.map(m => ({
+team1: m.team1[0],
+team2: m.team2[0],
+round: m.round
+}));
+}
+
+function generateDoublesRotating(players, roundsLimit) {
+let pairs = [];
+for (let i = 0; i < players.length; i++) {
+for (let j = i + 1; j < players.length; j++) {
+pairs.push([players[i], players[j]]);
+}
+}
+
+let matches = [];
+let round = 1;
+
+for (let i = 0; i < pairs.length && round <= roundsLimit; i += 2) {
+if (pairs[i+1]) {
+matches.push({
+team1: pairs[i],
+team2: pairs[i+1],
+round: round
+});
+round++;
+}
+}
+
+return matches;
 }
 
 function assignCourts(courts) {
-    tournamentData.forEach((match, index) => {
-        match.court = (index % courts) + 1;
-        match.score1 = "";
-        match.score2 = "";
-    });
+tournamentData.forEach((match, index) => {
+match.court = (index % courts) + 1;
+match.score1 = "";
+match.score2 = "";
+});
 }
 
 function renderMatches() {
-    const container = document.getElementById("matches");
-    container.innerHTML = "";
+const container = document.getElementById("matches");
+container.innerHTML = "";
 
-    tournamentData.forEach((m, i) => {
-        container.innerHTML += `
-            <div>
-                Court ${m.court} :
-                ${m.team1.join(" & ")} vs ${m.team2.join(" & ")}
-                <input type="number" placeholder="Score 1" onchange="updateScore(${i}, this.value, null)">
-                <input type="number" placeholder="Score 2" onchange="updateScore(${i}, null, this.value)">
-            </div>
-        `;
-    });
+let currentRound = 0;
+
+tournamentData.forEach((m, i) => {
+
+if (m.round !== currentRound) {
+currentRound = m.round;
+container.innerHTML += `<div class="roundHeader">Round ${currentRound}</div>`;
+}
+
+container.innerHTML += `
+<div>
+Court ${m.court} :
+${m.team1.join(" & ")} vs ${m.team2.join(" & ")}
+<input type="number" placeholder="Score 1" onchange="updateScore(${i}, this.value, null)">
+<input type="number" placeholder="Score 2" onchange="updateScore(${i}, null, this.value)">
+</div>
+`;
+});
 }
 
 function initLeaderboard() {
-    leaderboardData = {};
-    playersList.forEach(p => {
-        leaderboardData[p] = {
-            wins: 0,
-            losses: 0,
-            pointsFor: 0,
-            pointsAgainst: 0
-        };
-    });
+leaderboardData = {};
+playersList.forEach(p => {
+leaderboardData[p] = { wins:0, losses:0, pointsFor:0, pointsAgainst:0 };
+});
 }
 
 function updateScore(index, s1, s2) {
-    if (s1 !== null) tournamentData[index].score1 = parseInt(s1);
-    if (s2 !== null) tournamentData[index].score2 = parseInt(s2);
+if (s1 !== null) tournamentData[index].score1 = parseInt(s1);
+if (s2 !== null) tournamentData[index].score2 = parseInt(s2);
 
-    calculateLeaderboard();
-    renderLeaderboard();
-    saveTournament();
+calculateLeaderboard();
+renderLeaderboard();
+saveTournament();
 }
 
 function calculateLeaderboard() {
-    initLeaderboard();
+initLeaderboard();
 
-    tournamentData.forEach(m => {
-        if (!m.score1 && !m.score2) return;
+tournamentData.forEach(m => {
+if (m.score1 === "" || m.score2 === "") return;
 
-        m.team1.forEach(p => {
-            leaderboardData[p].pointsFor += m.score1 || 0;
-            leaderboardData[p].pointsAgainst += m.score2 || 0;
-        });
+m.team1.forEach(p => {
+leaderboardData[p].pointsFor += m.score1;
+leaderboardData[p].pointsAgainst += m.score2;
+});
 
-        m.team2.forEach(p => {
-            leaderboardData[p].pointsFor += m.score2 || 0;
-            leaderboardData[p].pointsAgainst += m.score1 || 0;
-        });
+m.team2.forEach(p => {
+leaderboardData[p].pointsFor += m.score2;
+leaderboardData[p].pointsAgainst += m.score1;
+});
 
-        if (m.score1 > m.score2) {
-            m.team1.forEach(p => leaderboardData[p].wins++);
-            m.team2.forEach(p => leaderboardData[p].losses++);
-        } else if (m.score2 > m.score1) {
-            m.team2.forEach(p => leaderboardData[p].wins++);
-            m.team1.forEach(p => leaderboardData[p].losses++);
-        }
-    });
+if (m.score1 > m.score2) {
+m.team1.forEach(p => leaderboardData[p].wins++);
+m.team2.forEach(p => leaderboardData[p].losses++);
+} else if (m.score2 > m.score1) {
+m.team2.forEach(p => leaderboardData[p].wins++);
+m.team1.forEach(p => leaderboardData[p].losses++);
+}
+});
 }
 
 function renderLeaderboard() {
-    const container = document.getElementById("leaderboard");
-    const sorted = Object.entries(leaderboardData).sort((a,b) =>
-        b[1].wins - a[1].wins ||
-        (b[1].pointsFor - b[1].pointsAgainst) - (a[1].pointsFor - a[1].pointsAgainst)
-    );
+const container = document.getElementById("leaderboard");
 
-    let html = "<table><tr><th>Player</th><th>Wins</th><th>Losses</th><th>PF</th><th>PA</th><th>Diff</th></tr>";
+const sorted = Object.entries(leaderboardData).sort((a,b) =>
+b[1].wins - a[1].wins ||
+((b[1].pointsFor - b[1].pointsAgainst) - (a[1].pointsFor - a[1].pointsAgainst)))
+;
 
-    sorted.forEach(([name, data]) => {
-        html += `<tr>
-            <td>${name}</td>
-            <td>${data.wins}</td>
-            <td>${data.losses}</td>
-            <td>${data.pointsFor}</td>
-            <td>${data.pointsAgainst}</td>
-            <td>${data.pointsFor - data.pointsAgainst}</td>
-        </tr>`;
-    });
+let html = "<table><tr><th>Player</th><th>Wins</th><th>Losses</th><th>PF</th><th>PA</th><th>Diff</th></tr>";
 
-    html += "</table>";
-    container.innerHTML = html;
+sorted.forEach(([name, data]) => {
+html += `<tr>
+<td>${name}</td>
+<td>${data.wins}</td>
+<td>${data.losses}</td>
+<td>${data.pointsFor}</td>
+<td>${data.pointsAgainst}</td>
+<td>${data.pointsFor - data.pointsAgainst}</td>
+</tr>`;
+});
+
+html += "</table>";
+container.innerHTML = html;
 }
 
 function saveTournament() {
-    db.collection("tournaments").add({
-        created: new Date(),
-        players: playersList,
-        matches: tournamentData
-    });
+db.collection("tournaments").add({
+created: new Date(),
+players: playersList,
+matches: tournamentData
+});
 }
 </script>
 
