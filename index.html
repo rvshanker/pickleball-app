@@ -2066,20 +2066,20 @@
                     const totalPlayers = playerPool.length;
                     const matchesPerRound = Math.floor(totalPlayers / 4);
                     
-                    // Proper round-robin rotation (Berger tables algorithm)
+                    // Simple round-robin rotation
                     for (let round = 0; round < numRounds; round++) {
                         const roundMatches = [];
                         const roundPlayers = [];
                         
-                        // Build the player list for this round with rotation
-                        if (round === 0) {
-                            roundPlayers.push(...playerPool);
-                        } else {
-                            // Keep first player fixed, rotate others
-                            roundPlayers.push(playerPool[0]);
-                            for (let i = 1; i < totalPlayers; i++) {
-                                const rotatedIndex = ((i - 1 + round) % (totalPlayers - 1)) + 1;
-                                roundPlayers.push(playerPool[rotatedIndex]);
+                        // Rotate players each round
+                        for (let i = 0; i < totalPlayers; i++) {
+                            if (i === 0) {
+                                // First player stays fixed
+                                roundPlayers.push(playerPool[0]);
+                            } else {
+                                // Rotate other players
+                                const index = ((i - 1 + round) % (totalPlayers - 1)) + 1;
+                                roundPlayers.push(playerPool[index]);
                             }
                         }
                         
@@ -2087,26 +2087,24 @@
                         let courtNum = 0;
                         const playersInMatches = [];
                         
-                        // Pair players: 0-1 vs 2-3, 4-5 vs 6-7, etc.
-                        for (let i = 0; i < roundPlayers.length && courtNum < matchesPerRound; i += 4) {
-                            if (i + 3 < roundPlayers.length) {
-                                const p1 = roundPlayers[i];
-                                const p2 = roundPlayers[i + 1];
-                                const p3 = roundPlayers[i + 2];
-                                const p4 = roundPlayers[i + 3];
-                                
-                                // Skip if any player is BYE
-                                if (p1 !== 'BYE' && p2 !== 'BYE' && p3 !== 'BYE' && p4 !== 'BYE') {
-                                    const matchId = `r${round}-m${courtNum}`;
-                                    roundMatches.push({
-                                        id: matchId,
-                                        court: (courtNum % courts) + 1,
-                                        team1: [p1, p2],
-                                        team2: [p3, p4]
-                                    });
-                                    playersInMatches.push(p1, p2, p3, p4);
-                                    courtNum++;
-                                }
+                        // Create as many matches as possible (4 players per match)
+                        for (let i = 0; i < totalPlayers - 3; i += 4) {
+                            const p1 = roundPlayers[i];
+                            const p2 = roundPlayers[i + 1];
+                            const p3 = roundPlayers[i + 2];
+                            const p4 = roundPlayers[i + 3];
+                            
+                            // Skip if any player is BYE
+                            if (p1 !== 'BYE' && p2 !== 'BYE' && p3 !== 'BYE' && p4 !== 'BYE') {
+                                const matchId = `r${round}-m${courtNum}`;
+                                roundMatches.push({
+                                    id: matchId,
+                                    court: (courtNum % courts) + 1,
+                                    team1: [p1, p2],
+                                    team2: [p3, p4]
+                                });
+                                playersInMatches.push(p1, p2, p3, p4);
+                                courtNum++;
                             }
                         }
                         
