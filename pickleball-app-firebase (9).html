@@ -1,0 +1,2237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PickleConnect - Find Courts & Organize Games</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <style>
+        .leaflet-container { height: 100%; width: 100%; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // FIREBASE CONFIGURATION
+        const firebaseConfig = {
+            apiKey: "AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
+            authDomain: "pickleball-app-1bba7.firebaseapp.com",
+            projectId: "pickleball-app-1bba7",
+            storageBucket: "pickleball-app-1bba7.firebasestorage.app",
+            messagingSenderId: "645604154338",
+            appId: "1:645604154338:web:b92f87c2cd11d950b737bb",
+            measurementId: "G-WM2DMSZM7F"
+        };
+
+        // Initialize Firebase
+        let db = null;
+        let auth = null;
+        let isFirebaseConfigured = false;
+
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            auth = firebase.auth();
+            isFirebaseConfigured = true;
+            console.log("✅ Firebase initialized successfully!");
+            console.log("🔥 Real-time database is active");
+        } catch (error) {
+            console.log("Firebase initialization failed - using localStorage fallback:", error);
+            isFirebaseConfigured = false;
+        }
+
+        // Storage helper with Firebase and localStorage fallback
+        const storage = {
+            async saveTournament(tournamentData) {
+                if (isFirebaseConfigured && db) {
+                    try {
+                        await db.collection('tournaments').doc(tournamentData.id).set(tournamentData);
+                        return true;
+                    } catch (error) {
+                        console.error("Firebase save failed:", error);
+                    }
+                }
+                // Fallback to localStorage
+                localStorage.setItem(`tournament:${tournamentData.id}`, JSON.stringify(tournamentData));
+                return true;
+            },
+            
+            async getTournament(id) {
+                if (isFirebaseConfigured && db) {
+                    try {
+                        const doc = await db.collection('tournaments').doc(id).get();
+                        if (doc.exists) {
+                            return doc.data();
+                        }
+                    } catch (error) {
+                        console.error("Firebase get failed:", error);
+                    }
+                }
+                // Fallback to localStorage
+                const data = localStorage.getItem(`tournament:${id}`);
+                return data ? JSON.parse(data) : null;
+            },
+            
+            async getAllTournaments(userId = null) {
+                if (isFirebaseConfigured && db) {
+                    try {
+                        let query = db.collection('tournaments');
+                        
+                        // Get public tournaments OR private tournaments where user is a participant
+                        const publicSnapshot = await query.where('isPublic', '==', true).get();
+                        const publicTournaments = publicSnapshot.docs.map(doc => doc.data());
+                        
+                        if (userId) {
+                            const privateSnapshot = await query
+                                .where('isPublic', '==', false)
+                                .where('participants', 'array-contains', userId)
+                                .get();
+                            const privateTournaments = privateSnapshot.docs.map(doc => doc.data());
+                            return [...publicTournaments, ...privateTournaments];
+                        }
+                        
+                        return publicTournaments;
+                    } catch (error) {
+                        console.error("Firebase getAllTournaments failed:", error);
+                    }
+                }
+                
+                // Fallback to localStorage
+                const tournaments = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('tournament:')) {
+                        const data = JSON.parse(localStorage.getItem(key));
+                        // Filter based on public/private and user access
+                        if (data.isPublic || (userId && data.participants?.includes(userId))) {
+                            tournaments.push(data);
+                        }
+                    }
+                }
+                return tournaments;
+            },
+            
+            async deleteTournament(id) {
+                if (isFirebaseConfigured && db) {
+                    try {
+                        await db.collection('tournaments').doc(id).delete();
+                        return true;
+                    } catch (error) {
+                        console.error("Firebase delete failed:", error);
+                    }
+                }
+                // Fallback to localStorage
+                localStorage.removeItem(`tournament:${id}`);
+                return true;
+            },
+            
+            async getAllEvents() {
+                if (isFirebaseConfigured && db) {
+                    try {
+                        const snapshot = await db.collection('events').get();
+                        return snapshot.docs.map(doc => doc.data());
+                    } catch (error) {
+                        console.log("Using localStorage for events (Firebase permissions not set)");
+                    }
+                }
+                
+                // Fallback to localStorage
+                const events = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('event:')) {
+                        const data = JSON.parse(localStorage.getItem(key));
+                        events.push(data);
+                    }
+                }
+                return events;
+            },
+            
+            async saveEvent(eventData) {
+                if (isFirebaseConfigured && db) {
+                    try {
+                        await db.collection('events').doc(eventData.id.toString()).set(eventData);
+                        return true;
+                    } catch (error) {
+                        console.log("Using localStorage for events (Firebase permissions not set)");
+                    }
+                }
+                // Fallback to localStorage
+                localStorage.setItem(`event:${eventData.id}`, JSON.stringify(eventData));
+                return true;
+            },
+            
+            async getAllCourts() {
+                if (isFirebaseConfigured && db) {
+                    try {
+                        const snapshot = await db.collection('courts').get();
+                        return snapshot.docs.map(doc => doc.data());
+                    } catch (error) {
+                        console.log("Using localStorage for courts (Firebase permissions not set)");
+                    }
+                }
+                
+                // Fallback to localStorage
+                const courts = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('court:')) {
+                        const data = JSON.parse(localStorage.getItem(key));
+                        courts.push(data);
+                    }
+                }
+                return courts;
+            },
+            
+            async saveCourt(courtData) {
+                if (isFirebaseConfigured && db) {
+                    try {
+                        await db.collection('courts').doc(courtData.id.toString()).set(courtData);
+                        return true;
+                    } catch (error) {
+                        console.error("Firebase saveCourt failed:", error);
+                    }
+                }
+                // Fallback to localStorage
+                localStorage.setItem(`court:${courtData.id}`, JSON.stringify(courtData));
+                return true;
+            },
+            
+            async listenToTournament(id, callback) {
+                if (isFirebaseConfigured && db) {
+                    return db.collection('tournaments').doc(id).onSnapshot(doc => {
+                        if (doc.exists) {
+                            callback(doc.data());
+                        }
+                    });
+                }
+                // For localStorage, we'll poll
+                const interval = setInterval(async () => {
+                    const data = await storage.getTournament(id);
+                    if (data) callback(data);
+                }, 2000);
+                return () => clearInterval(interval);
+            }
+        };
+
+        // Sample data
+        const SAMPLE_COURTS = [
+            { id: 1, name: "O'Fallon Community Center", address: "825 E US Hwy 50, O'Fallon, MO", courts: 6, indoor: true, outdoor: false, lat: 38.8106, lng: -90.7104, rating: 4.5 },
+            { id: 2, name: "Westhoff Park", address: "900 Westhoff Park Dr, O'Fallon, MO", courts: 4, indoor: false, outdoor: true, lat: 38.7906, lng: -90.7204, rating: 4.2 },
+            { id: 3, name: "Fort Zumwalt Park", address: "1000 Park View Ln, O'Fallon, MO", courts: 8, indoor: false, outdoor: true, lat: 38.8006, lng: -90.6904, rating: 4.7 },
+            { id: 4, name: "Civic Park", address: "100 Civic Park Dr, O'Fallon, MO", courts: 3, indoor: false, outdoor: true, lat: 38.8206, lng: -90.7304, rating: 4.0 },
+        ];
+
+        const SKILL_LEVELS = ['Beginner (2.0-2.5)', 'Intermediate (3.0-3.5)', 'Advanced (4.0-4.5)', 'Expert (5.0+)'];
+
+        function App() {
+            const [currentView, setCurrentView] = useState('home');
+            const [currentUser, setCurrentUser] = useState(null);
+            const [showLogin, setShowLogin] = useState(false);
+            const [games, setGames] = useState([
+                { 
+                    id: 1, 
+                    court: SAMPLE_COURTS[0], 
+                    date: '2026-02-15', 
+                    time: '10:00 AM', 
+                    skillLevel: 'Intermediate (3.0-3.5)', 
+                    players: ['John D.', 'Sarah M.'], 
+                    maxPlayers: 4,
+                    organizer: 'John D.',
+                    format: 'Doubles'
+                },
+            ]);
+
+            // Listen to auth state changes
+            useEffect(() => {
+                if (isFirebaseConfigured && auth) {
+                    auth.onAuthStateChanged(user => {
+                        if (user) {
+                            setCurrentUser({
+                                uid: user.uid,
+                                email: user.email,
+                                name: user.displayName || user.email.split('@')[0],
+                                skillLevel: 'Intermediate (3.0-3.5)',
+                                gamesPlayed: 0,
+                                avatar: '🏓'
+                            });
+                        } else {
+                            setCurrentUser(null);
+                        }
+                    });
+                } else {
+                    // Guest mode for localStorage
+                    const savedProfile = localStorage.getItem('userProfile');
+                    if (savedProfile) {
+                        try {
+                            setCurrentUser(JSON.parse(savedProfile));
+                        } catch (error) {
+                            setCurrentUser({
+                                uid: 'guest',
+                                name: 'Guest Player',
+                                email: 'guest@local',
+                                skillLevel: 'Intermediate (3.0-3.5)',
+                                gamesPlayed: 0,
+                                avatar: '🏓'
+                            });
+                        }
+                    } else {
+                        setCurrentUser({
+                            uid: 'guest',
+                            name: 'Guest Player',
+                            email: 'guest@local',
+                            skillLevel: 'Intermediate (3.0-3.5)',
+                            gamesPlayed: 0,
+                            avatar: '🏓'
+                        });
+                    }
+                }
+            }, []);
+
+            const views = {
+                home: <HomeView setCurrentView={setCurrentView} games={games} />,
+                courts: <CourtsView setCurrentView={setCurrentView} />,
+                games: <GamesView games={games} setGames={setGames} setCurrentView={setCurrentView} currentUser={currentUser} />,
+                profile: <ProfileView currentUser={currentUser} setCurrentUser={setCurrentUser} />,
+                roundRobin: <RoundRobinView currentUser={currentUser} />,
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+                    {/* Login Modal */}
+                    {showLogin && !currentUser && (
+                        <LoginModal setShowLogin={setShowLogin} />
+                    )}
+
+                    {/* Navigation */}
+                    <nav className="bg-white shadow-lg sticky top-0 z-50">
+                        <div className="max-w-7xl mx-auto px-4 py-3">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setCurrentView('home')}>
+                                    <div className="bg-green-600 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center font-bold text-sm md:text-lg">
+                                        P
+                                    </div>
+                                    <span className="text-xl md:text-2xl font-bold text-green-600">PickleConnect</span>
+                                </div>
+                                
+                                {/* Desktop Navigation */}
+                                <div className="hidden md:flex items-center space-x-4">
+                                    <div className="flex space-x-2">
+                                        <NavButton active={currentView === 'home'} onClick={() => setCurrentView('home')}>
+                                            🏠 Home
+                                        </NavButton>
+                                        <NavButton active={currentView === 'courts'} onClick={() => setCurrentView('courts')}>
+                                            📍 Courts
+                                        </NavButton>
+                                        <NavButton active={currentView === 'games'} onClick={() => setCurrentView('games')}>
+                                            🎮 Games
+                                        </NavButton>
+                                        <NavButton active={currentView === 'roundRobin'} onClick={() => setCurrentView('roundRobin')}>
+                                            🔄 Tournaments
+                                        </NavButton>
+                                        <NavButton active={currentView === 'profile'} onClick={() => setCurrentView('profile')}>
+                                            👤 Profile
+                                        </NavButton>
+                                    </div>
+                                    {currentUser ? (
+                                        <div className="flex items-center space-x-2 bg-green-100 px-4 py-2 rounded-lg">
+                                            <span className="text-xl">{currentUser.avatar}</span>
+                                            <span className="font-medium text-gray-800">{currentUser.name}</span>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() => setShowLogin(true)}
+                                            className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-all"
+                                        >
+                                            Login
+                                        </button>
+                                    )}
+                                </div>
+                                
+                                {/* Mobile User Info */}
+                                <div className="md:hidden flex items-center space-x-2">
+                                    {currentUser ? (
+                                        <div className="flex items-center space-x-1 bg-green-100 px-3 py-1 rounded-lg">
+                                            <span className="text-lg">{currentUser.avatar}</span>
+                                            <span className="text-sm font-medium text-gray-800 max-w-[80px] truncate">{currentUser.name}</span>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() => setShowLogin(true)}
+                                            className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-all text-sm"
+                                        >
+                                            Login
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            {/* Mobile Navigation */}
+                            <div className="md:hidden mt-3 flex overflow-x-auto space-x-2 pb-2">
+                                <NavButton active={currentView === 'home'} onClick={() => setCurrentView('home')}>
+                                    🏠
+                                </NavButton>
+                                <NavButton active={currentView === 'courts'} onClick={() => setCurrentView('courts')}>
+                                    📍
+                                </NavButton>
+                                <NavButton active={currentView === 'games'} onClick={() => setCurrentView('games')}>
+                                    🎮
+                                </NavButton>
+                                <NavButton active={currentView === 'roundRobin'} onClick={() => setCurrentView('roundRobin')}>
+                                    🔄
+                                </NavButton>
+                                <NavButton active={currentView === 'profile'} onClick={() => setCurrentView('profile')}>
+                                    👤
+                                </NavButton>
+                            </div>
+                        </div>
+                    </nav>
+
+
+                    {/* Main Content */}
+                    <main className="max-w-7xl mx-auto px-4 py-8">
+                        {views[currentView]}
+                    </main>
+
+
+                </div>
+            );
+        }
+
+        function LoginModal({ setShowLogin }) {
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [isSignup, setIsSignup] = useState(false);
+            const [error, setError] = useState('');
+
+            const handleAuth = async (e) => {
+                e.preventDefault();
+                setError('');
+                
+                if (!isFirebaseConfigured) {
+                    setError('Please configure Firebase first (see instructions below)');
+                    return;
+                }
+
+                try {
+                    if (isSignup) {
+                        await auth.createUserWithEmailAndPassword(email, password);
+                    } else {
+                        await auth.signInWithEmailAndPassword(email, password);
+                    }
+                    setShowLogin(false);
+                } catch (error) {
+                    setError(error.message);
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-gray-800">
+                                {isSignup ? 'Sign Up' : 'Login'}
+                            </h2>
+                            <button
+                                onClick={() => setShowLogin(false)}
+                                className="text-gray-500 hover:text-gray-700 text-2xl"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleAuth} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                    required
+                                />
+                            </div>
+
+                            {error && (
+                                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                                    {error}
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                className="w-full bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition-all"
+                            >
+                                {isSignup ? 'Sign Up' : 'Login'}
+                            </button>
+
+                            <div className="text-center">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsSignup(!isSignup)}
+                                    className="text-green-600 hover:text-green-700 font-medium"
+                                >
+                                    {isSignup ? 'Already have an account? Login' : "Don't have an account? Sign Up"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+
+        function NavButton({ active, onClick, children }) {
+            return (
+                <button
+                    onClick={onClick}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                        active 
+                            ? 'bg-green-600 text-white shadow-lg' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                >
+                    {children}
+                </button>
+            );
+        }
+
+        function HomeView({ setCurrentView, games }) {
+            const [news, setNews] = useState([]);
+            const [deals, setDeals] = useState([]);
+            const [loadingNews, setLoadingNews] = useState(false);
+
+            useEffect(() => {
+                // Load news and deals (simulated for now - in production use real API)
+                loadPickleballNews();
+                loadPickleballDeals();
+            }, []);
+
+            const loadPickleballNews = () => {
+                // Simulated news - in production, fetch from API or RSS feed
+                setNews([
+                    {
+                        id: 1,
+                        title: "MLP announces 2026 season schedule",
+                        source: "Major League Pickleball",
+                        date: "Feb 10, 2026",
+                        url: "https://majorleaguepickleball.com"
+                    },
+                    {
+                        id: 2,
+                        title: "New pickleball facilities opening across the US",
+                        source: "Pickleball Magazine",
+                        date: "Feb 8, 2026",
+                        url: "https://pickleballmagazine.com"
+                    },
+                    {
+                        id: 3,
+                        title: "Professional player rankings updated",
+                        source: "PPA Tour",
+                        date: "Feb 5, 2026",
+                        url: "https://ppatour.com"
+                    }
+                ]);
+            };
+
+            const loadPickleballDeals = () => {
+                // Simulated deals - in production, fetch from affiliate APIs
+                setDeals([
+                    {
+                        id: 1,
+                        title: "Paddletek Tempest Wave Pro - 20% Off",
+                        description: "Premium carbon fiber paddle",
+                        price: "$119.99",
+                        originalPrice: "$149.99",
+                        url: "https://amazon.com/pickleball-paddles"
+                    },
+                    {
+                        id: 2,
+                        title: "Franklin X-40 Performance Balls - 6 Pack",
+                        description: "USAPA approved outdoor balls",
+                        price: "$12.99",
+                        originalPrice: "$17.99",
+                        url: "https://amazon.com/pickleball-balls"
+                    },
+                    {
+                        id: 3,
+                        title: "Onix Fuse Indoor Shoes - 30% Off",
+                        description: "Non-marking court shoes",
+                        price: "$69.99",
+                        originalPrice: "$99.99",
+                        url: "https://amazon.com/pickleball-shoes"
+                    }
+                ]);
+            };
+
+            const upcomingGames = games.filter(g => new Date(g.date) >= new Date()).slice(0, 3);
+            
+            return (
+                <div className="space-y-8">
+                    {/* Hero Section */}
+                    <div className="bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl p-6 md:p-8 text-white shadow-xl">
+                        <h1 className="text-3xl md:text-4xl font-bold mb-4">Welcome to PickleConnect!</h1>
+                        <p className="text-lg md:text-xl mb-6">Find courts, organize games, and connect with players in your area</p>
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <button 
+                                onClick={() => setCurrentView('courts')}
+                                className="bg-white text-green-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-all shadow-lg"
+                            >
+                                Find Courts Near Me
+                            </button>
+                            <button 
+                                onClick={() => setCurrentView('games')}
+                                className="bg-green-700 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-800 transition-all shadow-lg"
+                            >
+                                Browse Events
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Quick Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <StatCard icon="📍" title="Courts" value={SAMPLE_COURTS.length} subtitle="in your area" />
+                        <StatCard icon="🎮" title="Active Events" value={games.length} subtitle="this week" />
+                        <StatCard icon="👥" title="Players" value="124" subtitle="in your community" />
+                    </div>
+
+                    {/* Tournament Features */}
+                    <div className="bg-white rounded-xl shadow-lg p-6">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-4">Tournament Features</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FeatureCard 
+                                icon="🔒" 
+                                title="Private Tournaments"
+                                description="Create private tournaments - only participants can see scores and results"
+                                onClick={() => setCurrentView('roundRobin')}
+                            />
+                            <FeatureCard 
+                                icon="🌍" 
+                                title="Public Tournaments"
+                                description="Share your tournament publicly - anyone can view scores and leaderboard"
+                                onClick={() => setCurrentView('roundRobin')}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Pickleball News */}
+                    <div className="bg-white rounded-xl shadow-lg p-6">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-4">Latest Pickleball News</h2>
+                        <div className="space-y-4">
+                            {news.map(item => (
+                                <a
+                                    key={item.id}
+                                    href={item.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 hover:border-green-300 rounded-lg p-4 transition-all"
+                                >
+                                    <h3 className="font-bold text-gray-800 mb-2">{item.title}</h3>
+                                    <div className="flex items-center justify-between text-sm text-gray-600">
+                                        <span>{item.source}</span>
+                                        <span>{item.date}</span>
+                                    </div>
+                                </a>
+                            ))}
+                        </div>
+                        <p className="text-sm text-gray-500 mt-4 text-center">
+                            News aggregated from top pickleball sources
+                        </p>
+                    </div>
+
+                    {/* Pickleball Deals */}
+                    <div className="bg-white rounded-xl shadow-lg p-6">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-4">Latest Deals</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {deals.map(deal => (
+                                <a
+                                    key={deal.id}
+                                    href={deal.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block bg-gradient-to-br from-orange-50 to-red-50 hover:from-orange-100 hover:to-red-100 border-2 border-orange-200 hover:border-orange-400 rounded-lg p-4 transition-all"
+                                >
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">DEAL</span>
+                                    </div>
+                                    <h3 className="font-bold text-gray-800 mb-2 text-sm">{deal.title}</h3>
+                                    <p className="text-xs text-gray-600 mb-3">{deal.description}</p>
+                                    <div className="flex items-baseline space-x-2">
+                                        <span className="text-lg font-bold text-green-600">{deal.price}</span>
+                                        <span className="text-sm text-gray-500 line-through">{deal.originalPrice}</span>
+                                    </div>
+                                </a>
+                            ))}
+                        </div>
+                        <p className="text-sm text-gray-500 mt-4 text-center">
+                            Deals from Amazon and partner retailers
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        function StatCard({ icon, title, value, subtitle }) {
+            return (
+                <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+                    <div className="text-4xl mb-2">{icon}</div>
+                    <div className="text-3xl font-bold text-gray-800">{value}</div>
+                    <div className="text-sm text-gray-600">{title}</div>
+                    <div className="text-xs text-gray-500">{subtitle}</div>
+                </div>
+            );
+        }
+
+        function FeatureCard({ icon, title, description, onClick }) {
+            return (
+                <div 
+                    onClick={onClick}
+                    className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all cursor-pointer border-2 border-transparent hover:border-green-500"
+                >
+                    <div className="text-4xl mb-4">{icon}</div>
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">{title}</h3>
+                    <p className="text-gray-600">{description}</p>
+                </div>
+            );
+        }
+
+        // Simplified CourtsView, GamesView, ProfileView (keeping original implementations)
+        function CourtsView({ setCurrentView }) {
+            const mapRef = useRef(null);
+            const mapInstanceRef = useRef(null);
+            const [courts, setCourts] = useState([]);
+            const [selectedCourt, setSelectedCourt] = useState(null);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [showAddCourt, setShowAddCourt] = useState(false);
+            const [newCourt, setNewCourt] = useState({
+                name: '',
+                address: '',
+                courts: 4,
+                indoor: false,
+                outdoor: true,
+                rating: 4.0
+            });
+
+            // Load courts from storage
+            useEffect(() => {
+                loadCourts();
+            }, []);
+
+            const loadCourts = async () => {
+                try {
+                    const savedCourts = await storage.getAllCourts();
+                    setCourts([...SAMPLE_COURTS, ...savedCourts]);
+                } catch (error) {
+                    console.log('No saved courts yet');
+                    setCourts([...SAMPLE_COURTS]);
+                }
+            };
+
+            const handleAddCourt = async () => {
+                if (!newCourt.name || !newCourt.address) {
+                    alert('Please fill in court name and address');
+                    return;
+                }
+
+                const court = {
+                    id: Date.now(),
+                    ...newCourt,
+                    lat: 38.8106 + (Math.random() - 0.5) * 0.1,
+                    lng: -90.7104 + (Math.random() - 0.5) * 0.1
+                };
+
+                try {
+                    await storage.saveCourt(court);
+                    const updatedCourts = [...courts, court];
+                    setCourts(updatedCourts);
+                    setShowAddCourt(false);
+                    setNewCourt({
+                        name: '',
+                        address: '',
+                        courts: 4,
+                        indoor: false,
+                        outdoor: true,
+                        rating: 4.0
+                    });
+                    
+                    // Reinitialize map
+                    if (mapInstanceRef.current) {
+                        mapInstanceRef.current.remove();
+                        mapInstanceRef.current = null;
+                    }
+                    setTimeout(() => {
+                        initializeMap(updatedCourts);
+                    }, 100);
+                    
+                    alert('Court added successfully!');
+                } catch (error) {
+                    console.error('Failed to add court:', error);
+                    alert('Failed to add court');
+                }
+            };
+
+            const handleCreateEvent = (court) => {
+                // Store selected court in localStorage for the Games view
+                localStorage.setItem('selectedCourtForEvent', JSON.stringify(court));
+                setCurrentView('games');
+            };
+
+            const initializeMap = (courtsList) => {
+                if (mapRef.current && courtsList.length > 0) {
+                    const map = L.map(mapRef.current).setView([38.8106, -90.7104], 12);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(map);
+                    
+                    courtsList.forEach(court => {
+                        const marker = L.marker([court.lat, court.lng]).addTo(map);
+                        marker.bindPopup(`<strong>${court.name}</strong><br/>${court.courts} courts`);
+                        marker.on('click', () => setSelectedCourt(court));
+                    });
+                    
+                    mapInstanceRef.current = map;
+                }
+            };
+
+            useEffect(() => {
+                if (courts.length > 0 && !mapInstanceRef.current) {
+                    initializeMap(courts);
+                }
+            }, [courts]);
+
+            const filteredCourts = courts.filter(court =>
+                court.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                court.address.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            return (
+                <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-4">
+                        <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Find Courts 📍</h2>
+                        <button
+                            onClick={() => setShowAddCourt(!showAddCourt)}
+                            className="bg-green-600 text-white px-4 md:px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-all"
+                        >
+                            {showAddCourt ? 'Cancel' : '+ Add Court'}
+                        </button>
+                    </div>
+
+                    {showAddCourt && (
+                        <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 md:p-6 mb-6">
+                            <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4">Add New Court</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Court Name *</label>
+                                    <input
+                                        type="text"
+                                        value={newCourt.name}
+                                        onChange={(e) => setNewCourt({...newCourt, name: e.target.value})}
+                                        placeholder="e.g., Springfield Park"
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
+                                    <input
+                                        type="text"
+                                        value={newCourt.address}
+                                        onChange={(e) => setNewCourt({...newCourt, address: e.target.value})}
+                                        placeholder="123 Main St, City, State"
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Number of Courts</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={newCourt.courts}
+                                        onChange={(e) => setNewCourt({...newCourt, courts: parseInt(e.target.value) || 1})}
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                                    <div className="flex space-x-4">
+                                        <label className="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={newCourt.indoor}
+                                                onChange={(e) => setNewCourt({...newCourt, indoor: e.target.checked})}
+                                                className="w-4 h-4"
+                                            />
+                                            <span>Indoor</span>
+                                        </label>
+                                        <label className="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={newCourt.outdoor}
+                                                onChange={(e) => setNewCourt({...newCourt, outdoor: e.target.checked})}
+                                                className="w-4 h-4"
+                                            />
+                                            <span>Outdoor</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleAddCourt}
+                                className="w-full mt-4 bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition-all"
+                            >
+                                Add Court
+                            </button>
+                        </div>
+                    )}
+
+                    <input
+                        type="text"
+                        placeholder="Search courts..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none mb-6"
+                    />
+                    
+                    <div className="rounded-lg overflow-hidden shadow-lg mb-6" style={{ height: '400px' }}>
+                        <div ref={mapRef} style={{ height: '100%', width: '100%' }}></div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {filteredCourts.map(court => (
+                            <div key={court.id} className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4">
+                                <h4 className="font-bold text-lg mb-2">{court.name}</h4>
+                                <p className="text-sm text-gray-600 mb-2">{court.address}</p>
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
+                                        {court.courts} courts
+                                    </span>
+                                    {court.indoor && (
+                                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+                                            Indoor
+                                        </span>
+                                    )}
+                                    {court.outdoor && (
+                                        <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">
+                                            Outdoor
+                                        </span>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => handleCreateEvent(court)}
+                                    className="w-full bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-all text-sm"
+                                >
+                                    Create Event Here
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        function GamesView({ games, setGames, setCurrentView, currentUser }) {
+            const [events, setEvents] = useState([]);
+            const [showCreateForm, setShowCreateForm] = useState(false);
+            const [allCourts, setAllCourts] = useState(SAMPLE_COURTS);
+            const [formData, setFormData] = useState({
+                court: SAMPLE_COURTS[0].id,
+                date: '2026-02-15',
+                time: '14:00',
+                skillLevel: 'All Levels',
+                maxPlayers: 8,
+                description: ''
+            });
+
+            useEffect(() => {
+                loadEvents();
+                loadAllCourts();
+                
+                // Check if coming from Courts page with selected court
+                const selectedCourtData = localStorage.getItem('selectedCourtForEvent');
+                if (selectedCourtData) {
+                    try {
+                        const court = JSON.parse(selectedCourtData);
+                        setFormData(prev => ({...prev, court: court.id}));
+                        setShowCreateForm(true);
+                        localStorage.removeItem('selectedCourtForEvent');
+                    } catch (error) {
+                        console.error('Error loading selected court:', error);
+                    }
+                }
+            }, []);
+
+            const loadAllCourts = async () => {
+                try {
+                    const savedCourts = await storage.getAllCourts();
+                    setAllCourts([...SAMPLE_COURTS, ...savedCourts]);
+                } catch (error) {
+                    console.log('Using default courts');
+                }
+            };
+
+            const loadEvents = async () => {
+                try {
+                    const allEvents = await storage.getAllEvents();
+                    setEvents(allEvents.sort((a, b) => new Date(a.date) - new Date(b.date)));
+                } catch (error) {
+                    console.error('Error loading events:', error);
+                }
+            };
+
+            const handleCreateEvent = async (e) => {
+                e.preventDefault();
+                const selectedCourt = allCourts.find(c => c.id === parseInt(formData.court));
+                
+                if (!selectedCourt) {
+                    alert('Please select a valid court');
+                    return;
+                }
+                
+                const newEvent = {
+                    id: Date.now(),
+                    court: selectedCourt,
+                    date: formData.date,
+                    time: formData.time,
+                    skillLevel: formData.skillLevel,
+                    maxPlayers: parseInt(formData.maxPlayers),
+                    description: formData.description,
+                    attendees: [currentUser?.name || 'Guest'],
+                    interested: [],
+                    organizer: currentUser?.name || 'Guest',
+                    createdAt: Date.now()
+                };
+
+                try {
+                    await storage.saveEvent(newEvent);
+                    setEvents([...events, newEvent].sort((a, b) => new Date(a.date) - new Date(b.date)));
+                    setShowCreateForm(false);
+                    setFormData({
+                        court: SAMPLE_COURTS[0].id,
+                        date: '2026-02-15',
+                        time: '14:00',
+                        skillLevel: 'All Levels',
+                        maxPlayers: 8,
+                        description: ''
+                    });
+                    alert('Event created successfully!');
+                } catch (error) {
+                    console.error('Error creating event:', error);
+                    alert('Failed to create event');
+                }
+            };
+
+            const handleRSVP = async (eventId, status) => {
+                const userName = currentUser?.name || prompt('Enter your name to RSVP:');
+                if (!userName) return;
+
+                const updatedEvents = events.map(event => {
+                    if (event.id === eventId) {
+                        let newAttendees = [...event.attendees];
+                        let newInterested = [...event.interested];
+
+                        // Remove from both lists first
+                        newAttendees = newAttendees.filter(name => name !== userName);
+                        newInterested = newInterested.filter(name => name !== userName);
+
+                        // Add to appropriate list
+                        if (status === 'going' && newAttendees.length < event.maxPlayers) {
+                            newAttendees.push(userName);
+                        } else if (status === 'interested') {
+                            newInterested.push(userName);
+                        }
+
+                        const updated = {...event, attendees: newAttendees, interested: newInterested};
+                        storage.saveEvent(updated);
+                        return updated;
+                    }
+                    return event;
+                });
+
+                setEvents(updatedEvents);
+            };
+
+            const upcomingEvents = events.filter(e => new Date(e.date + ' ' + e.time) >= new Date());
+            const pastEvents = events.filter(e => new Date(e.date + ' ' + e.time) < new Date());
+
+            return (
+                <div className="space-y-6">
+                    <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+                            <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Events & Meetups 🎮</h2>
+                            <button 
+                                onClick={() => setShowCreateForm(!showCreateForm)}
+                                className="bg-green-600 text-white px-4 md:px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition-all shadow-lg"
+                            >
+                                {showCreateForm ? 'Cancel' : '+ Create Event'}
+                            </button>
+                        </div>
+
+                        {showCreateForm && (
+                            <form onSubmit={handleCreateEvent} className="bg-green-50 border-2 border-green-200 rounded-lg p-4 md:p-6 mb-6">
+                                <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4">Create New Event</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Court</label>
+                                        <select 
+                                            value={formData.court}
+                                            onChange={(e) => setFormData({...formData, court: e.target.value})}
+                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                            required
+                                        >
+                                            {allCourts.map(court => (
+                                                <option key={court.id} value={court.id}>{court.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                                        <input 
+                                            type="date"
+                                            value={formData.date}
+                                            onChange={(e) => setFormData({...formData, date: e.target.value})}
+                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Time</label>
+                                        <input 
+                                            type="time"
+                                            value={formData.time}
+                                            onChange={(e) => setFormData({...formData, time: e.target.value})}
+                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Skill Level</label>
+                                        <select 
+                                            value={formData.skillLevel}
+                                            onChange={(e) => setFormData({...formData, skillLevel: e.target.value})}
+                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                        >
+                                            <option>All Levels</option>
+                                            {SKILL_LEVELS.map(level => (
+                                                <option key={level}>{level}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Max Players</label>
+                                        <select 
+                                            value={formData.maxPlayers}
+                                            onChange={(e) => setFormData({...formData, maxPlayers: e.target.value})}
+                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                        >
+                                            {[4, 6, 8, 10, 12, 16, 20].map(n => (
+                                                <option key={n} value={n}>{n} players</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
+                                        <textarea
+                                            value={formData.description}
+                                            onChange={(e) => setFormData({...formData, description: e.target.value})}
+                                            placeholder="Add any details about the event..."
+                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                            rows="3"
+                                        />
+                                    </div>
+                                </div>
+                                <button 
+                                    type="submit"
+                                    className="w-full mt-4 bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition-all"
+                                >
+                                    Create Event
+                                </button>
+                            </form>
+                        )}
+
+                        {/* Upcoming Events */}
+                        <div className="mb-8">
+                            <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4">Upcoming Events ({upcomingEvents.length})</h3>
+                            {upcomingEvents.length === 0 ? (
+                                <div className="text-center py-8 text-gray-500">
+                                    <p className="text-lg mb-2">No upcoming events</p>
+                                    <p>Create one to start playing!</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {upcomingEvents.map(event => (
+                                        <EventCard key={event.id} event={event} handleRSVP={handleRSVP} currentUser={currentUser} />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Past Events */}
+                        {pastEvents.length > 0 && (
+                            <div>
+                                <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4">Past Events ({pastEvents.length})</h3>
+                                <div className="space-y-4 opacity-60">
+                                    {pastEvents.map(event => (
+                                        <EventCard key={event.id} event={event} handleRSVP={handleRSVP} currentUser={currentUser} isPast={true} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function EventCard({ event, handleRSVP, currentUser, isPast = false }) {
+            const userName = currentUser?.name || 'Guest';
+            const isGoing = event.attendees.includes(userName);
+            const isInterested = event.interested.includes(userName);
+            const spotsLeft = event.maxPlayers - event.attendees.length;
+
+            return (
+                <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 hover:border-green-300 transition-all">
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+                        <div className="flex-1">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <h4 className="font-bold text-gray-800 text-lg">{event.court.name}</h4>
+                                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
+                                    {event.skillLevel}
+                                </span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 mb-2">
+                                <span>📅 {new Date(event.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                                <span>🕒 {event.time}</span>
+                                <span>👤 Organized by {event.organizer}</span>
+                            </div>
+                            {event.description && (
+                                <p className="text-sm text-gray-600 mb-2">{event.description}</p>
+                            )}
+                            <div className="flex flex-wrap gap-2 text-sm">
+                                <span className="font-medium">
+                                    ✓ Going ({event.attendees.length}/{event.maxPlayers}):
+                                </span>
+                                {event.attendees.map((name, idx) => (
+                                    <span key={idx} className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">
+                                        {name}
+                                    </span>
+                                ))}
+                            </div>
+                            {event.interested.length > 0 && (
+                                <div className="flex flex-wrap gap-2 text-sm mt-2">
+                                    <span className="font-medium">
+                                        ⭐ Interested ({event.interested.length}):
+                                    </span>
+                                    {event.interested.map((name, idx) => (
+                                        <span key={idx} className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs">
+                                            {name}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        
+                        {!isPast && (
+                            <div className="flex flex-col gap-2 min-w-[140px]">
+                                {spotsLeft > 0 ? (
+                                    <button
+                                        onClick={() => handleRSVP(event.id, 'going')}
+                                        className={`px-4 py-2 rounded-lg font-medium transition-all text-sm ${
+                                            isGoing
+                                                ? 'bg-green-600 text-white'
+                                                : 'bg-white border-2 border-green-600 text-green-600 hover:bg-green-50'
+                                        }`}
+                                    >
+                                        {isGoing ? '✓ Going' : `Join (${spotsLeft} spots)`}
+                                    </button>
+                                ) : (
+                                    <div className="px-4 py-2 bg-gray-300 text-gray-600 rounded-lg font-medium text-center text-sm">
+                                        Full
+                                    </div>
+                                )}
+                                <button
+                                    onClick={() => handleRSVP(event.id, 'interested')}
+                                    className={`px-4 py-2 rounded-lg font-medium transition-all text-sm ${
+                                        isInterested
+                                            ? 'bg-yellow-500 text-white'
+                                            : 'bg-white border-2 border-yellow-500 text-yellow-600 hover:bg-yellow-50'
+                                    }`}
+                                >
+                                    {isInterested ? '⭐ Interested' : 'Interested'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function ActivityItem({ icon, text, time }) {
+            return (
+                <div className="flex items-center space-x-3 py-3 border-b border-gray-100">
+                    <span className="text-2xl">{icon}</span>
+                    <div className="flex-1">
+                        <p className="text-gray-800">{text}</p>
+                        <p className="text-sm text-gray-500">{time}</p>
+                    </div>
+                </div>
+            );
+        }
+
+        function ProfileView({ currentUser, setCurrentUser }) {
+            const [isEditing, setIsEditing] = useState(false);
+            const [editForm, setEditForm] = useState(currentUser || {});
+
+            useEffect(() => {
+                if (currentUser) {
+                    setEditForm(currentUser);
+                }
+            }, [currentUser]);
+
+            const handleSave = async () => {
+                setCurrentUser(editForm);
+                setIsEditing(false);
+                
+                // Save to localStorage
+                try {
+                    localStorage.setItem('userProfile', JSON.stringify(editForm));
+                    console.log('✓ Profile saved');
+                } catch (error) {
+                    console.error('Failed to save profile:', error);
+                }
+            };
+
+            const handleLogout = async () => {
+                if (confirm('Are you sure you want to logout?')) {
+                    if (isFirebaseConfigured && auth) {
+                        try {
+                            await auth.signOut();
+                        } catch (error) {
+                            console.error('Logout error:', error);
+                        }
+                    }
+                    setCurrentUser(null);
+                    window.location.reload();
+                }
+            };
+
+            if (!currentUser) {
+                return (
+                    <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+                        <div className="text-6xl mb-4 font-bold text-green-600">Profile</div>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-4">Please login to view your profile</h2>
+                        <p className="text-gray-600 mb-6">Create an account to track your games, tournaments, and connect with players!</p>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="max-w-3xl mx-auto">
+                    <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                        <div className="flex flex-col md:flex-row md:items-center md:space-x-6 mb-8">
+                            <div className="text-6xl bg-green-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto md:mx-0 mb-4 md:mb-0">
+                                {currentUser.avatar}
+                            </div>
+                            <div className="flex-1 text-center md:text-left">
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        value={editForm.name}
+                                        onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                                        className="text-2xl md:text-3xl font-bold text-gray-800 mb-2 w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                    />
+                                ) : (
+                                    <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">{currentUser.name}</h2>
+                                )}
+                                <p className="text-gray-600 mb-1">{currentUser.email}</p>
+                                {isEditing ? (
+                                    <select
+                                        value={editForm.skillLevel}
+                                        onChange={(e) => setEditForm({...editForm, skillLevel: e.target.value})}
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                    >
+                                        {SKILL_LEVELS.map(level => (
+                                            <option key={level}>{level}</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <p className="text-gray-600">{currentUser.skillLevel}</p>
+                                )}
+                            </div>
+                            <div className="flex flex-col space-y-2 mt-4 md:mt-0">
+                                {isEditing ? (
+                                    <>
+                                        <button 
+                                            onClick={handleSave}
+                                            className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-all"
+                                        >
+                                            ✓ Save
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                setIsEditing(false);
+                                                setEditForm(currentUser);
+                                            }}
+                                            className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-400 transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button 
+                                            onClick={() => setIsEditing(true)}
+                                            className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-all"
+                                        >
+                                            ✏️ Edit Profile
+                                        </button>
+                                        <button 
+                                            onClick={handleLogout}
+                                            className="bg-red-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-red-600 transition-all"
+                                        >
+                                            🚪 Logout
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {isEditing && (
+                            <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4">
+                                <h3 className="font-bold mb-2">Choose Avatar</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {['🏓', '🏸', '🥎', '🎾', '⚾', '🏀', '⚽', '🎯', '🏅', '🔥', '⭐', '🌟'].map(emoji => (
+                                        <button
+                                            key={emoji}
+                                            onClick={() => setEditForm({...editForm, avatar: emoji})}
+                                            className={`text-3xl p-2 rounded-lg transition-all ${
+                                                editForm.avatar === emoji ? 'bg-green-500 scale-110' : 'bg-white hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            {emoji}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {!isEditing && (
+                            <>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                    <div className="bg-green-50 rounded-lg p-6 text-center">
+                                        <div className="text-3xl font-bold text-green-600 mb-2">{currentUser.gamesPlayed || 0}</div>
+                                        <div className="text-gray-600">Games Played</div>
+                                    </div>
+                                    <div className="bg-blue-50 rounded-lg p-6 text-center">
+                                        <div className="text-3xl font-bold text-blue-600 mb-2">4.2</div>
+                                        <div className="text-gray-600">DUPR Rating</div>
+                                    </div>
+                                    <div className="bg-purple-50 rounded-lg p-6 text-center">
+                                        <div className="text-3xl font-bold text-purple-600 mb-2">12</div>
+                                        <div className="text-gray-600">Upcoming Games</div>
+                                    </div>
+                                </div>
+
+                                <div className="pt-8 border-t-2 border-gray-200">
+                                    <h3 className="text-xl font-bold text-gray-800 mb-4">Recent Activity</h3>
+                                    <div className="space-y-3">
+                                        <ActivityItem 
+                                            icon="🎮" 
+                                            text="Joined tournament at O'Fallon Community Center" 
+                                            time="2 hours ago"
+                                        />
+                                        <ActivityItem 
+                                            icon="⭐" 
+                                            text="Rated Westhoff Park 5 stars" 
+                                            time="1 day ago"
+                                        />
+                                        <ActivityItem 
+                                            icon="🏆" 
+                                            text="Won tournament at Fort Zumwalt Park" 
+                                            time="3 days ago"
+                                        />
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // ENHANCED Round Robin View with Singles/Doubles support and guest access
+        function RoundRobinView({ currentUser }) {
+            const [players, setPlayers] = useState(['']);
+            const [courts, setCourts] = useState(1);
+            const [numRounds, setNumRounds] = useState(1);
+            const [matchFormat, setMatchFormat] = useState('singles'); // 'singles' or 'doubles'
+            const [schedule, setSchedule] = useState([]);
+            const [scores, setScores] = useState({});
+            const [tournamentId, setTournamentId] = useState(null);
+            const [savedTournaments, setSavedTournaments] = useState([]);
+            const [showLeaderboard, setShowLeaderboard] = useState(false);
+            const [saveStatus, setSaveStatus] = useState('');
+            const [isPublic, setIsPublic] = useState(false);
+            const [tournamentName, setTournamentName] = useState('');
+
+            useEffect(() => {
+                loadTournaments();
+            }, [currentUser]);
+
+            useEffect(() => {
+                if (tournamentId && schedule.length > 0) {
+                    saveTournament();
+                }
+            }, [scores, schedule, tournamentId]);
+
+            // Real-time listener for current tournament
+            useEffect(() => {
+                if (tournamentId && isFirebaseConfigured) {
+                    const unsubscribe = storage.listenToTournament(tournamentId, (data) => {
+                        if (data && data.scores) {
+                            setScores(data.scores);
+                        }
+                    });
+                    // Return cleanup function properly
+                    return () => {
+                        if (typeof unsubscribe === 'function') {
+                            unsubscribe();
+                        }
+                    };
+                }
+            }, [tournamentId]);
+
+            const loadTournaments = async () => {
+                try {
+                    const tournaments = await storage.getAllTournaments(currentUser?.uid);
+                    console.log('Loaded tournaments:', tournaments);
+                    setSavedTournaments(tournaments.sort((a, b) => b.createdAt - a.createdAt));
+                } catch (error) {
+                    console.error('Error loading tournaments:', error);
+                }
+            };
+
+            const saveTournament = async () => {
+                if (!tournamentId) return;
+                
+                // Use currentUser if logged in, otherwise use guest
+                const userId = currentUser?.uid || 'guest-' + Date.now();
+                
+                // Convert schedule to completely flat structure for Firestore
+                const firestoreSchedule = [];
+                schedule.forEach((round, roundIndex) => {
+                    round.forEach((match, matchIndex) => {
+                        firestoreSchedule.push({
+                            roundIndex: roundIndex,
+                            matchIndex: matchIndex,
+                            id: match.id,
+                            court: match.court,
+                            team1: Array.isArray(match.team1) ? match.team1.join(', ') : match.team1,
+                            team2: Array.isArray(match.team2) ? match.team2.join(', ') : match.team2
+                        });
+                    });
+                });
+                
+                const tournamentData = {
+                    id: tournamentId,
+                    name: tournamentName || `Tournament ${new Date().toLocaleDateString()}`,
+                    players: players.filter(p => p.trim() !== ''),
+                    courts,
+                    numRounds,
+                    matchFormat,
+                    scheduleFlat: firestoreSchedule,
+                    scores: scores || {},
+                    isPublic,
+                    participants: [userId, ...players.filter(p => p.trim() !== '').map(p => `player-${p}`)],
+                    createdBy: userId,
+                    createdAt: Date.now()
+                };
+
+                try {
+                    setSaveStatus('Saving...');
+                    console.log('Saving tournament:', tournamentData);
+                    await storage.saveTournament(tournamentData);
+                    setSaveStatus('✓ Saved');
+                    setTimeout(() => setSaveStatus(''), 2000);
+                    await loadTournaments();
+                } catch (error) {
+                    console.error('Failed to save tournament:', error);
+                    console.error('Error details:', error.message);
+                    setSaveStatus('✗ Save failed: ' + error.message);
+                    setTimeout(() => setSaveStatus(''), 3000);
+                }
+            };
+
+            const loadTournament = async (id) => {
+                try {
+                    const data = await storage.getTournament(id);
+                    if (data) {
+                        console.log('Loading tournament:', data);
+                        
+                        // Rebuild nested schedule structure from flat data
+                        let appSchedule = [];
+                        
+                        if (data.scheduleFlat) {
+                            const roundsMap = {};
+                            data.scheduleFlat.forEach(match => {
+                                if (!roundsMap[match.roundIndex]) {
+                                    roundsMap[match.roundIndex] = [];
+                                }
+                                
+                                // Parse team strings back to arrays
+                                const team1 = typeof match.team1 === 'string' 
+                                    ? match.team1.split(', ').filter(p => p.trim()) 
+                                    : [match.team1];
+                                const team2 = typeof match.team2 === 'string' 
+                                    ? match.team2.split(', ').filter(p => p.trim()) 
+                                    : [match.team2];
+                                
+                                roundsMap[match.roundIndex].push({
+                                    id: match.id,
+                                    court: match.court,
+                                    team1: team1,
+                                    team2: team2
+                                });
+                            });
+                            
+                            appSchedule = Object.keys(roundsMap)
+                                .sort((a, b) => parseInt(a) - parseInt(b))
+                                .map(key => roundsMap[key]);
+                        }
+                        
+                        setTournamentName(data.name || '');
+                        setPlayers(data.players);
+                        setCourts(data.courts);
+                        setNumRounds(data.numRounds);
+                        setMatchFormat(data.matchFormat || 'singles');
+                        setSchedule(appSchedule);
+                        setScores(data.scores || {});
+                        setIsPublic(data.isPublic || false);
+                        setTournamentId(data.id);
+                        setShowLeaderboard(true);
+                    }
+                } catch (error) {
+                    console.error('Tournament not found:', error);
+                    alert('Error loading tournament: ' + error.message);
+                }
+            };
+
+            const deleteTournament = async (id) => {
+                if (!confirm('Are you sure you want to delete this tournament?')) return;
+                
+                try {
+                    await storage.deleteTournament(id);
+                    await loadTournaments();
+                    if (tournamentId === id) {
+                        resetTournament();
+                    }
+                } catch (error) {
+                    console.error('Failed to delete tournament:', error);
+                }
+            };
+
+            const resetTournament = () => {
+                setTournamentName('');
+                setPlayers(['']);
+                setCourts(1);
+                setNumRounds(1);
+                setSchedule([]);
+                setScores({});
+                setTournamentId(null);
+                setShowLeaderboard(false);
+                setIsPublic(false);
+            };
+
+            const addPlayer = () => setPlayers([...players, '']);
+            const updatePlayer = (index, value) => {
+                const newPlayers = [...players];
+                newPlayers[index] = value;
+                setPlayers(newPlayers);
+            };
+            const removePlayer = (index) => setPlayers(players.filter((_, i) => i !== index));
+
+            const generateSchedule = () => {
+                const validPlayers = players.filter(p => p.trim() !== '');
+                
+                if (matchFormat === 'singles') {
+                    // Singles: minimum 2 players
+                    if (validPlayers.length < 2) {
+                        alert('Need at least 2 players for singles');
+                        return;
+                    }
+                    
+                    const allRounds = [];
+                    const playerList = [...validPlayers];
+                    
+                    if (playerList.length % 2 !== 0) {
+                        playerList.push('BYE');
+                    }
+
+                    const maxPossibleRounds = playerList.length - 1;
+                    const actualRounds = Math.min(numRounds, maxPossibleRounds);
+                    const half = playerList.length / 2;
+
+                    for (let round = 0; round < actualRounds; round++) {
+                        const roundMatches = [];
+                        for (let i = 0; i < half; i++) {
+                            const player1 = playerList[i];
+                            const player2 = playerList[playerList.length - 1 - i];
+                            
+                            if (player1 !== 'BYE' && player2 !== 'BYE') {
+                                const matchId = `r${round}-m${i}`;
+                                roundMatches.push({
+                                    id: matchId,
+                                    court: (i % courts) + 1,
+                                    team1: [player1],
+                                    team2: [player2]
+                                });
+                            }
+                        }
+                        allRounds.push(roundMatches);
+                        playerList.splice(1, 0, playerList.pop());
+                    }
+                    
+                    setSchedule(allRounds);
+                } else {
+                    // Doubles: minimum 4 players
+                    if (validPlayers.length < 4) {
+                        alert('Need at least 4 players for doubles');
+                        return;
+                    }
+                    
+                    if (validPlayers.length % 2 !== 0) {
+                        alert('Need an even number of players for doubles');
+                        return;
+                    }
+                    
+                    const allRounds = [];
+                    
+                    for (let round = 0; round < numRounds; round++) {
+                        const roundMatches = [];
+                        const shuffled = [...validPlayers].sort(() => Math.random() - 0.5);
+                        
+                        // Create teams of 2
+                        for (let i = 0; i < shuffled.length; i += 4) {
+                            if (i + 3 < shuffled.length) {
+                                const matchId = `r${round}-m${Math.floor(i/4)}`;
+                                roundMatches.push({
+                                    id: matchId,
+                                    court: (Math.floor(i/4) % courts) + 1,
+                                    team1: [shuffled[i], shuffled[i + 1]],
+                                    team2: [shuffled[i + 2], shuffled[i + 3]]
+                                });
+                            }
+                        }
+                        allRounds.push(roundMatches);
+                    }
+                    
+                    setSchedule(allRounds);
+                }
+                
+                setScores({});
+                const newTournamentId = `tournament-${Date.now()}`;
+                setTournamentId(newTournamentId);
+                setShowLeaderboard(false);
+            };
+
+            const updateScore = (matchId, team, score) => {
+                setScores(prev => ({
+                    ...prev,
+                    [matchId]: {
+                        ...prev[matchId],
+                        [team]: parseInt(score) || 0
+                    }
+                }));
+            };
+
+            const calculateLeaderboard = () => {
+                const validPlayers = players.filter(p => p.trim() !== '');
+                const playerStats = {};
+
+                validPlayers.forEach(player => {
+                    playerStats[player] = {
+                        name: player,
+                        wins: 0,
+                        losses: 0,
+                        pointsFor: 0,
+                        pointsAgainst: 0,
+                        matchesPlayed: 0
+                    };
+                });
+
+                schedule.forEach(round => {
+                    round.forEach(match => {
+                        const matchScore = scores[match.id];
+                        if (matchScore && matchScore.team1 !== undefined && matchScore.team2 !== undefined) {
+                            const team1Player = match.team1[0];
+                            const team2Player = match.team2[0];
+                            const team1Score = matchScore.team1;
+                            const team2Score = matchScore.team2;
+
+                            playerStats[team1Player].matchesPlayed++;
+                            playerStats[team2Player].matchesPlayed++;
+                            playerStats[team1Player].pointsFor += team1Score;
+                            playerStats[team1Player].pointsAgainst += team2Score;
+                            playerStats[team2Player].pointsFor += team2Score;
+                            playerStats[team2Player].pointsAgainst += team1Score;
+
+                            if (team1Score > team2Score) {
+                                playerStats[team1Player].wins++;
+                                playerStats[team2Player].losses++;
+                            } else if (team2Score > team1Score) {
+                                playerStats[team2Player].wins++;
+                                playerStats[team1Player].losses++;
+                            }
+                        }
+                    });
+                });
+
+                return Object.values(playerStats).sort((a, b) => {
+                    if (b.wins !== a.wins) return b.wins - a.wins;
+                    return (b.pointsFor - b.pointsAgainst) - (a.pointsFor - a.pointsAgainst);
+                });
+            };
+
+            const getRoundWinner = (roundMatches) => {
+                const roundScores = {};
+                roundMatches.forEach(match => {
+                    const matchScore = scores[match.id];
+                    if (matchScore) {
+                        const p1 = match.team1[0];
+                        const p2 = match.team2[0];
+                        roundScores[p1] = (roundScores[p1] || 0) + (matchScore.team1 || 0);
+                        roundScores[p2] = (roundScores[p2] || 0) + (matchScore.team2 || 0);
+                    }
+                });
+                
+                let maxScore = -1;
+                let winner = null;
+                Object.entries(roundScores).forEach(([player, score]) => {
+                    if (score > maxScore) {
+                        maxScore = score;
+                        winner = player;
+                    }
+                });
+                return winner;
+            };
+
+            const leaderboard = schedule.length > 0 ? calculateLeaderboard() : [];
+
+            return (
+                <div className="max-w-6xl mx-auto">
+                    <div className="bg-white rounded-xl shadow-lg p-4 md:p-8">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 space-y-4 md:space-y-0">
+                            <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Round Robin Tournament 🔄</h2>
+                            <div className="flex items-center space-x-4">
+                                {saveStatus && (
+                                    <span className={`px-3 md:px-4 py-2 rounded-lg font-medium text-sm ${
+                                        saveStatus.includes('✓') ? 'bg-green-100 text-green-700' : 
+                                        saveStatus.includes('✗') ? 'bg-red-100 text-red-700' : 
+                                        'bg-blue-100 text-blue-700'
+                                    }`}>
+                                        {saveStatus}
+                                    </span>
+                                )}
+                                {schedule.length > 0 && (
+                                    <button 
+                                        onClick={resetTournament}
+                                        className="bg-gray-600 text-white px-4 md:px-6 py-2 rounded-lg font-medium hover:bg-gray-700 transition-all text-sm md:text-base"
+                                    >
+                                        New Tournament
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Saved Tournaments */}
+                        {savedTournaments.length > 0 && schedule.length === 0 && (
+                            <div className="mb-8">
+                                <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4">Your Tournaments</h3>
+                                <div className="space-y-3">
+                                    {savedTournaments.map(tournament => (
+                                        <div key={tournament.id} className="bg-gray-50 border-2 border-gray-200 rounded-lg p-3 md:p-4 flex flex-col md:flex-row md:items-center md:justify-between space-y-3 md:space-y-0">
+                                            <div className="flex-1">
+                                                <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                    <p className="font-medium text-gray-800">{tournament.name}</p>
+                                                    {tournament.isPublic ? (
+                                                        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">🌍 Public</span>
+                                                    ) : (
+                                                        <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-medium">🔒 Private</span>
+                                                    )}
+                                                    <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-medium">
+                                                        {tournament.matchFormat === 'doubles' ? '👥 Doubles' : '1️⃣ Singles'}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm text-gray-600">
+                                                    {tournament.players.length} players, {tournament.numRounds} rounds
+                                                </p>
+                                                <p className="text-xs text-gray-500">
+                                                    {new Date(tournament.createdAt).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                            <div className="flex space-x-2">
+                                                <button 
+                                                    onClick={() => loadTournament(tournament.id)}
+                                                    className="flex-1 md:flex-none bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all text-sm"
+                                                >
+                                                    Load
+                                                </button>
+                                                <button 
+                                                    onClick={() => deleteTournament(tournament.id)}
+                                                    className="flex-1 md:flex-none bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all text-sm"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {schedule.length === 0 && (
+                            <>
+                                <div className="mb-6">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Tournament Name</label>
+                                    <input
+                                        type="text"
+                                        value={tournamentName}
+                                        onChange={(e) => setTournamentName(e.target.value)}
+                                        placeholder="e.g., Weekend Championship"
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                    />
+                                </div>
+
+                                <div className="mb-6 space-y-4">
+                                    <label className="flex items-center space-x-3 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={isPublic}
+                                            onChange={(e) => setIsPublic(e.target.checked)}
+                                            className="w-5 h-5 text-green-600"
+                                        />
+                                        <div>
+                                            <span className="font-medium text-gray-800">
+                                                {isPublic ? '🌍 Public Tournament' : '🔒 Private Tournament'}
+                                            </span>
+                                            <p className="text-sm text-gray-600">
+                                                {isPublic 
+                                                    ? 'Anyone can view scores and leaderboard' 
+                                                    : 'Only participants can see this tournament'}
+                                            </p>
+                                        </div>
+                                    </label>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Match Format</label>
+                                        <div className="flex space-x-4">
+                                            <label className="flex items-center space-x-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="matchFormat"
+                                                    value="singles"
+                                                    checked={matchFormat === 'singles'}
+                                                    onChange={(e) => setMatchFormat(e.target.value)}
+                                                    className="w-4 h-4 text-green-600"
+                                                />
+                                                <span className="text-gray-700">1️⃣ Singles (1v1)</span>
+                                            </label>
+                                            <label className="flex items-center space-x-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="matchFormat"
+                                                    value="doubles"
+                                                    checked={matchFormat === 'doubles'}
+                                                    onChange={(e) => setMatchFormat(e.target.value)}
+                                                    className="w-4 h-4 text-green-600"
+                                                />
+                                                <span className="text-gray-700">👥 Doubles (2v2)</span>
+                                            </label>
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-2">
+                                            {matchFormat === 'singles' ? 'Minimum 2 players' : 'Minimum 4 players (must be even)'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="mb-8">
+                                    <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4">Add Players</h3>
+                                    <div className="space-y-3 mb-4">
+                                        {players.map((player, index) => (
+                                            <div key={index} className="flex space-x-2 md:space-x-3">
+                                                <input 
+                                                    type="text"
+                                                    value={player}
+                                                    onChange={(e) => updatePlayer(index, e.target.value)}
+                                                    placeholder={`Player ${index + 1} name`}
+                                                    className="flex-1 px-3 md:px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none text-sm md:text-base"
+                                                />
+                                                {players.length > 1 && (
+                                                    <button 
+                                                        onClick={() => removePlayer(index)}
+                                                        className="px-3 md:px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all text-sm md:text-base"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <button 
+                                        onClick={addPlayer}
+                                        className="bg-blue-600 text-white px-4 md:px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-all text-sm md:text-base"
+                                    >
+                                        + Add Player
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Number of Courts</label>
+                                        <select 
+                                            value={courts}
+                                            onChange={(e) => setCourts(parseInt(e.target.value))}
+                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                        >
+                                            {[1, 2, 3, 4, 5, 6].map(n => (
+                                                <option key={n} value={n}>{n} Court{n > 1 ? 's' : ''}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Number of Rounds</label>
+                                        <input 
+                                            type="number"
+                                            min="1"
+                                            value={numRounds}
+                                            onChange={(e) => setNumRounds(parseInt(e.target.value) || 1)}
+                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                        />
+                                    </div>
+                                </div>
+
+                                <button 
+                                    onClick={generateSchedule}
+                                    className="w-full bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition-all shadow-lg"
+                                >
+                                    Generate Tournament Schedule
+                                </button>
+                            </>
+                        )}
+
+                        {schedule.length > 0 && (
+                            <>
+                                <div className="mb-6 bg-gray-50 p-4 rounded-lg">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-xl font-bold text-gray-800">{tournamentName || 'Tournament'}</h3>
+                                            <p className="text-gray-600">
+                                                {isPublic ? '🌍 Public Tournament' : '🔒 Private Tournament'}
+                                            </p>
+                                        </div>
+                                        <button 
+                                            onClick={() => setShowLeaderboard(!showLeaderboard)}
+                                            className="bg-purple-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-purple-700 transition-all shadow-lg"
+                                        >
+                                            {showLeaderboard ? 'Hide Leaderboard' : 'Show Leaderboard'}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {showLeaderboard && (
+                                    <div className="mb-8 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-xl p-4 md:p-6">
+                                        <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                                            🏆 Overall Leaderboard
+                                        </h3>
+                                        <div className="space-y-2">
+                                            {leaderboard.map((player, index) => (
+                                                <div 
+                                                    key={player.name} 
+                                                    className={`bg-white rounded-lg p-3 md:p-4 ${
+                                                        index === 0 ? 'border-4 border-yellow-400 shadow-lg' : 'border-2 border-gray-200'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
+                                                            <span className={`text-xl md:text-2xl font-bold flex-shrink-0 ${
+                                                                index === 0 ? 'text-yellow-500' :
+                                                                index === 1 ? 'text-gray-400' :
+                                                                index === 2 ? 'text-orange-600' :
+                                                                'text-gray-600'
+                                                            }`}>
+                                                                {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                                                            </span>
+                                                            <span className={`font-bold truncate ${index === 0 ? 'text-base md:text-xl' : 'text-sm md:text-lg'}`}>
+                                                                {player.name}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex gap-3 md:gap-6 text-xs md:text-sm flex-shrink-0">
+                                                            <div className="text-center">
+                                                                <div className="text-gray-500 text-xs">Record</div>
+                                                                <div className="font-bold text-gray-800">{player.wins}-{player.losses}</div>
+                                                            </div>
+                                                            <div className="text-center">
+                                                                <div className="text-gray-500 text-xs">Pts</div>
+                                                                <div className="font-bold text-green-600">{player.pointsFor}</div>
+                                                            </div>
+                                                            <div className="text-center">
+                                                                <div className="text-gray-500 text-xs">Diff</div>
+                                                                <div className={`font-bold ${
+                                                                    (player.pointsFor - player.pointsAgainst) > 0 ? 'text-green-600' : 'text-red-600'
+                                                                }`}>
+                                                                    {player.pointsFor - player.pointsAgainst > 0 ? '+' : ''}
+                                                                    {player.pointsFor - player.pointsAgainst}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="space-y-6">
+                                    <h3 className="text-xl md:text-2xl font-bold text-gray-800">Rounds & Scores</h3>
+                                    {schedule.map((round, roundIndex) => {
+                                        const roundWinner = getRoundWinner(round);
+                                        return (
+                                            <div key={roundIndex} className="bg-green-50 border-2 border-green-200 rounded-lg p-4 md:p-6">
+                                                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
+                                                    <h4 className="text-lg md:text-xl font-bold text-gray-800">Round {roundIndex + 1}</h4>
+                                                    {roundWinner && (
+                                                        <span className="bg-yellow-400 text-gray-800 px-3 py-2 rounded-full font-bold flex items-center space-x-2 text-xs md:text-sm w-fit">
+                                                            <span>🏆</span>
+                                                            <span className="truncate">Winner: {roundWinner}</span>
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="space-y-3">
+                                                    {round.map((match) => {
+                                                        const matchScore = scores[match.id];
+                                                        const hasScore = matchScore && matchScore.team1 !== undefined && matchScore.team2 !== undefined;
+                                                        const winner = hasScore ? (matchScore.team1 > matchScore.team2 ? match.team1.join(', ') : matchScore.team2 > matchScore.team1 ? match.team2.join(', ') : null) : null;
+                                                        
+                                                        return (
+                                                            <div key={match.id} className="bg-white rounded-lg p-3 md:p-4">
+                                                                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 gap-2">
+                                                                    <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs md:text-sm font-medium w-fit">
+                                                                        Court {match.court}
+                                                                    </span>
+                                                                    {winner && (
+                                                                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs md:text-sm font-medium w-fit truncate">
+                                                                            ✓ Winner: {winner}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                
+                                                                {/* Mobile Layout */}
+                                                                <div className="md:hidden space-y-3">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <span className={`font-medium text-sm flex-1 truncate ${winner === match.team1.join(', ') ? 'text-green-600 font-bold' : ''}`}>
+                                                                            {winner === match.team1.join(', ') && '🏆 '}
+                                                                            {match.team1.join(', ')}
+                                                                        </span>
+                                                                        <input 
+                                                                            type="number"
+                                                                            min="0"
+                                                                            value={scores[match.id]?.team1 || ''}
+                                                                            onChange={(e) => updateScore(match.id, 'team1', e.target.value)}
+                                                                            placeholder="0"
+                                                                            className="w-14 px-2 py-2 border-2 border-gray-300 rounded-lg text-center font-bold focus:border-green-500 focus:outline-none ml-2"
+                                                                        />
+                                                                    </div>
+                                                                    <div className="text-center text-gray-400 text-xs">VS</div>
+                                                                    <div className="flex items-center justify-between">
+                                                                        <span className={`font-medium text-sm flex-1 truncate ${winner === match.team2.join(', ') ? 'text-green-600 font-bold' : ''}`}>
+                                                                            {winner === match.team2.join(', ') && '🏆 '}
+                                                                            {match.team2.join(', ')}
+                                                                        </span>
+                                                                        <input 
+                                                                            type="number"
+                                                                            min="0"
+                                                                            value={scores[match.id]?.team2 || ''}
+                                                                            onChange={(e) => updateScore(match.id, 'team2', e.target.value)}
+                                                                            placeholder="0"
+                                                                            className="w-14 px-2 py-2 border-2 border-gray-300 rounded-lg text-center font-bold focus:border-green-500 focus:outline-none ml-2"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                {/* Desktop Layout */}
+                                                                <div className="hidden md:grid md:grid-cols-3 gap-4 items-center">
+                                                                    <div className="text-right">
+                                                                        <span className={`font-medium text-lg ${winner === match.team1.join(', ') ? 'text-green-600 font-bold' : ''}`}>
+                                                                            {match.team1.join(', ')}
+                                                                            {winner === match.team1.join(', ') && ' 🏆'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="flex items-center justify-center space-x-3">
+                                                                        <input 
+                                                                            type="number"
+                                                                            min="0"
+                                                                            value={scores[match.id]?.team1 || ''}
+                                                                            onChange={(e) => updateScore(match.id, 'team1', e.target.value)}
+                                                                            placeholder="0"
+                                                                            className="w-16 px-3 py-2 border-2 border-gray-300 rounded-lg text-center font-bold text-lg focus:border-green-500 focus:outline-none"
+                                                                        />
+                                                                        <span className="text-gray-400 font-bold">-</span>
+                                                                        <input 
+                                                                            type="number"
+                                                                            min="0"
+                                                                            value={scores[match.id]?.team2 || ''}
+                                                                            onChange={(e) => updateScore(match.id, 'team2', e.target.value)}
+                                                                            placeholder="0"
+                                                                            className="w-16 px-3 py-2 border-2 border-gray-300 rounded-lg text-center font-bold text-lg focus:border-green-500 focus:outline-none"
+                                                                        />
+                                                                    </div>
+                                                                    <div className="text-left">
+                                                                        <span className={`font-medium text-lg ${winner === match.team2.join(', ') ? 'text-green-600 font-bold' : ''}`}>
+                                                                            {winner === match.team2.join(', ') && '🏆 '}
+                                                                            {match.team2.join(', ')}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
