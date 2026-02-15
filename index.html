@@ -709,24 +709,30 @@
                     <div className="bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl p-6 md:p-8 text-white shadow-xl">
                         <h1 className="text-3xl md:text-4xl font-bold mb-4">Welcome to PickleConnect!</h1>
                         <p className="text-lg md:text-xl mb-6">Find courts, organize games, and connect with players in your area</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                            <button 
+                                onClick={() => setCurrentView('roundRobin')}
+                                className="bg-yellow-400 text-gray-900 px-4 md:px-6 py-3 rounded-lg font-bold hover:bg-yellow-500 transition-all shadow-lg text-sm md:text-base"
+                            >
+                                🏆 Tournaments
+                            </button>
                             <button 
                                 onClick={() => setCurrentView('courts')}
                                 className="bg-white text-green-600 px-4 md:px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-all shadow-lg text-sm md:text-base"
                             >
-                                📍 Find Courts
+                                📍 Courts
                             </button>
                             <button 
                                 onClick={() => setCurrentView('games')}
                                 className="bg-green-700 text-white px-4 md:px-6 py-3 rounded-lg font-bold hover:bg-green-800 transition-all shadow-lg text-sm md:text-base"
                             >
-                                📅 Browse Events
+                                📅 Events
                             </button>
                             <button 
-                                onClick={() => setCurrentView('roundRobin')}
-                                className="bg-yellow-400 text-gray-900 px-4 md:px-6 py-3 rounded-lg font-bold hover:bg-yellow-500 transition-all shadow-lg text-sm md:text-base"
+                                onClick={() => setCurrentView('pickleball101')}
+                                className="bg-blue-600 text-white px-4 md:px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-all shadow-lg text-sm md:text-base"
                             >
-                                🏆 Generate Tournament
+                                📚 Learn
                             </button>
                         </div>
                     </div>
@@ -1945,8 +1951,15 @@
                 try {
                     // Use 'guest' as userId for non-logged in users
                     const userId = currentUser?.uid || 'guest';
+                    console.log('📋 Loading tournaments for userId:', userId);
+                    console.log('   currentUser:', currentUser ? 'Logged in' : 'Guest');
+                    
                     const tournaments = await storage.getAllTournaments(userId);
-                    console.log('📋 Loaded tournaments for', userId, ':', tournaments);
+                    console.log('   Found', tournaments.length, 'tournaments');
+                    tournaments.forEach(t => {
+                        console.log('   -', t.name, '|', t.isPublic ? '🌍 Public' : '🔒 Private', '| Created by:', t.createdBy);
+                    });
+                    
                     setSavedTournaments(tournaments.sort((a, b) => b.createdAt - a.createdAt));
                 } catch (error) {
                     console.error('Error loading tournaments:', error);
@@ -1996,6 +2009,9 @@
                     setSaveStatus('✓ Saved');
                     setTimeout(() => setSaveStatus(''), 2000);
                     console.log('✅ Tournament saved successfully!');
+                    
+                    // Reload tournaments to show the newly saved one
+                    await loadTournaments();
                 } catch (error) {
                     console.error('Failed to save tournament:', error);
                     console.error('Error details:', error.message);
