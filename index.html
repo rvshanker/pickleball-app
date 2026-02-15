@@ -2055,36 +2055,67 @@
                         return;
                     }
                     
-                    // Add BYE player if odd number
-                    const doublesPlayers = [...validPlayers];
-                    if (doublesPlayers.length % 2 !== 0) {
-                        doublesPlayers.push('BYE');
+                    const allRounds = [];
+                    let playerPool = [...validPlayers];
+                    
+                    // Add BYE if odd number
+                    if (playerPool.length % 2 !== 0) {
+                        playerPool.push('BYE');
                     }
                     
-                    const allRounds = [];
-                    
+                    // Round robin for doubles - ensure everyone plays against each other
                     for (let round = 0; round < numRounds; round++) {
                         const roundMatches = [];
-                        const shuffled = [...doublesPlayers].sort(() => Math.random() - 0.5);
+                        const roundPlayers = [...playerPool];
                         
-                        // Create teams of 2
-                        for (let i = 0; i < shuffled.length; i += 4) {
-                            if (i + 3 < shuffled.length) {
-                                // Skip matches with BYE players
-                                const team1 = [shuffled[i], shuffled[i + 1]];
-                                const team2 = [shuffled[i + 2], shuffled[i + 3]];
+                        // Rotate players (except first player for proper round-robin)
+                        if (round > 0) {
+                            const fixed = roundPlayers[0];
+                            const rest = roundPlayers.slice(1);
+                            rest.unshift(rest.pop()); // Rotate
+                            roundPlayers[0] = fixed;
+                            for (let i = 1; i < roundPlayers.length; i++) {
+                                roundPlayers[i] = rest[i - 1];
+                            }
+                        }
+                        
+                        // Create matches (pair players 1-2 vs 3-4, 5-6 vs 7-8, etc.)
+                        let courtNum = 0;
+                        for (let i = 0; i < roundPlayers.length; i += 4) {
+                            if (i + 3 < roundPlayers.length) {
+                                const p1 = roundPlayers[i];
+                                const p2 = roundPlayers[i + 1];
+                                const p3 = roundPlayers[i + 2];
+                                const p4 = roundPlayers[i + 3];
                                 
-                                if (!team1.includes('BYE') && !team2.includes('BYE')) {
-                                    const matchId = `r${round}-m${Math.floor(i/4)}`;
+                                // Skip if any player is BYE
+                                if (p1 !== 'BYE' && p2 !== 'BYE' && p3 !== 'BYE' && p4 !== 'BYE') {
+                                    const matchId = `r${round}-m${courtNum}`;
                                     roundMatches.push({
                                         id: matchId,
-                                        court: (Math.floor(i/4) % courts) + 1,
-                                        team1: team1,
-                                        team2: team2
+                                        court: (courtNum % courts) + 1,
+                                        team1: [p1, p2],
+                                        team2: [p3, p4]
                                     });
+                                    courtNum++;
                                 }
                             }
                         }
+                        
+                        // Find BYE player for this round
+                        const byePlayer = roundPlayers.find(p => {
+                            // Check if player is not in any match
+                            const inMatch = roundMatches.some(match => 
+                                match.team1.includes(p) || match.team2.includes(p)
+                            );
+                            return !inMatch && p !== 'BYE';
+                        });
+                        
+                        // Add BYE indicator
+                        if (byePlayer) {
+                            roundMatches.byePlayer = byePlayer;
+                        }
+                        
                         allRounds.push(roundMatches);
                     }
                     
@@ -2126,25 +2157,35 @@
                     round.forEach(match => {
                         const matchScore = scores[match.id];
                         if (matchScore && matchScore.team1 !== undefined && matchScore.team2 !== undefined) {
-                            const team1Player = match.team1[0];
-                            const team2Player = match.team2[0];
-                            const team1Score = matchScore.team1;
-                            const team2Score = matchScore.team2;
+                            const team1Score = parseInt(matchScore.team1) || 0;
+                            const team2Score = parseInt(matchScore.team2) || 0;
 
-                            playerStats[team1Player].matchesPlayed++;
-                            playerStats[team2Player].matchesPlayed++;
-                            playerStats[team1Player].pointsFor += team1Score;
-                            playerStats[team1Player].pointsAgainst += team2Score;
-                            playerStats[team2Player].pointsFor += team2Score;
-                            playerStats[team2Player].pointsAgainst += team1Score;
+                            // Handle both singles and doubles
+                            match.team1.forEach(player => {
+                                if (playerStats[player]) {
+                                    playerStats[player].matchesPlayed++;
+                                    playerStats[player].pointsFor += team1Score;
+                                    playerStats[player].pointsAgainst += team2Score;
+                                    if (team1Score > team2Score) {
+                                        playerStats[player].wins++;
+                                    } else if (team2Score > team1Score) {
+                                        playerStats[player].losses++;
+                                    }
+                                }
+                            });
 
-                            if (team1Score > team2Score) {
-                                playerStats[team1Player].wins++;
-                                playerStats[team2Player].losses++;
-                            } else if (team2Score > team1Score) {
-                                playerStats[team2Player].wins++;
-                                playerStats[team1Player].losses++;
-                            }
+                            match.team2.forEach(player => {
+                                if (playerStats[player]) {
+                                    playerStats[player].matchesPlayed++;
+                                    playerStats[player].pointsFor += team2Score;
+                                    playerStats[player].pointsAgainst += team1Score;
+                                    if (team2Score > team1Score) {
+                                        playerStats[player].wins++;
+                                    } else if (team1Score > team2Score) {
+                                        playerStats[player].losses++;
+                                    }
+                                }
+                            });
                         }
                     });
                 });
@@ -2185,9 +2226,46 @@
                     <div className="bg-white rounded-xl shadow-lg p-4 md:p-8">
                         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 space-y-4 md:space-y-0">
                             <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Round Robin Tournament 🔄</h2>
-                            <div className="flex items-center space-x-4">
+                            <div className="flex flex-wrap items-center gap-2">
+                                {tournamentId && schedule.length > 0 && (
+                                    <>
+                                        <button
+                                            onClick={() => {
+                                                const url = window.location.origin + window.location.pathname + '?tournament=' + tournamentId;
+                                                navigator.clipboard.writeText(url).then(() => {
+                                                    alert('✓ Tournament link copied to clipboard! Share it with others.');
+                                                }).catch(() => {
+                                                    prompt('Copy this link:', url);
+                                                });
+                                            }}
+                                            className="bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-all text-xs md:text-sm"
+                                        >
+                                            📋 Share Link
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (scoresFinalized) {
+                                                    alert('Scores are already finalized!');
+                                                    return;
+                                                }
+                                                if (confirm('Finalize scores? This will make them read-only. You cannot undo this action.')) {
+                                                    setScoresFinalized(true);
+                                                    alert('✓ Scores finalized! They are now read-only.');
+                                                }
+                                            }}
+                                            className={`px-3 md:px-4 py-2 rounded-lg font-medium transition-all text-xs md:text-sm ${
+                                                scoresFinalized 
+                                                    ? 'bg-gray-400 text-white cursor-not-allowed' 
+                                                    : 'bg-purple-600 text-white hover:bg-purple-700'
+                                            }`}
+                                            disabled={scoresFinalized}
+                                        >
+                                            {scoresFinalized ? '🔒 Finalized' : '✓ Finalize'}
+                                        </button>
+                                    </>
+                                )}
                                 {saveStatus && (
-                                    <span className={`px-3 md:px-4 py-2 rounded-lg font-medium text-sm ${
+                                    <span className={`px-3 md:px-4 py-2 rounded-lg font-medium text-xs md:text-sm ${
                                         saveStatus.includes('✓') ? 'bg-green-100 text-green-700' : 
                                         saveStatus.includes('✗') ? 'bg-red-100 text-red-700' : 
                                         'bg-blue-100 text-blue-700'
@@ -2462,6 +2540,11 @@
                                             <div key={roundIndex} className="bg-green-50 border-2 border-green-200 rounded-lg p-4 md:p-6">
                                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
                                                     <h4 className="text-lg md:text-xl font-bold text-gray-800">Round {roundIndex + 1}</h4>
+                                                    {round.byePlayer && (
+                                                        <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                            ⏸️ BYE: {round.byePlayer}
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <div className="space-y-3">
                                                     {round.map((match) => {
@@ -2495,7 +2578,12 @@
                                                                             value={scores[match.id]?.team1 || ''}
                                                                             onChange={(e) => updateScore(match.id, 'team1', e.target.value)}
                                                                             placeholder="0"
-                                                                            className="w-14 px-2 py-2 border-2 border-gray-300 rounded-lg text-center font-bold focus:border-green-500 focus:outline-none ml-2"
+                                                                            disabled={scoresFinalized}
+                                                                            className={`w-14 px-2 py-2 border-2 rounded-lg text-center font-bold focus:outline-none ml-2 ${
+                                                                                scoresFinalized 
+                                                                                    ? 'bg-gray-100 border-gray-300 cursor-not-allowed' 
+                                                                                    : 'border-gray-300 focus:border-green-500'
+                                                                            }`}
                                                                         />
                                                                     </div>
                                                                     <div className="text-center text-gray-400 text-xs">VS</div>
@@ -2510,7 +2598,12 @@
                                                                             value={scores[match.id]?.team2 || ''}
                                                                             onChange={(e) => updateScore(match.id, 'team2', e.target.value)}
                                                                             placeholder="0"
-                                                                            className="w-14 px-2 py-2 border-2 border-gray-300 rounded-lg text-center font-bold focus:border-green-500 focus:outline-none ml-2"
+                                                                            disabled={scoresFinalized}
+                                                                            className={`w-14 px-2 py-2 border-2 rounded-lg text-center font-bold focus:outline-none ml-2 ${
+                                                                                scoresFinalized 
+                                                                                    ? 'bg-gray-100 border-gray-300 cursor-not-allowed' 
+                                                                                    : 'border-gray-300 focus:border-green-500'
+                                                                            }`}
                                                                         />
                                                                     </div>
                                                                 </div>
@@ -2530,7 +2623,12 @@
                                                                             value={scores[match.id]?.team1 || ''}
                                                                             onChange={(e) => updateScore(match.id, 'team1', e.target.value)}
                                                                             placeholder="0"
-                                                                            className="w-16 px-3 py-2 border-2 border-gray-300 rounded-lg text-center font-bold text-lg focus:border-green-500 focus:outline-none"
+                                                                            disabled={scoresFinalized}
+                                                                            className={`w-16 px-3 py-2 border-2 rounded-lg text-center font-bold text-lg focus:outline-none ${
+                                                                                scoresFinalized 
+                                                                                    ? 'bg-gray-100 border-gray-300 cursor-not-allowed' 
+                                                                                    : 'border-gray-300 focus:border-green-500'
+                                                                            }`}
                                                                         />
                                                                         <span className="text-gray-400 font-bold">-</span>
                                                                         <input 
@@ -2539,7 +2637,12 @@
                                                                             value={scores[match.id]?.team2 || ''}
                                                                             onChange={(e) => updateScore(match.id, 'team2', e.target.value)}
                                                                             placeholder="0"
-                                                                            className="w-16 px-3 py-2 border-2 border-gray-300 rounded-lg text-center font-bold text-lg focus:border-green-500 focus:outline-none"
+                                                                            disabled={scoresFinalized}
+                                                                            className={`w-16 px-3 py-2 border-2 rounded-lg text-center font-bold text-lg focus:outline-none ${
+                                                                                scoresFinalized 
+                                                                                    ? 'bg-gray-100 border-gray-300 cursor-not-allowed' 
+                                                                                    : 'border-gray-300 focus:border-green-500'
+                                                                            }`}
                                                                         />
                                                                     </div>
                                                                     <div className="text-left">
