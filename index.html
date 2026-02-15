@@ -276,14 +276,30 @@
                     });
                 } else {
                     // Guest mode for localStorage
-                    setCurrentUser({
-                        uid: 'guest',
-                        name: 'Guest Player',
-                        email: 'guest@local',
-                        skillLevel: 'Intermediate (3.0-3.5)',
-                        gamesPlayed: 0,
-                        avatar: '🏓'
-                    });
+                    const savedProfile = localStorage.getItem('userProfile');
+                    if (savedProfile) {
+                        try {
+                            setCurrentUser(JSON.parse(savedProfile));
+                        } catch (error) {
+                            setCurrentUser({
+                                uid: 'guest',
+                                name: 'Guest Player',
+                                email: 'guest@local',
+                                skillLevel: 'Intermediate (3.0-3.5)',
+                                gamesPlayed: 0,
+                                avatar: '🏓'
+                            });
+                        }
+                    } else {
+                        setCurrentUser({
+                            uid: 'guest',
+                            name: 'Guest Player',
+                            email: 'guest@local',
+                            skillLevel: 'Intermediate (3.0-3.5)',
+                            gamesPlayed: 0,
+                            avatar: '🏓'
+                        });
+                    }
                 }
             }, []);
 
@@ -307,7 +323,9 @@
                         <div className="max-w-7xl mx-auto px-4 py-3">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setCurrentView('home')}>
-                                    <span className="text-2xl md:text-3xl">🏸🥎</span>
+                                    <div className="bg-green-600 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center font-bold text-sm md:text-lg">
+                                        P
+                                    </div>
                                     <span className="text-xl md:text-2xl font-bold text-green-600">PickleConnect</span>
                                 </div>
                                 
@@ -505,15 +523,82 @@
         }
 
         function HomeView({ setCurrentView, games }) {
+            const [news, setNews] = useState([]);
+            const [deals, setDeals] = useState([]);
+            const [loadingNews, setLoadingNews] = useState(false);
+
+            useEffect(() => {
+                // Load news and deals (simulated for now - in production use real API)
+                loadPickleballNews();
+                loadPickleballDeals();
+            }, []);
+
+            const loadPickleballNews = () => {
+                // Simulated news - in production, fetch from API or RSS feed
+                setNews([
+                    {
+                        id: 1,
+                        title: "MLP announces 2026 season schedule",
+                        source: "Major League Pickleball",
+                        date: "Feb 10, 2026",
+                        url: "https://majorleaguepickleball.com"
+                    },
+                    {
+                        id: 2,
+                        title: "New pickleball facilities opening across the US",
+                        source: "Pickleball Magazine",
+                        date: "Feb 8, 2026",
+                        url: "https://pickleballmagazine.com"
+                    },
+                    {
+                        id: 3,
+                        title: "Professional player rankings updated",
+                        source: "PPA Tour",
+                        date: "Feb 5, 2026",
+                        url: "https://ppatour.com"
+                    }
+                ]);
+            };
+
+            const loadPickleballDeals = () => {
+                // Simulated deals - in production, fetch from affiliate APIs
+                setDeals([
+                    {
+                        id: 1,
+                        title: "Paddletek Tempest Wave Pro - 20% Off",
+                        description: "Premium carbon fiber paddle",
+                        price: "$119.99",
+                        originalPrice: "$149.99",
+                        url: "https://amazon.com/pickleball-paddles"
+                    },
+                    {
+                        id: 2,
+                        title: "Franklin X-40 Performance Balls - 6 Pack",
+                        description: "USAPA approved outdoor balls",
+                        price: "$12.99",
+                        originalPrice: "$17.99",
+                        url: "https://amazon.com/pickleball-balls"
+                    },
+                    {
+                        id: 3,
+                        title: "Onix Fuse Indoor Shoes - 30% Off",
+                        description: "Non-marking court shoes",
+                        price: "$69.99",
+                        originalPrice: "$99.99",
+                        url: "https://amazon.com/pickleball-shoes"
+                    }
+                ]);
+            };
+
             const upcomingGames = games.filter(g => new Date(g.date) >= new Date()).slice(0, 3);
             
             return (
                 <div className="space-y-8">
                     {/* Hero Section */}
-                    <div className="bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl p-8 text-white shadow-xl">
-                        <h1 className="text-4xl font-bold mb-4">Welcome to PickleConnect! 🏸🥎</h1>
-                        <p className="text-xl mb-6">Find courts, organize games, and connect with players in your area</p>
-                        <div className="flex space-x-4">
+                    <div className="bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl p-6 md:p-8 text-white shadow-xl">
+                        <h1 className="text-3xl md:text-4xl font-bold mb-4">Welcome to PickleConnect!</h1>
+                        <p className="text-lg md:text-xl mb-6">Find courts, organize games, and connect with players in your area</p>
+                        <div className="flex flex-col sm:flex-row gap-4">
                             <button 
                                 onClick={() => setCurrentView('courts')}
                                 className="bg-white text-green-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-all shadow-lg"
@@ -521,10 +606,10 @@
                                 Find Courts Near Me
                             </button>
                             <button 
-                                onClick={() => setCurrentView('roundRobin')}
+                                onClick={() => setCurrentView('games')}
                                 className="bg-green-700 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-800 transition-all shadow-lg"
                             >
-                                Start Tournament
+                                Browse Events
                             </button>
                         </div>
                     </div>
@@ -532,24 +617,81 @@
                     {/* Quick Stats */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <StatCard icon="📍" title="Courts" value={SAMPLE_COURTS.length} subtitle="in your area" />
-                        <StatCard icon="🎮" title="Active Games" value={games.length} subtitle="this week" />
+                        <StatCard icon="🎮" title="Active Events" value={games.length} subtitle="this week" />
                         <StatCard icon="👥" title="Players" value="124" subtitle="in your community" />
                     </div>
 
-                    {/* Features */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FeatureCard 
-                            icon="🔒" 
-                            title="Private Tournaments"
-                            description="Create private tournaments - only participants can see scores and results"
-                            onClick={() => setCurrentView('roundRobin')}
-                        />
-                        <FeatureCard 
-                            icon="🌍" 
-                            title="Public Tournaments"
-                            description="Share your tournament publicly - anyone can view scores and leaderboard"
-                            onClick={() => setCurrentView('roundRobin')}
-                        />
+                    {/* Tournament Features */}
+                    <div className="bg-white rounded-xl shadow-lg p-6">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-4">Tournament Features</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FeatureCard 
+                                icon="🔒" 
+                                title="Private Tournaments"
+                                description="Create private tournaments - only participants can see scores and results"
+                                onClick={() => setCurrentView('roundRobin')}
+                            />
+                            <FeatureCard 
+                                icon="🌍" 
+                                title="Public Tournaments"
+                                description="Share your tournament publicly - anyone can view scores and leaderboard"
+                                onClick={() => setCurrentView('roundRobin')}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Pickleball News */}
+                    <div className="bg-white rounded-xl shadow-lg p-6">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-4">Latest Pickleball News</h2>
+                        <div className="space-y-4">
+                            {news.map(item => (
+                                <a
+                                    key={item.id}
+                                    href={item.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 hover:border-green-300 rounded-lg p-4 transition-all"
+                                >
+                                    <h3 className="font-bold text-gray-800 mb-2">{item.title}</h3>
+                                    <div className="flex items-center justify-between text-sm text-gray-600">
+                                        <span>{item.source}</span>
+                                        <span>{item.date}</span>
+                                    </div>
+                                </a>
+                            ))}
+                        </div>
+                        <p className="text-sm text-gray-500 mt-4 text-center">
+                            News aggregated from top pickleball sources
+                        </p>
+                    </div>
+
+                    {/* Pickleball Deals */}
+                    <div className="bg-white rounded-xl shadow-lg p-6">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-4">Latest Deals</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {deals.map(deal => (
+                                <a
+                                    key={deal.id}
+                                    href={deal.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block bg-gradient-to-br from-orange-50 to-red-50 hover:from-orange-100 hover:to-red-100 border-2 border-orange-200 hover:border-orange-400 rounded-lg p-4 transition-all"
+                                >
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">DEAL</span>
+                                    </div>
+                                    <h3 className="font-bold text-gray-800 mb-2 text-sm">{deal.title}</h3>
+                                    <p className="text-xs text-gray-600 mb-3">{deal.description}</p>
+                                    <div className="flex items-baseline space-x-2">
+                                        <span className="text-lg font-bold text-green-600">{deal.price}</span>
+                                        <span className="text-sm text-gray-500 line-through">{deal.originalPrice}</span>
+                                    </div>
+                                </a>
+                            ))}
+                        </div>
+                        <p className="text-sm text-gray-500 mt-4 text-center">
+                            Deals from Amazon and partner retailers
+                        </p>
                     </div>
                 </div>
             );
@@ -583,7 +725,7 @@
         function CourtsView({ setCurrentView }) {
             const mapRef = useRef(null);
             const mapInstanceRef = useRef(null);
-            const [courts, setCourts] = useState(SAMPLE_COURTS);
+            const [courts, setCourts] = useState([]);
             const [selectedCourt, setSelectedCourt] = useState(null);
             const [searchTerm, setSearchTerm] = useState('');
             const [showAddCourt, setShowAddCourt] = useState(false);
@@ -604,11 +746,10 @@
             const loadCourts = async () => {
                 try {
                     const savedCourts = await storage.getAllCourts();
-                    if (savedCourts && savedCourts.length > 0) {
-                        setCourts([...SAMPLE_COURTS, ...savedCourts]);
-                    }
+                    setCourts([...SAMPLE_COURTS, ...savedCourts]);
                 } catch (error) {
                     console.log('No saved courts yet');
+                    setCourts([...SAMPLE_COURTS]);
                 }
             };
 
@@ -618,8 +759,6 @@
                     return;
                 }
 
-                // Geocode address (in production, use Google Maps Geocoding API)
-                // For now, use approximate coordinates
                 const court = {
                     id: Date.now(),
                     ...newCourt,
@@ -641,18 +780,26 @@
                         rating: 4.0
                     });
                     
-                    // Force reload map with new court
+                    // Reinitialize map
                     if (mapInstanceRef.current) {
                         mapInstanceRef.current.remove();
                         mapInstanceRef.current = null;
-                        setTimeout(() => {
-                            initializeMap(updatedCourts);
-                        }, 100);
                     }
+                    setTimeout(() => {
+                        initializeMap(updatedCourts);
+                    }, 100);
+                    
+                    alert('Court added successfully!');
                 } catch (error) {
                     console.error('Failed to add court:', error);
                     alert('Failed to add court');
                 }
+            };
+
+            const handleCreateEvent = (court) => {
+                // Store selected court in localStorage for the Games view
+                localStorage.setItem('selectedCourtForEvent', JSON.stringify(court));
+                setCurrentView('games');
             };
 
             const initializeMap = (courtsList) => {
@@ -673,7 +820,7 @@
             };
 
             useEffect(() => {
-                if (!mapInstanceRef.current && courts.length > 0) {
+                if (courts.length > 0 && !mapInstanceRef.current) {
                     initializeMap(courts);
                 }
             }, [courts]);
@@ -795,7 +942,7 @@
                                     )}
                                 </div>
                                 <button
-                                    onClick={() => setSelectedCourt(court)}
+                                    onClick={() => handleCreateEvent(court)}
                                     className="w-full bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-all text-sm"
                                 >
                                     Create Event Here
@@ -810,6 +957,7 @@
         function GamesView({ games, setGames, setCurrentView, currentUser }) {
             const [events, setEvents] = useState([]);
             const [showCreateForm, setShowCreateForm] = useState(false);
+            const [allCourts, setAllCourts] = useState(SAMPLE_COURTS);
             const [formData, setFormData] = useState({
                 court: SAMPLE_COURTS[0].id,
                 date: '2026-02-15',
@@ -821,7 +969,30 @@
 
             useEffect(() => {
                 loadEvents();
+                loadAllCourts();
+                
+                // Check if coming from Courts page with selected court
+                const selectedCourtData = localStorage.getItem('selectedCourtForEvent');
+                if (selectedCourtData) {
+                    try {
+                        const court = JSON.parse(selectedCourtData);
+                        setFormData(prev => ({...prev, court: court.id}));
+                        setShowCreateForm(true);
+                        localStorage.removeItem('selectedCourtForEvent');
+                    } catch (error) {
+                        console.error('Error loading selected court:', error);
+                    }
+                }
             }, []);
+
+            const loadAllCourts = async () => {
+                try {
+                    const savedCourts = await storage.getAllCourts();
+                    setAllCourts([...SAMPLE_COURTS, ...savedCourts]);
+                } catch (error) {
+                    console.log('Using default courts');
+                }
+            };
 
             const loadEvents = async () => {
                 try {
@@ -834,7 +1005,12 @@
 
             const handleCreateEvent = async (e) => {
                 e.preventDefault();
-                const selectedCourt = SAMPLE_COURTS.find(c => c.id === parseInt(formData.court));
+                const selectedCourt = allCourts.find(c => c.id === parseInt(formData.court));
+                
+                if (!selectedCourt) {
+                    alert('Please select a valid court');
+                    return;
+                }
                 
                 const newEvent = {
                     id: Date.now(),
@@ -862,6 +1038,7 @@
                         maxPlayers: 8,
                         description: ''
                     });
+                    alert('Event created successfully!');
                 } catch (error) {
                     console.error('Error creating event:', error);
                     alert('Failed to create event');
@@ -926,7 +1103,7 @@
                                             className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
                                             required
                                         >
-                                            {SAMPLE_COURTS.map(court => (
+                                            {allCourts.map(court => (
                                                 <option key={court.id} value={court.id}>{court.name}</option>
                                             ))}
                                         </select>
@@ -1134,10 +1311,17 @@
                 }
             }, [currentUser]);
 
-            const handleSave = () => {
+            const handleSave = async () => {
                 setCurrentUser(editForm);
                 setIsEditing(false);
-                // TODO: Save to Firebase/localStorage
+                
+                // Save to localStorage
+                try {
+                    localStorage.setItem('userProfile', JSON.stringify(editForm));
+                    console.log('✓ Profile saved');
+                } catch (error) {
+                    console.error('Failed to save profile:', error);
+                }
             };
 
             const handleLogout = async () => {
@@ -1157,7 +1341,7 @@
             if (!currentUser) {
                 return (
                     <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-                        <div className="text-6xl mb-4">🏓</div>
+                        <div className="text-6xl mb-4 font-bold text-green-600">Profile</div>
                         <h2 className="text-2xl font-bold text-gray-800 mb-4">Please login to view your profile</h2>
                         <p className="text-gray-600 mb-6">Create an account to track your games, tournaments, and connect with players!</p>
                     </div>
