@@ -14,13 +14,14 @@ th { background:#2c3e50; color:white;}
 .card { background:white; padding:15px; border-radius:8px; margin-bottom:20px;}
 button { background:#2c3e50; color:white; border:none; cursor:pointer;}
 button:hover { background:#1a242f;}
-.roundHeader { background:#eee; padding:5px; margin-top:10px; font-weight:bold;}
+.roundHeader { background:#eee; padding:6px; margin-top:12px; font-weight:bold;}
+.bye { color:red; font-style:italic;}
 </style>
 </head>
 
 <body>
 
-<h1>🏓 Pickleball Round Robin Pro</h1>
+<h1>🏓 Pickleball Tournament Manager</h1>
 
 <div class="card">
 <h2>Setup Tournament</h2>
@@ -38,7 +39,7 @@ button:hover { background:#1a242f;}
 <br>
 
 <label>Number of Rounds:</label>
-<input type="number" id="rounds" value="1" min="1">
+<input type="number" id="rounds" value="3" min="1">
 <br>
 
 <label>Players (comma separated):</label><br>
@@ -81,6 +82,7 @@ let playersList = [];
 let leaderboardData = {};
 
 function generateTournament() {
+
 const format = document.getElementById("format").value;
 const courts = parseInt(document.getElementById("courts").value);
 const roundsLimit = parseInt(document.getElementById("rounds").value);
@@ -97,10 +99,12 @@ return;
 
 if (format === "singles") {
 tournamentData = generateSingles(playersList, roundsLimit);
-} else if (format === "doubles-fixed") {
+} 
+else if (format === "doubles-fixed") {
 tournamentData = generateDoublesFixed(playersList, roundsLimit);
-} else {
-tournamentData = generateDoublesRotating(playersList, roundsLimit);
+} 
+else {
+tournamentData = generateDoublesRotating(playersList, roundsLimit, courts);
 }
 
 assignCourts(courts);
@@ -110,7 +114,11 @@ renderLeaderboard();
 saveTournament();
 }
 
+/* ===========================
+   SINGLES - TRUE ROUND ROBIN
+=========================== */
 function generateSingles(players, roundsLimit) {
+
 let list = [...players];
 if (list.length % 2 !== 0) list.push("BYE");
 
@@ -120,27 +128,34 @@ const totalRounds = Math.min(roundsLimit, maxRounds);
 const matches = [];
 
 for (let r = 0; r < totalRounds; r++) {
+
 for (let i = 0; i < list.length / 2; i++) {
 const p1 = list[i];
 const p2 = list[list.length - 1 - i];
+
 if (p1 !== "BYE" && p2 !== "BYE") {
-matches.push({ team1: [p1], team2: [p2], round: r + 1 });
+matches.push({ team1:[p1], team2:[p2], round:r+1 });
 }
 }
+
 list.splice(1, 0, list.pop());
 }
 
 return matches;
 }
 
+/* ===========================
+   DOUBLES FIXED
+=========================== */
 function generateDoublesFixed(players, roundsLimit) {
+
 if (players.length % 4 !== 0) {
 alert("Players must be multiple of 4 for fixed doubles.");
 return [];
 }
 
 let teams = [];
-for (let i = 0; i < players.length; i += 2) {
+for (let i=0;i<players.length;i+=2) {
 teams.push([players[i], players[i+1]]);
 }
 
@@ -153,135 +168,206 @@ round: m.round
 }));
 }
 
-function generateDoublesRotating(players, roundsLimit) {
-let pairs = [];
-for (let i = 0; i < players.length; i++) {
-for (let j = i + 1; j < players.length; j++) {
-pairs.push([players[i], players[j]]);
-}
-}
+/* ===========================
+   DOUBLES ROTATING (SWISH STYLE)
+=========================== */
+function generateDoublesRotating(players, roundsLimit, courts) {
 
 let matches = [];
-let round = 1;
+let teammateHistory = {};
+let opponentHistory = {};
+let byeCount = {};
 
-for (let i = 0; i < pairs.length && round <= roundsLimit; i += 2) {
-if (pairs[i+1]) {
-matches.push({
-team1: pairs[i],
-team2: pairs[i+1],
-round: round
+players.forEach(p => {
+teammateHistory[p] = new Set();
+opponentHistory[p] = new Set();
+byeCount[p] = 0;
 });
-round++;
+
+for (let round=1; round<=roundsLimit; round++) {
+
+let sortedPlayers = [...players].sort((a,b)=>byeCount[a]-byeCount[b]);
+let maxPlayers = courts * 4;
+let playing = sortedPlayers.slice(0, maxPlayers);
+
+players.forEach(p=>{
+if (!playing.includes(p)) byeCount[p]++;
+});
+
+let used = new Set();
+
+for (let c=0;c<courts;c++) {
+
+let found = false;
+
+for (let i=0;i<playing.length-3;i++) {
+if (used.has(playing[i])) continue;
+
+for (let j=i+1;j<playing.length-2;j++) {
+if (used.has(playing[j])) continue;
+if (teammateHistory[playing[i]].has(playing[j])) continue;
+
+for (let k=j+1;k<playing.length-1;k++) {
+if (used.has(playing[k])) continue;
+
+for (let l=k+1;l<playing.length;l++) {
+if (used.has(playing[l])) continue;
+if (teammateHistory[playing[k]].has(playing[l])) continue;
+
+let p1=playing[i], p2=playing[j], p3=playing[k], p4=playing[l];
+
+if (
+opponentHistory[p1].has(p3) ||
+opponentHistory[p1].has(p4) ||
+opponentHistory[p2].has(p3) ||
+opponentHistory[p2].has(p4)
+) continue;
+
+matches.push({ team1:[p1,p2], team2:[p3,p4], round:round });
+
+used.add(p1); used.add(p2); used.add(p3); used.add(p4);
+
+teammateHistory[p1].add(p2);
+teammateHistory[p2].add(p1);
+teammateHistory[p3].add(p4);
+teammateHistory[p4].add(p3);
+
+opponentHistory[p1].add(p3);
+opponentHistory[p1].add(p4);
+opponentHistory[p2].add(p3);
+opponentHistory[p2].add(p4);
+opponentHistory[p3].add(p1);
+opponentHistory[p3].add(p2);
+opponentHistory[p4].add(p1);
+opponentHistory[p4].add(p2);
+
+found=true;
+break;
+}
+if(found) break;
+}
+if(found) break;
+}
+if(found) break;
+}
 }
 }
 
 return matches;
 }
 
+/* ===========================
+   COMMON FUNCTIONS
+=========================== */
+
 function assignCourts(courts) {
-tournamentData.forEach((match, index) => {
-match.court = (index % courts) + 1;
-match.score1 = "";
-match.score2 = "";
+tournamentData.forEach((m,i)=>{
+m.court = (i % courts)+1;
+m.score1="";
+m.score2="";
 });
 }
 
 function renderMatches() {
-const container = document.getElementById("matches");
-container.innerHTML = "";
 
-let currentRound = 0;
+const container=document.getElementById("matches");
+container.innerHTML="";
 
-tournamentData.forEach((m, i) => {
+let currentRound=0;
 
-if (m.round !== currentRound) {
-currentRound = m.round;
-container.innerHTML += `<div class="roundHeader">Round ${currentRound}</div>`;
+tournamentData.forEach((m,i)=>{
+
+if(m.round!==currentRound){
+currentRound=m.round;
+container.innerHTML+=`<div class="roundHeader">Round ${currentRound}</div>`;
 }
 
-container.innerHTML += `
+container.innerHTML+=`
 <div>
 Court ${m.court} :
 ${m.team1.join(" & ")} vs ${m.team2.join(" & ")}
-<input type="number" placeholder="Score 1" onchange="updateScore(${i}, this.value, null)">
-<input type="number" placeholder="Score 2" onchange="updateScore(${i}, null, this.value)">
+<input type="number" placeholder="Score 1" onchange="updateScore(${i},this.value,null)">
+<input type="number" placeholder="Score 2" onchange="updateScore(${i},null,this.value)">
 </div>
 `;
 });
 }
 
-function initLeaderboard() {
-leaderboardData = {};
-playersList.forEach(p => {
-leaderboardData[p] = { wins:0, losses:0, pointsFor:0, pointsAgainst:0 };
+function initLeaderboard(){
+leaderboardData={};
+playersList.forEach(p=>{
+leaderboardData[p]={wins:0,losses:0,pointsFor:0,pointsAgainst:0};
 });
 }
 
-function updateScore(index, s1, s2) {
-if (s1 !== null) tournamentData[index].score1 = parseInt(s1);
-if (s2 !== null) tournamentData[index].score2 = parseInt(s2);
+function updateScore(index,s1,s2){
+if(s1!==null) tournamentData[index].score1=parseInt(s1);
+if(s2!==null) tournamentData[index].score2=parseInt(s2);
 
 calculateLeaderboard();
 renderLeaderboard();
 saveTournament();
 }
 
-function calculateLeaderboard() {
+function calculateLeaderboard(){
+
 initLeaderboard();
 
-tournamentData.forEach(m => {
-if (m.score1 === "" || m.score2 === "") return;
+tournamentData.forEach(m=>{
+if(m.score1===""||m.score2==="") return;
 
-m.team1.forEach(p => {
-leaderboardData[p].pointsFor += m.score1;
-leaderboardData[p].pointsAgainst += m.score2;
+m.team1.forEach(p=>{
+leaderboardData[p].pointsFor+=m.score1;
+leaderboardData[p].pointsAgainst+=m.score2;
+});
+m.team2.forEach(p=>{
+leaderboardData[p].pointsFor+=m.score2;
+leaderboardData[p].pointsAgainst+=m.score1;
 });
 
-m.team2.forEach(p => {
-leaderboardData[p].pointsFor += m.score2;
-leaderboardData[p].pointsAgainst += m.score1;
-});
-
-if (m.score1 > m.score2) {
-m.team1.forEach(p => leaderboardData[p].wins++);
-m.team2.forEach(p => leaderboardData[p].losses++);
-} else if (m.score2 > m.score1) {
-m.team2.forEach(p => leaderboardData[p].wins++);
-m.team1.forEach(p => leaderboardData[p].losses++);
+if(m.score1>m.score2){
+m.team1.forEach(p=>leaderboardData[p].wins++);
+m.team2.forEach(p=>leaderboardData[p].losses++);
+}
+else if(m.score2>m.score1){
+m.team2.forEach(p=>leaderboardData[p].wins++);
+m.team1.forEach(p=>leaderboardData[p].losses++);
 }
 });
 }
 
-function renderLeaderboard() {
-const container = document.getElementById("leaderboard");
+function renderLeaderboard(){
 
-const sorted = Object.entries(leaderboardData).sort((a,b) =>
-b[1].wins - a[1].wins ||
-((b[1].pointsFor - b[1].pointsAgainst) - (a[1].pointsFor - a[1].pointsAgainst)))
-;
+const container=document.getElementById("leaderboard");
 
-let html = "<table><tr><th>Player</th><th>Wins</th><th>Losses</th><th>PF</th><th>PA</th><th>Diff</th></tr>";
+const sorted=Object.entries(leaderboardData)
+.sort((a,b)=>
+b[1].wins-a[1].wins ||
+((b[1].pointsFor-b[1].pointsAgainst)-(a[1].pointsFor-a[1].pointsAgainst))
+);
 
-sorted.forEach(([name, data]) => {
-html += `<tr>
+let html="<table><tr><th>Player</th><th>Wins</th><th>Losses</th><th>PF</th><th>PA</th><th>Diff</th></tr>";
+
+sorted.forEach(([name,data])=>{
+html+=`<tr>
 <td>${name}</td>
 <td>${data.wins}</td>
 <td>${data.losses}</td>
 <td>${data.pointsFor}</td>
 <td>${data.pointsAgainst}</td>
-<td>${data.pointsFor - data.pointsAgainst}</td>
+<td>${data.pointsFor-data.pointsAgainst}</td>
 </tr>`;
 });
 
-html += "</table>";
-container.innerHTML = html;
+html+="</table>";
+container.innerHTML=html;
 }
 
-function saveTournament() {
+function saveTournament(){
 db.collection("tournaments").add({
-created: new Date(),
-players: playersList,
-matches: tournamentData
+created:new Date(),
+players:playersList,
+matches:tournamentData
 });
 }
 </script>
