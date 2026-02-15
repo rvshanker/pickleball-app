@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PickleConnect - Pickleball Courts & Events</title>
-    <meta name="description" content="Find pickleball courts, create tournaments, organize events, and connect with players in your area.">
+    <title>PickleConnect - Professional Tournament Manager</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%2316a34a'/%3E%3Ctext x='50' y='50' font-family='Arial, sans-serif' font-size='60' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='central'%3EP%3C/text%3E%3C/svg%3E">
     
@@ -12,376 +11,320 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     
     <style>
-        .leaflet-container { height: 100%; width: 100%; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        .win-gradient { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .match-card { transition: all 0.2s ease; }
+        .match-card:hover { transform: translateY(-2px); shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); }
     </style>
 </head>
-<body>
+<body class="bg-slate-50">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef, useCallback } = React;
+        const { useState, useEffect, useRef, useMemo } = React;
 
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
             authDomain: "pickleball-app-1bba7.firebaseapp.com",
             projectId: "pickleball-app-1bba7",
             storageBucket: "pickleball-app-1bba7.firebasestorage.app",
             messagingSenderId: "645604154338",
-            appId: "1:645604154338:web:b92f87c2cd11d950b737bb",
-            measurementId: "G-WM2DMSZM7F"
+            appId: "1:645604154338:web:b92f87c2cd11d950b737bb"
         };
 
+        // Initialize Firebase
         let db = null;
-        let auth = null;
-        let isFirebaseConfigured = false;
-
         try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            auth = firebase.auth();
-            isFirebaseConfigured = true;
-        } catch (error) {
-            console.log("Firebase fallback to localStorage active.");
-        }
-
-        const storage = {
-            async saveTournament(tournamentData) {
-                if (isFirebaseConfigured && db) {
-                    try {
-                        await db.collection('tournaments').doc(tournamentData.id).set(tournamentData);
-                        return true;
-                    } catch (e) {}
-                }
-                localStorage.setItem(`tournament:${tournamentData.id}`, JSON.stringify(tournamentData));
-                return true;
-            },
-            
-            async getTournament(id) {
-                if (isFirebaseConfigured && db) {
-                    try {
-                        const doc = await db.collection('tournaments').doc(id).get();
-                        if (doc.exists) return doc.data();
-                    } catch (e) {}
-                }
-                const data = localStorage.getItem(`tournament:${id}`);
-                return data ? JSON.parse(data) : null;
-            },
-            
-            async getAllTournaments(userId = 'guest') {
-                if (isFirebaseConfigured && db) {
-                    try {
-                        const snapshot = await db.collection('tournaments').get();
-                        const all = snapshot.docs.map(doc => doc.data());
-                        return all.filter(t => t.isPublic || t.creatorId === userId || t.participants?.includes(userId));
-                    } catch (e) {}
-                }
-                const tournaments = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key.startsWith('tournament:')) {
-                        const data = JSON.parse(localStorage.getItem(key));
-                        if (data.isPublic || data.creatorId === userId || data.participants?.includes(userId)) {
-                            tournaments.push(data);
-                        }
-                    }
-                }
-                return tournaments;
-            },
-
-            async listenToTournament(id, callback) {
-                if (isFirebaseConfigured && db) {
-                    return db.collection('tournaments').doc(id).onSnapshot(doc => {
-                        if (doc.exists) callback(doc.data());
-                    });
-                }
-                const interval = setInterval(async () => {
-                    const data = await storage.getTournament(id);
-                    if (data) callback(data);
-                }, 3000);
-                return () => clearInterval(interval);
+            if (!firebase.apps.length) {
+                const app = firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
             }
-        };
-
-        const SAMPLE_COURTS = [
-            { id: 1, name: "O'Fallon Community Center", address: "825 E US Hwy 50, O'Fallon, MO", courts: 6, indoor: true, outdoor: false, lat: 38.8106, lng: -90.7104, rating: 4.5 },
-            { id: 2, name: "Westhoff Park", address: "900 Westhoff Park Dr, O'Fallon, MO", courts: 4, indoor: false, outdoor: true, lat: 38.7906, lng: -90.7204, rating: 4.2 }
-        ];
-
-        const SKILL_LEVELS = ['Beginner (2.0-2.5)', 'Intermediate (3.0-3.5)', 'Advanced (4.0-4.5)', 'Expert (5.0+)'];
+        } catch (e) { console.error("Firebase init failed", e); }
 
         function App() {
-            const [currentView, setCurrentView] = useState('home');
-            const [currentUser, setCurrentUser] = useState(null);
-
-            useEffect(() => {
-                if (isFirebaseConfigured && auth) {
-                    auth.onAuthStateChanged(user => {
-                        if (user) {
-                            setCurrentUser({ uid: user.uid, email: user.email, name: user.displayName || user.email.split('@')[0], avatar: '🏓' });
-                        } else {
-                            setCurrentUser({ uid: 'guest', name: 'Guest Player', avatar: '👤' });
-                        }
-                    });
-                } else {
-                    setCurrentUser({ uid: 'guest', name: 'Guest Player', avatar: '👤' });
-                }
-            }, []);
-
-            return (
-                <div className="min-h-screen bg-slate-50">
-                    <nav className="bg-white shadow-sm sticky top-0 z-50 px-4 py-3">
-                        <div className="max-w-7xl mx-auto flex justify-between items-center">
-                            <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setCurrentView('home')}>
-                                <div className="bg-green-600 text-white rounded-lg p-2 font-bold">PC</div>
-                                <span className="text-xl font-bold text-slate-800">PickleConnect</span>
-                            </div>
-                            <div className="hidden md:flex space-x-6 font-medium text-slate-600">
-                                <button onClick={() => setCurrentView('home')}>Home</button>
-                                <button onClick={() => setCurrentView('roundRobin')}>Tournaments</button>
-                                <div className="bg-slate-100 px-3 py-1 rounded-full text-sm flex items-center gap-2">
-                                    <span>{currentUser?.avatar}</span>
-                                    <span>{currentUser?.name}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </nav>
-
-                    <main className="max-w-7xl mx-auto p-4 md:p-8">
-                        {currentView === 'home' && <HomeView setCurrentView={setCurrentView} />}
-                        {currentView === 'roundRobin' && <RoundRobinView currentUser={currentUser} />}
-                    </main>
-                </div>
-            );
-        }
-
-        function HomeView({ setCurrentView }) {
-            return (
-                <div className="text-center space-y-8 py-12">
-                    <h1 className="text-5xl font-extrabold text-slate-900">Your Local Pickleball Hub</h1>
-                    <p className="text-xl text-slate-600 max-w-2xl mx-auto">Organize fair tournaments, track real-time scores, and find local courts effortlessly.</p>
-                    <div className="flex justify-center gap-4">
-                        <button onClick={() => setCurrentView('roundRobin')} className="bg-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-green-700 transition-all">
-                            🏆 Start Tournament
-                        </button>
-                    </div>
-                </div>
-            );
-        }
-
-        function RoundRobinView({ currentUser }) {
-            const [players, setPlayers] = useState(['', '', '', '']);
-            const [courts, setCourts] = useState(1);
-            const [numRounds, setNumRounds] = useState(3);
+            const [view, setView] = useState('setup'); // setup or tournament
+            const [players, setPlayers] = useState(['Player 1', 'Player 2', 'Player 3', 'Player 4', 'Player 5', 'Player 6', 'Player 7', 'Player 8', 'Player 9']);
+            const [courts, setCourts] = useState(2);
+            const [numRounds, setNumRounds] = useState(5);
             const [matchFormat, setMatchFormat] = useState('doubles');
             const [schedule, setSchedule] = useState([]);
             const [scores, setScores] = useState({});
-            const [tournamentId, setTournamentId] = useState(null);
             const [saveStatus, setSaveStatus] = useState('');
-            const saveTimeoutRef = useRef(null);
+            const saveTimeout = useRef(null);
 
-            // AUTO-SAVE LOGIC (Debounced)
+            // AUTO-SAVE LOGIC
             useEffect(() => {
-                if (tournamentId && schedule.length > 0) {
-                    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+                if (view === 'tournament') {
+                    if (saveTimeout.current) clearTimeout(saveTimeout.current);
                     setSaveStatus('Drafting...');
-                    saveTimeoutRef.current = setTimeout(() => {
-                        handleSave();
-                    }, 1500);
+                    saveTimeout.current = setTimeout(async () => {
+                        const data = {
+                            players, courts, numRounds, matchFormat, scores, schedule,
+                            updatedAt: Date.now()
+                        };
+                        localStorage.setItem('active_tournament', JSON.stringify(data));
+                        if (db) {
+                            try {
+                                await db.collection('tournaments').doc('active_session').set(data);
+                            } catch(e) {}
+                        }
+                        setSaveStatus('✓ Auto-saved');
+                        setTimeout(() => setSaveStatus(''), 2000);
+                    }, 1000);
                 }
-                return () => clearTimeout(saveTimeoutRef.current);
-            }, [scores, schedule, tournamentId]);
+            }, [scores, view]);
 
-            const handleSave = async () => {
-                const flat = [];
-                schedule.forEach((round, rIdx) => {
-                    round.forEach(m => {
-                        flat.push({ ...m, roundIndex: rIdx, team1: m.team1.join(', '), team2: m.team2.join(', ') });
-                    });
-                });
-
-                const data = {
-                    id: tournamentId,
-                    creatorId: currentUser?.uid || 'guest',
-                    players: players.filter(p => p.trim()),
-                    courts,
-                    numRounds,
-                    matchFormat,
-                    scores,
-                    scheduleFlat: flat,
-                    updatedAt: Date.now(),
-                    isPublic: true
-                };
-
-                setSaveStatus('Saving...');
-                await storage.saveTournament(data);
-                setSaveStatus('✓ Saved');
-                setTimeout(() => setSaveStatus(''), 2000);
+            const addPlayer = () => setPlayers([...players, `Player ${players.length + 1}`]);
+            const removePlayer = (index) => setPlayers(players.filter((_, i) => i !== index));
+            const updatePlayer = (index, val) => {
+                const newP = [...players];
+                newP[index] = val;
+                setPlayers(newP);
             };
 
-            const generateSchedule = () => {
+            const generateTournament = () => {
                 const validPlayers = players.filter(p => p.trim() !== '');
-                if (matchFormat === 'singles' && validPlayers.length < 2) return alert('Need 2+ players');
-                if (matchFormat === 'doubles' && validPlayers.length < 4) return alert('Need 4+ players');
-
-                const allRounds = [];
-                let rotators = [...validPlayers];
-                if (rotators.length % 2 !== 0) rotators.push('BYE');
+                if (matchFormat === 'doubles' && validPlayers.length < 4) return alert("Need at least 4 players for doubles.");
                 
-                const n = rotators.length;
+                let pool = [...validPlayers];
+                // For 9 players, pool size becomes 10 with BYE
+                if (pool.length % 2 !== 0) pool.push('BYE');
+                
+                const n = pool.length;
+                const newSchedule = [];
 
                 for (let r = 0; r < numRounds; r++) {
                     const roundMatches = [];
-                    const temp = [...rotators];
+                    const pairs = [];
                     
-                    if (matchFormat === 'singles') {
-                        for (let i = 0; i < n / 2; i++) {
-                            const p1 = temp[i];
-                            const p2 = temp[n - 1 - i];
-                            if (p1 !== 'BYE' && p2 !== 'BYE') {
-                                roundMatches.push({ id: `r${r}-m${i}`, court: (i % courts) + 1, team1: [p1], team2: [p2] });
+                    // 1. Circle Method Rotation for Pairs
+                    for (let i = 0; i < n / 2; i++) {
+                        const p1 = pool[i];
+                        const p2 = pool[n - 1 - i];
+                        if (p1 !== 'BYE' && p2 !== 'BYE') {
+                            pairs.push([p1, p2]);
+                        }
+                    }
+
+                    // 2. Assign Pairs to Matches
+                    if (matchFormat === 'doubles') {
+                        // Takes pairs 2-at-a-time to make 2v2
+                        for (let i = 0; i < pairs.length; i += 2) {
+                            if (pairs[i] && pairs[i+1]) {
+                                const matchIdx = Math.floor(i/2);
+                                if (matchIdx < courts) { // Multi-court limit
+                                    roundMatches.push({
+                                        id: `r${r}-m${matchIdx}`,
+                                        court: matchIdx + 1,
+                                        team1: pairs[i],
+                                        team2: pairs[i+1]
+                                    });
+                                }
                             }
                         }
                     } else {
-                        // Doubles Partner Rotation
-                        for (let i = 0; i < n; i += 4) {
-                            const team1 = [temp[i], temp[i + 1]];
-                            const team2 = [temp[i + 2], temp[i + 3]];
-                            if (!team1.includes('BYE') && !team2.includes('BYE') && team1[1] && team2[1]) {
-                                roundMatches.push({ id: `r${r}-m${i}`, court: (Math.floor(i/4) % courts) + 1, team1, team2 });
+                        // Singles: Each pair is a match
+                        pairs.forEach((pair, i) => {
+                            if (i < courts) {
+                                roundMatches.push({
+                                    id: `r${r}-m${i}`,
+                                    court: i + 1,
+                                    team1: [pair[0]],
+                                    team2: [pair[1]]
+                                });
                             }
-                        }
+                        });
                     }
-                    allRounds.push(roundMatches);
-                    // Rotate players (keep index 0 fixed)
-                    rotators.splice(1, 0, rotators.pop());
+                    newSchedule.push(roundMatches);
+                    // Rotate pool for next round (keep first fixed)
+                    pool.splice(1, 0, pool.pop());
                 }
 
-                setSchedule(allRounds);
-                setTournamentId(`t-${Date.now()}`);
+                setSchedule(newSchedule);
+                setView('tournament');
             };
 
-            const calculateLeaderboard = () => {
+            const leaderboard = useMemo(() => {
                 const stats = {};
-                players.filter(p => p.trim()).forEach(p => stats[p] = { name: p, wins: 0, diff: 0, points: 0 });
+                players.forEach(p => stats[p] = { name: p, wins: 0, pointsFor: 0, pointsAgainst: 0 });
 
-                Object.keys(scores).forEach(matchId => {
-                    const match = schedule.flat().find(m => m.id === matchId);
+                Object.entries(scores).forEach(([matchId, score]) => {
+                    const [rIdx, mId] = matchId.split('-');
+                    const match = schedule[rIdx.substring(1)]?.find(m => m.id === matchId);
                     if (!match) return;
-                    const s1 = parseInt(scores[matchId].team1) || 0;
-                    const s2 = parseInt(scores[matchId].team2) || 0;
+
+                    const s1 = parseInt(score.team1) || 0;
+                    const s2 = parseInt(score.team2) || 0;
                     if (s1 === 0 && s2 === 0) return;
 
                     match.team1.forEach(p => {
                         if (stats[p]) {
-                            stats[p].points += s1;
-                            stats[p].diff += (s1 - s2);
-                            if (s1 > s2) stats[p].wins++;
+                            stats[p].pointsFor += s1;
+                            stats[p].pointsAgainst += s2;
+                            if (s1 > s2) stats[p].wins += 1;
                         }
                     });
                     match.team2.forEach(p => {
                         if (stats[p]) {
-                            stats[p].points += s2;
-                            stats[p].diff += (s2 - s1);
-                            if (s2 > s1) stats[p].wins++;
+                            stats[p].pointsFor += s2;
+                            stats[p].pointsAgainst += s1;
+                            if (s2 > s1) stats[p].wins += 1;
                         }
                     });
                 });
 
-                return Object.values(stats).sort((a, b) => b.wins - a.wins || b.diff - a.diff || b.points - a.points);
-            };
+                return Object.values(stats).sort((a, b) => b.wins - a.wins || (b.pointsFor - b.pointsAgainst) - (a.pointsFor - a.pointsAgainst));
+            }, [scores, schedule, players]);
 
             return (
-                <div className="space-y-8">
-                    {schedule.length === 0 ? (
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-2xl mx-auto">
-                            <h2 className="text-2xl font-bold mb-6">Setup Tournament</h2>
-                            <div className="space-y-4">
-                                <div className="flex gap-4">
-                                    <button onClick={() => setMatchFormat('singles')} className={`flex-1 p-4 rounded-xl border-2 transition-all ${matchFormat === 'singles' ? 'border-green-600 bg-green-50 text-green-700' : 'border-slate-100'}`}>1v1 Singles</button>
-                                    <button onClick={() => setMatchFormat('doubles')} className={`flex-1 p-4 rounded-xl border-2 transition-all ${matchFormat === 'doubles' ? 'border-green-600 bg-green-50 text-green-700' : 'border-slate-100'}`}>2v2 Doubles</button>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
+                <div className="max-w-6xl mx-auto p-4 md:p-8">
+                    <header className="flex justify-between items-center mb-8">
+                        <div>
+                            <h1 className="text-3xl font-extrabold text-slate-900">PickleConnect</h1>
+                            <p className="text-slate-500 font-medium">Fair Play • Real-time Scoring</p>
+                        </div>
+                        {view === 'tournament' && (
+                            <div className="flex items-center gap-4">
+                                <span className="text-xs font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full uppercase tracking-wider">{saveStatus}</span>
+                                <button onClick={() => setView('setup')} className="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold hover:bg-slate-300">New Tournament</button>
+                            </div>
+                        )}
+                    </header>
+
+                    {view === 'setup' ? (
+                        <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden grid md:grid-cols-2">
+                            <div className="p-8 border-r border-slate-100">
+                                <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                                    <span className="bg-green-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm">1</span>
+                                    Tournament Settings
+                                </h2>
+                                <div className="space-y-6">
                                     <div>
-                                        <label className="block text-sm font-medium mb-1">Rounds</label>
-                                        <input type="number" value={numRounds} onChange={e => setNumRounds(e.target.value)} className="w-full p-2 border rounded-lg"/>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">Match Format</label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button onClick={() => setMatchFormat('singles')} className={`py-3 rounded-xl border-2 font-bold transition-all ${matchFormat === 'singles' ? 'border-green-600 bg-green-50 text-green-700' : 'border-slate-100 text-slate-500'}`}>Singles (1v1)</button>
+                                            <button onClick={() => setMatchFormat('doubles')} className={`py-3 rounded-xl border-2 font-bold transition-all ${matchFormat === 'doubles' ? 'border-green-600 bg-green-50 text-green-700' : 'border-slate-100 text-slate-500'}`}>Doubles (2v2)</button>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Courts</label>
-                                        <input type="number" value={courts} onChange={e => setCourts(e.target.value)} className="w-full p-2 border rounded-lg"/>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">Number of Courts</label>
+                                            <input type="number" value={courts} onChange={(e) => setCourts(parseInt(e.target.value))} className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 focus:border-green-500 outline-none font-bold" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">Total Rounds</label>
+                                            <input type="number" value={numRounds} onChange={(e) => setNumRounds(parseInt(e.target.value))} className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 focus:border-green-500 outline-none font-bold" />
+                                        </div>
                                     </div>
+                                    <button onClick={generateTournament} className="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-green-200 hover:bg-green-700 hover:-translate-y-1 transition-all">GENERATE SCHEDULE</button>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium">Players</label>
+                            </div>
+                            <div className="p-8 bg-slate-50/50">
+                                <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                                    <span className="bg-green-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm">2</span>
+                                    Player Roster ({players.length})
+                                </h2>
+                                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                                     {players.map((p, i) => (
-                                        <input key={i} value={p} onChange={e => {
-                                            const newP = [...players];
-                                            newP[i] = e.target.value;
-                                            setPlayers(newP);
-                                        }} placeholder={`Player ${i+1}`} className="w-full p-2 border rounded-lg mb-2"/>
+                                        <div key={i} className="flex gap-2">
+                                            <input 
+                                                value={p} 
+                                                onChange={(e) => updatePlayer(i, e.target.value)}
+                                                className="flex-1 bg-white border border-slate-200 rounded-lg p-2 text-sm font-medium focus:ring-2 ring-green-500 outline-none"
+                                            />
+                                            <button onClick={() => removePlayer(i)} className="text-slate-300 hover:text-red-500">✕</button>
+                                        </div>
                                     ))}
-                                    <button onClick={() => setPlayers([...players, ''])} className="text-green-600 font-bold">+ Add Player</button>
                                 </div>
-                                <button onClick={generateSchedule} className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold mt-4 hover:bg-slate-800">Generate Bracket</button>
+                                <button onClick={addPlayer} className="mt-4 w-full border-2 border-dashed border-slate-300 py-3 rounded-xl text-slate-500 font-bold hover:border-green-500 hover:text-green-600 transition-colors">+ Add Player</button>
                             </div>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-2 space-y-6">
-                                <div className="flex justify-between items-center">
-                                    <h2 className="text-3xl font-bold">Tournament Bracket</h2>
-                                    <span className="text-sm font-mono bg-slate-100 px-3 py-1 rounded text-slate-500">{saveStatus || 'Ready'}</span>
-                                </div>
+                        <div className="grid lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-2 space-y-10">
                                 {schedule.map((round, rIdx) => (
-                                    <div key={rIdx} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                                        <h3 className="text-lg font-bold mb-4 text-slate-400">ROUND {rIdx + 1}</h3>
-                                        <div className="space-y-4">
+                                    <section key={rIdx}>
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <h3 className="text-xl font-black text-slate-400 uppercase tracking-widest">Round {rIdx + 1}</h3>
+                                            <div className="h-px flex-1 bg-slate-200"></div>
+                                        </div>
+                                        <div className="grid gap-4">
                                             {round.map(match => (
-                                                <div key={match.id} className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
-                                                    <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-xs font-bold">C{match.court}</div>
-                                                    <div className="flex-1 grid grid-cols-2 gap-8">
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="font-bold truncate">{match.team1.join(' & ')}</span>
-                                                            <input type="number" value={scores[match.id]?.team1 || ''} onChange={e => setScores({...scores, [match.id]: {...scores[match.id], team1: e.target.value}})} className="w-12 p-1 text-center border rounded-md font-bold bg-white"/>
+                                                <div key={match.id} className="match-card bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-center gap-6">
+                                                    <div className="flex flex-col items-center justify-center bg-slate-100 rounded-xl px-4 py-2 min-w-[80px]">
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase">Court</span>
+                                                        <span className="text-xl font-black text-slate-800">{match.court}</span>
+                                                    </div>
+                                                    
+                                                    <div className="flex-1 w-full grid grid-cols-7 items-center gap-2 text-center md:text-left">
+                                                        <div className="col-span-3">
+                                                            <p className="text-xs font-bold text-slate-400 uppercase mb-1">Team 1</p>
+                                                            <p className="font-bold text-slate-800 text-lg leading-tight">{match.team1.join(' & ')}</p>
                                                         </div>
-                                                        <div className="flex items-center justify-between">
-                                                            <input type="number" value={scores[match.id]?.team2 || ''} onChange={e => setScores({...scores, [match.id]: {...scores[match.id], team2: e.target.value}})} className="w-12 p-1 text-center border rounded-md font-bold bg-white"/>
-                                                            <span className="font-bold text-right truncate">{match.team2.join(' & ')}</span>
+                                                        <div className="col-span-1 flex justify-center">
+                                                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400">VS</div>
                                                         </div>
+                                                        <div className="col-span-3 text-right">
+                                                            <p className="text-xs font-bold text-slate-400 uppercase mb-1">Team 2</p>
+                                                            <p className="font-bold text-slate-800 text-lg leading-tight">{match.team2.join(' & ')}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                                                        <input 
+                                                            type="number" 
+                                                            placeholder="0"
+                                                            value={scores[match.id]?.team1 || ''}
+                                                            onChange={(e) => setScores({...scores, [match.id]: {...(scores[match.id] || {}), team1: e.target.value}})}
+                                                            className="w-12 h-12 text-center font-black text-xl rounded-lg border-2 border-white bg-white shadow-sm focus:border-green-500 outline-none"
+                                                        />
+                                                        <div className="w-2 h-0.5 bg-slate-300"></div>
+                                                        <input 
+                                                            type="number" 
+                                                            placeholder="0"
+                                                            value={scores[match.id]?.team2 || ''}
+                                                            onChange={(e) => setScores({...scores, [match.id]: {...(scores[match.id] || {}), team2: e.target.value}})}
+                                                            className="w-12 h-12 text-center font-black text-xl rounded-lg border-2 border-white bg-white shadow-sm focus:border-green-500 outline-none"
+                                                        />
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
+                                    </section>
                                 ))}
                             </div>
-                            <div className="space-y-6">
-                                <h2 className="text-2xl font-bold">Live Leaderboard</h2>
-                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                                    {calculateLeaderboard().map((p, i) => (
-                                        <div key={p.name} className={`flex items-center justify-between p-4 border-b last:border-0 ${i === 0 ? 'bg-yellow-50' : ''}`}>
-                                            <div className="flex items-center gap-3">
-                                                <span className="font-bold text-slate-400">#{i+1}</span>
-                                                <span className="font-bold">{p.name} {i === 0 && '🥇'}</span>
+
+                            <aside className="space-y-6">
+                                <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl sticky top-24">
+                                    <h3 className="text-xl font-black mb-6 flex items-center gap-2">
+                                        <span className="text-2xl">🏆</span> LEADERBOARD
+                                    </h3>
+                                    <div className="space-y-4">
+                                        {leaderboard.map((p, i) => (
+                                            <div key={p.name} className={`flex items-center justify-between p-3 rounded-2xl ${i === 0 ? 'bg-green-600 shadow-lg shadow-green-900/50' : 'bg-white/5'}`}>
+                                                <div className="flex items-center gap-3">
+                                                    <span className={`w-6 text-center font-black ${i === 0 ? 'text-white' : 'text-slate-500'}`}>{i + 1}</span>
+                                                    <div>
+                                                        <p className="font-bold leading-none">{p.name}</p>
+                                                        <p className="text-[10px] font-bold text-white/50 uppercase tracking-tighter mt-1">{p.pointsFor - p.pointsAgainst >= 0 ? '+' : ''}{p.pointsFor - p.pointsAgainst} Diff</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="font-black text-lg leading-none">{p.wins}</p>
+                                                    <p className="text-[10px] font-bold opacity-50 uppercase">Wins</p>
+                                                </div>
                                             </div>
-                                            <div className="flex gap-4 text-sm font-bold">
-                                                <div className="text-green-600">{p.wins}W</div>
-                                                <div className="text-slate-400">{p.diff > 0 ? `+${p.diff}` : p.diff}</div>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                                <button onClick={() => setSchedule([])} className="w-full border-2 border-slate-200 text-slate-500 py-3 rounded-xl font-bold hover:bg-slate-50 transition-all">Reset & Start New</button>
-                            </div>
+                            </aside>
                         </div>
                     )}
                 </div>
