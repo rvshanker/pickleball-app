@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PickleConnect - Find Courts & Organize Games</title>
+    <title>PickleConnect - Pickleball Courts & Events</title>
+    <meta name="description" content="Find pickleball courts, create tournaments, organize events, and connect with players in your area.">
+    
+    <!-- Favicon using data URI (green P icon) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%2316a34a'/%3E%3Ctext x='50' y='50' font-family='Arial, sans-serif' font-size='60' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='central'%3EP%3C/text%3E%3C/svg%3E">
+    
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -561,31 +566,31 @@
             };
 
             const loadPickleballDeals = () => {
-                // Simulated deals - in production, fetch from affiliate APIs
+                // Real Amazon search URLs for pickleball equipment
                 setDeals([
                     {
                         id: 1,
-                        title: "Paddletek Tempest Wave Pro - 20% Off",
-                        description: "Premium carbon fiber paddle",
-                        price: "$119.99",
-                        originalPrice: "$149.99",
-                        url: "https://amazon.com/pickleball-paddles"
+                        title: "Pickleball Paddles - Carbon Fiber",
+                        description: "Premium paddles from top brands",
+                        price: "Starting at $79.99",
+                        originalPrice: "",
+                        url: "https://www.amazon.com/s?k=pickleball+paddles+carbon+fiber"
                     },
                     {
                         id: 2,
-                        title: "Franklin X-40 Performance Balls - 6 Pack",
-                        description: "USAPA approved outdoor balls",
-                        price: "$12.99",
-                        originalPrice: "$17.99",
-                        url: "https://amazon.com/pickleball-balls"
+                        title: "Pickleball Balls - USAPA Approved",
+                        description: "Indoor & outdoor tournament balls",
+                        price: "Starting at $12.99",
+                        originalPrice: "",
+                        url: "https://www.amazon.com/s?k=pickleball+balls+outdoor"
                     },
                     {
                         id: 3,
-                        title: "Onix Fuse Indoor Shoes - 30% Off",
-                        description: "Non-marking court shoes",
-                        price: "$69.99",
-                        originalPrice: "$99.99",
-                        url: "https://amazon.com/pickleball-shoes"
+                        title: "Pickleball Shoes - Court Grip",
+                        description: "Non-marking court shoes for men & women",
+                        price: "Starting at $49.99",
+                        originalPrice: "",
+                        url: "https://www.amazon.com/s?k=pickleball+shoes"
                     }
                 ]);
             };
@@ -621,22 +626,72 @@
                         <StatCard icon="👥" title="Players" value="124" subtitle="in your community" />
                     </div>
 
-                    {/* Tournament Features */}
-                    <div className="bg-white rounded-xl shadow-lg p-6">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-4">Tournament Features</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FeatureCard 
-                                icon="🔒" 
-                                title="Private Tournaments"
-                                description="Create private tournaments - only participants can see scores and results"
-                                onClick={() => setCurrentView('roundRobin')}
-                            />
-                            <FeatureCard 
-                                icon="🌍" 
-                                title="Public Tournaments"
-                                description="Share your tournament publicly - anyone can view scores and leaderboard"
-                                onClick={() => setCurrentView('roundRobin')}
-                            />
+                    {/* Tournament System - Main Feature */}
+                    <div className="bg-gradient-to-br from-green-600 via-green-500 to-blue-500 rounded-2xl shadow-2xl overflow-hidden">
+                        <div className="p-8 md:p-12 text-white">
+                            <div className="flex items-center justify-center mb-6">
+                                <div className="bg-white bg-opacity-20 rounded-full p-4">
+                                    <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            
+                            <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">Tournament Generator</h2>
+                            <p className="text-xl text-center mb-8 text-white text-opacity-90">
+                                The Core of PickleConnect
+                            </p>
+                            
+                            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 mb-8">
+                                <h3 className="text-2xl font-bold mb-4">What It Does:</h3>
+                                <div className="space-y-3 text-lg">
+                                    <div className="flex items-start space-x-3">
+                                        <span className="text-2xl flex-shrink-0">✓</span>
+                                        <p><strong>Automatic Round Robin Scheduling:</strong> Enter player names, choose singles or doubles, and we'll generate fair, balanced match-ups instantly</p>
+                                    </div>
+                                    <div className="flex items-start space-x-3">
+                                        <span className="text-2xl flex-shrink-0">✓</span>
+                                        <p><strong>Real-Time Score Tracking:</strong> Enter scores as matches finish and see live leaderboards update automatically</p>
+                                    </div>
+                                    <div className="flex items-start space-x-3">
+                                        <span className="text-2xl flex-shrink-0">✓</span>
+                                        <p><strong>Smart Court Management:</strong> Distribute matches across multiple courts efficiently</p>
+                                    </div>
+                                    <div className="flex items-start space-x-3">
+                                        <span className="text-2xl flex-shrink-0">✓</span>
+                                        <p><strong>Winner Highlighting:</strong> See round winners and overall champions with medals and rankings</p>
+                                    </div>
+                                    <div className="flex items-start space-x-3">
+                                        <span className="text-2xl flex-shrink-0">✓</span>
+                                        <p><strong>Private or Public:</strong> Keep your tournament private for participants only, or make it public for everyone to follow</p>
+                                    </div>
+                                    <div className="flex items-start space-x-3">
+                                        <span className="text-2xl flex-shrink-0">✓</span>
+                                        <p><strong>Persistent Storage:</strong> Your tournaments are saved automatically - resume anytime, even after closing your browser</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-6 text-center">
+                                    <div className="text-4xl font-bold mb-2">Singles & Doubles</div>
+                                    <div className="text-sm opacity-90">Both formats supported</div>
+                                </div>
+                                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-6 text-center">
+                                    <div className="text-4xl font-bold mb-2">Unlimited Players</div>
+                                    <div className="text-sm opacity-90">From 2 to 50+ participants</div>
+                                </div>
+                            </div>
+                            
+                            <div className="text-center">
+                                <button 
+                                    onClick={() => setCurrentView('roundRobin')}
+                                    className="bg-white text-green-600 px-12 py-4 rounded-xl font-bold text-xl hover:bg-gray-100 transition-all shadow-2xl transform hover:scale-105"
+                                >
+                                    Create Tournament Now →
+                                </button>
+                                <p className="text-sm mt-4 opacity-75">No login required to get started</p>
+                            </div>
                         </div>
                     </div>
 
@@ -684,7 +739,9 @@
                                     <p className="text-xs text-gray-600 mb-3">{deal.description}</p>
                                     <div className="flex items-baseline space-x-2">
                                         <span className="text-lg font-bold text-green-600">{deal.price}</span>
-                                        <span className="text-sm text-gray-500 line-through">{deal.originalPrice}</span>
+                                        {deal.originalPrice && (
+                                            <span className="text-sm text-gray-500 line-through">{deal.originalPrice}</span>
+                                        )}
                                     </div>
                                 </a>
                             ))}
@@ -693,6 +750,138 @@
                             Deals from Amazon and partner retailers
                         </p>
                     </div>
+
+                    {/* Pickleball Terms & Glossary */}
+                    <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-xl shadow-lg p-6 md:p-8 border-2 border-blue-200">
+                        <h2 className="text-3xl font-bold text-gray-800 mb-2 text-center">Pickleball 101</h2>
+                        <p className="text-center text-gray-600 mb-8">Essential terms every player should know</p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <TermCard 
+                                term="Kitchen (Non-Volley Zone)"
+                                definition="The 7-foot area on both sides of the net where you cannot volley the ball. You can step in after the ball bounces. Most strategic area of the court!"
+                            />
+                            <TermCard 
+                                term="Dink"
+                                definition="A soft shot hit from the non-volley zone that lands in the opponent's non-volley zone. The most important shot in pickleball - master this to win games!"
+                            />
+                            <TermCard 
+                                term="Volley"
+                                definition="Hitting the ball in the air before it bounces. Cannot be done while standing in the kitchen!"
+                            />
+                            <TermCard 
+                                term="Lob"
+                                definition="A high, arcing shot hit deep into the opponent's court. Use it to move aggressive players back from the net."
+                            />
+                            <TermCard 
+                                term="Baseline"
+                                definition="The back line of the court, 22 feet from the net. Serves must be made from behind this line."
+                            />
+                            <TermCard 
+                                term="Centerline"
+                                definition="The line down the middle of the court dividing service areas. Serves must land in the diagonal service box."
+                            />
+                            <TermCard 
+                                term="Two-Bounce Rule"
+                                definition="After the serve, each team must let the ball bounce once before volleying. This prevents serve-and-volley dominance."
+                            />
+                            <TermCard 
+                                term="Side Out"
+                                definition="When the serving team loses the rally, service passes to the other team. In doubles, both players serve before side out (except first service of game)."
+                            />
+                            <TermCard 
+                                term="Rally Scoring"
+                                definition="Points can be scored by the serving or receiving team. Games typically played to 11, 15, or 21, win by 2."
+                            />
+                            <TermCard 
+                                term="Third Shot Drop"
+                                definition="A soft shot hit from the baseline after the serve return, designed to land in the opponent's kitchen. The most important strategic shot!"
+                            />
+                            <TermCard 
+                                term="Erne"
+                                definition="An advanced shot where you jump around the kitchen to volley near the net post. Named after Erne Perry who popularized it."
+                            />
+                            <TermCard 
+                                term="ATP (Around The Post)"
+                                definition="A shot that goes around the net post below the height of the net. Legal and spectacular when executed!"
+                            />
+                            <TermCard 
+                                term="DUPR"
+                                definition="Dynamic Universal Pickleball Rating - a skill rating system from 2.0 (beginner) to 8.0+ (professional). Most recreational players are 2.5-4.5."
+                            />
+                            <TermCard 
+                                term="Stacking"
+                                definition="A doubles strategy where partners align on the same side to keep their stronger forehand in the middle. Requires strategic positioning."
+                            />
+                            <TermCard 
+                                term="Poach"
+                                definition="When you cross over and hit your partner's ball. Aggressive net play that can surprise opponents."
+                            />
+                            <TermCard 
+                                term="Paddle Face"
+                                definition="The hitting surface of your paddle. Can be 'open' (angled up) or 'closed' (angled down) to control ball trajectory."
+                            />
+                        </div>
+                        
+                        <div className="mt-8 bg-white rounded-lg p-6 border-2 border-green-300">
+                            <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">Quick Rules Reference</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <h4 className="font-bold text-green-600 mb-2">Serving Rules:</h4>
+                                    <ul className="space-y-1 text-gray-700">
+                                        <li>• Underhand serve only</li>
+                                        <li>• Paddle below waist at contact</li>
+                                        <li>• Serve diagonally cross-court</li>
+                                        <li>• Must clear the kitchen line</li>
+                                        <li>• One serve attempt (no second serves)</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-green-600 mb-2">Scoring Rules:</h4>
+                                    <ul className="space-y-1 text-gray-700">
+                                        <li>• Only serving team can score</li>
+                                        <li>• Games to 11, win by 2</li>
+                                        <li>• Tournament games often to 15 or 21</li>
+                                        <li>• Call score as: Server-Receiver-Server#</li>
+                                        <li>• Example: "5-3-2" (we have 5, they have 3, server 2)</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-green-600 mb-2">Fault Rules:</h4>
+                                    <ul className="space-y-1 text-gray-700">
+                                        <li>• Volleying in the kitchen</li>
+                                        <li>• Serve doesn't clear the net</li>
+                                        <li>• Ball lands out of bounds</li>
+                                        <li>• Double bounce on your side</li>
+                                        <li>• Hitting the ball twice</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-green-600 mb-2">Court Dimensions:</h4>
+                                    <ul className="space-y-1 text-gray-700">
+                                        <li>• Court: 20' x 44' (same as badminton)</li>
+                                        <li>• Net height: 36" sides, 34" center</li>
+                                        <li>• Kitchen: 7' from net on each side</li>
+                                        <li>• Service boxes: 10' x 15' each</li>
+                                        <li>• Smaller than tennis, bigger than ping pong!</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p className="text-center text-gray-600 mt-6 italic">
+                            "Pickleball: Easy to learn, impossible to master!" - Practice these fundamentals and join tournaments to improve!
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        function TermCard({ term, definition }) {
+            return (
+                <div className="bg-white rounded-lg p-4 border-2 border-gray-200 hover:border-green-400 transition-all">
+                    <h3 className="font-bold text-lg text-green-600 mb-2">{term}</h3>
+                    <p className="text-gray-700 text-sm">{definition}</p>
                 </div>
             );
         }
@@ -759,11 +948,35 @@
                     return;
                 }
 
+                // Simple geocoding based on address
+                // In production, use Google Maps Geocoding API for accurate results
+                let lat = 38.8106; // Default O'Fallon, MO
+                let lng = -90.7104;
+                
+                // Extract city/state from address for better positioning
+                const addressLower = newCourt.address.toLowerCase();
+                
+                // Simple heuristic: if it mentions common cities, use those coordinates
+                if (addressLower.includes('st. charles') || addressLower.includes('st charles')) {
+                    lat = 38.7873;
+                    lng = -90.4898;
+                } else if (addressLower.includes('wentzville')) {
+                    lat = 38.8114;
+                    lng = -90.8529;
+                } else if (addressLower.includes('st. peters') || addressLower.includes('st peters')) {
+                    lat = 38.7875;
+                    lng = -90.6298;
+                } else {
+                    // Default to small random offset from O'Fallon
+                    lat += (Math.random() - 0.5) * 0.02;
+                    lng += (Math.random() - 0.5) * 0.02;
+                }
+
                 const court = {
                     id: Date.now(),
                     ...newCourt,
-                    lat: 38.8106 + (Math.random() - 0.5) * 0.1,
-                    lng: -90.7104 + (Math.random() - 0.5) * 0.1
+                    lat: lat,
+                    lng: lng
                 };
 
                 try {
@@ -789,7 +1002,7 @@
                         initializeMap(updatedCourts);
                     }, 100);
                     
-                    alert('Court added successfully!');
+                    alert('Court added successfully! Note: For accurate location, use a real geocoding service in production.');
                 } catch (error) {
                     console.error('Failed to add court:', error);
                     alert('Failed to add court');
@@ -1312,16 +1525,20 @@
             }, [currentUser]);
 
             const handleSave = async () => {
+                // Update current user
                 setCurrentUser(editForm);
-                setIsEditing(false);
                 
                 // Save to localStorage
                 try {
                     localStorage.setItem('userProfile', JSON.stringify(editForm));
-                    console.log('✓ Profile saved');
+                    console.log('✓ Profile saved successfully:', editForm);
+                    alert('Profile saved successfully!');
                 } catch (error) {
                     console.error('Failed to save profile:', error);
+                    alert('Failed to save profile');
                 }
+                
+                setIsEditing(false);
             };
 
             const handleLogout = async () => {
