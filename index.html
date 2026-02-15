@@ -371,7 +371,7 @@
                                             📍 Courts
                                         </NavButton>
                                         <NavButton active={currentView === 'games'} onClick={() => setCurrentView('games')}>
-                                            🎮 Games
+                                            📅 Games
                                         </NavButton>
                                         <NavButton active={currentView === 'roundRobin'} onClick={() => setCurrentView('roundRobin')}>
                                             🔄 Tournaments
@@ -422,7 +422,7 @@
                                     📍
                                 </NavButton>
                                 <NavButton active={currentView === 'games'} onClick={() => setCurrentView('games')}>
-                                    🎮
+                                    📅
                                 </NavButton>
                                 <NavButton active={currentView === 'roundRobin'} onClick={() => setCurrentView('roundRobin')}>
                                     🔄
@@ -669,7 +669,7 @@
                                 onClick={() => setCurrentView('games')}
                                 className="bg-green-700 text-white px-4 md:px-6 py-3 rounded-lg font-bold hover:bg-green-800 transition-all shadow-lg text-sm md:text-base"
                             >
-                                🎮 Browse Events
+                                📅 Browse Events
                             </button>
                             <button 
                                 onClick={() => setCurrentView('roundRobin')}
@@ -687,7 +687,7 @@
                                 <StatCard icon="📍" title="Courts" value={SAMPLE_COURTS.length} subtitle="in your area" />
                             </div>
                             <div className="snap-center flex-shrink-0 w-[85%] md:w-auto">
-                                <StatCard icon="🎮" title="Active Events" value={games.length} subtitle="this week" />
+                                <StatCard icon="📅" title="Active Events" value={games.length} subtitle="this week" />
                             </div>
                             <div className="snap-center flex-shrink-0 w-[85%] md:w-auto">
                                 <StatCard icon="👥" title="Players" value="124" subtitle="in your community" />
@@ -1816,6 +1816,16 @@
             const [saveStatus, setSaveStatus] = useState('');
             const [isPublic, setIsPublic] = useState(false);
             const [tournamentName, setTournamentName] = useState('');
+            const [scoresFinalized, setScoresFinalized] = useState(false);
+
+            // Load tournament from URL parameter if present
+            useEffect(() => {
+                const params = new URLSearchParams(window.location.search);
+                const tournamentIdFromUrl = params.get('tournament');
+                if (tournamentIdFromUrl) {
+                    loadTournament(tournamentIdFromUrl);
+                }
+            }, []);
 
             useEffect(() => {
                 loadTournaments();
@@ -2045,27 +2055,34 @@
                         return;
                     }
                     
-                    if (validPlayers.length % 2 !== 0) {
-                        alert('Need an even number of players for doubles');
-                        return;
+                    // Add BYE player if odd number
+                    const doublesPlayers = [...validPlayers];
+                    if (doublesPlayers.length % 2 !== 0) {
+                        doublesPlayers.push('BYE');
                     }
                     
                     const allRounds = [];
                     
                     for (let round = 0; round < numRounds; round++) {
                         const roundMatches = [];
-                        const shuffled = [...validPlayers].sort(() => Math.random() - 0.5);
+                        const shuffled = [...doublesPlayers].sort(() => Math.random() - 0.5);
                         
                         // Create teams of 2
                         for (let i = 0; i < shuffled.length; i += 4) {
                             if (i + 3 < shuffled.length) {
-                                const matchId = `r${round}-m${Math.floor(i/4)}`;
-                                roundMatches.push({
-                                    id: matchId,
-                                    court: (Math.floor(i/4) % courts) + 1,
-                                    team1: [shuffled[i], shuffled[i + 1]],
-                                    team2: [shuffled[i + 2], shuffled[i + 3]]
-                                });
+                                // Skip matches with BYE players
+                                const team1 = [shuffled[i], shuffled[i + 1]];
+                                const team2 = [shuffled[i + 2], shuffled[i + 3]];
+                                
+                                if (!team1.includes('BYE') && !team2.includes('BYE')) {
+                                    const matchId = `r${round}-m${Math.floor(i/4)}`;
+                                    roundMatches.push({
+                                        id: matchId,
+                                        court: (Math.floor(i/4) % courts) + 1,
+                                        team1: team1,
+                                        team2: team2
+                                    });
+                                }
                             }
                         }
                         allRounds.push(roundMatches);
@@ -2441,17 +2458,10 @@
                                 <div className="space-y-6">
                                     <h3 className="text-xl md:text-2xl font-bold text-gray-800">Rounds & Scores</h3>
                                     {schedule.map((round, roundIndex) => {
-                                        const roundWinner = getRoundWinner(round);
                                         return (
                                             <div key={roundIndex} className="bg-green-50 border-2 border-green-200 rounded-lg p-4 md:p-6">
                                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
                                                     <h4 className="text-lg md:text-xl font-bold text-gray-800">Round {roundIndex + 1}</h4>
-                                                    {roundWinner && (
-                                                        <span className="bg-yellow-400 text-gray-800 px-3 py-2 rounded-full font-bold flex items-center space-x-2 text-xs md:text-sm w-fit">
-                                                            <span>🏆</span>
-                                                            <span className="truncate">Winner: {roundWinner}</span>
-                                                        </span>
-                                                    )}
                                                 </div>
                                                 <div className="space-y-3">
                                                     {round.map((match) => {
