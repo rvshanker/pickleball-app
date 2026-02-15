@@ -2056,65 +2056,67 @@
                     }
                     
                     const allRounds = [];
-                    let playerPool = [...validPlayers];
+                    let players = [...validPlayers];
                     
-                    // Add BYE if odd number
-                    if (playerPool.length % 2 !== 0) {
-                        playerPool.push('BYE');
+                    // Add dummy player if odd number
+                    const needsBye = players.length % 2 !== 0;
+                    if (needsBye) {
+                        players.push('__BYE__'); // Use special marker
                     }
                     
-                    const totalPlayers = playerPool.length;
-                    const matchesPerRound = Math.floor(totalPlayers / 4);
+                    const n = players.length;
                     
-                    // Simple round-robin rotation
+                    // Standard round-robin algorithm with rotation
                     for (let round = 0; round < numRounds; round++) {
                         const roundMatches = [];
-                        const roundPlayers = [];
+                        const roundPlayers = [...players];
                         
-                        // Rotate players each round
-                        for (let i = 0; i < totalPlayers; i++) {
-                            if (i === 0) {
-                                // First player stays fixed
-                                roundPlayers.push(playerPool[0]);
-                            } else {
-                                // Rotate other players
-                                const index = ((i - 1 + round) % (totalPlayers - 1)) + 1;
-                                roundPlayers.push(playerPool[index]);
+                        // Perform rotation for rounds after the first
+                        if (round > 0) {
+                            // Keep first player fixed, rotate rest clockwise
+                            const fixed = roundPlayers[0];
+                            const last = roundPlayers.pop();
+                            roundPlayers.splice(1, 0, last);
+                        }
+                        
+                        // Create matches by pairing players
+                        // Player 0 vs n-1, Player 1 vs n-2, etc.
+                        const pairs = [];
+                        for (let i = 0; i < n / 2; i++) {
+                            const p1 = roundPlayers[i];
+                            const p2 = roundPlayers[n - 1 - i];
+                            if (p1 !== '__BYE__' && p2 !== '__BYE__') {
+                                pairs.push([p1, p2]);
                             }
                         }
                         
-                        // Create matches for this round
+                        // Group pairs into teams of 2v2
                         let courtNum = 0;
                         const playersInMatches = [];
-                        
-                        // Create as many matches as possible (4 players per match)
-                        for (let i = 0; i < totalPlayers - 3; i += 4) {
-                            const p1 = roundPlayers[i];
-                            const p2 = roundPlayers[i + 1];
-                            const p3 = roundPlayers[i + 2];
-                            const p4 = roundPlayers[i + 3];
-                            
-                            // Skip if any player is BYE
-                            if (p1 !== 'BYE' && p2 !== 'BYE' && p3 !== 'BYE' && p4 !== 'BYE') {
+                        for (let i = 0; i < pairs.length - 1; i += 2) {
+                            if (pairs[i + 1]) {
                                 const matchId = `r${round}-m${courtNum}`;
+                                const team1 = pairs[i];
+                                const team2 = pairs[i + 1];
+                                
                                 roundMatches.push({
                                     id: matchId,
                                     court: (courtNum % courts) + 1,
-                                    team1: [p1, p2],
-                                    team2: [p3, p4]
+                                    team1: team1,
+                                    team2: team2
                                 });
-                                playersInMatches.push(p1, p2, p3, p4);
+                                
+                                playersInMatches.push(...team1, ...team2);
                                 courtNum++;
                             }
                         }
                         
-                        // Find BYE player (player not in any match this round)
-                        const byePlayer = roundPlayers.find(p => 
-                            p !== 'BYE' && !playersInMatches.includes(p)
-                        );
-                        
-                        if (byePlayer) {
-                            roundMatches.byePlayer = byePlayer;
+                        // Find who has BYE this round
+                        if (needsBye) {
+                            const byePlayer = validPlayers.find(p => !playersInMatches.includes(p));
+                            if (byePlayer) {
+                                roundMatches.byePlayer = byePlayer;
+                            }
                         }
                         
                         allRounds.push(roundMatches);
