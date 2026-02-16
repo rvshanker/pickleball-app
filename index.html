@@ -310,6 +310,8 @@
             // Listen to auth state changes and auto-sign in guests anonymously
             useEffect(() => {
                 if (isFirebaseConfigured && auth) {
+                    let signingIn = false; // Prevent multiple simultaneous sign-ins
+                    
                     const unsubscribe = auth.onAuthStateChanged(async (user) => {
                         if (user) {
                             console.log('👤 User authenticated:', user.isAnonymous ? 'Anonymous Guest' : user.email);
@@ -379,8 +381,9 @@
                             if (userLoggedOut === 'true') {
                                 console.log('🔐 User logged out, staying logged out (not auto-signing in)');
                                 setCurrentUser(null);
-                            } else {
+                            } else if (!signingIn) {
                                 // Auto sign in anonymously for first-time visitors
+                                signingIn = true; // Prevent multiple simultaneous attempts
                                 console.log('🔐 No user detected, signing in as anonymous guest...');
                                 try {
                                     await auth.signInAnonymously();
@@ -388,6 +391,8 @@
                                 } catch (error) {
                                     console.error('❌ Anonymous sign-in failed:', error);
                                     setCurrentUser(null);
+                                } finally {
+                                    signingIn = false;
                                 }
                             }
                         }
@@ -2012,6 +2017,7 @@
             const [isPublic, setIsPublic] = useState(false);
             const [tournamentName, setTournamentName] = useState('');
             const [scoresFinalized, setScoresFinalized] = useState(false);
+            const isSavingRef = useRef(false); // Prevent simultaneous saves
 
             // Update players array when numPlayers changes
             useEffect(() => {
@@ -2081,6 +2087,14 @@
             const saveTournament = async () => {
                 if (!tournamentId) return;
                 
+                // Prevent multiple simultaneous saves
+                if (isSavingRef.current) {
+                    console.log('⏭️ Save already in progress, skipping...');
+                    return;
+                }
+                
+                isSavingRef.current = true;
+                
                 // Use consistent userId - 'guest' for non-logged in users
                 const userId = currentUser?.uid || 'guest';
                 
@@ -2122,12 +2136,16 @@
                     setTimeout(() => setSaveStatus(''), 2000);
                     console.log('✅ Tournament saved successfully!');
                     
-                    // Reload tournaments to show the newly saved one
-                    await loadTournaments();
+                    // Don't reload tournaments here - it causes a save loop
+                    // The tournament list will refresh when user navigates away and back
                 } catch (error) {
                     console.error('Failed to save tournament:', error);
                     console.error('Error details:', error.message);
                     setSaveStatus('✗ Save failed: ' + error.message);
+                } finally {
+                    // Reset saving flag
+                    isSavingRef.current = false;
+                }
                     setTimeout(() => setSaveStatus(''), 3000);
                 }
             };
