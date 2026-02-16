@@ -3,139 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pickleball Pro Scheduler</title>
+    <title>Pickleball Balanced Round Robin</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .bye-badge { background-color: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; }
-        .stats-card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; text-align: center; }
-    </style>
 </head>
-<body class="bg-gray-50 p-4 md:p-8">
-    <div class="max-w-6xl mx-auto bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
-        <h1 class="text-3xl font-black text-gray-900 mb-6">Tournament Scheduler</h1>
+<body class="bg-slate-50 p-4 md:p-8 font-sans">
+    <div class="max-w-5xl mx-auto bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
+        <h1 class="text-3xl font-black text-slate-800 mb-6">Tournament Generator</h1>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                <label class="block text-xs font-black text-blue-800 uppercase mb-1">Total Players</label>
-                <input type="number" id="playerCount" value="15" min="4" class="w-full p-2 rounded border-blue-200 outline-none focus:ring-2 focus:ring-blue-400">
+            <div class="bg-slate-100 p-4 rounded-xl">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Total Players</label>
+                <input type="number" id="playerCount" value="15" min="4" class="w-full p-2 rounded border-slate-300">
             </div>
-            <div class="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                <label class="block text-xs font-black text-purple-800 uppercase mb-1">Available Courts</label>
-                <input type="number" id="courtCount" value="3" min="1" class="w-full p-2 rounded border-purple-200 outline-none focus:ring-2 focus:ring-purple-400">
+            <div class="bg-slate-100 p-4 rounded-xl">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Available Courts</label>
+                <input type="number" id="courtCount" value="3" min="1" class="w-full p-2 rounded border-slate-300">
             </div>
-            <div class="bg-green-50 p-4 rounded-xl border border-green-100">
-                <label class="block text-xs font-black text-green-800 uppercase mb-1">Rounds to Play</label>
-                <input type="number" id="roundCount" value="10" min="1" class="w-full p-2 rounded border-green-200 outline-none focus:ring-2 focus:ring-green-400">
+            <div class="bg-slate-100 p-4 rounded-xl">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Rounds</label>
+                <input type="number" id="roundCount" value="10" min="1" class="w-full p-2 rounded border-slate-300">
             </div>
         </div>
 
-        <button onclick="generateSchedule()" class="w-full bg-gray-900 text-white font-bold py-4 rounded-xl hover:bg-black transition-all shadow-lg active:scale-[0.98] mb-10">
-            Generate Balanced Schedule
+        <button onclick="generateBalanced()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg mb-8">
+            Generate Fair Schedule
         </button>
 
-        <div id="statsSection" class="hidden mb-10">
-            <h2 class="text-lg font-bold text-gray-800 mb-4">Games per Player</h2>
-            <div id="statsOutput" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-3"></div>
+        <div id="statsSection" class="hidden mb-8 p-4 bg-green-50 rounded-xl border border-green-200">
+            <h2 class="text-sm font-bold text-green-800 mb-3 uppercase tracking-wider">Games Scheduled per Player</h2>
+            <div id="statsOutput" class="flex flex-wrap gap-2"></div>
         </div>
 
-        <div id="scheduleOutput" class="space-y-12"></div>
+        <div id="scheduleOutput" class="space-y-8"></div>
     </div>
 
     <script>
-        function generateSchedule() {
-            const numPlayers = parseInt(document.getElementById('playerCount').value);
-            const numCourts = parseInt(document.getElementById('courtCount').value);
-            const numRounds = parseInt(document.getElementById('roundCount').value);
+        function generateBalanced() {
+            const count = parseInt(document.getElementById('playerCount').value);
+            const courts = parseInt(document.getElementById('courtCount').value);
+            const rounds = parseInt(document.getElementById('roundCount').value);
             
-            // 1. Prepare Players (Add Ghost if odd for Bye logic)
-            let players = Array.from({length: numPlayers}, (_, i) => `P${i + 1}`);
-            const gameTracker = {};
-            players.forEach(p => gameTracker[p] = 0);
+            let players = Array.from({length: count}, (_, i) => `P${i + 1}`);
+            const tally = {};
+            players.forEach(p => tally[p] = 0);
 
+            // Circle Rotation Logic
+            // If odd, we add a 'BYE' player so the circle is even
             let circle = [...players];
-            if (circle.length % 2 !== 0) circle.push("GHOST");
+            if (circle.length % 2 !== 0) circle.push("BYE");
 
             const n = circle.length;
             const fullSchedule = [];
 
-            // 2. Circle Rotation Algorithm
-            for (let r = 0; r < numRounds; r++) {
-                const roundPool = [];
-                const waitingList = [];
+            for (let r = 0; r < rounds; r++) {
+                const pairs = [];
+                const waiting = [];
 
-                // Pair outside-in (0-14, 1-13, 2-12...)
+                // 1. Generate Pairs using Fixed Pivot
                 for (let i = 0; i < n / 2; i++) {
                     const p1 = circle[i];
                     const p2 = circle[n - 1 - i];
                     
-                    if (p1 === "GHOST") waitingList.push(p2);
-                    else if (p2 === "GHOST") waitingList.push(p1);
-                    else roundPool.push([p1, p2]);
+                    if (p1 === "BYE") waiting.push(p2);
+                    else if (p2 === "BYE") waiting.push(p1);
+                    else pairs.push([p1, p2]);
                 }
 
-                // 3. Apply Court Limits
+                // 2. Assign to Courts
                 const matches = [];
-                const maxPairs = numCourts * 2; // 2 pairs per court
+                const maxPairsNeeded = courts * 2;
                 
-                // Take pairs from the pool to fill courts
-                for (let i = 0; i < roundPool.length; i += 2) {
-                    if (matches.length < numCourts && (i + 1) < roundPool.length) {
-                        const pair1 = roundPool[i];
-                        const pair2 = roundPool[i+1];
-                        matches.push({ team1: pair1, team2: pair2 });
-                        
-                        // Count games played
-                        gameTracker[pair1[0]]++; gameTracker[pair1[1]]++;
-                        gameTracker[pair2[0]]++; gameTracker[pair2[1]]++;
+                for (let i = 0; i < pairs.length; i += 2) {
+                    if (matches.length < courts && (i + 1) < pairs.length) {
+                        const m = { team1: pairs[i], team2: pairs[i+1] };
+                        matches.push(m);
+                        // Update tally
+                        tally[m.team1[0]]++; tally[m.team1[1]]++;
+                        tally[m.team2[0]]++; tally[m.team2[1]]++;
                     } else {
-                        // Leftover pairs if courts are full
-                        waitingList.push(...roundPool[i]);
-                        if (i+1 < roundPool.length) waitingList.push(...roundPool[i+1]);
+                        // People who couldn't fit on court this round
+                        waiting.push(...pairs[i]);
+                        if (pairs[i+1]) waiting.push(...pairs[i+1]);
                     }
                 }
 
-                fullSchedule.push({ round: r + 1, matches, waiting: waitingList });
+                fullSchedule.push({ round: r + 1, matches, waiting });
 
-                // 4. Rotate Circle (Fixed Pivot)
+                // 3. Rotate Circle: Keep index 0 fixed, rotate others
                 const fixed = circle[0];
                 const rest = circle.slice(1);
                 rest.unshift(rest.pop());
                 circle = [fixed, ...rest];
             }
 
-            renderStats(gameTracker);
-            renderSchedule(fullSchedule);
+            render(fullSchedule, tally);
         }
 
-        function renderStats(tracker) {
-            document.getElementById('statsSection').classList.remove('hidden');
-            const output = document.getElementById('statsOutput');
-            output.innerHTML = Object.entries(tracker).map(([name, count]) => `
-                <div class="stats-card">
-                    <div class="text-[10px] uppercase font-black text-gray-400">${name}</div>
-                    <div class="text-lg font-bold text-gray-800">${count} <span class="text-[10px] font-normal text-gray-500">games</span></div>
-                </div>
-            `).join('');
-        }
+        function render(schedule, tally) {
+            // Render Stats
+            const stats = document.getElementById('statsSection');
+            stats.classList.remove('hidden');
+            document.getElementById('statsOutput').innerHTML = Object.entries(tally)
+                .map(([p, c]) => `<span class="bg-white border border-green-300 px-3 py-1 rounded-full text-xs font-bold text-green-700">${p}: ${c}</span>`)
+                .join('');
 
-        function renderSchedule(schedule) {
-            const output = document.getElementById('scheduleOutput');
-            output.innerHTML = schedule.map(r => `
-                <div class="relative">
+            // Render Rounds
+            document.getElementById('scheduleOutput').innerHTML = schedule.map(r => `
+                <div class="border-t border-slate-200 pt-6">
                     <div class="flex items-center gap-4 mb-4">
-                        <h3 class="text-xl font-black text-gray-900">ROUND ${r.round}</h3>
-                        <div class="flex flex-wrap gap-2">
-                            ${r.waiting.map(p => `<span class="bye-badge">Waiting: ${p}</span>`).join('')}
+                        <h3 class="text-xl font-black text-slate-800">Round ${r.round}</h3>
+                        <div class="flex flex-wrap gap-1">
+                            ${r.waiting.map(w => `<span class="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded font-bold">Waiting: ${w}</span>`).join('')}
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         ${r.matches.map((m, i) => `
-                            <div class="bg-white border border-gray-200 p-4 rounded-xl shadow-sm relative overflow-hidden">
-                                <div class="absolute top-0 left-0 bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-500 rounded-br-lg uppercase">Court ${i + 1}</div>
-                                <div class="flex flex-col items-center gap-2 mt-2">
-                                    <div class="text-blue-700 font-bold">${m.team1[0]} & ${m.team1[1]}</div>
-                                    <div class="text-[9px] font-black text-gray-300">VS</div>
-                                    <div class="text-red-700 font-bold">${m.team2[0]} & ${m.team2[1]}</div>
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 relative">
+                                <span class="absolute top-2 left-2 text-[9px] font-black text-slate-400 uppercase">Court ${i+1}</span>
+                                <div class="text-center py-2">
+                                    <div class="font-bold text-blue-700 text-sm">${m.team1[0]} & ${m.team1[1]}</div>
+                                    <div class="text-[10px] font-black text-slate-300 my-1">VS</div>
+                                    <div class="font-bold text-red-700 text-sm">${m.team2[0]} & ${m.team2[1]}</div>
                                 </div>
                             </div>
                         `).join('')}
