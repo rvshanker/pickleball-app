@@ -2446,7 +2446,8 @@
                         stats[p] = {
                             games: 0,
                             partners: {},  // Track who they've partnered with
-                            opponents: {}  // Track who they've played against
+                            opponents: {},  // Track who they've played against
+                            lastPartner: null  // Track most recent partner for stronger variety
                         };
                     });
                     
@@ -2478,14 +2479,22 @@
                                             const p4 = playing[d];
                                             
                                             // Calculate "conflict score" - lower is better
-                                            // Penalize repeating partners and opponents
-                                            const score =
-                                                (stats[p1].partners[p2] || 0) +
-                                                (stats[p3].partners[p4] || 0) +
-                                                (stats[p1].opponents[p3] || 0) +
-                                                (stats[p1].opponents[p4] || 0) +
-                                                (stats[p2].opponents[p3] || 0) +
-                                                (stats[p2].opponents[p4] || 0);
+                                            // Heavily penalize repeating partners and recent partners
+                                            let score = 0;
+                                            
+                                            // Partner history penalty (cumulative)
+                                            score += (stats[p1].partners[p2] || 0) * 5;  // 5x weight
+                                            score += (stats[p3].partners[p4] || 0) * 5;
+                                            
+                                            // EXTRA penalty for playing with same partner as last round
+                                            if (stats[p1].lastPartner === p2 || stats[p2].lastPartner === p1) score += 20;
+                                            if (stats[p3].lastPartner === p4 || stats[p4].lastPartner === p3) score += 20;
+                                            
+                                            // Opponent history penalty (lighter)
+                                            score += (stats[p1].opponents[p3] || 0);
+                                            score += (stats[p1].opponents[p4] || 0);
+                                            score += (stats[p2].opponents[p3] || 0);
+                                            score += (stats[p2].opponents[p4] || 0);
                                             
                                             if (score < bestScore) {
                                                 bestScore = score;
@@ -2522,6 +2531,12 @@
                             stats[bestMatch.team2[1]].partners[bestMatch.team2[0]] = 
                                 (stats[bestMatch.team2[1]].partners[bestMatch.team2[0]] || 0) + 1;
                             
+                            // Update last partner for next round
+                            stats[bestMatch.team1[0]].lastPartner = bestMatch.team1[1];
+                            stats[bestMatch.team1[1]].lastPartner = bestMatch.team1[0];
+                            stats[bestMatch.team2[0]].lastPartner = bestMatch.team2[1];
+                            stats[bestMatch.team2[1]].lastPartner = bestMatch.team2[0];
+                            
                             // Track opponents
                             bestMatch.team1.forEach(p1 => {
                                 bestMatch.team2.forEach(p2 => {
@@ -2548,7 +2563,10 @@
                     Object.entries(stats)
                         .sort((a, b) => b[1].games - a[1].games)
                         .forEach(([player, s]) => {
-                            console.log(`  ${player}: ${s.games} games`);
+                            const partnersList = Object.entries(s.partners)
+                                .map(([p, count]) => `${p}(${count})`)
+                                .join(', ');
+                            console.log(`  ${player}: ${s.games} games | Partners: ${partnersList || 'none'}`);
                         });
                     
                     return allRounds;
@@ -2870,14 +2888,14 @@
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-2">Players</label>
                                             <div className="flex items-center gap-2">
                                                 <button
                                                     type="button"
                                                     onClick={() => setNumPlayers(Math.max((matchFormat === 'doubles' ? 4 : 2), numPlayers - 1))}
-                                                    className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center"
+                                                    className="w-12 h-12 flex-shrink-0 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center"
                                                 >
                                                     −
                                                 </button>
@@ -2893,12 +2911,12 @@
                                                             setNumPlayers(Math.min(99, Math.max((matchFormat === 'doubles' ? 4 : 2), parseInt(val))));
                                                         }
                                                     }}
-                                                    className="flex-1 px-2 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none font-bold text-lg text-center"
+                                                    className="flex-1 min-w-0 px-2 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none font-bold text-lg text-center"
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => setNumPlayers(Math.min(99, numPlayers + 1))}
-                                                    className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center"
+                                                    className="w-12 h-12 flex-shrink-0 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center"
                                                 >
                                                     +
                                                 </button>
@@ -2911,7 +2929,7 @@
                                                 <button
                                                     type="button"
                                                     onClick={() => setCourts(Math.max(1, courts - 1))}
-                                                    className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center"
+                                                    className="w-12 h-12 flex-shrink-0 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center"
                                                 >
                                                     −
                                                 </button>
@@ -2927,12 +2945,12 @@
                                                             setCourts(Math.min(10, Math.max(1, parseInt(val))));
                                                         }
                                                     }}
-                                                    className="flex-1 px-2 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none font-bold text-lg text-center"
+                                                    className="flex-1 min-w-0 px-2 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none font-bold text-lg text-center"
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => setCourts(Math.min(10, courts + 1))}
-                                                    className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center"
+                                                    className="w-12 h-12 flex-shrink-0 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center"
                                                 >
                                                     +
                                                 </button>
@@ -2945,7 +2963,7 @@
                                                 <button
                                                     type="button"
                                                     onClick={() => setNumRounds(Math.max(1, numRounds - 1))}
-                                                    className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center"
+                                                    className="w-12 h-12 flex-shrink-0 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center"
                                                 >
                                                     −
                                                 </button>
@@ -2961,12 +2979,12 @@
                                                             setNumRounds(Math.min(50, Math.max(1, parseInt(val))));
                                                         }
                                                     }}
-                                                    className="flex-1 px-2 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none font-bold text-center"
+                                                    className="flex-1 min-w-0 px-2 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none font-bold text-center"
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => setNumRounds(Math.min(50, numRounds + 1))}
-                                                    className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center"
+                                                    className="w-12 h-12 flex-shrink-0 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center"
                                                 >
                                                     +
                                                 </button>
