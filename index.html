@@ -2458,6 +2458,11 @@
                         // Determine how many can play this round
                         const playingCount = Math.min(courts * 4, sortedPlayers.length);
                         let playing = sortedPlayers.slice(0, playingCount);
+                        
+                        // 🔥 RANDOMIZE EVALUATION ORDER to break ties
+                        // This ensures variety even with small player counts
+                        playing = playing.sort(() => Math.random() - 0.5);
+                        
                         const sitting = sortedPlayers.slice(playingCount);
                         
                         const roundMatches = [];
@@ -2466,7 +2471,7 @@
                         // Create matches for this round
                         while (playing.length >= 4 && courtNum < courts) {
                             let bestScore = Infinity;
-                            let bestMatch = null;
+                            let bestMatches = [];  // Store all matches with same best score
                             
                             // Try all possible combinations of 4 players from remaining
                             for (let a = 0; a < playing.length; a++) {
@@ -2483,27 +2488,33 @@
                                             let score = 0;
                                             
                                             // Partner history penalty (cumulative)
-                                            score += (stats[p1].partners[p2] || 0) * 5;  // 5x weight
-                                            score += (stats[p3].partners[p4] || 0) * 5;
+                                            score += (stats[p1].partners[p2] || 0) * 10;  // 10x weight for stronger rotation
+                                            score += (stats[p3].partners[p4] || 0) * 10;
                                             
                                             // EXTRA penalty for playing with same partner as last round
-                                            if (stats[p1].lastPartner === p2 || stats[p2].lastPartner === p1) score += 20;
-                                            if (stats[p3].lastPartner === p4 || stats[p4].lastPartner === p3) score += 20;
+                                            if (stats[p1].lastPartner === p2 || stats[p2].lastPartner === p1) score += 100;
+                                            if (stats[p3].lastPartner === p4 || stats[p4].lastPartner === p3) score += 100;
                                             
                                             // Opponent history penalty (lighter)
-                                            score += (stats[p1].opponents[p3] || 0);
-                                            score += (stats[p1].opponents[p4] || 0);
-                                            score += (stats[p2].opponents[p3] || 0);
-                                            score += (stats[p2].opponents[p4] || 0);
+                                            score += (stats[p1].opponents[p3] || 0) * 2;
+                                            score += (stats[p1].opponents[p4] || 0) * 2;
+                                            score += (stats[p2].opponents[p3] || 0) * 2;
+                                            score += (stats[p2].opponents[p4] || 0) * 2;
                                             
                                             if (score < bestScore) {
                                                 bestScore = score;
-                                                bestMatch = { team1: [p1, p2], team2: [p3, p4] };
+                                                bestMatches = [{ team1: [p1, p2], team2: [p3, p4] }];
+                                            } else if (score === bestScore) {
+                                                // Store all equally good matches
+                                                bestMatches.push({ team1: [p1, p2], team2: [p3, p4] });
                                             }
                                         }
                                     }
                                 }
                             }
+                            
+                            // Pick random match from best matches to add variety
+                            const bestMatch = bestMatches[Math.floor(Math.random() * bestMatches.length)];
                             
                             if (!bestMatch) break;
                             
@@ -3358,6 +3369,65 @@
                                                     </div>
                                                 </div>
                                             ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Games Per Player Statistics */}
+                                {schedule.length > 0 && (
+                                    <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mb-6">
+                                        <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-4">📊 Games Per Player</h3>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                                            {(() => {
+                                                // Calculate games per player from schedule
+                                                const gamesCount = {};
+                                                players.forEach(p => { if (p.trim()) gamesCount[p] = 0; });
+                                                
+                                                schedule.forEach(round => {
+                                                    round.forEach(match => {
+                                                        [...match.team1, ...match.team2].forEach(player => {
+                                                            if (gamesCount[player] !== undefined) {
+                                                                gamesCount[player]++;
+                                                            }
+                                                        });
+                                                    });
+                                                });
+                                                
+                                                // Sort by games (descending) then name
+                                                return Object.entries(gamesCount)
+                                                    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+                                                    .map(([player, games]) => (
+                                                        <div key={player} className="bg-white border-2 border-blue-300 rounded-lg p-3 text-center shadow-sm">
+                                                            <div className="text-sm font-bold text-gray-700 truncate" title={player}>
+                                                                {player}
+                                                            </div>
+                                                            <div className="text-2xl font-black text-blue-600 mt-1">
+                                                                {games}
+                                                            </div>
+                                                            <div className="text-xs text-gray-500">
+                                                                {games === 1 ? 'game' : 'games'}
+                                                            </div>
+                                                        </div>
+                                                    ));
+                                            })()}
+                                        </div>
+                                        <div className="mt-4 text-sm text-gray-600 text-center">
+                                            {(() => {
+                                                const gamesCount = {};
+                                                players.forEach(p => { if (p.trim()) gamesCount[p] = 0; });
+                                                schedule.forEach(round => {
+                                                    round.forEach(match => {
+                                                        [...match.team1, ...match.team2].forEach(player => {
+                                                            if (gamesCount[player] !== undefined) gamesCount[player]++;
+                                                        });
+                                                    });
+                                                });
+                                                const counts = Object.values(gamesCount);
+                                                const min = Math.min(...counts);
+                                                const max = Math.max(...counts);
+                                                const avg = (counts.reduce((a, b) => a + b, 0) / counts.length).toFixed(1);
+                                                return `Min: ${min} | Max: ${max} | Average: ${avg} games per player`;
+                                            })()}
                                         </div>
                                     </div>
                                 )}
