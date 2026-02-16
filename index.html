@@ -278,9 +278,23 @@
 
             // Check if user has dismissed Firebase info
             useEffect(() => {
-                const dismissed = localStorage.getItem('firebaseInfoDismissed');
-                if (!dismissed && isFirebaseConfigured) {
-                    setShowFirebaseInfo(true);
+                if (isFirebaseConfigured && auth && !currentUser) {
+                    // Auto sign-in guests anonymously
+                    auth.signInAnonymously()
+                        .then((result) => {
+                            console.log('✅ Guest signed in anonymously:', result.user.uid);
+                            setCurrentUser({
+                                uid: result.user.uid,
+                                name: 'Guest User',
+                                email: 'guest@local',
+                                skillLevel: 'Beginner (2.0-2.5)',
+                                avatar: '👤',
+                                isAnonymous: true
+                            });
+                        })
+                        .catch((error) => {
+                            console.log('Anonymous auth failed:', error);
+                        });
                 }
             }, []);
 
