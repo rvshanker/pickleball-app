@@ -25,7 +25,7 @@
         .leaflet-container { height: 100%; width: 100%; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        /* Remove number input spinners for cleaner UI (matching index4.html style) */
+        /* Remove number input spinners for cleaner UI (matching index4.html) */
         input[type="number"] {
             -moz-appearance: textfield;
         }
@@ -2146,11 +2146,13 @@
 
             // Update players array when numPlayers changes
             useEffect(() => {
-                const newPlayers = [];
-                for (let i = 0; i < numPlayers; i++) {
-                    newPlayers.push(players[i] || `Player ${i + 1}`);
-                }
-                setPlayers(newPlayers);
+                setPlayers(prevPlayers => {
+                    const newPlayers = [];
+                    for (let i = 0; i < numPlayers; i++) {
+                        newPlayers.push(prevPlayers[i] || `Player ${i + 1}`);
+                    }
+                    return newPlayers;
+                });
             }, [numPlayers]);
 
             // Load tournament from URL parameter if present
@@ -3047,10 +3049,10 @@
                                 <div className="bg-white rounded-xl p-6 md:p-8 mb-6 border-2 border-gray-200">
                                     <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
                                         <span className="bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
-                                        Enter Player Names ({players.length} players)
+                                        Enter Player Names ({players?.length || 0} players)
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {players.map((player, index) => (
+                                        {(players || []).map((player, index) => (
                                             <div key={index} className="flex gap-2">
                                                 <span className="flex items-center justify-center w-8 h-10 font-bold text-gray-400">
                                                     {index + 1}
