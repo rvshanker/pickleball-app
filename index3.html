@@ -3,134 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PickleConnect - Professional Tournament Scheduler</title>
+    <title>PickleConnect - Balanced Tournament</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .bye-badge { background-color: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; }
-        .stats-card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; text-align: center; }
-    </style>
 </head>
-<body class="bg-gray-50 p-4 md:p-8">
+<body class="bg-slate-50 p-4">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useMemo } = React;
 
-        function App() {
+        function TournamentApp() {
             const [playerCount, setPlayerCount] = useState(15);
             const [courtCount, setCourtCount] = useState(3);
             const [roundCount, setRoundCount] = useState(10);
-            const [schedule, setSchedule] = useState(null);
-            const [stats, setStats] = useState({});
+            const [data, setData] = useState({ schedule: [], stats: {} });
 
             const generateSchedule = () => {
                 let players = Array.from({ length: playerCount }, (_, i) => `P${i + 1}`);
-                const gameTracker = {};
-                players.forEach(p => gameTracker[p] = 0);
-
-                // Circle Rotation Logic
                 let circle = [...players];
+                
+                // For Odd numbers, add a "Ghost". Whoever pairs with Ghost sits out.
                 if (circle.length % 2 !== 0) circle.push("GHOST");
-
+                
                 const n = circle.length;
-                const fullSchedule = [];
+                const schedule = [];
+                const stats = {};
+                players.forEach(p => stats[p] = 0);
 
                 for (let r = 0; r < roundCount; r++) {
-                    const roundPairs = [];
-                    const waitingList = [];
+                    let pairs = [];
+                    let waiting = [];
 
-                    // 1. Generate Pairs using Fixed Pivot (Index 0 stays put)
+                    // 1. Circle Rotation (Fixed Pivot at index 0)
                     for (let i = 0; i < n / 2; i++) {
                         const p1 = circle[i];
                         const p2 = circle[n - 1 - i];
-                        
-                        if (p1 === "GHOST") waitingList.push(p2);
-                        else if (p2 === "GHOST") waitingList.push(p1);
-                        else roundPairs.push([p1, p2]);
+                        if (p1 === "GHOST") waiting.push(p2);
+                        else if (p2 === "GHOST") waiting.push(p1);
+                        else pairs.push([p1, p2]);
                     }
 
-                    // 2. Assign to Courts (Doubles = 2 pairs per court)
+                    // 2. Assign to Courts (2 pairs per match)
                     const matches = [];
-                    for (let i = 0; i < roundPairs.length; i += 2) {
-                        if (matches.length < courtCount && (i + 1) < roundPairs.length) {
-                            const match = { team1: roundPairs[i], team2: roundPairs[i+1] };
-                            matches.push(match);
-                            // Update game counts
-                            [...match.team1, ...match.team2].forEach(p => gameTracker[p]++);
-                        } else {
-                            waitingList.push(...roundPairs[i]);
-                            if (roundPairs[i+1]) waitingList.push(...roundPairs[i+1]);
-                        }
+                    const availablePairs = [...pairs];
+                    
+                    while (matches.length < courtCount && availablePairs.length >= 2) {
+                        const team1 = availablePairs.shift();
+                        const team2 = availablePairs.shift();
+                        matches.push({ team1, team2 });
+                        
+                        // Track games
+                        [...team1, ...team2].forEach(p => stats[p]++);
                     }
 
-                    fullSchedule.push({ round: r + 1, matches, waiting: waitingList });
+                    // Anyone left in availablePairs also sits out due to court limits
+                    availablePairs.forEach(pair => waiting.push(...pair));
 
-                    // 3. Rotate Circle: keep [0] fixed, move others clockwise
+                    schedule.push({ round: r + 1, matches, waiting });
+
+                    // 3. Rotate the circle for next round
                     const fixed = circle[0];
-                    const rest = circle.slice(1);
-                    rest.unshift(rest.pop());
-                    circle = [fixed, ...rest];
+                    const shifters = circle.slice(1);
+                    shifters.unshift(shifters.pop());
+                    circle = [fixed, ...shifters];
                 }
-
-                setSchedule(fullSchedule);
-                setStats(gameTracker);
+                setData({ schedule, stats });
             };
 
             return (
-                <div className="max-w-6xl mx-auto bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
-                    <h1 className="text-3xl font-black text-gray-900 mb-6 text-center">🏆 Balanced Tournament Scheduler</h1>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-center">
-                            <label className="block text-xs font-black text-blue-800 uppercase mb-1">Players</label>
-                            <input type="number" value={playerCount} onChange={e => setPlayerCount(parseInt(e.target.value))} className="w-full p-2 rounded text-center font-bold" />
+                <div className="max-w-4xl mx-auto bg-white shadow-2xl rounded-3xl p-8 border border-slate-200">
+                    <h1 className="text-3xl font-black text-slate-800 mb-8 flex items-center gap-2">
+                        <span className="bg-green-500 text-white p-2 rounded-lg text-xl">P</span> 
+                        Tournament Logic Fix
+                    </h1>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div>
+                            <label className="text-xs font-bold text-slate-400 uppercase">Players</label>
+                            <input type="number" value={playerCount} onChange={e => setPlayerCount(Number(e.target.value))} className="w-full bg-slate-50 p-3 rounded-xl border-none ring-1 ring-slate-200" />
                         </div>
-                        <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 text-center">
-                            <label className="block text-xs font-black text-purple-800 uppercase mb-1">Courts</label>
-                            <input type="number" value={courtCount} onChange={e => setCourtCount(parseInt(e.target.value))} className="w-full p-2 rounded text-center font-bold" />
+                        <div>
+                            <label className="text-xs font-bold text-slate-400 uppercase">Courts</label>
+                            <input type="number" value={courtCount} onChange={e => setCourtCount(Number(e.target.value))} className="w-full bg-slate-50 p-3 rounded-xl border-none ring-1 ring-slate-200" />
                         </div>
-                        <div className="bg-green-50 p-4 rounded-xl border border-green-100 text-center">
-                            <label className="block text-xs font-black text-green-800 uppercase mb-1">Rounds</label>
-                            <input type="number" value={roundCount} onChange={e => setRoundCount(parseInt(e.target.value))} className="w-full p-2 rounded text-center font-bold" />
+                        <div>
+                            <label className="text-xs font-bold text-slate-400 uppercase">Rounds</label>
+                            <input type="number" value={roundCount} onChange={e => setRoundCount(Number(e.target.value))} className="w-full bg-slate-50 p-3 rounded-xl border-none ring-1 ring-slate-200" />
                         </div>
                     </div>
 
-                    <button onClick={generateSchedule} className="w-full bg-gray-900 text-white font-bold py-4 rounded-xl hover:bg-black transition-all shadow-lg active:scale-[0.98] mb-10">
+                    <button onClick={generateSchedule} className="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition mb-10">
                         Generate Balanced Schedule
                     </button>
 
-                    {schedule && (
+                    {data.schedule.length > 0 && (
                         <>
-                            <h2 className="text-lg font-bold text-gray-800 mb-4 uppercase tracking-tighter">Verification: Games Played</h2>
-                            <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-3 mb-12">
-                                {Object.entries(stats).map(([p, count]) => (
-                                    <div key={p} className="stats-card">
-                                        <div className="text-[10px] font-black text-gray-400">{p}</div>
-                                        <div className="text-lg font-bold text-blue-600">{count}</div>
-                                    </div>
-                                ))}
+                            <div className="mb-10 bg-green-50 p-6 rounded-2xl border border-green-100">
+                                <h2 className="font-bold text-green-800 mb-4">Verification: Game Counts</h2>
+                                <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                                    {Object.entries(data.stats).map(([player, count]) => (
+                                        <div key={player} className="bg-white p-2 rounded border border-green-200 text-center">
+                                            <div className="text-[10px] text-slate-400 font-bold">{player}</div>
+                                            <div className="font-black text-green-600">{count}</div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
 
-                            <div className="space-y-12">
-                                {schedule.map(r => (
-                                    <div key={r.round} className="relative">
-                                        <div className="flex flex-wrap items-center gap-4 mb-4">
-                                            <h3 className="text-xl font-black text-gray-900">ROUND {r.round}</h3>
-                                            <div className="flex flex-wrap gap-2">
-                                                {r.waiting.map(p => <span key={p} className="bye-badge">Waiting: {p}</span>)}
+                            <div className="space-y-8">
+                                {data.schedule.map(round => (
+                                    <div key={round.round} className="border-l-4 border-slate-100 pl-6">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h3 className="text-xl font-bold">Round {round.round}</h3>
+                                            <div className="flex gap-1">
+                                                {round.waiting.map(p => <span key={p} className="bg-red-100 text-red-600 px-2 py-1 rounded text-[10px] font-bold">Bye: {p}</span>)}
                                             </div>
                                         </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {r.matches.map((m, i) => (
-                                                <div key={i} className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm relative overflow-hidden">
-                                                    <div className="absolute top-0 left-0 bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-500 rounded-br-lg">COURT {i+1}</div>
-                                                    <div className="flex flex-col items-center gap-2 mt-2">
-                                                        <div className="text-blue-700 font-bold">{m.team1[0]} & {m.team1[1]}</div>
-                                                        <div className="text-[9px] font-black text-gray-300">VS</div>
-                                                        <div className="text-red-700 font-bold">{m.team2[0]} & {m.team2[1]}</div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {round.matches.map((m, i) => (
+                                                <div key={i} className="bg-slate-50 p-4 rounded-xl border border-slate-100 relative">
+                                                    <span className="absolute top-2 left-2 text-[9px] font-bold text-slate-300">COURT {i+1}</span>
+                                                    <div className="flex justify-around items-center pt-2">
+                                                        <span className="font-bold text-blue-600">{m.team1.join(' & ')}</span>
+                                                        <span className="text-[10px] font-black text-slate-300 px-2">VS</span>
+                                                        <span className="font-bold text-red-600">{m.team2.join(' & ')}</span>
                                                     </div>
                                                 </div>
                                             ))}
@@ -144,7 +143,7 @@
             );
         }
 
-        ReactDOM.render(<App />, document.getElementById('root'));
+        ReactDOM.createRoot(document.getElementById('root')).render(<TournamentApp />);
     </script>
 </body>
 </html>
