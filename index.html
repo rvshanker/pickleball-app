@@ -1690,7 +1690,7 @@
                                         <select 
                                             value={formData.court}
                                             onChange={(e) => setFormData({...formData, court: e.target.value})}
-                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                            className="w-full px-2 md:px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none text-sm md:text-base"
                                             required
                                         >
                                             {allCourts.map(court => (
@@ -1704,7 +1704,7 @@
                                             type="date"
                                             value={formData.date}
                                             onChange={(e) => setFormData({...formData, date: e.target.value})}
-                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                            className="w-full px-2 md:px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none text-sm md:text-base"
                                             required
                                         />
                                     </div>
@@ -1714,7 +1714,7 @@
                                             type="time"
                                             value={formData.time}
                                             onChange={(e) => setFormData({...formData, time: e.target.value})}
-                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                            className="w-full px-2 md:px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none text-sm md:text-base"
                                             required
                                         />
                                     </div>
@@ -1723,7 +1723,7 @@
                                         <select 
                                             value={formData.skillLevel}
                                             onChange={(e) => setFormData({...formData, skillLevel: e.target.value})}
-                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                            className="w-full px-2 md:px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none text-sm md:text-base"
                                         >
                                             <option>All Levels</option>
                                             {SKILL_LEVELS.map(level => (
@@ -1736,7 +1736,7 @@
                                         <select 
                                             value={formData.maxPlayers}
                                             onChange={(e) => setFormData({...formData, maxPlayers: e.target.value})}
-                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                            className="w-full px-2 md:px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none text-sm md:text-base"
                                         >
                                             {[4, 6, 8, 10, 12, 16, 20].map(n => (
                                                 <option key={n} value={n}>{n} players</option>
@@ -1749,7 +1749,7 @@
                                             value={formData.description}
                                             onChange={(e) => setFormData({...formData, description: e.target.value})}
                                             placeholder="Add any details about the event..."
-                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                            className="w-full px-2 md:px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none text-sm md:text-base"
                                             rows="3"
                                         />
                                     </div>
@@ -2119,6 +2119,7 @@
             const [courts, setCourts] = useState(1);
             const [numRounds, setNumRounds] = useState(1);
             const [matchFormat, setMatchFormat] = useState('doubles'); // 'singles' or 'doubles'
+            const [tournamentMode, setTournamentMode] = useState('rotating'); // 'rotating', 'fixed', 'custom'
             const [schedule, setSchedule] = useState([]);
             const [scores, setScores] = useState({});
             const [tournamentId, setTournamentId] = useState(null);
@@ -2396,59 +2397,119 @@
                         return;
                     }
                     
-                    // WORKING ALGORITHM: Circle Method with proper rotation
-                    let pool = [...validPlayers];
-                    
-                    // Add BYE if odd number
-                    if (pool.length % 2 !== 0) {
-                        pool.push('BYE');
-                    }
-                    
-                    const n = pool.length;
+                    // SMART DOUBLES ALGORITHM - Optimizes partner/opponent distribution
                     const allRounds = [];
-
+                    const stats = {};
+                    
+                    // Initialize stats for each player
+                    validPlayers.forEach(p => {
+                        stats[p] = {
+                            games: 0,
+                            partners: {},  // Track who they've partnered with
+                            opponents: {}  // Track who they've played against
+                        };
+                    });
+                    
                     for (let round = 0; round < numRounds; round++) {
+                        // Sort players by least games played first
+                        const sortedPlayers = [...validPlayers].sort((a, b) => stats[a].games - stats[b].games);
+                        
+                        // Determine how many can play this round
+                        const playingCount = Math.min(courts * 4, sortedPlayers.length);
+                        let playing = sortedPlayers.slice(0, playingCount);
+                        const sitting = sortedPlayers.slice(playingCount);
+                        
                         const roundMatches = [];
-                        const pairs = [];
-                        
-                        // 1. Circle Method: Pair players from opposite ends
-                        for (let i = 0; i < n / 2; i++) {
-                            const p1 = pool[i];
-                            const p2 = pool[n - 1 - i];
-                            if (p1 !== 'BYE' && p2 !== 'BYE') {
-                                pairs.push([p1, p2]);
-                            }
-                        }
-
-                        // 2. Combine pairs into 2v2 matches
                         let courtNum = 0;
-                        const playersInMatches = [];
                         
-                        for (let i = 0; i < pairs.length - 1; i += 2) {
-                            if (pairs[i] && pairs[i + 1]) {
-                                const matchId = `r${round}-m${courtNum}`;
-                                roundMatches.push({
-                                    id: matchId,
-                                    court: (courtNum % courts) + 1,
-                                    team1: pairs[i],
-                                    team2: pairs[i + 1]
-                                });
-                                playersInMatches.push(...pairs[i], ...pairs[i + 1]);
-                                courtNum++;
+                        // Create matches for this round
+                        while (playing.length >= 4 && courtNum < courts) {
+                            let bestScore = Infinity;
+                            let bestMatch = null;
+                            
+                            // Try all possible combinations of 4 players from remaining
+                            for (let a = 0; a < playing.length; a++) {
+                                for (let b = a + 1; b < playing.length; b++) {
+                                    for (let c = b + 1; c < playing.length; c++) {
+                                        for (let d = c + 1; d < playing.length; d++) {
+                                            const p1 = playing[a];
+                                            const p2 = playing[b];
+                                            const p3 = playing[c];
+                                            const p4 = playing[d];
+                                            
+                                            // Calculate "conflict score" - lower is better
+                                            // Penalize repeating partners and opponents
+                                            const score =
+                                                (stats[p1].partners[p2] || 0) +
+                                                (stats[p3].partners[p4] || 0) +
+                                                (stats[p1].opponents[p3] || 0) +
+                                                (stats[p1].opponents[p4] || 0) +
+                                                (stats[p2].opponents[p3] || 0) +
+                                                (stats[p2].opponents[p4] || 0);
+                                            
+                                            if (score < bestScore) {
+                                                bestScore = score;
+                                                bestMatch = { team1: [p1, p2], team2: [p3, p4] };
+                                            }
+                                        }
+                                    }
+                                }
                             }
+                            
+                            if (!bestMatch) break;
+                            
+                            // Add match to round
+                            const matchId = `r${round}-m${courtNum}`;
+                            roundMatches.push({
+                                id: matchId,
+                                court: courtNum + 1,
+                                team1: bestMatch.team1,
+                                team2: bestMatch.team2
+                            });
+                            
+                            // Update stats - track games, partners, opponents
+                            const allInMatch = [...bestMatch.team1, ...bestMatch.team2];
+                            allInMatch.forEach(p => stats[p].games++);
+                            
+                            // Track partners
+                            stats[bestMatch.team1[0]].partners[bestMatch.team1[1]] = 
+                                (stats[bestMatch.team1[0]].partners[bestMatch.team1[1]] || 0) + 1;
+                            stats[bestMatch.team1[1]].partners[bestMatch.team1[0]] = 
+                                (stats[bestMatch.team1[1]].partners[bestMatch.team1[0]] || 0) + 1;
+                                
+                            stats[bestMatch.team2[0]].partners[bestMatch.team2[1]] = 
+                                (stats[bestMatch.team2[0]].partners[bestMatch.team2[1]] || 0) + 1;
+                            stats[bestMatch.team2[1]].partners[bestMatch.team2[0]] = 
+                                (stats[bestMatch.team2[1]].partners[bestMatch.team2[0]] || 0) + 1;
+                            
+                            // Track opponents
+                            bestMatch.team1.forEach(p1 => {
+                                bestMatch.team2.forEach(p2 => {
+                                    stats[p1].opponents[p2] = (stats[p1].opponents[p2] || 0) + 1;
+                                    stats[p2].opponents[p1] = (stats[p2].opponents[p1] || 0) + 1;
+                                });
+                            });
+                            
+                            // Remove used players from pool
+                            playing = playing.filter(p => !allInMatch.includes(p));
+                            courtNum++;
                         }
                         
-                        // 3. Find BYE player
-                        const byePlayer = validPlayers.find(p => !playersInMatches.includes(p));
-                        if (byePlayer) {
-                            roundMatches.byePlayer = byePlayer;
+                        // Mark BYE players
+                        if (sitting.length > 0) {
+                            roundMatches.byePlayers = sitting;
                         }
                         
                         allRounds.push(roundMatches);
-                        
-                        // 4. Rotate for next round (keep first fixed)
-                        pool.splice(1, 0, pool.pop());
                     }
+                    
+                    // Log balance stats for verification
+                    console.log('🎯 SMART ENGINE - Games Distribution:');
+                    Object.entries(stats)
+                        .sort((a, b) => b[1].games - a[1].games)
+                        .forEach(([player, s]) => {
+                            console.log(`  ${player}: ${s.games} games`);
+                        });
                     
                     setSchedule(allRounds);
                 }
@@ -2643,6 +2704,48 @@
                                         </div>
 
                                         <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Match Format</label>
+                                            <div className="flex gap-3">
+                                                <label className="flex-1 cursor-pointer">
+                                                    <input
+                                                        type="radio"
+                                                        name="matchFormat"
+                                                        value="singles"
+                                                        checked={matchFormat === 'singles'}
+                                                        onChange={(e) => setMatchFormat(e.target.value)}
+                                                        className="sr-only"
+                                                    />
+                                                    <div className={`px-3 py-3 border-2 rounded-lg font-bold text-center transition-all text-sm ${
+                                                        matchFormat === 'singles'
+                                                            ? 'border-green-500 bg-green-50 text-green-700'
+                                                            : 'border-gray-300 text-gray-600 hover:border-gray-400'
+                                                    }`}>
+                                                        1️⃣ Singles
+                                                    </div>
+                                                </label>
+                                                <label className="flex-1 cursor-pointer">
+                                                    <input
+                                                        type="radio"
+                                                        name="matchFormat"
+                                                        value="doubles"
+                                                        checked={matchFormat === 'doubles'}
+                                                        onChange={(e) => setMatchFormat(e.target.value)}
+                                                        className="sr-only"
+                                                    />
+                                                    <div className={`px-3 py-3 border-2 rounded-lg font-bold text-center transition-all text-sm ${
+                                                        matchFormat === 'doubles'
+                                                            ? 'border-green-500 bg-green-50 text-green-700'
+                                                            : 'border-gray-300 text-gray-600 hover:border-gray-400'
+                                                    }`}>
+                                                        👥 Doubles
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                                        <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-2">Privacy</label>
                                             <div className="flex gap-4">
                                                 <label className="flex-1 cursor-pointer">
@@ -2678,55 +2781,12 @@
                                                     </div>
                                                 </label>
                                             </div>
-                                            <p className="text-xs text-gray-500 mt-2">
-                                                {isPublic ? 'Anyone can view this tournament' : 'Only participants can see scores'}
-                                            </p>
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Match Format</label>
-                                            <div className="flex flex-col gap-2">
-                                                <label className="cursor-pointer">
-                                                    <input
-                                                        type="radio"
-                                                        name="matchFormat"
-                                                        value="singles"
-                                                        checked={matchFormat === 'singles'}
-                                                        onChange={(e) => setMatchFormat(e.target.value)}
-                                                        className="sr-only"
-                                                    />
-                                                    <div className={`px-4 py-2 border-2 rounded-lg font-bold transition-all ${
-                                                        matchFormat === 'singles'
-                                                            ? 'border-green-500 bg-green-50 text-green-700'
-                                                            : 'border-gray-300 text-gray-600 hover:border-gray-400'
-                                                    }`}>
-                                                        1️⃣ Singles (1v1)
-                                                    </div>
-                                                </label>
-                                                <label className="cursor-pointer">
-                                                    <input
-                                                        type="radio"
-                                                        name="matchFormat"
-                                                        value="doubles"
-                                                        checked={matchFormat === 'doubles'}
-                                                        onChange={(e) => setMatchFormat(e.target.value)}
-                                                        className="sr-only"
-                                                    />
-                                                    <div className={`px-4 py-2 border-2 rounded-lg font-bold transition-all ${
-                                                        matchFormat === 'doubles'
-                                                            ? 'border-green-500 bg-green-50 text-green-700'
-                                                            : 'border-gray-300 text-gray-600 hover:border-gray-400'
-                                                    }`}>
-                                                        👥 Doubles (2v2)
-                                                    </div>
-                                                </label>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Number of Players</label>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Players</label>
                                             <div className="flex items-center gap-2">
                                                 <button
                                                     type="button"
@@ -2736,38 +2796,65 @@
                                                     −
                                                 </button>
                                                 <input
-                                                    type="number"
-                                                    min={matchFormat === 'doubles' ? 4 : 2}
-                                                    max="20"
+                                                    type="text"
+                                                    inputMode="numeric"
                                                     value={numPlayers}
-                                                    onChange={(e) => setNumPlayers(parseInt(e.target.value) || 4)}
-                                                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none font-bold text-lg text-center"
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(/\D/g, '');
+                                                        if (val === '') {
+                                                            setNumPlayers(matchFormat === 'doubles' ? 4 : 2);
+                                                        } else {
+                                                            setNumPlayers(Math.min(99, Math.max((matchFormat === 'doubles' ? 4 : 2), parseInt(val))));
+                                                        }
+                                                    }}
+                                                    className="flex-1 px-2 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none font-bold text-lg text-center"
                                                 />
                                                 <button
                                                     type="button"
-                                                    onClick={() => setNumPlayers(Math.min(20, numPlayers + 1))}
+                                                    onClick={() => setNumPlayers(Math.min(99, numPlayers + 1))}
                                                     className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center"
                                                 >
                                                     +
                                                 </button>
                                             </div>
-                                            <p className="text-xs text-gray-500 mt-1 text-center">
-                                                Min: {matchFormat === 'doubles' ? 4 : 2} players
-                                            </p>
                                         </div>
 
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-2">Courts</label>
-                                            <select
-                                                value={courts}
-                                                onChange={(e) => setCourts(parseInt(e.target.value))}
-                                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none font-bold"
-                                            >
-                                                {[1, 2, 3, 4, 5, 6].map(n => (
-                                                    <option key={n} value={n}>{n} Court{n > 1 ? 's' : ''}</option>
-                                                ))}
-                                            </select>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2 mt-4">Rounds</label>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setCourts(Math.max(1, courts - 1))}
+                                                    className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center"
+                                                >
+                                                    −
+                                                </button>
+                                                <input
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    value={courts}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(/\D/g, '');
+                                                        if (val === '') {
+                                                            setCourts(1);
+                                                        } else {
+                                                            setCourts(Math.min(10, Math.max(1, parseInt(val))));
+                                                        }
+                                                    }}
+                                                    className="flex-1 px-2 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none font-bold text-lg text-center"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setCourts(Math.min(10, courts + 1))}
+                                                    className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Rounds</label>
                                             <div className="flex items-center gap-2">
                                                 <button
                                                     type="button"
@@ -2777,21 +2864,40 @@
                                                     −
                                                 </button>
                                                 <input
-                                                    type="number"
-                                                    min="1"
-                                                    max="20"
+                                                    type="text"
+                                                    inputMode="numeric"
                                                     value={numRounds}
-                                                    onChange={(e) => setNumRounds(parseInt(e.target.value) || 1)}
-                                                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none font-bold text-center"
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(/\D/g, '');
+                                                        if (val === '') {
+                                                            setNumRounds(1);
+                                                        } else {
+                                                            setNumRounds(Math.min(50, Math.max(1, parseInt(val))));
+                                                        }
+                                                    }}
+                                                    className="flex-1 px-2 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none font-bold text-center"
                                                 />
                                                 <button
                                                     type="button"
-                                                    onClick={() => setNumRounds(Math.min(20, numRounds + 1))}
+                                                    onClick={() => setNumRounds(Math.min(50, numRounds + 1))}
                                                     className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center"
                                                 >
                                                     +
                                                 </button>
                                             </div>
+                                        </div>
+                                        
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Mode</label>
+                                            <select
+                                                value={tournamentMode}
+                                                onChange={(e) => setTournamentMode(e.target.value)}
+                                                className="w-full px-2 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none font-bold text-sm"
+                                            >
+                                                <option value="rotating">🔄 Rotating</option>
+                                                <option value="fixed">🔒 Fixed</option>
+                                                <option value="custom">✏️ Custom</option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
@@ -2961,6 +3067,11 @@
                                                     {round.byePlayer && (
                                                         <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
                                                             ⏸️ BYE: {round.byePlayer}
+                                                        </span>
+                                                    )}
+                                                    {round.byePlayers && round.byePlayers.length > 0 && (
+                                                        <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                            ⏸️ BYE: {round.byePlayers.join(', ')}
                                                         </span>
                                                     )}
                                                 </div>
