@@ -76,16 +76,28 @@
         // Storage helper with Firebase and localStorage fallback
         const storage = {
             async saveTournament(tournamentData) {
+                console.log('💾 Storage.saveTournament called with:', {
+                    id: tournamentData.id,
+                    name: tournamentData.name,
+                    isPublic: tournamentData.isPublic,
+                    createdBy: tournamentData.createdBy,
+                    participants: tournamentData.participants
+                });
+                
                 if (isFirebaseConfigured && db) {
                     try {
                         await db.collection('tournaments').doc(tournamentData.id).set(tournamentData);
+                        console.log('   ✅ Saved to Firebase');
                         return true;
                     } catch (error) {
+                        console.log('   ⚠️ Firebase failed, falling back to localStorage');
                         // Silently fall back to localStorage - this is expected without proper Firestore rules
                     }
                 }
                 // Fallback to localStorage
-                localStorage.setItem(`tournament:${tournamentData.id}`, JSON.stringify(tournamentData));
+                const key = `tournament:${tournamentData.id}`;
+                localStorage.setItem(key, JSON.stringify(tournamentData));
+                console.log('   ✅ Saved to localStorage with key:', key);
                 return true;
             },
             
@@ -131,16 +143,22 @@
                 
                 // Fallback to localStorage
                 const tournaments = [];
+                console.log('   Using localStorage, checking', localStorage.length, 'keys');
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
                     if (key.startsWith('tournament:')) {
                         const data = JSON.parse(localStorage.getItem(key));
+                        console.log('   Found:', key, '| Public:', data.isPublic, '| CreatedBy:', data.createdBy);
                         // Filter based on public/private and user access
                         if (data.isPublic || (userId && data.participants?.includes(userId))) {
+                            console.log('      ✅ Adding to list (visible to', userId, ')');
                             tournaments.push(data);
+                        } else {
+                            console.log('      ❌ Skipping (not visible to', userId, ')');
                         }
                     }
                 }
+                console.log('   Total tournaments returned:', tournaments.length);
                 return tournaments;
             },
             
@@ -278,23 +296,9 @@
 
             // Check if user has dismissed Firebase info
             useEffect(() => {
-                if (isFirebaseConfigured && auth && !currentUser) {
-                    // Auto sign-in guests anonymously
-                    auth.signInAnonymously()
-                        .then((result) => {
-                            console.log('✅ Guest signed in anonymously:', result.user.uid);
-                            setCurrentUser({
-                                uid: result.user.uid,
-                                name: 'Guest User',
-                                email: 'guest@local',
-                                skillLevel: 'Beginner (2.0-2.5)',
-                                avatar: '👤',
-                                isAnonymous: true
-                            });
-                        })
-                        .catch((error) => {
-                            console.log('Anonymous auth failed:', error);
-                        });
+                const dismissed = localStorage.getItem('firebaseInfoDismissed');
+                if (!dismissed && isFirebaseConfigured) {
+                    setShowFirebaseInfo(true);
                 }
             }, []);
 
@@ -303,25 +307,97 @@
                 setShowFirebaseInfo(false);
             };
 
-            // Listen to auth state changes
+            // Listen to auth state changes and auto-sign in guests anonymously
             useEffect(() => {
                 if (isFirebaseConfigured && auth) {
-                    auth.onAuthStateChanged(user => {
+                    const unsubscribe = auth.onAuthStateChanged(async (user) => {
                         if (user) {
-                            setCurrentUser({
-                                uid: user.uid,
-                                email: user.email,
-                                name: user.displayName || user.email.split('@')[0],
-                                skillLevel: 'Intermediate (3.0-3.5)',
-                                gamesPlayed: 0,
-                                avatar: '🏓'
-                            });
+                            console.log('👤 User authenticated:', user.isAnonymous ? 'Anonymous Guest' : user.email);
+                            
+                            if (user.isAnonymous) {
+                                // Anonymous user (guest)
+                                console.log('   Anonymous UID:', user.uid);
+                                setCurrentUser({
+                                    uid: user.uid,
+                                    name: 'Guest User',
+                                    email: 'guest@local',
+                                    skillLevel: 'Beginner (2.0-2.5)',
+                                    avatar: '👤',
+                                    isAnonymous: true,
+                                    gamesPlayed: 0
+                                });
+                            } else {
+                                // Regular logged-in user - load profile from Firestore
+                                console.log('   Loading profile from Firestore...');
+                                try {
+                                    const profileDoc = await db.collection('users').doc(user.uid).get();
+                                    
+                                    if (profileDoc.exists) {
+                                        const profileData = profileDoc.data();
+                                        console.log('   ✅ Profile loaded from Firestore');
+                                        setCurrentUser(profileData);
+                                    } else {
+                                        console.log('   ℹ️ No profile in Firestore, creating default');
+                                        // Create default profile
+                                        const defaultProfile = {
+                                            uid: user.uid,
+                                            email: user.email,
+                                            name: user.displayName || user.email.split('@')[0],
+                                            skillLevel: 'Intermediate (3.0-3.5)',
+                                            gamesPlayed: 0,
+                                            avatar: '🏓',
+                                            isAnonymous: false
+                                        };
+                                        setCurrentUser(defaultProfile);
+                                        
+                                        // Save default profile to Firestore
+                                        try {
+                                            await db.collection('users').doc(user.uid).set(defaultProfile);
+                                            console.log('   ✅ Default profile saved to Firestore');
+                                        } catch (error) {
+                                            console.log('   ⚠️ Failed to save default profile:', error.message);
+                                        }
+                                    }
+                                } catch (error) {
+                                    console.log('   ⚠️ Firestore read failed, using default profile');
+                                    // Fallback to default
+                                    setCurrentUser({
+                                        uid: user.uid,
+                                        email: user.email,
+                                        name: user.displayName || user.email.split('@')[0],
+                                        skillLevel: 'Intermediate (3.0-3.5)',
+                                        gamesPlayed: 0,
+                                        avatar: '🏓',
+                                        isAnonymous: false
+                                    });
+                                }
+                            }
                         } else {
-                            setCurrentUser(null);
+                            // No user - sign in anonymously
+                            console.log('🔐 No user detected, signing in as anonymous guest...');
+                            try {
+                                await auth.signInAnonymously();
+                                console.log('✅ Anonymous sign-in successful - waiting for onAuthStateChanged...');
+                            } catch (error) {
+                                console.error('❌ Anonymous sign-in failed:', error);
+                                // Fallback to localStorage guest mode
+                                const savedProfile = localStorage.getItem('userProfile');
+                                if (savedProfile) {
+                                    try {
+                                        setCurrentUser(JSON.parse(savedProfile));
+                                    } catch (e) {
+                                        setCurrentUser(null);
+                                    }
+                                } else {
+                                    setCurrentUser(null);
+                                }
+                            }
                         }
                     });
+                    
+                    return () => unsubscribe();
                 } else {
-                    // Guest mode for localStorage
+                    // Guest mode for localStorage (Firebase not configured)
                     const savedProfile = localStorage.getItem('userProfile');
                     if (savedProfile) {
                         try {
@@ -1729,10 +1805,24 @@
                 
                 setCurrentUser(updatedUser);
                 
-                // Save to localStorage
                 try {
+                    console.log('💾 Saving profile for user:', updatedUser.uid);
+                    
+                    // Save to Firestore first
+                    if (isFirebaseConfigured && db && updatedUser.uid && updatedUser.uid !== 'guest') {
+                        try {
+                            await db.collection('users').doc(updatedUser.uid).set(updatedUser);
+                            console.log('   ✅ Profile saved to Firestore');
+                        } catch (error) {
+                            console.log('   ⚠️ Firestore save failed:', error.message);
+                            console.log('   ℹ️ Falling back to localStorage');
+                        }
+                    }
+                    
+                    // Always save to localStorage as backup
                     localStorage.setItem('userProfile', JSON.stringify(updatedUser));
-                    console.log('✓ Profile saved successfully:', updatedUser);
+                    console.log('   ✅ Profile saved to localStorage');
+                    
                     setIsEditing(false);
                     alert('Profile saved successfully!');
                 } catch (error) {
@@ -2232,6 +2322,11 @@
                 const newTournamentId = `tournament-${Date.now()}`;
                 setTournamentId(newTournamentId);
                 setShowLeaderboard(false);
+                
+                // Trigger initial save immediately after setting up tournament
+                setTimeout(() => {
+                    console.log('🎯 Triggering initial tournament save for:', newTournamentId);
+                }, 100);
             };
 
             const updateScore = (matchId, team, score) => {
