@@ -1,206 +1,192 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PickleConnect Pro</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <title>True Swish Smart Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Removing default number input arrows for index4 style */
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
-            -webkit-appearance: none; margin: 0;
-        }
-        input[type=number] { -moz-appearance: textfield; }
-    </style>
 </head>
-<body class="bg-gray-50 text-slate-900">
-    <div id="root"></div>
+<body class="bg-gray-100 p-8">
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+<div class="max-w-5xl mx-auto bg-white p-8 rounded-3xl shadow-2xl">
 
-        function App() {
-            const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
-            const [view, setView] = useState('home'); // 'home', 'tournament'
-            const [currentTournament, setCurrentTournament] = useState(null);
+    <h1 class="text-3xl font-black mb-6">True Swish-Style Match Engine</h1>
 
-            // Logic: The Balanced Queue Engine
-            const generateBalancedTournament = (players, courts, rounds) => {
-                let playerPool = Array.from({ length: players }, (_, i) => `P${i + 1}`);
-                let stats = {};
-                playerPool.forEach(p => stats[p] = 0);
+    <!-- Controls -->
+    <div class="grid md:grid-cols-2 gap-6 mb-8">
 
-                let schedule = [];
-                let queue = [...playerPool]; // Use a persistent queue for the whole tournament
+        <div>
+            <label class="font-bold">Players (one per line)</label>
+            <textarea id="playerNames"
+                class="w-full border p-3 rounded-xl mt-2 h-40"
+                placeholder="John&#10;Mike&#10;Sarah&#10;Emma"></textarea>
+        </div>
 
-                for (let r = 1; r <= rounds; r++) {
-                    const capacity = courts * 4;
-                    const playingThisRound = queue.slice(0, capacity);
-                    const waitingThisRound = queue.slice(capacity);
+        <div class="space-y-4">
+            <div>
+                <label class="font-bold">Courts</label>
+                <input type="number" id="courts" value="1"
+                    class="w-full border p-3 rounded-xl mt-2">
+            </div>
 
-                    const matches = [];
-                    for (let i = 0; i < playingThisRound.length; i += 4) {
-                        if (i + 3 < playingThisRound.length) {
-                            const m = {
-                                id: Date.now() + i,
-                                team1: [playingThisRound[i], playingThisRound[i+1]],
-                                team2: [playingThisRound[i+2], playingThisRound[i+3]],
-                                score1: 0, score2: 0, winner: null
-                            };
-                            matches.push(m);
-                            [...m.team1, ...m.team2].forEach(p => stats[p]++);
-                        }
-                    }
+            <div>
+                <label class="font-bold">Rounds</label>
+                <input type="number" id="rounds" value="3"
+                    class="w-full border p-3 rounded-xl mt-2">
+            </div>
 
-                    schedule.push({ round: r, matches, waiting: waitingThisRound });
-                    
-                    // ROTATION: Move the people who played to the back of the queue
-                    // This ensures the "Waiters" are at the front for next round
-                    queue = [...waitingThisRound, ...playingThisRound];
-                }
-                return { schedule, stats };
-            };
+            <div>
+                <label class="font-bold">Match Type</label>
+                <select id="matchType"
+                    class="w-full border p-3 rounded-xl mt-2">
+                    <option value="doubles">Doubles</option>
+                    <option value="singles">Singles</option>
+                </select>
+            </div>
+        </div>
+    </div>
 
-            const handleCreate = (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                const p = parseInt(formData.get('players'));
-                const c = parseInt(formData.get('courts'));
-                const r = parseInt(formData.get('rounds'));
+    <button onclick="generateMatches()"
+        class="bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-blue-700">
+        Generate Matches
+    </button>
 
-                const { schedule, stats } = generateBalancedTournament(p, c, r);
-                const newTournament = {
-                    id: Math.random().toString(36).substr(2, 9),
-                    creatorId: user ? user.id : 'guest',
-                    players: p, courts: c, rounds: r,
-                    schedule, stats,
-                    createdAt: new Date().toISOString()
-                };
+    <div id="output" class="mt-10 space-y-8"></div>
 
-                setCurrentTournament(newTournament);
-                // Simple routing: Update URL without refresh
-                window.history.pushState({}, '', `?tid=${newTournament.id}`);
-                setView('tournament');
-            };
+</div>
 
-            const isOwner = currentTournament?.creatorId === user?.id && user !== null;
+<script>
 
-            return (
-                <div className="min-h-screen">
-                    {/* Header */}
-                    <nav className="bg-slate-900 p-6 text-white flex justify-between items-center">
-                        <h1 className="text-2xl font-black tracking-tighter cursor-pointer" onClick={() => setView('home')}>
-                            PICKLE<span className="text-green-400">CONNECT</span>
-                        </h1>
-                        {!user ? (
-                            <button onClick={() => setUser({id: 'u123', name: 'Admin'})} className="text-sm font-bold bg-green-600 px-4 py-2 rounded-xl">Login</button>
-                        ) : (
-                            <div className="flex items-center gap-4">
-                                <span className="text-xs text-slate-400">Hi, {user.name}</span>
-                                <button onClick={() => setUser(null)} className="text-xs underline">Logout</button>
-                            </div>
-                        )}
-                    </nav>
+function shuffle(array) {
+    return array.sort(() => Math.random() - 0.5);
+}
 
-                    <div className="max-w-6xl mx-auto p-6">
-                        {view === 'home' ? (
-                            <div className="max-w-xl mx-auto mt-12 bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
-                                <h2 className="text-3xl font-black mb-6 italic">START A TOURNAMENT</h2>
-                                <form onSubmit={handleCreate} className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div className="bg-gray-100 p-4 rounded-2xl">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase">Players</label>
-                                            <input name="players" type="number" defaultValue="15" className="w-full bg-transparent text-xl font-bold outline-none" />
-                                        </div>
-                                        <div className="bg-gray-100 p-4 rounded-2xl">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase">Courts</label>
-                                            <input name="courts" type="number" defaultValue="3" className="w-full bg-transparent text-xl font-bold outline-none" />
-                                        </div>
-                                        <div className="bg-gray-100 p-4 rounded-2xl">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase">Rounds</label>
-                                            <input name="rounds" type="number" defaultValue="10" className="w-full bg-transparent text-xl font-bold outline-none" />
-                                        </div>
-                                    </div>
-                                    <button className="w-full bg-green-500 text-white font-black py-5 rounded-2xl shadow-lg shadow-green-200">GENERATE SCHEDULE</button>
-                                </form>
-                            </div>
-                        ) : (
-                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <div className="flex justify-between items-end mb-8">
-                                    <div>
-                                        <span className="text-green-600 font-black text-xs uppercase tracking-widest">Live Tournament</span>
-                                        <h2 className="text-4xl font-black italic">DASHBOARD</h2>
-                                    </div>
-                                    <button 
-                                        onClick={() => navigator.clipboard.writeText(window.location.href)}
-                                        className="bg-slate-100 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2"
-                                    >
-                                        Share Link
-                                    </button>
-                                </div>
+function generateMatches() {
 
-                                {/* Stats Bar */}
-                                <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 mb-12">
-                                    {Object.entries(currentTournament.stats).map(([p, count]) => (
-                                        <div key={p} className="bg-white border p-3 rounded-2xl text-center shadow-sm">
-                                            <div className="text-[10px] text-gray-400 font-black">{p}</div>
-                                            <div className="text-lg font-bold text-green-600">{count}g</div>
-                                        </div>
-                                    ))}
-                                </div>
+    const names = document.getElementById("playerNames").value
+        .split("\n")
+        .map(n => n.trim())
+        .filter(n => n !== "");
 
-                                {/* Schedule */}
-                                <div className="space-y-12">
-                                    {currentTournament.schedule.map(r => (
-                                        <div key={r.round} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                                            <div className="flex justify-between items-center mb-6">
-                                                <h3 className="text-xl font-black italic underline decoration-green-400 decoration-4">ROUND {r.round}</h3>
-                                                <div className="flex gap-1">
-                                                    {r.waiting.map(p => <span key={p} className="bg-red-50 text-red-500 text-[10px] font-black px-2 py-1 rounded">BYE: {p}</span>)}
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                                {r.matches.map((m, idx) => (
-                                                    <div key={idx} className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                                                        <div className="text-[10px] font-black text-gray-400 uppercase mb-3">Court {idx + 1}</div>
-                                                        <div className="flex flex-col gap-4">
-                                                            <div className="flex justify-between items-center">
-                                                                <span className="font-bold text-slate-700">{m.team1.join(' & ')}</span>
-                                                                <input 
-                                                                    type="number" 
-                                                                    disabled={!isOwner}
-                                                                    placeholder="0"
-                                                                    className={`w-12 p-1 text-center rounded-lg border-none font-bold ${isOwner ? 'bg-white shadow-inner' : 'bg-transparent cursor-not-allowed'}`}
-                                                                />
-                                                            </div>
-                                                            <div className="flex justify-between items-center border-t pt-4">
-                                                                <span className="font-bold text-slate-700">{m.team2.join(' & ')}</span>
-                                                                <input 
-                                                                    type="number" 
-                                                                    disabled={!isOwner}
-                                                                    placeholder="0"
-                                                                    className={`w-12 p-1 text-center rounded-lg border-none font-bold ${isOwner ? 'bg-white shadow-inner' : 'bg-transparent cursor-not-allowed'}`}
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+    const C = parseInt(document.getElementById("courts").value);
+    const R = parseInt(document.getElementById("rounds").value);
+    const type = document.getElementById("matchType").value;
+
+    if (names.length < 2) {
+        alert("Enter at least 2 players.");
+        return;
+    }
+
+    let P = names.length;
+
+    let stats = {};
+    names.forEach(p => {
+        stats[p] = { games: 0, partners: {}, opponents: {} };
+    });
+
+    let html = "";
+
+    // 🔥 SPECIAL PERFECT ROTATION FOR 4 PLAYERS DOUBLES
+    if (P === 4 && C === 1 && type === "doubles") {
+
+        const rotations = [
+            [[names[0],names[1]],[names[2],names[3]]],
+            [[names[0],names[2]],[names[1],names[3]]],
+            [[names[0],names[3]],[names[1],names[2]]],
+        ];
+
+        for (let round = 1; round <= R; round++) {
+
+            const combo = rotations[(round-1) % 3];
+
+            combo.flat().forEach(p => stats[p].games++);
+
+            html += `
+            <div class="border-l-4 border-green-500 pl-6">
+                <h3 class="text-xl font-black uppercase mb-3">
+                    Round ${round}
+                </h3>
+                <div class="bg-gray-50 p-4 rounded-2xl border text-center">
+                    <div class="text-blue-600 font-bold">
+                        ${combo[0][0]} & ${combo[0][1]}
+                    </div>
+                    <div class="text-xs text-gray-400 my-1">VS</div>
+                    <div class="text-red-600 font-bold">
+                        ${combo[1][0]} & ${combo[1][1]}
                     </div>
                 </div>
-            );
+            </div>`;
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+        document.getElementById("output").innerHTML = html;
+        return;
+    }
+
+    // 🔥 GENERAL SMART ENGINE
+    for (let round = 1; round <= R; round++) {
+
+        html += `<div class="border-l-4 border-blue-500 pl-6">
+                 <h3 class="text-xl font-black uppercase mb-4">
+                 Round ${round}</h3>`;
+
+        let players = shuffle([...names]);
+
+        let perMatch = (type === "doubles") ? 4 : 2;
+        let playingCount = Math.min(C * perMatch, P);
+
+        let playing = players.slice(0, playingCount);
+        let waiting = players.slice(playingCount);
+
+        if (waiting.length > 0) {
+            html += `<div class="text-sm text-gray-500 mb-4">
+                     Bench: ${waiting.join(", ")}</div>`;
+        }
+
+        for (let court = 1; court <= C; court++) {
+
+            if (playing.length < perMatch) break;
+
+            if (type === "singles") {
+
+                const p1 = playing.shift();
+                const p2 = playing.shift();
+
+                stats[p1].games++;
+                stats[p2].games++;
+
+                html += `
+                <div class="bg-gray-50 p-4 rounded-2xl border mb-4 text-center">
+                    <div class="font-bold text-blue-600">${p1}</div>
+                    <div class="text-xs text-gray-400 my-1">VS</div>
+                    <div class="font-bold text-red-600">${p2}</div>
+                </div>`;
+
+            } else {
+
+                const p1 = playing.shift();
+                const p2 = playing.shift();
+                const p3 = playing.shift();
+                const p4 = playing.shift();
+
+                stats[p1].games++;
+                stats[p2].games++;
+                stats[p3].games++;
+                stats[p4].games++;
+
+                html += `
+                <div class="bg-gray-50 p-4 rounded-2xl border mb-4 text-center">
+                    <div class="text-blue-600 font-bold">${p1} & ${p2}</div>
+                    <div class="text-xs text-gray-400 my-1">VS</div>
+                    <div class="text-red-600 font-bold">${p3} & ${p4}</div>
+                </div>`;
+            }
+        }
+
+        html += `</div>`;
+    }
+
+    document.getElementById("output").innerHTML = html;
+}
+
+</script>
+
 </body>
 </html>
