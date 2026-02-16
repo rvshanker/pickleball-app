@@ -1,61 +1,150 @@
-function generateBalancedSchedule() {
-    // 1. Get current settings
-    const numPlayers = parseInt(document.getElementById('playerCount').value);
-    const numCourts = parseInt(document.getElementById('courtCount').value);
-    const numRounds = parseInt(document.getElementById('roundCount').value);
-    
-    // 2. Prepare Players and Tally
-    let players = Array.from({length: numPlayers}, (_, i) => `P${i + 1}`);
-    const gameTracker = {};
-    players.forEach(p => gameTracker[p] = 0);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PickleConnect - Professional Tournament Scheduler</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .bye-badge { background-color: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; }
+        .stats-card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; text-align: center; }
+    </style>
+</head>
+<body class="bg-gray-50 p-4 md:p-8">
+    <div id="root"></div>
 
-    // 3. Circle Rotation Logic (Fixed Pivot)
-    // If odd, we add a 'GHOST' player so the circle is even. 
-    // Anyone paired with the GHOST is actually "Sitting Out".
-    let circle = [...players];
-    if (circle.length % 2 !== 0) circle.push("GHOST");
+    <script type="text/babel">
+        const { useState } = React;
 
-    const n = circle.length;
-    const fullSchedule = [];
+        function App() {
+            const [playerCount, setPlayerCount] = useState(15);
+            const [courtCount, setCourtCount] = useState(3);
+            const [roundCount, setRoundCount] = useState(10);
+            const [schedule, setSchedule] = useState(null);
+            const [stats, setStats] = useState({});
 
-    for (let r = 0; r < numRounds; r++) {
-        const roundPairs = [];
-        const waitingList = [];
+            const generateSchedule = () => {
+                let players = Array.from({ length: playerCount }, (_, i) => `P${i + 1}`);
+                const gameTracker = {};
+                players.forEach(p => gameTracker[p] = 0);
 
-        // Pair from outside-in (0-15, 1-14, 2-13, etc.)
-        for (let i = 0; i < n / 2; i++) {
-            const p1 = circle[i];
-            const p2 = circle[n - 1 - i];
-            
-            if (p1 === "GHOST") waitingList.push(p2);
-            else if (p2 === "GHOST") waitingList.push(p1);
-            else roundPairs.push([p1, p2]);
+                // Circle Rotation Logic
+                let circle = [...players];
+                if (circle.length % 2 !== 0) circle.push("GHOST");
+
+                const n = circle.length;
+                const fullSchedule = [];
+
+                for (let r = 0; r < roundCount; r++) {
+                    const roundPairs = [];
+                    const waitingList = [];
+
+                    // 1. Generate Pairs using Fixed Pivot (Index 0 stays put)
+                    for (let i = 0; i < n / 2; i++) {
+                        const p1 = circle[i];
+                        const p2 = circle[n - 1 - i];
+                        
+                        if (p1 === "GHOST") waitingList.push(p2);
+                        else if (p2 === "GHOST") waitingList.push(p1);
+                        else roundPairs.push([p1, p2]);
+                    }
+
+                    // 2. Assign to Courts (Doubles = 2 pairs per court)
+                    const matches = [];
+                    for (let i = 0; i < roundPairs.length; i += 2) {
+                        if (matches.length < courtCount && (i + 1) < roundPairs.length) {
+                            const match = { team1: roundPairs[i], team2: roundPairs[i+1] };
+                            matches.push(match);
+                            // Update game counts
+                            [...match.team1, ...match.team2].forEach(p => gameTracker[p]++);
+                        } else {
+                            waitingList.push(...roundPairs[i]);
+                            if (roundPairs[i+1]) waitingList.push(...roundPairs[i+1]);
+                        }
+                    }
+
+                    fullSchedule.push({ round: r + 1, matches, waiting: waitingList });
+
+                    // 3. Rotate Circle: keep [0] fixed, move others clockwise
+                    const fixed = circle[0];
+                    const rest = circle.slice(1);
+                    rest.unshift(rest.pop());
+                    circle = [fixed, ...rest];
+                }
+
+                setSchedule(fullSchedule);
+                setStats(gameTracker);
+            };
+
+            return (
+                <div className="max-w-6xl mx-auto bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+                    <h1 className="text-3xl font-black text-gray-900 mb-6 text-center">🏆 Balanced Tournament Scheduler</h1>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-center">
+                            <label className="block text-xs font-black text-blue-800 uppercase mb-1">Players</label>
+                            <input type="number" value={playerCount} onChange={e => setPlayerCount(parseInt(e.target.value))} className="w-full p-2 rounded text-center font-bold" />
+                        </div>
+                        <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 text-center">
+                            <label className="block text-xs font-black text-purple-800 uppercase mb-1">Courts</label>
+                            <input type="number" value={courtCount} onChange={e => setCourtCount(parseInt(e.target.value))} className="w-full p-2 rounded text-center font-bold" />
+                        </div>
+                        <div className="bg-green-50 p-4 rounded-xl border border-green-100 text-center">
+                            <label className="block text-xs font-black text-green-800 uppercase mb-1">Rounds</label>
+                            <input type="number" value={roundCount} onChange={e => setRoundCount(parseInt(e.target.value))} className="w-full p-2 rounded text-center font-bold" />
+                        </div>
+                    </div>
+
+                    <button onClick={generateSchedule} className="w-full bg-gray-900 text-white font-bold py-4 rounded-xl hover:bg-black transition-all shadow-lg active:scale-[0.98] mb-10">
+                        Generate Balanced Schedule
+                    </button>
+
+                    {schedule && (
+                        <>
+                            <h2 className="text-lg font-bold text-gray-800 mb-4 uppercase tracking-tighter">Verification: Games Played</h2>
+                            <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-3 mb-12">
+                                {Object.entries(stats).map(([p, count]) => (
+                                    <div key={p} className="stats-card">
+                                        <div className="text-[10px] font-black text-gray-400">{p}</div>
+                                        <div className="text-lg font-bold text-blue-600">{count}</div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="space-y-12">
+                                {schedule.map(r => (
+                                    <div key={r.round} className="relative">
+                                        <div className="flex flex-wrap items-center gap-4 mb-4">
+                                            <h3 className="text-xl font-black text-gray-900">ROUND {r.round}</h3>
+                                            <div className="flex flex-wrap gap-2">
+                                                {r.waiting.map(p => <span key={p} className="bye-badge">Waiting: {p}</span>)}
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {r.matches.map((m, i) => (
+                                                <div key={i} className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm relative overflow-hidden">
+                                                    <div className="absolute top-0 left-0 bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-500 rounded-br-lg">COURT {i+1}</div>
+                                                    <div className="flex flex-col items-center gap-2 mt-2">
+                                                        <div className="text-blue-700 font-bold">{m.team1[0]} & {m.team1[1]}</div>
+                                                        <div className="text-[9px] font-black text-gray-300">VS</div>
+                                                        <div className="text-red-700 font-bold">{m.team2[0]} & {m.team2[1]}</div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
+            );
         }
 
-        // 4. Assign Matches to Courts (2 pairs per court for doubles)
-        const matches = [];
-        for (let i = 0; i < roundPairs.length; i += 2) {
-            if (matches.length < numCourts && (i + 1) < roundPairs.length) {
-                const m = { team1: roundPairs[i], team2: roundPairs[i+1] };
-                matches.push(m);
-                
-                // Track games played for stats
-                m.team1.concat(m.team2).forEach(player => gameTracker[player]++);
-            } else {
-                // Not enough courts or leftover pair? They sit out this round.
-                waitingList.push(...roundPairs[i]);
-                if (roundPairs[i+1]) waitingList.push(...roundPairs[i+1]);
-            }
-        }
-
-        fullSchedule.push({ round: r + 1, matches, waiting: waitingList });
-
-        // 5. THE KEY: Rotate the circle (keep first player fixed at index 0)
-        const fixed = circle[0];
-        const rotators = circle.slice(1);
-        rotators.unshift(rotators.pop()); // Shift last element to the front
-        circle = [fixed, ...rotators];
-    }
-
-    renderTournament(fullSchedule, gameTracker);
-}
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
