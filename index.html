@@ -373,22 +373,20 @@
                                 }
                             }
                         } else {
-                            // No user - sign in anonymously
-                            console.log('🔐 No user detected, signing in as anonymous guest...');
-                            try {
-                                await auth.signInAnonymously();
-                                console.log('✅ Anonymous sign-in successful - waiting for onAuthStateChanged...');
-                            } catch (error) {
-                                console.error('❌ Anonymous sign-in failed:', error);
-                                // Fallback to localStorage guest mode
-                                const savedProfile = localStorage.getItem('userProfile');
-                                if (savedProfile) {
-                                    try {
-                                        setCurrentUser(JSON.parse(savedProfile));
-                                    } catch (e) {
-                                        setCurrentUser(null);
-                                    }
-                                } else {
+                            // No user - check if user manually logged out
+                            const userLoggedOut = localStorage.getItem('userLoggedOut');
+                            
+                            if (userLoggedOut === 'true') {
+                                console.log('🔐 User logged out, staying logged out (not auto-signing in)');
+                                setCurrentUser(null);
+                            } else {
+                                // Auto sign in anonymously for first-time visitors
+                                console.log('🔐 No user detected, signing in as anonymous guest...');
+                                try {
+                                    await auth.signInAnonymously();
+                                    console.log('✅ Anonymous sign-in successful - waiting for onAuthStateChanged...');
+                                } catch (error) {
+                                    console.error('❌ Anonymous sign-in failed:', error);
                                     setCurrentUser(null);
                                 }
                             }
@@ -590,6 +588,11 @@
                     } else {
                         await auth.signInWithEmailAndPassword(email, password);
                     }
+                    
+                    // Clear logout flag so user stays logged in
+                    localStorage.removeItem('userLoggedOut');
+                    console.log('✅ Logged in successfully, cleared logout flag');
+                    
                     setShowLogin(false);
                 } catch (error) {
                     setError(error.message);
@@ -1774,6 +1777,7 @@
 
         function ProfileView({ currentUser, setCurrentUser }) {
             const [isEditing, setIsEditing] = useState(false);
+            const [hasLoggedOut, setHasLoggedOut] = useState(false); // Track manual logout
             const [editForm, setEditForm] = useState({
                 name: '',
                 email: '',
@@ -1833,15 +1837,18 @@
 
             const handleLogout = async () => {
                 if (confirm('Are you sure you want to logout?')) {
+                    setHasLoggedOut(true); // Prevent auto-signin
+                    localStorage.setItem('userLoggedOut', 'true'); // Persist across reload
+                    
                     if (isFirebaseConfigured && auth) {
                         try {
                             await auth.signOut();
+                            console.log('✅ Signed out successfully');
                         } catch (error) {
                             console.error('Logout error:', error);
                         }
                     }
                     setCurrentUser(null);
-                    window.location.reload();
                 }
             };
 
@@ -2029,10 +2036,11 @@
             }, [currentUser]);
 
             useEffect(() => {
+                // Only auto-save when scores change (not when loading tournament)
                 if (tournamentId && schedule.length > 0) {
                     saveTournament();
                 }
-            }, [scores, schedule, tournamentId]);
+            }, [scores, tournamentId]); // Removed 'schedule' from dependencies to prevent save loop when loading
 
             // Real-time listener for current tournament
             useEffect(() => {
