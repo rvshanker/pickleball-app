@@ -575,32 +575,107 @@
         function LoginModal({ setShowLogin }) {
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
+            const [confirmPassword, setConfirmPassword] = useState('');
             const [isSignup, setIsSignup] = useState(false);
             const [error, setError] = useState('');
+            const [success, setSuccess] = useState('');
+
+            const handlePasswordReset = async () => {
+                setError('');
+                setSuccess('');
+                
+                if (!email) {
+                    setError('Please enter your email address to reset password');
+                    return;
+                }
+
+                if (!isFirebaseConfigured) {
+                    setError('Please configure Firebase first');
+                    return;
+                }
+
+                try {
+                    await auth.sendPasswordResetEmail(email);
+                    setSuccess('Password reset email sent! Check your inbox (and spam folder).');
+                    console.log('✅ Password reset email sent to:', email);
+                } catch (error) {
+                    if (error.code === 'auth/user-not-found') {
+                        setError('No account found with this email address.');
+                    } else if (error.code === 'auth/invalid-email') {
+                        setError('Invalid email address.');
+                    } else {
+                        setError('Failed to send reset email: ' + error.message);
+                    }
+                }
+            };
 
             const handleAuth = async (e) => {
                 e.preventDefault();
                 setError('');
+                setSuccess('');
                 
                 if (!isFirebaseConfigured) {
                     setError('Please configure Firebase first (see instructions below)');
                     return;
                 }
 
+                // Validate password confirmation for signup
+                if (isSignup && password !== confirmPassword) {
+                    setError('Passwords do not match');
+                    return;
+                }
+
+                // Validate password strength for signup
+                if (isSignup && password.length < 6) {
+                    setError('Password must be at least 6 characters');
+                    return;
+                }
+
                 try {
                     if (isSignup) {
-                        await auth.createUserWithEmailAndPassword(email, password);
+                        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                        
+                        // Send verification email
+                        try {
+                            await userCredential.user.sendEmailVerification();
+                            setSuccess('Account created! Please check your email to verify your account.');
+                            console.log('✅ Verification email sent to:', email);
+                        } catch (emailError) {
+                            console.warn('⚠️ Could not send verification email:', emailError.message);
+                            setSuccess('Account created successfully!');
+                        }
+                        
+                        // Clear logout flag
+                        localStorage.removeItem('userLoggedOut');
+                        
+                        // Close modal after 3 seconds
+                        setTimeout(() => {
+                            setShowLogin(false);
+                        }, 3000);
                     } else {
                         await auth.signInWithEmailAndPassword(email, password);
+                        
+                        // Clear logout flag so user stays logged in
+                        localStorage.removeItem('userLoggedOut');
+                        console.log('✅ Logged in successfully, cleared logout flag');
+                        
+                        setShowLogin(false);
                     }
-                    
-                    // Clear logout flag so user stays logged in
-                    localStorage.removeItem('userLoggedOut');
-                    console.log('✅ Logged in successfully, cleared logout flag');
-                    
-                    setShowLogin(false);
                 } catch (error) {
-                    setError(error.message);
+                    // User-friendly error messages
+                    if (error.code === 'auth/email-already-in-use') {
+                        setError('This email is already registered. Please login instead.');
+                    } else if (error.code === 'auth/invalid-email') {
+                        setError('Invalid email address.');
+                    } else if (error.code === 'auth/weak-password') {
+                        setError('Password is too weak. Use at least 6 characters.');
+                    } else if (error.code === 'auth/user-not-found') {
+                        setError('No account found with this email.');
+                    } else if (error.code === 'auth/wrong-password') {
+                        setError('Incorrect password.');
+                    } else {
+                        setError(error.message);
+                    }
                 }
             };
 
@@ -639,8 +714,32 @@
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
                                     required
+                                    minLength={6}
                                 />
+                                {isSignup && (
+                                    <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
+                                )}
                             </div>
+
+                            {isSignup && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                                    <input
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                                        required
+                                        minLength={6}
+                                    />
+                                </div>
+                            )}
+
+                            {success && (
+                                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                                    {success}
+                                </div>
+                            )}
 
                             {error && (
                                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
@@ -654,6 +753,18 @@
                             >
                                 {isSignup ? 'Sign Up' : 'Login'}
                             </button>
+
+                            {!isSignup && (
+                                <div className="text-center">
+                                    <button
+                                        type="button"
+                                        onClick={handlePasswordReset}
+                                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                                    >
+                                        Forgot Password?
+                                    </button>
+                                </div>
+                            )}
 
                             <div className="text-center">
                                 <button
