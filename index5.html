@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pickle-Balancer PRO v2</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-50 p-6">
+<div class="max-w-6xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100">
+
+    <div class="bg-slate-900 p-8 text-white">
+        <h1 class="text-3xl font-black italic">
+            PICKLE-BALANCER <span class="text-green-400">PRO v2</span>
+        </h1>
+        <p class="text-slate-400 text-sm mt-1">
+            Multi-Mode Professional Scheduler
+        </p>
+    </div>
+
+    <div class="p-8 space-y-6">
+
+        <!-- MODE SELECT -->
+        <div>
+            <label class="text-xs font-bold text-gray-400 uppercase">Mode</label>
+            <select id="mode" onchange="modeChanged()"
+                class="w-full bg-gray-100 rounded-2xl p-3 font-bold">
+                <option value="rotating">Rotating Partner (Smart)</option>
+                <option value="fixed">Fixed Partner Teams</option>
+                <option value="roundrobin">Round Robin Doubles</option>
+                <option value="custom">Custom Manual</option>
+                <option value="singles">Singles</option>
+            </select>
+        </div>
+
+        <!-- GENERAL INPUTS -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <input type="number" id="players" value="16"
+                class="bg-gray-100 p-3 rounded-xl font-bold" placeholder="Players">
+            <input type="number" id="courts" value="3"
+                class="bg-gray-100 p-3 rounded-xl font-bold" placeholder="Courts">
+            <input type="number" id="rounds" value="8"
+                class="bg-gray-100 p-3 rounded-xl font-bold" placeholder="Rounds">
+        </div>
+
+        <!-- FIXED TEAM INPUT -->
+        <div id="fixedSection" class="hidden">
+            <label class="text-xs font-bold text-gray-400 uppercase">Enter Teams (P1,P2 per line)</label>
+            <textarea id="fixedTeams"
+                class="w-full bg-gray-100 p-3 rounded-xl"
+                rows="4"
+                placeholder="P1,P2&#10;P3,P4&#10;P5,P6"></textarea>
+        </div>
+
+        <!-- CUSTOM INPUT -->
+        <div id="customSection" class="hidden">
+            <label class="text-xs font-bold text-gray-400 uppercase">Manual Matches (1 per line)</label>
+            <textarea id="customInput"
+                class="w-full bg-gray-100 p-3 rounded-xl"
+                rows="5"
+                placeholder="P1,P2 vs P3,P4"></textarea>
+        </div>
+
+        <button onclick="generate()"
+            class="w-full bg-green-500 text-white font-bold py-4 rounded-2xl">
+            Generate Schedule
+        </button>
+
+        <!-- STATS -->
+        <div id="statsContainer" class="hidden">
+            <h2 class="font-bold text-gray-400 uppercase mt-8 mb-4">Balance Stats</h2>
+            <div id="statsList" class="grid grid-cols-4 md:grid-cols-8 gap-2"></div>
+        </div>
+
+        <!-- OUTPUT -->
+        <div id="output" class="space-y-10 mt-10"></div>
+
+    </div>
+</div>
+
+<script>
+
+function modeChanged() {
+    const mode = document.getElementById("mode").value;
+    document.getElementById("fixedSection").classList.toggle("hidden", mode !== "fixed");
+    document.getElementById("customSection").classList.toggle("hidden", mode !== "custom");
+}
+
+function generate() {
+    const mode = document.getElementById("mode").value;
+
+    if (mode === "rotating") generateRotating();
+    if (mode === "fixed") generateFixed();
+    if (mode === "roundrobin") generateRoundRobin();
+    if (mode === "custom") generateCustom();
+    if (mode === "singles") generateSingles();
+}
+
+function initPlayers(P) {
+    const players = [];
+    const stats = {};
+    for (let i=1;i<=P;i++) {
+        const id = `P${i}`;
+        players.push(id);
+        stats[id] = {games:0};
+    }
+    return {players,stats};
+}
+
+function renderStats(stats) {
+    let html="";
+    for (let p in stats) {
+        html+=`<div class="bg-white border p-2 rounded text-center">
+        <div class="text-xs text-gray-400">${p}</div>
+        <div class="font-bold text-green-600">${stats[p].games}</div>
+        </div>`;
+    }
+    document.getElementById("statsContainer").classList.remove("hidden");
+    document.getElementById("statsList").innerHTML=html;
+}
+
+function renderOutput(roundHtml) {
+    document.getElementById("output").innerHTML=roundHtml;
+}
+
+/* ===========================
+   1️⃣ ROTATING SMART MODE
+=========================== */
+
+function generateRotating() {
+    const P=parseInt(players.value);
+    const C=parseInt(courts.value);
+    const R=parseInt(rounds.value);
+
+    const {players,stats}=initPlayers(P);
+    let html="";
+
+    for (let r=1;r<=R;r++) {
+        players.sort((a,b)=>stats[a].games-stats[b].games);
+        let playing=players.slice(0,C*4);
+        let sitting=players.slice(C*4);
+
+        let matches=[];
+        while (playing.length>=4) {
+            let group=playing.splice(0,4);
+            matches.push({t1:[group[0],group[1]],t2:[group[2],group[3]]});
+            group.forEach(p=>stats[p].games++);
+        }
+
+        html+=renderRound(r,matches,sitting);
+    }
+
+    renderStats(stats);
+    renderOutput(html);
+}
+
+/* ===========================
+   2️⃣ FIXED TEAM MODE
+=========================== */
+
+function generateFixed() {
+    const C=parseInt(courts.value);
+    const R=parseInt(rounds.value);
+    const teamLines=document.getElementById("fixedTeams").value.trim().split("\n");
+
+    let teams=teamLines.map(line=>line.split(",").map(p=>p.trim()));
+    let stats={};
+    teams.flat().forEach(p=>stats[p]={games:0});
+
+    let html="";
+
+    for (let r=1;r<=R;r++) {
+        teams=teams.sort(()=>Math.random()-0.5);
+        let roundTeams=teams.slice(0,C*2);
+        let matches=[];
+
+        for (let i=0;i<roundTeams.length;i+=2) {
+            matches.push({t1:roundTeams[i],t2:roundTeams[i+1]});
+            [...roundTeams[i],...roundTeams[i+1]].forEach(p=>stats[p].games++);
+        }
+
+        html+=renderRound(r,matches,[]);
+    }
+
+    renderStats(stats);
+    renderOutput(html);
+}
+
+/* ===========================
+   3️⃣ ROUND ROBIN DOUBLES
+=========================== */
+
+function generateRoundRobin() {
+    const P=parseInt(players.value);
+    const {players:plist,stats}=initPlayers(P);
+    let html="";
+    let round=1;
+
+    for (let i=0;i<plist.length;i++) {
+        for (let j=i+1;j<plist.length;j++) {
+            html+=renderRound(round,[{t1:[plist[i]],t2:[plist[j]]}],[]);
+            stats[plist[i]].games++;
+            stats[plist[j]].games++;
+            round++;
+        }
+    }
+
+    renderStats(stats);
+    renderOutput(html);
+}
+
+/* ===========================
+   4️⃣ CUSTOM MODE
+=========================== */
+
+function generateCustom() {
+    const lines=document.getElementById("customInput").value.trim().split("\n");
+    let stats={};
+    let html="";
+    let round=1;
+
+    lines.forEach(line=>{
+        const parts=line.split("vs");
+        const t1=parts[0].split(",").map(p=>p.trim());
+        const t2=parts[1].split(",").map(p=>p.trim());
+        [...t1,...t2].forEach(p=>{
+            if(!stats[p]) stats[p]={games:0};
+            stats[p].games++;
+        });
+        html+=renderRound(round,[{t1,t2}],[]);
+        round++;
+    });
+
+    renderStats(stats);
+    renderOutput(html);
+}
+
+/* ===========================
+   5️⃣ SINGLES MODE
+=========================== */
+
+function generateSingles() {
+    const P=parseInt(players.value);
+    const C=parseInt(courts.value);
+    const R=parseInt(rounds.value);
+
+    const {players,stats}=initPlayers(P);
+    let html="";
+
+    for (let r=1;r<=R;r++) {
+        players.sort((a,b)=>stats[a].games-stats[b].games);
+        let playing=players.slice(0,C*2);
+        let sitting=players.slice(C*2);
+        let matches=[];
+
+        while (playing.length>=2) {
+            let p1=playing.shift();
+            let p2=playing.shift();
+            matches.push({t1:[p1],t2:[p2]});
+            stats[p1].games++;
+            stats[p2].games++;
+        }
+
+        html+=renderRound(r,matches,sitting);
+    }
+
+    renderStats(stats);
+    renderOutput(html);
+}
+
+/* ===========================
+   RENDER ROUND
+=========================== */
+
+function renderRound(round,matches,sitting) {
+    return `
+    <div class="border-l-4 border-green-500 pl-4">
+        <h3 class="font-bold mb-2">Round ${round}</h3>
+        ${sitting.length?`<div class="text-red-500 text-sm mb-2">Bye: ${sitting.join(", ")}</div>`:""}
+        ${matches.map((m,i)=>`
+            <div class="bg-gray-100 p-3 rounded mb-2">
+                Court ${i+1}: ${m.t1.join(" & ")} VS ${m.t2.join(" & ")}
+            </div>
+        `).join("")}
+    </div>`;
+}
+
+</script>
+</body>
+</html>
