@@ -3,147 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PickleConnect - Balanced Tournament</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <title>PickleConnect - Absolute Fair Scheduler</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="bg-slate-50 p-4">
-    <div id="root"></div>
+<body class="bg-gray-50 p-6">
+    <div class="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+        <div class="bg-slate-900 p-8 text-white">
+            <h1 class="text-3xl font-black italic tracking-tighter">PICKLE-BALANCER <span class="text-green-400">PRO</span></h1>
+            <p class="text-slate-400 text-sm mt-1">Mathematical Round-Robin Engine</p>
+        </div>
 
-    <script type="text/babel">
-        const { useState, useMemo } = React;
+        <div class="p-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Total Players</label>
+                    <input type="number" id="players" value="15" class="w-full bg-gray-100 border-none rounded-2xl p-4 focus:ring-2 focus:ring-green-500 font-bold">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Number of Courts</label>
+                    <input type="number" id="courts" value="3" class="w-full bg-gray-100 border-none rounded-2xl p-4 focus:ring-2 focus:ring-green-500 font-bold">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Rounds</label>
+                    <input type="number" id="rounds" value="10" class="w-full bg-gray-100 border-none rounded-2xl p-4 focus:ring-2 focus:ring-green-500 font-bold">
+                </div>
+            </div>
 
-        function TournamentApp() {
-            const [playerCount, setPlayerCount] = useState(15);
-            const [courtCount, setCourtCount] = useState(3);
-            const [roundCount, setRoundCount] = useState(10);
-            const [data, setData] = useState({ schedule: [], stats: {} });
+            <button onclick="generate()" class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-5 rounded-2xl transition-all transform active:scale-95 shadow-lg shadow-green-200 uppercase tracking-widest">
+                Calculate Balanced Schedule
+            </button>
 
-            const generateSchedule = () => {
-                let players = Array.from({ length: playerCount }, (_, i) => `P${i + 1}`);
-                let circle = [...players];
-                
-                // For Odd numbers, add a "Ghost". Whoever pairs with Ghost sits out.
-                if (circle.length % 2 !== 0) circle.push("GHOST");
-                
-                const n = circle.length;
-                const schedule = [];
-                const stats = {};
-                players.forEach(p => stats[p] = 0);
+            <div id="statsContainer" class="hidden mt-12 animate-fade-in">
+                <h2 class="text-sm font-black text-gray-400 uppercase mb-4 flex items-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i> Balance Verification
+                </h2>
+                <div id="statsList" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-3"></div>
+            </div>
 
-                for (let r = 0; r < roundCount; r++) {
-                    let pairs = [];
-                    let waiting = [];
+            <div id="output" class="mt-12 space-y-12"></div>
+        </div>
+    </div>
 
-                    // 1. Circle Rotation (Fixed Pivot at index 0)
-                    for (let i = 0; i < n / 2; i++) {
-                        const p1 = circle[i];
-                        const p2 = circle[n - 1 - i];
-                        if (p1 === "GHOST") waiting.push(p2);
-                        else if (p2 === "GHOST") waiting.push(p1);
-                        else pairs.push([p1, p2]);
-                    }
+    <script>
+        function generate() {
+            const P = parseInt(document.getElementById('players').value);
+            const C = parseInt(document.getElementById('courts').value);
+            const R = parseInt(document.getElementById('rounds').value);
+            
+            // 1. Setup the "Carousel" Array
+            // If odd, we add a Ghost at the end.
+            let circle = Array.from({length: P}, (_, i) => `P${i + 1}`);
+            if (P % 2 !== 0) circle.push("GHOST");
+            
+            const n = circle.length;
+            const stats = {};
+            Array.from({length: P}).forEach((_, i) => stats[`P${i+1}`] = 0);
+            
+            let html = "";
+            let statsHtml = "";
 
-                    // 2. Assign to Courts (2 pairs per match)
-                    const matches = [];
-                    const availablePairs = [...pairs];
-                    
-                    while (matches.length < courtCount && availablePairs.length >= 2) {
-                        const team1 = availablePairs.shift();
-                        const team2 = availablePairs.shift();
-                        matches.push({ team1, team2 });
-                        
-                        // Track games
-                        [...team1, ...team2].forEach(p => stats[p]++);
-                    }
+            // 2. Run Rounds
+            for (let r = 0; r < R; r++) {
+                let roundPairs = [];
+                let sittingOut = [];
 
-                    // Anyone left in availablePairs also sits out due to court limits
-                    availablePairs.forEach(pair => waiting.push(...pair));
+                // Fixed-Pivot Folding: Pair 0-n, 1-(n-1), 2-(n-2)
+                for (let i = 0; i < n / 2; i++) {
+                    const p1 = circle[i];
+                    const p2 = circle[n - 1 - i];
 
-                    schedule.push({ round: r + 1, matches, waiting });
-
-                    // 3. Rotate the circle for next round
-                    const fixed = circle[0];
-                    const shifters = circle.slice(1);
-                    shifters.unshift(shifters.pop());
-                    circle = [fixed, ...shifters];
+                    if (p1 === "GHOST") sittingOut.push(p2);
+                    else if (p2 === "GHOST") sittingOut.push(p1);
+                    else roundPairs.push([p1, p2]);
                 }
-                setData({ schedule, stats });
-            };
 
-            return (
-                <div className="max-w-4xl mx-auto bg-white shadow-2xl rounded-3xl p-8 border border-slate-200">
-                    <h1 className="text-3xl font-black text-slate-800 mb-8 flex items-center gap-2">
-                        <span className="bg-green-500 text-white p-2 rounded-lg text-xl">P</span> 
-                        Tournament Logic Fix
-                    </h1>
+                // Match Assignment
+                let matches = [];
+                let courtIdx = 0;
+                
+                // We need 2 pairs per match (doubles)
+                for (let j = 0; j < roundPairs.length; j += 2) {
+                    if (courtIdx < C && (j + 1) < roundPairs.length) {
+                        const m = { t1: roundPairs[j], t2: roundPairs[j+1], court: courtIdx + 1 };
+                        matches.push(m);
+                        
+                        // Update stats
+                        [...m.t1, ...m.t2].forEach(p => stats[p]++);
+                        courtIdx++;
+                    } else {
+                        // Leftover players due to court limits
+                        sittingOut.push(...roundPairs[j]);
+                        if (roundPairs[j+1]) sittingOut.push(...roundPairs[j+1]);
+                    }
+                }
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div>
-                            <label className="text-xs font-bold text-slate-400 uppercase">Players</label>
-                            <input type="number" value={playerCount} onChange={e => setPlayerCount(Number(e.target.value))} className="w-full bg-slate-50 p-3 rounded-xl border-none ring-1 ring-slate-200" />
-                        </div>
-                        <div>
-                            <label className="text-xs font-bold text-slate-400 uppercase">Courts</label>
-                            <input type="number" value={courtCount} onChange={e => setCourtCount(Number(e.target.value))} className="w-full bg-slate-50 p-3 rounded-xl border-none ring-1 ring-slate-200" />
-                        </div>
-                        <div>
-                            <label className="text-xs font-bold text-slate-400 uppercase">Rounds</label>
-                            <input type="number" value={roundCount} onChange={e => setRoundCount(Number(e.target.value))} className="w-full bg-slate-50 p-3 rounded-xl border-none ring-1 ring-slate-200" />
+                // Render Round
+                html += `
+                <div class="border-l-4 border-green-500 pl-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-2xl font-black text-gray-800 italic uppercase">Round ${r + 1}</h3>
+                        <div class="flex flex-wrap gap-2 justify-end max-w-xs">
+                            ${sittingOut.map(p => `<span class="bg-red-50 text-red-500 text-[10px] font-black px-2 py-1 rounded uppercase">Bye: ${p}</span>`).join('')}
                         </div>
                     </div>
-
-                    <button onClick={generateSchedule} className="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition mb-10">
-                        Generate Balanced Schedule
-                    </button>
-
-                    {data.schedule.length > 0 && (
-                        <>
-                            <div className="mb-10 bg-green-50 p-6 rounded-2xl border border-green-100">
-                                <h2 className="font-bold text-green-800 mb-4">Verification: Game Counts</h2>
-                                <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-                                    {Object.entries(data.stats).map(([player, count]) => (
-                                        <div key={player} className="bg-white p-2 rounded border border-green-200 text-center">
-                                            <div className="text-[10px] text-slate-400 font-bold">{player}</div>
-                                            <div className="font-black text-green-600">{count}</div>
-                                        </div>
-                                    ))}
-                                </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        ${matches.map(m => `
+                            <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col items-center">
+                                <span class="text-[9px] font-black text-gray-300 uppercase mb-2">Court ${m.court}</span>
+                                <div class="text-blue-600 font-bold">${m.t1[0]} & ${m.t1[1]}</div>
+                                <div class="text-[10px] font-black text-gray-300 my-1">VS</div>
+                                <div class="text-red-600 font-bold">${m.t2[0]} & ${m.t2[1]}</div>
                             </div>
+                        `).join('')}
+                    </div>
+                </div>`;
 
-                            <div className="space-y-8">
-                                {data.schedule.map(round => (
-                                    <div key={round.round} className="border-l-4 border-slate-100 pl-6">
-                                        <div className="flex justify-between items-center mb-4">
-                                            <h3 className="text-xl font-bold">Round {round.round}</h3>
-                                            <div className="flex gap-1">
-                                                {round.waiting.map(p => <span key={p} className="bg-red-100 text-red-600 px-2 py-1 rounded text-[10px] font-bold">Bye: {p}</span>)}
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {round.matches.map((m, i) => (
-                                                <div key={i} className="bg-slate-50 p-4 rounded-xl border border-slate-100 relative">
-                                                    <span className="absolute top-2 left-2 text-[9px] font-bold text-slate-300">COURT {i+1}</span>
-                                                    <div className="flex justify-around items-center pt-2">
-                                                        <span className="font-bold text-blue-600">{m.team1.join(' & ')}</span>
-                                                        <span className="text-[10px] font-black text-slate-300 px-2">VS</span>
-                                                        <span className="font-bold text-red-600">{m.team2.join(' & ')}</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </>
-                    )}
-                </div>
-            );
+                // 3. THE KEY: Pivot Rotation
+                // Keep circle[0] fixed. Move everything else one step clockwise.
+                const fixed = circle[0];
+                const shifters = circle.slice(1);
+                shifters.unshift(shifters.pop());
+                circle = [fixed, ...shifters];
+            }
+
+            // Render Stats
+            for (let player in stats) {
+                statsHtml += `
+                <div class="bg-white border border-gray-100 p-3 rounded-2xl text-center shadow-sm">
+                    <div class="text-[10px] font-black text-gray-400">${player}</div>
+                    <div class="text-xl font-black text-green-600">${stats[player]}</div>
+                </div>`;
+            }
+
+            document.getElementById('statsContainer').classList.remove('hidden');
+            document.getElementById('statsList').innerHTML = statsHtml;
+            document.getElementById('output').innerHTML = html;
+            lucide.createIcons();
         }
-
-        ReactDOM.createRoot(document.getElementById('root')).render(<TournamentApp />);
     </script>
 </body>
 </html>
