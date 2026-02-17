@@ -2172,9 +2172,8 @@
                         createdAt: new Date().toISOString()
                     };
                     
-                    // Try to save to Firebase
-                    if (typeof firebase !== 'undefined' && firebase.firestore) {
-                        const db = firebase.firestore();
+                    // Try to save to Firebase (use the already initialized db variable)
+                    if (isFirebaseConfigured && db) {
                         await db.collection('feedback').add(feedbackData);
                         setSubmitStatus('✓ Feedback submitted successfully!');
                     } else {
@@ -2962,6 +2961,91 @@
                     <div className="bg-white rounded-xl shadow-lg p-4 md:p-8">
                         <div className="flex flex-col md:flex-row md:justify-end md:items-center mb-6 space-y-4 md:space-y-0">
                             <div className="flex flex-wrap items-center gap-2">
+                                {tournamentId && schedule.length > 0 && (
+                                    <>
+                                        <button
+                                            onClick={() => {
+                                                // Simple modal to show tournament ID
+                                                const modal = document.createElement('div');
+                                                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+                                                modal.innerHTML = `
+                                                    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
+                                                        <div class="flex justify-between items-center mb-4">
+                                                            <h3 class="text-xl font-black text-gray-800">📤 Share Tournament</h3>
+                                                            <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+                                                        </div>
+                                                        
+                                                        <div class="mb-4">
+                                                            <p class="text-sm text-gray-600 mb-3">
+                                                                ${isPublic ? '🌍 Public - Anyone can view' : '🔒 Private - Only you can edit'}
+                                                            </p>
+                                                            
+                                                            <div class="bg-gray-100 rounded-xl p-4 mb-3">
+                                                                <p class="text-xs font-black text-gray-400 uppercase mb-2">Tournament ID</p>
+                                                                <div class="flex gap-2">
+                                                                    <input 
+                                                                        type="text" 
+                                                                        value="${tournamentId}" 
+                                                                        readonly 
+                                                                        class="flex-1 bg-white rounded-lg px-3 py-2 text-sm border-2 border-gray-300 font-mono"
+                                                                        onclick="this.select()"
+                                                                    />
+                                                                    <button 
+                                                                        onclick="navigator.clipboard.writeText('${tournamentId}').then(() => { 
+                                                                            this.textContent = '✓'; 
+                                                                            setTimeout(() => this.textContent = '📋', 1000); 
+                                                                        })"
+                                                                        class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 font-bold"
+                                                                    >
+                                                                        📋
+                                                                    </button>
+                                                                </div>
+                                                                <p class="text-xs text-gray-500 mt-2">Copy this ID and share it. Others can paste it in the "Load Tournament" box at the top.</p>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="bg-blue-50 border-l-4 border-blue-500 p-3 rounded text-sm">
+                                                            <p class="text-blue-800">
+                                                                <strong>💡 How to share:</strong> Copy the ID and send it to others. They paste it in the blue box at the top to load your tournament.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                `;
+                                                document.body.appendChild(modal);
+                                                
+                                                // Close on background click
+                                                modal.addEventListener('click', (e) => {
+                                                    if (e.target === modal) modal.remove();
+                                                });
+                                            }}
+                                            className="bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-all text-xs md:text-sm"
+                                        >
+                                            📤 Share
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (scoresFinalized) {
+                                                    alert('Scores are already finalized!');
+                                                    return;
+                                                }
+                                                if (confirm('Finalize scores? This will make them read-only. You cannot undo this action.')) {
+                                                    setScoresFinalized(true);
+                                                    // Trigger save to persist finalized state
+                                                    setTimeout(() => saveTournament(), 100);
+                                                    alert('✓ Scores finalized! They are now read-only.');
+                                                }
+                                            }}
+                                            className={`px-3 md:px-4 py-2 rounded-lg font-medium transition-all text-xs md:text-sm ${
+                                                scoresFinalized 
+                                                    ? 'bg-gray-400 text-white cursor-not-allowed' 
+                                                    : 'bg-purple-600 text-white hover:bg-purple-700'
+                                            }`}
+                                            disabled={scoresFinalized}
+                                        >
+                                            {scoresFinalized ? '🔒 Finalized' : '✓ Finalize'}
+                                        </button>
+                                    </>
+                                )}
                                 {saveStatus && (
                                     <span className={`px-3 md:px-4 py-2 rounded-lg font-medium text-xs md:text-sm ${
                                         saveStatus.includes('✓') ? 'bg-green-100 text-green-700' : 
