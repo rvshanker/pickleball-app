@@ -2131,15 +2131,18 @@
             const [isPublic, setIsPublic] = useState(false);
             const [tournamentName, setTournamentName] = useState('');
             const [scoresFinalized, setScoresFinalized] = useState(false);
+            const [showSavedTournaments, setShowSavedTournaments] = useState(false);
             const isSavingRef = useRef(false); // Prevent simultaneous saves
 
             // Update players array when numPlayers changes
             useEffect(() => {
-                const newPlayers = [];
-                for (let i = 0; i < numPlayers; i++) {
-                    newPlayers.push(players[i] || `Player ${i + 1}`);
-                }
-                setPlayers(newPlayers);
+                setPlayers(prevPlayers => {
+                    const newPlayers = [];
+                    for (let i = 0; i < numPlayers; i++) {
+                        newPlayers.push(prevPlayers[i] || `Player ${i + 1}`);
+                    }
+                    return newPlayers;
+                });
             }, [numPlayers]);
 
             // Load tournament from URL parameter if present
@@ -2236,6 +2239,7 @@
                     matchFormat,
                     scheduleFlat: firestoreSchedule,
                     scores: scores || {},
+                    scoresFinalized: scoresFinalized,
                     isPublic,
                     participants: [userId, ...players.filter(p => p.trim() !== '').map(p => `player-${p}`)],
                     createdBy: userId,
@@ -2306,6 +2310,7 @@
                         setMatchFormat(data.matchFormat || 'singles');
                         setSchedule(appSchedule);
                         setScores(data.scores || {});
+                        setScoresFinalized(data.scoresFinalized || false);
                         setIsPublic(data.isPublic || false);
                         setTournamentId(data.id);
                         setShowLeaderboard(true);
@@ -2762,6 +2767,8 @@
                                                 }
                                                 if (confirm('Finalize scores? This will make them read-only. You cannot undo this action.')) {
                                                     setScoresFinalized(true);
+                                                    // Trigger save to persist finalized state
+                                                    setTimeout(() => saveTournament(), 100);
                                                     alert('✓ Scores finalized! They are now read-only.');
                                                 }
                                             }}
@@ -2836,7 +2843,7 @@
                                                     />
                                                     <div className={`px-4 py-3 rounded-2xl font-bold text-center transition-all ${
                                                         matchFormat === 'singles'
-                                                            ? 'bg-gray-100 border-2 border-gray-300 text-gray-700'
+                                                            ? 'bg-green-500 text-white'
                                                             : 'bg-gray-50 border-2 border-gray-200 text-gray-500 hover:bg-gray-100'
                                                     }`}>
                                                         1️⃣ Singles
@@ -2877,7 +2884,7 @@
                                                     />
                                                     <div className={`px-4 py-3 rounded-2xl text-center font-bold transition-all ${
                                                         !isPublic 
-                                                            ? 'bg-purple-100 border-2 border-purple-300 text-purple-700' 
+                                                            ? 'bg-green-500 text-white' 
                                                             : 'bg-gray-50 border-2 border-gray-200 text-gray-500 hover:bg-gray-100'
                                                     }`}>
                                                         🔒 Private
@@ -2893,7 +2900,7 @@
                                                     />
                                                     <div className={`px-4 py-3 rounded-2xl text-center font-bold transition-all ${
                                                         isPublic 
-                                                            ? 'bg-blue-100 border-2 border-blue-300 text-blue-700' 
+                                                            ? 'bg-green-500 text-white' 
                                                             : 'bg-gray-50 border-2 border-gray-200 text-gray-500 hover:bg-gray-100'
                                                     }`}>
                                                         🌍 Public
@@ -2906,47 +2913,96 @@
                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mt-6">
                                         <div>
                                             <label className="text-xs font-black text-gray-400 uppercase block mb-2">Players</label>
-                                            <input
-                                                type="number"
-                                                value={numPlayers}
-                                                onChange={(e) => {
-                                                    const val = parseInt(e.target.value) || (matchFormat === 'doubles' ? 4 : 2);
-                                                    setNumPlayers(Math.min(99, Math.max((matchFormat === 'doubles' ? 4 : 2), val)));
-                                                }}
-                                                min={matchFormat === 'doubles' ? 4 : 2}
-                                                max="99"
-                                                className="w-full bg-gray-100 rounded-2xl p-4 font-bold text-center focus:outline-none focus:ring-2 focus:ring-green-500"
-                                            />
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setNumPlayers(Math.max((matchFormat === 'doubles' ? 4 : 2), numPlayers - 1))}
+                                                    className="sm:hidden w-10 h-12 flex-shrink-0 bg-gray-200 hover:bg-gray-300 rounded-xl font-bold text-xl"
+                                                >
+                                                    −
+                                                </button>
+                                                <input
+                                                    type="number"
+                                                    value={numPlayers}
+                                                    onChange={(e) => {
+                                                        const val = parseInt(e.target.value) || (matchFormat === 'doubles' ? 4 : 2);
+                                                        setNumPlayers(Math.min(99, Math.max((matchFormat === 'doubles' ? 4 : 2), val)));
+                                                    }}
+                                                    min={matchFormat === 'doubles' ? 4 : 2}
+                                                    max="99"
+                                                    className="flex-1 bg-gray-100 rounded-2xl p-4 font-bold text-center focus:outline-none focus:ring-2 focus:ring-green-500"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setNumPlayers(Math.min(99, numPlayers + 1))}
+                                                    className="sm:hidden w-10 h-12 flex-shrink-0 bg-gray-200 hover:bg-gray-300 rounded-xl font-bold text-xl"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
                                         </div>
 
                                         <div>
                                             <label className="text-xs font-black text-gray-400 uppercase block mb-2">Courts</label>
-                                            <input
-                                                type="number"
-                                                value={courts}
-                                                onChange={(e) => {
-                                                    const val = parseInt(e.target.value) || 1;
-                                                    setCourts(Math.min(20, Math.max(1, val)));
-                                                }}
-                                                min="1"
-                                                max="20"
-                                                className="w-full bg-gray-100 rounded-2xl p-4 font-bold text-center focus:outline-none focus:ring-2 focus:ring-green-500"
-                                            />
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setCourts(Math.max(1, courts - 1))}
+                                                    className="sm:hidden w-10 h-12 flex-shrink-0 bg-gray-200 hover:bg-gray-300 rounded-xl font-bold text-xl"
+                                                >
+                                                    −
+                                                </button>
+                                                <input
+                                                    type="number"
+                                                    value={courts}
+                                                    onChange={(e) => {
+                                                        const val = parseInt(e.target.value) || 1;
+                                                        setCourts(Math.min(20, Math.max(1, val)));
+                                                    }}
+                                                    min="1"
+                                                    max="20"
+                                                    className="flex-1 bg-gray-100 rounded-2xl p-4 font-bold text-center focus:outline-none focus:ring-2 focus:ring-green-500"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setCourts(Math.min(20, courts + 1))}
+                                                    className="sm:hidden w-10 h-12 flex-shrink-0 bg-gray-200 hover:bg-gray-300 rounded-xl font-bold text-xl"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
                                         </div>
 
                                         <div>
                                             <label className="text-xs font-black text-gray-400 uppercase block mb-2">Rounds</label>
-                                            <input
-                                                type="number"
-                                                value={numRounds}
-                                                onChange={(e) => {
-                                                    const val = parseInt(e.target.value) || 1;
-                                                    setNumRounds(Math.min(50, Math.max(1, val)));
-                                                }}
-                                                min="1"
-                                                max="50"
-                                                className="w-full bg-gray-100 rounded-2xl p-4 font-bold text-center focus:outline-none focus:ring-2 focus:ring-green-500"
-                                            />
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setNumRounds(Math.max(1, numRounds - 1))}
+                                                    className="sm:hidden w-10 h-12 flex-shrink-0 bg-gray-200 hover:bg-gray-300 rounded-xl font-bold text-xl"
+                                                >
+                                                    −
+                                                </button>
+                                                <input
+                                                    type="number"
+                                                    value={numRounds}
+                                                    onChange={(e) => {
+                                                        const val = parseInt(e.target.value) || 1;
+                                                        setNumRounds(Math.min(50, Math.max(1, val)));
+                                                    }}
+                                                    min="1"
+                                                    max="50"
+                                                    className="flex-1 bg-gray-100 rounded-2xl p-4 font-bold text-center focus:outline-none focus:ring-2 focus:ring-green-500"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setNumRounds(Math.min(50, numRounds + 1))}
+                                                    className="sm:hidden w-10 h-12 flex-shrink-0 bg-gray-200 hover:bg-gray-300 rounded-xl font-bold text-xl"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        </div>
                                         </div>
                                         
                                         <div>
@@ -2984,10 +3040,10 @@
                                 <div className="bg-white rounded-xl p-6 md:p-8 mb-6 border-2 border-gray-200">
                                     <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
                                         <span className="bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
-                                        Enter Player Names ({players.length} players)
+                                        Enter Player Names ({players?.length || 0} players)
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {players.map((player, index) => (
+                                        {(players || []).map((player, index) => (
                                             <div key={index} className="flex gap-2">
                                                 <span className="flex items-center justify-center w-8 h-10 font-bold text-gray-400">
                                                     {index + 1}
@@ -3204,46 +3260,56 @@
                                 {/* Saved Tournaments - Below Generate Button */}
                                 {savedTournaments.length > 0 && (
                                     <div className="mt-8 p-6 bg-gray-50 rounded-xl border-2 border-gray-200">
-                                        <h3 className="text-xl font-bold text-gray-800 mb-4">📁 Your Saved Tournaments</h3>
-                                        <div className="space-y-3">
-                                            {savedTournaments.map(tournament => (
-                                                <div key={tournament.id} className="bg-white border-2 border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                                                    <div className="flex-1">
-                                                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                            <p className="font-bold text-gray-800">{tournament.name}</p>
-                                                            {tournament.isPublic ? (
-                                                                <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">🌍 Public</span>
-                                                            ) : (
-                                                                <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-medium">🔒 Private</span>
-                                                            )}
-                                                            <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-medium">
-                                                                {tournament.matchFormat === 'doubles' ? '👥 Doubles' : '1️⃣ Singles'}
-                                                            </span>
-                                                        </div>
-                                                        <p className="text-sm text-gray-600">
-                                                            {tournament.players.length} players • {tournament.numRounds} rounds
-                                                        </p>
-                                                        <p className="text-xs text-gray-500">
-                                                            {new Date(tournament.createdAt).toLocaleDateString()}
-                                                        </p>
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        <button 
-                                                            onClick={() => loadTournament(tournament.id)}
-                                                            className="flex-1 md:flex-none bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all text-sm font-bold"
-                                                        >
-                                                            Load
-                                                        </button>
-                                                        <button 
-                                                            onClick={() => deleteTournament(tournament.id)}
-                                                            className="flex-1 md:flex-none bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all text-sm font-bold"
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-xl font-bold text-gray-800">📁 Your Saved Tournaments ({savedTournaments.length})</h3>
+                                            <button
+                                                onClick={() => setShowSavedTournaments(!showSavedTournaments)}
+                                                className="bg-green-500 text-white px-4 py-2 rounded-xl hover:bg-green-600 transition-all text-sm font-bold"
+                                            >
+                                                {showSavedTournaments ? '▲ Hide All' : '▼ Show All'}
+                                            </button>
                                         </div>
+                                        {showSavedTournaments && (
+                                            <div className="space-y-3">
+                                                {savedTournaments.map(tournament => (
+                                                    <div key={tournament.id} className="bg-white border-2 border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                                        <div className="flex-1">
+                                                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                                <p className="font-bold text-gray-800">{tournament.name}</p>
+                                                                {tournament.isPublic ? (
+                                                                    <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">🌍 Public</span>
+                                                                ) : (
+                                                                    <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-medium">🔒 Private</span>
+                                                                )}
+                                                                <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-medium">
+                                                                    {tournament.matchFormat === 'doubles' ? '👥 Doubles' : '1️⃣ Singles'}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-sm text-gray-600">
+                                                                {tournament.players.length} players • {tournament.numRounds} rounds
+                                                            </p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(tournament.createdAt).toLocaleDateString()}
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <button 
+                                                                onClick={() => loadTournament(tournament.id)}
+                                                                className="flex-1 md:flex-none bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all text-sm font-bold"
+                                                            >
+                                                                👁️ View
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => deleteTournament(tournament.id)}
+                                                                className="flex-1 md:flex-none bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all text-sm font-bold"
+                                                            >
+                                                                🗑️ Delete
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </>
