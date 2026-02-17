@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PickleConnect Lite – Tournament Generator</title>
     
     <!-- SEO Meta Tags -->
@@ -155,7 +155,10 @@
             .landing-cards{grid-template-columns:1fr!important;}
             /* 2-column player name grid on mobile */
             .player-names-grid{grid-template-columns:repeat(2,1fr)!important;}
-            .player-name-input{min-width:0!important;}
+            .player-name-input{min-width:0!important;font-size:16px!important;}
+            /* Prevent zoom on input focus */
+            .inp{font-size:16px!important;}
+            input[type="number"]{font-size:16px!important;}
             /* Hide desktop logout button on mobile */
             .logout-btn-desktop{display:none!important;}
             /* Hide email on very small screens */
@@ -361,14 +364,14 @@ function TournamentSetup({onGenerate}){
     const[format,setFormat]=useState('doubles');
     const[mode,setMode]=useState('rotating');
     const[np,setNp]=useState(8);
-    const[players,setPlayers]=useState(Array.from({length:8},(_,i)=>`Player ${i+1}`));
+    const[players,setPlayers]=useState(Array.from({length:8},()=>''));
     const[courts,setCourts]=useState(2);
     const[rounds,setRounds]=useState(3);
     const[partnerships,setPartnerships]=useState([]);
     const[customs,setCustoms]=useState([{team1:['',''],team2:['','']}]);
     const[showGuide,setShowGuide]=useState(false);
 
-    useEffect(()=>setPlayers(prev=>Array.from({length:np},(_,i)=>prev[i]||`Player ${i+1}`)),[np]);
+    useEffect(()=>setPlayers(prev=>Array.from({length:np},(_,i)=>prev[i]||'')),[np]);
 
     const valid=players.filter(p=>p.trim());
 
@@ -468,15 +471,15 @@ function TournamentSetup({onGenerate}){
 
             {mode!=='custom'&&(
                 <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12}}>
-                    <div><SL>Players</SL><input className="inp" type="number" min={format==='singles'?2:4} max={32} value={np} onChange={e=>setNp(parseInt(e.target.value)||4)}/></div>
-                    <div><SL>Courts</SL><input className="inp" type="number" min={1} max={10} value={courts} onChange={e=>setCourts(parseInt(e.target.value)||1)}/></div>
-                    <div><SL>Rounds</SL><input className="inp" type="number" min={1} max={20} value={rounds} onChange={e=>setRounds(parseInt(e.target.value)||1)}/></div>
+                    <div><SL>Players</SL><input className="inp" type="number" min={format==='singles'?2:4} max={32} value={np===0?'':np} onChange={e=>setNp(e.target.value===''?0:parseInt(e.target.value)||0)} onBlur={e=>{if(np===0||np<(format==='singles'?2:4))setNp(format==='singles'?2:4);}}/></div>
+                    <div><SL>Courts</SL><input className="inp" type="number" min={1} max={10} value={courts===0?'':courts} onChange={e=>setCourts(e.target.value===''?0:parseInt(e.target.value)||0)} onBlur={e=>{if(courts===0||courts<1)setCourts(1);}}/></div>
+                    <div><SL>Rounds</SL><input className="inp" type="number" min={1} max={20} value={rounds===0?'':rounds} onChange={e=>setRounds(e.target.value===''?0:parseInt(e.target.value)||0)} onBlur={e=>{if(rounds===0||rounds<1)setRounds(1);}}/></div>
                 </div>
             )}
             {mode==='custom'&&(
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-                    <div><SL>Players</SL><input className="inp" type="number" min={4} max={32} value={np} onChange={e=>setNp(parseInt(e.target.value)||4)}/></div>
-                    <div><SL>Courts</SL><input className="inp" type="number" min={1} max={10} value={courts} onChange={e=>setCourts(parseInt(e.target.value)||1)}/></div>
+                    <div><SL>Players</SL><input className="inp" type="number" min={4} max={32} value={np===0?'':np} onChange={e=>setNp(e.target.value===''?0:parseInt(e.target.value)||0)} onBlur={e=>{if(np===0||np<4)setNp(4);}}/></div>
+                    <div><SL>Courts</SL><input className="inp" type="number" min={1} max={10} value={courts===0?'':courts} onChange={e=>setCourts(e.target.value===''?0:parseInt(e.target.value)||0)} onBlur={e=>{if(courts===0||courts<1)setCourts(1);}}/></div>
                 </div>
             )}
 
