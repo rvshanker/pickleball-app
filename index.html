@@ -2748,16 +2748,90 @@
                                     <>
                                         <button
                                             onClick={() => {
-                                                const url = window.location.origin + window.location.pathname + '?tournament=' + tournamentId;
-                                                navigator.clipboard.writeText(url).then(() => {
-                                                    alert('✓ Tournament link copied to clipboard! Share it with others.');
-                                                }).catch(() => {
-                                                    prompt('Copy this link:', url);
-                                                });
+                                                const shareUrl = `${window.location.origin}${window.location.pathname}?tournament=${tournamentId}`;
+                                                const shareText = `🏓 ${tournamentName || 'Pickleball Tournament'}\n\nJoin or view scores:\n${shareUrl}`;
+                                                
+                                                // Try native share first (works on mobile)
+                                                if (navigator.share) {
+                                                    navigator.share({
+                                                        title: tournamentName || 'Pickleball Tournament',
+                                                        text: `Check out this pickleball tournament!`,
+                                                        url: shareUrl
+                                                    }).catch(err => {
+                                                        // Fallback to clipboard if share is cancelled
+                                                        navigator.clipboard.writeText(shareUrl).then(() => {
+                                                            alert('✓ Link copied to clipboard!');
+                                                        });
+                                                    });
+                                                } else {
+                                                    // Desktop: show share modal
+                                                    const modal = document.createElement('div');
+                                                    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+                                                    modal.innerHTML = `
+                                                        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
+                                                            <div class="flex justify-between items-center mb-4">
+                                                                <h3 class="text-xl font-black text-gray-800">📤 Share Tournament</h3>
+                                                                <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+                                                            </div>
+                                                            
+                                                            <div class="mb-4">
+                                                                <p class="text-sm text-gray-600 mb-3">
+                                                                    ${isPublic ? '🌍 Public tournament - Anyone with the link can view' : '🔒 Private tournament - Only you can edit'}
+                                                                </p>
+                                                                
+                                                                <div class="bg-gray-100 rounded-xl p-4 mb-3">
+                                                                    <p class="text-xs font-black text-gray-400 uppercase mb-2">Share Link</p>
+                                                                    <div class="flex gap-2">
+                                                                        <input 
+                                                                            type="text" 
+                                                                            value="${shareUrl}" 
+                                                                            readonly 
+                                                                            class="flex-1 bg-white rounded-lg px-3 py-2 text-sm border-2 border-gray-300 font-mono"
+                                                                            onclick="this.select()"
+                                                                        />
+                                                                        <button 
+                                                                            onclick="navigator.clipboard.writeText('${shareUrl}').then(() => { 
+                                                                                this.textContent = '✓'; 
+                                                                                setTimeout(() => this.textContent = '📋', 1000); 
+                                                                            })"
+                                                                            class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 font-bold"
+                                                                        >
+                                                                            📋
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <div class="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl p-4 text-center">
+                                                                    <p class="text-xs font-black text-gray-400 uppercase mb-3">QR Code</p>
+                                                                    <div class="bg-white rounded-lg p-3 inline-block">
+                                                                        <img 
+                                                                            src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(shareUrl)}" 
+                                                                            alt="QR Code"
+                                                                            class="w-32 h-32"
+                                                                        />
+                                                                    </div>
+                                                                    <p class="text-xs text-gray-500 mt-2">Scan to open on mobile</p>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="bg-blue-50 border-l-4 border-blue-500 p-3 rounded text-sm">
+                                                                <p class="text-blue-800">
+                                                                    <strong>💡 Tip:</strong> ${isPublic ? 'Others can view scores but only you can edit or delete.' : 'Make this tournament public to allow others to view.'}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    `;
+                                                    document.body.appendChild(modal);
+                                                    
+                                                    // Close on background click
+                                                    modal.addEventListener('click', (e) => {
+                                                        if (e.target === modal) modal.remove();
+                                                    });
+                                                }
                                             }}
                                             className="bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-all text-xs md:text-sm"
                                         >
-                                            📋 Share Link
+                                            📤 Share
                                         </button>
                                         <button
                                             onClick={() => {
@@ -3002,7 +3076,6 @@
                                                     +
                                                 </button>
                                             </div>
-                                        </div>
                                         </div>
                                         
                                         <div>
