@@ -356,7 +356,7 @@ function doPrint(name,schedule,scores,players,withScores){
 
     const vp=players.filter(p=>p.trim());
     if(vp.length)html+=`<div class="pls"><strong>Players (${vp.length}):</strong> ${vp.join(' · ')}</div>`;
-    html+=`<div class="ft">PickleConnect Lite · Pickleball Tournament Generator</div></body></html>`;
+    html+=`<div class="ft">© 2025 PickleConnect. All rights reserved. · Pickleball Tournament Generator</div></body></html>`;
 
     const w=window.open('','_blank');
     if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
@@ -786,8 +786,11 @@ function LandingView({onSimple,onAdvanced,user,onFeedback}){
                     </div>
                 </div>
             </div>
-            <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:24,padding:'16px',fontFamily:'Outfit,sans-serif',fontSize:13,color:'#94a3b8'}}>
-                <span>PickleConnect Lite · Built for pickleball players</span>
+            <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:24,padding:'16px',fontFamily:'Outfit,sans-serif',fontSize:13,color:'#94a3b8',flexWrap:'wrap'}}>
+                <span>© 2025 PickleConnect. All rights reserved.</span>
+                <span>·</span>
+                <span>Built for pickleball players</span>
+                <span>·</span>
                 <button onClick={onFeedback} style={{background:'none',border:'none',color:'#059669',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:700,cursor:'pointer'}}>💬 Feedback</button>
             </div>
         </div>
