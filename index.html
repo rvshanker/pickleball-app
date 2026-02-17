@@ -453,6 +453,7 @@
                 games: <GamesView games={games} setGames={setGames} setCurrentView={setCurrentView} currentUser={currentUser} />,
                 profile: <ProfileView currentUser={currentUser} setCurrentUser={setCurrentUser} />,
                 roundRobin: <RoundRobinView currentUser={currentUser} />,
+                feedback: <FeedbackView currentUser={currentUser} />,
                 pickleball101: <Pickleball101View setCurrentView={setCurrentView} />,
             };
 
@@ -491,6 +492,9 @@
                                         </NavButton>
                                         <NavButton active={currentView === 'profile'} onClick={() => setCurrentView('profile')}>
                                             👤 Profile
+                                        </NavButton>
+                                        <NavButton active={currentView === 'feedback'} onClick={() => setCurrentView('feedback')}>
+                                            💬 Feedback
                                         </NavButton>
                                     </div>
                                     {currentUser ? (
@@ -547,6 +551,10 @@
                                 <NavButton active={currentView === 'profile'} onClick={() => setCurrentView('profile')}>
                                     <span>👤</span>
                                     <span className="text-xs">Profile</span>
+                                </NavButton>
+                                <NavButton active={currentView === 'feedback'} onClick={() => setCurrentView('feedback')}>
+                                    <span>💬</span>
+                                    <span className="text-xs">Feedback</span>
                                 </NavButton>
                             </div>
                         </div>
@@ -2131,6 +2139,152 @@
             );
         }
 
+        // Feedback View Component
+        function FeedbackView({ currentUser }) {
+            const [feedback, setFeedback] = React.useState({
+                email: currentUser?.email || '',
+                type: 'bug',
+                message: ''
+            });
+            const [submitting, setSubmitting] = React.useState(false);
+            const [submitStatus, setSubmitStatus] = React.useState('');
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                
+                if (!feedback.message.trim()) {
+                    alert('Please enter your feedback message');
+                    return;
+                }
+                
+                setSubmitting(true);
+                setSubmitStatus('Submitting...');
+                
+                try {
+                    // Save feedback to Firebase
+                    const feedbackData = {
+                        email: feedback.email || 'Anonymous',
+                        type: feedback.type,
+                        message: feedback.message,
+                        userId: currentUser?.uid || 'guest',
+                        userName: currentUser?.name || 'Anonymous',
+                        timestamp: Date.now(),
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    // Try to save to Firebase
+                    if (typeof firebase !== 'undefined' && firebase.firestore) {
+                        const db = firebase.firestore();
+                        await db.collection('feedback').add(feedbackData);
+                        setSubmitStatus('✓ Feedback submitted successfully!');
+                    } else {
+                        // Fallback: save to localStorage
+                        const existingFeedback = JSON.parse(localStorage.getItem('pendingFeedback') || '[]');
+                        existingFeedback.push(feedbackData);
+                        localStorage.setItem('pendingFeedback', JSON.stringify(existingFeedback));
+                        setSubmitStatus('✓ Feedback saved! Will be sent when online.');
+                    }
+                    
+                    // Reset form
+                    setFeedback({ ...feedback, message: '' });
+                    
+                    setTimeout(() => {
+                        setSubmitStatus('');
+                    }, 3000);
+                } catch (error) {
+                    console.error('Error submitting feedback:', error);
+                    setSubmitStatus('✗ Error submitting. Please try again.');
+                }
+                
+                setSubmitting(false);
+            };
+
+            return (
+                <div className="max-w-3xl mx-auto">
+                    <div className="bg-white rounded-3xl shadow-2xl p-6 md:p-8">
+                        <div className="mb-6">
+                            <h2 className="text-3xl font-black text-gray-800 mb-2">💬 Send Feedback</h2>
+                            <p className="text-gray-600">
+                                Help us improve PickleConnect! Share your thoughts, report bugs, or suggest new features.
+                            </p>
+                        </div>
+                        
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div>
+                                <label className="text-xs font-black text-gray-400 uppercase block mb-2">
+                                    Your Email (optional)
+                                </label>
+                                <input 
+                                    type="email"
+                                    value={feedback.email}
+                                    onChange={(e) => setFeedback({ ...feedback, email: e.target.value })}
+                                    placeholder="your@email.com"
+                                    className="w-full bg-gray-100 rounded-2xl p-4 font-medium focus:outline-none focus:ring-2 focus:ring-green-500"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Optional - provide if you'd like a response
+                                </p>
+                            </div>
+                            
+                            <div>
+                                <label className="text-xs font-black text-gray-400 uppercase block mb-2">
+                                    Feedback Type
+                                </label>
+                                <select 
+                                    value={feedback.type}
+                                    onChange={(e) => setFeedback({ ...feedback, type: e.target.value })}
+                                    className="w-full bg-gray-100 rounded-2xl p-4 font-bold focus:outline-none focus:ring-2 focus:ring-green-500"
+                                >
+                                    <option value="bug">🐛 Bug Report</option>
+                                    <option value="feature">💡 Feature Request</option>
+                                    <option value="improvement">✨ Improvement</option>
+                                    <option value="other">💬 General Feedback</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label className="text-xs font-black text-gray-400 uppercase block mb-2">
+                                    Your Message
+                                </label>
+                                <textarea 
+                                    value={feedback.message}
+                                    onChange={(e) => setFeedback({ ...feedback, message: e.target.value })}
+                                    rows="8"
+                                    placeholder="Tell us what's on your mind..."
+                                    className="w-full bg-gray-100 rounded-2xl p-4 font-medium focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                                    required
+                                />
+                            </div>
+                            
+                            {submitStatus && (
+                                <div className={`p-4 rounded-xl text-center font-bold ${
+                                    submitStatus.includes('✓') ? 'bg-green-100 text-green-700' :
+                                    submitStatus.includes('✗') ? 'bg-red-100 text-red-700' :
+                                    'bg-blue-100 text-blue-700'
+                                }`}>
+                                    {submitStatus}
+                                </div>
+                            )}
+                            
+                            <button 
+                                type="submit"
+                                disabled={submitting}
+                                className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white px-6 py-4 rounded-2xl hover:from-green-600 hover:to-blue-600 transition-all font-black text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {submitting ? '📤 Sending...' : '📤 Send Feedback'}
+                            </button>
+                        </form>
+                        
+                        <div className="mt-8 bg-gradient-to-r from-orange-50 to-pink-50 border-l-4 border-orange-500 p-4 rounded-lg">
+                            <p className="text-sm text-gray-700">
+                                <strong>💡 Pro Tip:</strong> Be as specific as possible! Include steps to reproduce bugs or detailed descriptions of features you'd like to see.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         // ENHANCED Round Robin View with Singles/Doubles support and guest access
         function RoundRobinView({ currentUser }) {
             const [numPlayers, setNumPlayers] = useState(4);
@@ -2808,198 +2962,6 @@
                     <div className="bg-white rounded-xl shadow-lg p-4 md:p-8">
                         <div className="flex flex-col md:flex-row md:justify-end md:items-center mb-6 space-y-4 md:space-y-0">
                             <div className="flex flex-wrap items-center gap-2">
-                                {tournamentId && schedule.length > 0 && isOwner && (
-                                    <>
-                                        <button
-                                            onClick={() => {
-                                                // Simple modal to show tournament ID
-                                                const modal = document.createElement('div');
-                                                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
-                                                modal.innerHTML = `
-                                                    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
-                                                        <div class="flex justify-between items-center mb-4">
-                                                            <h3 class="text-xl font-black text-gray-800">📤 Share Tournament</h3>
-                                                            <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600 text-2xl">×</button>
-                                                        </div>
-                                                        
-                                                        <div class="mb-4">
-                                                            <p class="text-sm text-gray-600 mb-3">
-                                                                ${isPublic ? '🌍 Public - Anyone can view' : '🔒 Private - Only you can edit'}
-                                                            </p>
-                                                            
-                                                            <div class="bg-gray-100 rounded-xl p-4 mb-3">
-                                                                <p class="text-xs font-black text-gray-400 uppercase mb-2">Tournament ID</p>
-                                                                <div class="flex gap-2">
-                                                                    <input 
-                                                                        type="text" 
-                                                                        value="${tournamentId}" 
-                                                                        readonly 
-                                                                        class="flex-1 bg-white rounded-lg px-3 py-2 text-sm border-2 border-gray-300 font-mono"
-                                                                        onclick="this.select()"
-                                                                    />
-                                                                    <button 
-                                                                        onclick="navigator.clipboard.writeText('${tournamentId}').then(() => { 
-                                                                            this.textContent = '✓'; 
-                                                                            setTimeout(() => this.textContent = '📋', 1000); 
-                                                                        })"
-                                                                        class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 font-bold"
-                                                                    >
-                                                                        📋
-                                                                    </button>
-                                                                </div>
-                                                                <p class="text-xs text-gray-500 mt-2">Copy this ID and share it. Others can paste it in the "Load Tournament" box at the top.</p>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <div class="bg-blue-50 border-l-4 border-blue-500 p-3 rounded text-sm">
-                                                            <p class="text-blue-800">
-                                                                <strong>💡 How to share:</strong> Copy the ID and send it to others. They paste it in the blue box at the top to load your tournament.
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                `;
-                                                document.body.appendChild(modal);
-                                                
-                                                // Close on background click
-                                                modal.addEventListener('click', (e) => {
-                                                    if (e.target === modal) modal.remove();
-                                                });
-                                            }}
-                                            className="bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-all text-xs md:text-sm"
-                                        >
-                                            📤 Share
-                                        </button>
-                                        <button
-                                            onClick={async () => {
-                                                if (scoresFinalized) {
-                                                    alert('Scores are already finalized!');
-                                                    return;
-                                                }
-                                                if (confirm('Finalize scores? This will make them read-only. You cannot undo this action.')) {
-                                                    setScoresFinalized(true);
-                                                    // Pass true directly to ensure it saves as finalized
-                                                    await saveTournament(true);
-                                                    alert('✓ Scores finalized and saved!');
-                                                }
-                                            }}
-                                            className={`px-3 md:px-4 py-2 rounded-lg font-medium transition-all text-xs md:text-sm ${
-                                                scoresFinalized 
-                                                    ? 'bg-gray-400 text-white cursor-not-allowed' 
-                                                    : 'bg-purple-600 text-white hover:bg-purple-700'
-                                            }`}
-                                            disabled={!canEditScores}
-                                        >
-                                            {scoresFinalized ? '🔒 Finalized' : '✓ Finalize'}
-                                        </button>
-                                    </>
-                                )}
-                                
-                                {/* Feedback Button - Always visible */}
-                                <button
-                                    onClick={() => {
-                                        const modal = document.createElement('div');
-                                        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
-                                        modal.innerHTML = `
-                                            <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6">
-                                                <div class="flex justify-between items-center mb-4">
-                                                    <h3 class="text-2xl font-black text-gray-800">💬 Send Feedback</h3>
-                                                    <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600 text-2xl">×</button>
-                                                </div>
-                                                
-                                                <p class="text-sm text-gray-600 mb-4">
-                                                    Help us improve! Share your thoughts, report bugs, or suggest features.
-                                                </p>
-                                                
-                                                <form id="feedbackForm" class="space-y-4">
-                                                    <div>
-                                                        <label class="text-xs font-black text-gray-400 uppercase block mb-2">Your Email (optional)</label>
-                                                        <input 
-                                                            type="email" 
-                                                            id="feedbackEmail"
-                                                            placeholder="your@email.com"
-                                                            class="w-full bg-gray-100 rounded-xl p-3 font-medium focus:outline-none focus:ring-2 focus:ring-green-500"
-                                                        />
-                                                    </div>
-                                                    
-                                                    <div>
-                                                        <label class="text-xs font-black text-gray-400 uppercase block mb-2">Feedback Type</label>
-                                                        <select 
-                                                            id="feedbackType"
-                                                            class="w-full bg-gray-100 rounded-xl p-3 font-bold focus:outline-none focus:ring-2 focus:ring-green-500"
-                                                        >
-                                                            <option value="bug">🐛 Bug Report</option>
-                                                            <option value="feature">💡 Feature Request</option>
-                                                            <option value="improvement">✨ Improvement</option>
-                                                            <option value="other">💬 General Feedback</option>
-                                                        </select>
-                                                    </div>
-                                                    
-                                                    <div>
-                                                        <label class="text-xs font-black text-gray-400 uppercase block mb-2">Your Message</label>
-                                                        <textarea 
-                                                            id="feedbackMessage"
-                                                            rows="5"
-                                                            placeholder="Tell us what's on your mind..."
-                                                            class="w-full bg-gray-100 rounded-xl p-3 font-medium focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-                                                            required
-                                                        ></textarea>
-                                                    </div>
-                                                    
-                                                    <button 
-                                                        type="submit"
-                                                        class="w-full bg-green-500 text-white px-6 py-3 rounded-xl hover:bg-green-600 transition-all font-bold shadow-lg"
-                                                    >
-                                                        📤 Send Feedback
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        `;
-                                        document.body.appendChild(modal);
-                                        
-                                        // Handle form submission
-                                        document.getElementById('feedbackForm').addEventListener('submit', async (e) => {
-                                            e.preventDefault();
-                                            
-                                            const email = document.getElementById('feedbackEmail').value;
-                                            const type = document.getElementById('feedbackType').value;
-                                            const message = document.getElementById('feedbackMessage').value;
-                                            
-                                            if (!message.trim()) {
-                                                alert('Please enter your feedback message');
-                                                return;
-                                            }
-                                            
-                                            // Create mailto link
-                                            const subject = encodeURIComponent('PickleConnect Feedback: ' + type.toUpperCase());
-                                            const bodyText = 'Feedback Type: ' + type + '\\n' +
-                                                'From: ' + (email || 'Anonymous') + '\\n\\n' +
-                                                'Message:\\n' + message + '\\n\\n' +
-                                                '---\\n' +
-                                                'Sent from PickleConnect Tournament App';
-                                            const body = encodeURIComponent(bodyText);
-                                            
-                                            const mailtoLink = 'mailto:rvshanker1@gmail.com?subject=' + subject + '&body=' + body;
-                                            
-                                            // Open email client
-                                            window.location.href = mailtoLink;
-                                            
-                                            // Close modal after a short delay
-                                            setTimeout(() => {
-                                                modal.remove();
-                                                alert('✓ Email client opened! Please send your feedback.');
-                                            }, 500);
-                                        });
-                                        
-                                        // Close on background click
-                                        modal.addEventListener('click', (e) => {
-                                            if (e.target === modal) modal.remove();
-                                        });
-                                    }}
-                                    className="bg-gradient-to-r from-orange-500 to-pink-500 text-white px-3 md:px-4 py-2 rounded-lg font-medium hover:from-orange-600 hover:to-pink-600 transition-all text-xs md:text-sm"
-                                >
-                                    💬 Feedback
-                                </button>
-                                
                                 {saveStatus && (
                                     <span className={`px-3 md:px-4 py-2 rounded-lg font-medium text-xs md:text-sm ${
                                         saveStatus.includes('✓') ? 'bg-green-100 text-green-700' : 
