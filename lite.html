@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PickleConnect Lite – Tournament Generator</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23059669'/><circle cx='50' cy='50' r='28' fill='white' opacity='0.15'/><ellipse cx='50' cy='50' rx='20' ry='20' fill='none' stroke='white' stroke-width='3'/><line x1='30' y1='50' x2='70' y2='50' stroke='white' stroke-width='3'/><line x1='50' y1='30' x2='50' y2='70' stroke='white' stroke-width='3'/><circle cx='50' cy='50' r='6' fill='white'/></svg>" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -82,11 +83,25 @@
 
         /* Mobile */
         @media(max-width:540px){
-            .match-row{grid-template-columns:auto 1fr;grid-template-rows:auto auto auto;}
-            .score-block{grid-column:1/-1;justify-content:center;padding:4px 0;}
-            .pname:last-child{text-align:left;}
+            .match-row{grid-template-columns:1fr;grid-template-rows:auto;gap:0;padding:12px 14px;}
+            .court-badge{margin-bottom:6px;}
+            .pname-desktop{display:none!important;}
+            .score-block{display:none!important;}
+            .match-row-inner{display:flex;flex-direction:column;gap:5px;width:100%;}
+            .mobile-team-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+            .mobile-divider{text-align:center;font-size:11px;font-weight:700;color:#cbd5e1;letter-spacing:1.5px;padding:1px 0;}
+            .mobile-score{font-size:20px;font-weight:800;font-family:'Outfit',sans-serif;color:#1e293b;min-width:34px;text-align:right;flex-shrink:0;}
+            .mobile-score.win{color:#059669;}
+            .mobile-score.pending{color:#94a3b8;font-size:15px;font-weight:600;}
             .score-inp{width:66px;padding:11px 4px;font-size:18px;}
             .landing-cards{grid-template-columns:1fr!important;}
+        }
+        @media(min-width:541px){
+            .match-row-inner{display:none!important;}
+            .mobile-divider{display:none;}
+            .mobile-score{display:none;}
+            .pname-desktop{display:block;}
+            .court-badge{align-self:start;margin-top:2px;}
         }
     </style>
 </head>
@@ -452,10 +467,11 @@ function ScheduleView({schedule,scores,onScoreChange,canEdit,tournamentName,play
                         const t1=match.team1.join(' & '),t2=match.team2.join(' & ');
                         return(
                             <div key={match.id} className="match-row">
-                                <span style={{fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:700,color:'#059669',background:'#f0fdf4',borderRadius:7,padding:'5px 9px',whiteSpace:'nowrap',alignSelf:'start',marginTop:2}}>
+                                {/* Desktop layout (via grid) */}
+                                <span className="court-badge" style={{fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:700,color:'#059669',background:'#f0fdf4',borderRadius:7,padding:'5px 9px',whiteSpace:'nowrap'}}>
                                     Court {match.court}
                                 </span>
-                                <span className={`pname${w1?' win':''}`}>{w1&&'🏆 '}{t1}</span>
+                                <span className={`pname pname-desktop${w1?' win':''}`}>{w1&&'🏆 '}{t1}</span>
                                 <div className="score-block">
                                     <input className="score-inp" type="number" min={0}
                                         value={sc.team1!==undefined?sc.team1:''}
@@ -467,7 +483,38 @@ function ScheduleView({schedule,scores,onScoreChange,canEdit,tournamentName,play
                                         onChange={e=>canEdit&&onScoreChange(match.id,'team2',e.target.value)}
                                         placeholder="0" disabled={!canEdit||finalized}/>
                                 </div>
-                                <span className={`pname${w2?' win':''}`} style={{textAlign:'right'}}>{t2}{w2&&' 🏆'}</span>
+                                <span className={`pname pname-desktop${w2?' win':''}`} style={{textAlign:'right'}}>{t2}{w2&&' 🏆'}</span>
+
+                                {/* Mobile layout — team name + score on same line */}
+                                <div className="match-row-inner" style={{}}>
+                                    <div className="mobile-team-row">
+                                        <span className={`pname${w1?' win':''}`} style={{flex:1}}>{w1&&'🏆 '}{t1}</span>
+                                        {canEdit&&!finalized?(
+                                            <input className="score-inp" type="number" min={0}
+                                                value={sc.team1!==undefined?sc.team1:''}
+                                                onChange={e=>onScoreChange(match.id,'team1',e.target.value)}
+                                                placeholder="—"/>
+                                        ):(
+                                            <span className={`mobile-score${w1?' win':s1===null?' pending':''}`}>
+                                                {s1!==null?s1:'—'}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="mobile-divider">vs</div>
+                                    <div className="mobile-team-row">
+                                        <span className={`pname${w2?' win':''}`} style={{flex:1}}>{w2&&'🏆 '}{t2}</span>
+                                        {canEdit&&!finalized?(
+                                            <input className="score-inp" type="number" min={0}
+                                                value={sc.team2!==undefined?sc.team2:''}
+                                                onChange={e=>onScoreChange(match.id,'team2',e.target.value)}
+                                                placeholder="—"/>
+                                        ):(
+                                            <span className={`mobile-score${w2?' win':s2===null?' pending':''}`}>
+                                                {s2!==null?s2:'—'}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         );
                     })}
@@ -587,8 +634,10 @@ function LandingView({onSimple,onAdvanced,user,onFeedback}){
                 <div className="landing-cards" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(290px,1fr))',gap:18,maxWidth:660,margin:'0 auto'}}>
                     {/* Quick Generation */}
                     <div className="card-lift" onClick={onSimple} style={{background:'white',borderRadius:18,padding:'30px 26px',cursor:'pointer',textAlign:'left',border:'2px solid transparent'}}>
-                        <div style={{fontSize:42,marginBottom:16}}>⚡</div>
-                        <div className="fd" style={{fontSize:30,fontWeight:800,color:'#0f172a',marginBottom:8}}>QUICK GENERATION</div>
+                        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+                            <span style={{fontSize:36,lineHeight:1}}>⚡</span>
+                            <div className="fd" style={{fontSize:30,fontWeight:800,color:'#0f172a',lineHeight:1}}>QUICK GENERATION</div>
+                        </div>
                         <div style={{fontFamily:'Outfit,sans-serif',fontSize:15,color:'#64748b',marginBottom:18,lineHeight:1.6}}>Generate & play immediately. No account needed.</div>
                         <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:24}}>
                             {['✓ Instant bracket generator','✓ Enter scores live','✓ Export blank scorecard (PDF)','✓ Look up public tournaments','✗ No cloud saving','✗ No sharing'].map(t=>(
@@ -599,8 +648,10 @@ function LandingView({onSimple,onAdvanced,user,onFeedback}){
                     </div>
                     {/* Full Tournament */}
                     <div className="card-lift" onClick={onAdvanced} style={{background:'#0f172a',borderRadius:18,padding:'30px 26px',cursor:'pointer',textAlign:'left',border:'2px solid #059669'}}>
-                        <div style={{fontSize:42,marginBottom:16}}>🏆</div>
-                        <div className="fd" style={{fontSize:30,fontWeight:800,color:'white',marginBottom:8}}>FULL TOURNAMENT</div>
+                        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+                            <span style={{fontSize:36,lineHeight:1}}>🏆</span>
+                            <div className="fd" style={{fontSize:30,fontWeight:800,color:'white',lineHeight:1}}>FULL TOURNAMENT</div>
+                        </div>
                         <div style={{fontFamily:'Outfit,sans-serif',fontSize:15,color:'#94a3b8',marginBottom:18,lineHeight:1.6}}>Save, share & manage tournaments. Login required.</div>
                         <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:24}}>
                             {['✓ Everything in Quick Generation','✓ Cloud save & real-time sync','✓ Share via tournament ID','✓ Public / Private control','✓ Finalize & lock scores','✓ Export with scores (PDF)'].map(t=>(
@@ -912,6 +963,17 @@ function FullApp({user,onLogout,onBack,onFeedback}){
             <div className="fd" style={{fontSize:22,fontWeight:800,flex:1,cursor:'pointer'}} onClick={()=>setView('dashboard')}>
                 <span style={{color:'white'}}>PICKLE</span><span style={{color:'#34d399'}}>CONNECT</span>
             </div>
+            {user&&(
+                <div style={{display:'flex',alignItems:'center',gap:8,marginRight:4,background:'rgba(255,255,255,.07)',borderRadius:9,padding:'5px 10px 5px 8px',border:'1px solid rgba(255,255,255,.1)'}}>
+                    <div style={{width:28,height:28,borderRadius:'50%',background:'#059669',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'white',fontFamily:'Outfit,sans-serif',flexShrink:0}}>
+                        {(user.name||user.email||'?')[0].toUpperCase()}
+                    </div>
+                    <div style={{display:'flex',flexDirection:'column',lineHeight:1.2}}>
+                        <span style={{fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:700,color:'white',maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.name||user.email?.split('@')[0]||'Player'}</span>
+                        {user.email&&<span style={{fontFamily:'Outfit,sans-serif',fontSize:10,color:'#6ee7b7',maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.email}</span>}
+                    </div>
+                </div>
+            )}
             <button onClick={onFeedback} style={{background:'rgba(255,255,255,.1)',color:'#94a3b8',border:'none',borderRadius:8,padding:'8px 13px',fontFamily:'Outfit,sans-serif',fontSize:14,cursor:'pointer',marginRight:6}}>💬</button>
             <button onClick={onLogout} style={{background:'rgba(255,255,255,.1)',color:'white',border:'none',borderRadius:8,padding:'9px 14px',fontFamily:'Outfit,sans-serif',fontSize:13,cursor:'pointer'}}>Logout</button>
         </div>
