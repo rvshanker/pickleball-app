@@ -803,7 +803,7 @@ function LoginView({onBack,onSuccess}){
         try{
             if(isSignup){const c=await auth.createUserWithEmailAndPassword(email,pw);try{await c.user.sendEmailVerification();}catch(e){}setMsg('Account created! Redirecting…');setTimeout(onSuccess,1500);}
             else{await auth.signInWithEmailAndPassword(email,pw);onSuccess();}
-        }catch(e){const m={'auth/email-already-in-use':'Email already registered.','auth/invalid-email':'Invalid email.','auth/wrong-password':'Incorrect password.','auth/user-not-found':'No account with this email.'};setErr(m[e.code]||e.message);}
+        }catch(e){const m={'auth/email-already-in-use':'Email already registered.','auth/invalid-email':'Invalid email.','auth/wrong-password':'Incorrect password.','auth/user-not-found':'No account with this email.','auth/invalid-credential':'Incorrect email or password.'};setErr(m[e.code]||e.message);}
         setBusy(false);
     };
 
