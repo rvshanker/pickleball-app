@@ -4,7 +4,64 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PickleConnect Lite – Tournament Generator</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Free pickleball tournament generator. Create round-robin brackets instantly for singles and doubles. Real-time scoring, leaderboards, and PDF export. No signup required for quick tournaments.">
+    <meta name="keywords" content="pickleball tournament generator, pickleball bracket, round robin pickleball, pickleball scheduler, pickleball tournament app, doubles tournament, singles tournament, pickleball scorecard, free tournament maker, pickleball organizer, pickleball match scheduler, rotating partners pickleball, pickleball round robin generator, tournament bracket generator, pickleball scoring app">
+    <meta name="author" content="PickleConnect">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://rvhanker.github.io/">
+    <meta property="og:title" content="PickleConnect Lite – Free Pickleball Tournament Generator">
+    <meta property="og:description" content="Generate pickleball round-robin brackets instantly. Free tournament maker with real-time scoring, rotating partners, and PDF export.">
+    <meta property="og:image" content="https://rvhanker.github.io/og-image.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://rvhanker.github.io/">
+    <meta property="twitter:title" content="PickleConnect Lite – Free Pickleball Tournament Generator">
+    <meta property="twitter:description" content="Generate pickleball round-robin brackets instantly. Free tournament maker with real-time scoring, rotating partners, and PDF export.">
+    <meta property="twitter:image" content="https://rvhanker.github.io/og-image.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://rvhanker.github.io/">
+    
+    <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23059669'/><circle cx='50' cy='50' r='28' fill='white' opacity='0.15'/><ellipse cx='50' cy='50' rx='20' ry='20' fill='none' stroke='white' stroke-width='3'/><line x1='30' y1='50' x2='70' y2='50' stroke='white' stroke-width='3'/><line x1='50' y1='30' x2='50' y2='70' stroke='white' stroke-width='3'/><circle cx='50' cy='50' r='6' fill='white'/></svg>" type="image/svg+xml">
+    
+    <!-- Structured Data / JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "PickleConnect Lite",
+      "description": "Free pickleball tournament generator for creating round-robin brackets with real-time scoring",
+      "url": "https://rvhanker.github.io/",
+      "applicationCategory": "SportsApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Round-robin tournament generation",
+        "Singles and doubles formats",
+        "Rotating partner mode",
+        "Real-time scoring",
+        "Live leaderboards",
+        "PDF export",
+        "Cloud saving",
+        "Tournament sharing"
+      ],
+      "keywords": "pickleball, tournament, generator, bracket, round-robin, scoring, sports"
+    }
+    </script>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -97,8 +154,8 @@
             .score-inp{width:66px;padding:11px 4px;font-size:18px;}
             .landing-cards{grid-template-columns:1fr!important;}
             /* 2-column player name grid on mobile */
-            .pg input[placeholder^="Player"]{min-width:0;}
-            body .pg>div>div>div>div>div>div>div:has(input[placeholder^="Player"]){grid-template-columns:repeat(2,1fr)!important;}
+            .player-names-grid{grid-template-columns:repeat(2,1fr)!important;}
+            .player-name-input{min-width:0!important;}
             /* Hide desktop logout button on mobile */
             .logout-btn-desktop{display:none!important;}
             /* Hide email on very small screens */
@@ -425,12 +482,12 @@ function TournamentSetup({onGenerate}){
 
             <div>
                 <SL>Player Names</SL>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(170px,1fr))',gap:8}}>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(170px,1fr))',gap:8}} className="player-names-grid">
                     {players.map((p,i)=>(
-                        <input key={i} className="inp" value={p} onChange={e=>{const n=[...players];n[i]=e.target.value;setPlayers(n);}} placeholder={`Player ${i+1}`} style={{fontSize:14}}/>
+                        <input key={i} className="inp player-name-input" value={p} onChange={e=>{const n=[...players];n[i]=e.target.value;setPlayers(n);}} placeholder={`Player ${i+1}`} style={{fontSize:14}}/>
                     ))}
                 </div>
-                <button onClick={()=>setPlayers(Array.from({length:np},(_,i)=>`Player ${i+1}`))} style={{marginTop:10,background:'none',border:'1px solid #e2e8f0',borderRadius:8,padding:'8px 14px',fontFamily:'Outfit,sans-serif',fontSize:13,color:'#64748b',cursor:'pointer',fontWeight:600}}>↻ Clear All Names</button>
+                <button onClick={()=>setPlayers(Array.from({length:np},()=>''))} style={{marginTop:10,background:'none',border:'1px solid #e2e8f0',borderRadius:8,padding:'8px 14px',fontFamily:'Outfit,sans-serif',fontSize:13,color:'#64748b',cursor:'pointer',fontWeight:600}}>↻ Clear All Names</button>
             </div>
 
             {format==='doubles'&&mode==='fixed'&&(
@@ -684,7 +741,8 @@ function LandingView({onSimple,onAdvanced,user,onFeedback}){
                 </p>
                 <div className="landing-cards" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(290px,1fr))',gap:18,maxWidth:660,margin:'0 auto'}}>
                     {/* Quick Generation */}
-                    <div className="card-lift" onClick={onSimple} style={{background:'white',borderRadius:18,padding:'30px 26px',cursor:'pointer',textAlign:'left',border:'2px solid transparent'}}>
+                    <div className="card-lift" onClick={onSimple} style={{background:'white',borderRadius:18,padding:'30px 26px',cursor:'pointer',textAlign:'left',border:'2px solid transparent',position:'relative',overflow:'visible'}}>
+                        <div style={{position:'absolute',top:-8,right:-8,background:'#10b981',color:'white',fontSize:13,fontWeight:800,padding:'6px 14px',borderRadius:99,fontFamily:'Outfit,sans-serif',letterSpacing:.5,boxShadow:'0 4px 12px rgba(16,185,129,.4)'}}>FREE</div>
                         <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
                             <span style={{fontSize:36,lineHeight:1}}>⚡</span>
                             <div className="fd" style={{fontSize:30,fontWeight:800,color:'#0f172a',lineHeight:1}}>QUICK GENERATION</div>
