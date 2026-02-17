@@ -2970,16 +2970,15 @@
                                             }
                                             
                                             // Create mailto link
-                                            const subject = encodeURIComponent(\`PickleConnect Feedback: \${type.toUpperCase()}\`);
-                                            const body = encodeURIComponent(
-                                                \`Feedback Type: \${type}\n\` +
-                                                \`From: \${email || 'Anonymous'}\n\n\` +
-                                                \`Message:\n\${message}\n\n\` +
-                                                \`---\n\` +
-                                                \`Sent from PickleConnect Tournament App\`
-                                            );
+                                            const subject = encodeURIComponent('PickleConnect Feedback: ' + type.toUpperCase());
+                                            const bodyText = 'Feedback Type: ' + type + '\\n' +
+                                                'From: ' + (email || 'Anonymous') + '\\n\\n' +
+                                                'Message:\\n' + message + '\\n\\n' +
+                                                '---\\n' +
+                                                'Sent from PickleConnect Tournament App';
+                                            const body = encodeURIComponent(bodyText);
                                             
-                                            const mailtoLink = \`mailto:rvshanker1@gmail.com?subject=\${subject}&body=\${body}\`;
+                                            const mailtoLink = 'mailto:rvshanker1@gmail.com?subject=' + subject + '&body=' + body;
                                             
                                             // Open email client
                                             window.location.href = mailtoLink;
