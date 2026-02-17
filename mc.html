@@ -122,8 +122,8 @@
         .setup-panel{border-radius:14px;padding:18px 20px;margin-bottom:14px;}
         .panel-name{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:2px solid #86efac;box-shadow:0 2px 8px rgba(34,197,94,.1);}
         .panel-format{background:white;border:2px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,.05);}
-        .panel-settings{background:linear-gradient(135deg,#fef9ec,#fef3c7);border:2px solid #fbbf24;box-shadow:0 2px 8px rgba(251,191,36,.1);}
-        .panel-players{background:linear-gradient(135deg,#faf5ff,#f3e8ff);border:2px solid #d8b4fe;box-shadow:0 2px 8px rgba(168,85,247,.1);}
+        .panel-settings{background:linear-gradient(135deg,#0f172a 0%,#1a2f22 60%,#052e16 100%);border:1px solid rgba(52,211,153,.2);box-shadow:0 4px 16px rgba(0,0,0,.2);}
+        .panel-players{background:linear-gradient(135deg,#0f172a 0%,#1e2a3a 100%);border:1px solid rgba(99,179,237,.2);box-shadow:0 4px 16px rgba(0,0,0,.2);}
         .panel-guide{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #93c5fd;overflow:hidden;}
 
         /* Panel header row */
@@ -132,27 +132,28 @@
         .panel-title{font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;}
 
         /* Stepper control */
-        .stepper{display:flex;align-items:center;gap:0;background:white;border:2px solid #fbbf24;border-radius:12px;overflow:hidden;}
-        .stepper-btn{background:linear-gradient(135deg,#059669,#10b981);color:white;border:none;width:40px;height:46px;font-size:20px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;}
+        .stepper{display:flex;align-items:center;gap:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:12px;overflow:hidden;}
+        .stepper-btn{background:linear-gradient(135deg,#059669,#10b981);color:white;border:none;width:44px;height:48px;font-size:22px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;}
         .stepper-btn:hover{background:linear-gradient(135deg,#047857,#059669);}
         .stepper-btn:active{transform:scale(.94);}
-        .stepper-val{flex:1;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:#78350f;background:transparent;border:none;outline:none;padding:0 6px;height:46px;min-width:0;}
+        .stepper-val{flex:1;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:white;background:transparent;border:none;outline:none;padding:0 6px;height:48px;min-width:0;}
         input.stepper-val[type=number]::-webkit-inner-spin-button,
         input.stepper-val[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 
         /* Numbered player input */
         .player-inp-wrap{position:relative;}
-        .player-inp-num{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:#7c3aed;letter-spacing:.03em;pointer-events:none;}
-        .player-inp{padding-left:34px!important;background:white!important;border:2px solid #d8b4fe!important;transition:all .15s!important;}
-        .player-inp:focus{border-color:#7c3aed!important;box-shadow:0 0 0 3px rgba(124,58,237,.1)!important;}
-        .player-inp:hover:not(:focus){background:#faf5ff!important;border-color:#c084fc!important;}
+        .player-inp-num{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:#6ee7b7;letter-spacing:.03em;pointer-events:none;}
+        .player-inp{padding-left:34px!important;background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.15)!important;color:white!important;transition:all .15s!important;}
+        .player-inp::placeholder{color:rgba(255,255,255,.3)!important;}
+        .player-inp:focus{border-color:#34d399!important;background:rgba(255,255,255,.1)!important;box-shadow:0 0 0 3px rgba(52,211,153,.15)!important;}
+        .player-inp:hover:not(:focus){background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.25)!important;}
 
         /* Player count badge */
-        .player-badge{font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:#7c3aed;background:rgba(124,58,237,.1);padding:4px 10px;border-radius:20px;border:1px solid rgba(124,58,237,.2);}
+        .player-badge{font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:#6ee7b7;background:rgba(52,211,153,.15);padding:4px 10px;border-radius:20px;border:1px solid rgba(52,211,153,.25);}
 
         /* Clear names btn */
-        .btn-clear{margin-top:12px;background:linear-gradient(135deg,#7c3aed,#9333ea);color:white;border:none;border-radius:10px;padding:9px 16px;font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;font-weight:600;box-shadow:0 2px 8px rgba(124,58,237,.25);transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
-        .btn-clear:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(124,58,237,.35);}
+        .btn-clear{margin-top:12px;background:rgba(255,255,255,.1);color:#e2e8f0;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:9px 16px;font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
+        .btn-clear:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);transform:translateY(-1px);}
 
         /* Generate button */
         .btn-generate{width:100%;padding:17px;font-size:17px;font-weight:800;letter-spacing:.02em;background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 6px 20px rgba(5,150,105,.3);border:none;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;color:white;font-family:'Outfit',sans-serif;cursor:pointer;}
@@ -518,31 +519,28 @@ function TournamentSetup({onGenerate}){
 
             {/* ── Format & Partner Mode ── */}
             <div className="setup-panel panel-format" style={{marginBottom:14}}>
-                <div style={{display:'grid',gridTemplateColumns:format==='doubles'?'1fr 1fr':'1fr',gap:20}}>
+                <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:13}}>
+                    <span className="panel-hdr-icon">🎾</span>
+                    <span className="panel-title" style={{color:'#334155'}}>Format</span>
+                </div>
+                <div style={{display:'flex',gap:8,marginBottom: format==='doubles'?16:0}}>
+                    <Pill val="singles" cur={format} set={v=>{setFormat(v);setMode('rotating');}} label="Singles"/>
+                    <Pill val="doubles" cur={format} set={setFormat} label="Doubles"/>
+                </div>
+                {format==='doubles'&&(
                     <div>
-                        <div className="panel-hdr">
-                            <span className="panel-hdr-icon">🎾</span>
-                            <span className="panel-title" style={{color:'#334155'}}>Format</span>
+                        <div style={{height:1,background:'#e2e8f0',marginBottom:14}}/>
+                        <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:11}}>
+                            <span className="panel-hdr-icon">👥</span>
+                            <span className="panel-title" style={{color:'#334155'}}>Partner Mode</span>
                         </div>
-                        <div style={{display:'flex',gap:8}}>
-                            <Pill val="singles" cur={format} set={v=>{setFormat(v);setMode('rotating');}} label="Singles"/>
-                            <Pill val="doubles" cur={format} set={setFormat} label="Doubles"/>
+                        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                            <Pill val="rotating" cur={mode} set={setMode} label="🔄 Rotating"/>
+                            <Pill val="fixed" cur={mode} set={setMode} label="🔒 Fixed"/>
+                            <Pill val="custom" cur={mode} set={setMode} label="✏️ Custom"/>
                         </div>
                     </div>
-                    {format==='doubles'&&(
-                        <div>
-                            <div className="panel-hdr">
-                                <span className="panel-hdr-icon">👥</span>
-                                <span className="panel-title" style={{color:'#334155'}}>Partner Mode</span>
-                            </div>
-                            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                                <Pill val="rotating" cur={mode} set={setMode} label="🔄 Rotating"/>
-                                <Pill val="fixed" cur={mode} set={setMode} label="🔒 Fixed"/>
-                                <Pill val="custom" cur={mode} set={setMode} label="✏️ Custom"/>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                )}
             </div>
 
             {/* ── Tournament Settings (steppers) ── */}
@@ -550,27 +548,27 @@ function TournamentSetup({onGenerate}){
                 <div className="setup-panel panel-settings" style={{marginBottom:14}}>
                     <div className="panel-hdr">
                         <span className="panel-hdr-icon">⚙️</span>
-                        <span className="panel-title" style={{color:'#78350f'}}>Tournament Settings</span>
+                        <span className="panel-title" style={{color:'#6ee7b7'}}>Tournament Settings</span>
                     </div>
                     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:14}}>
                         <div>
                             <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8}}>
                                 <span style={{fontSize:16}}>👤</span>
-                                <span className="slbl" style={{marginBottom:0,color:'#92400e'}}>Players</span>
+                                <span className="slbl" style={{marginBottom:0,color:'#94a3b8'}}>Players</span>
                             </div>
                             <Stepper val={np} min={format==='singles'?2:4} max={32} onChange={setNp}/>
                         </div>
                         <div>
                             <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8}}>
                                 <span style={{fontSize:16}}>🏟️</span>
-                                <span className="slbl" style={{marginBottom:0,color:'#92400e'}}>Courts</span>
+                                <span className="slbl" style={{marginBottom:0,color:'#94a3b8'}}>Courts</span>
                             </div>
                             <Stepper val={courts} min={1} max={10} onChange={setCourts}/>
                         </div>
                         <div>
                             <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8}}>
                                 <span style={{fontSize:16}}>🔢</span>
-                                <span className="slbl" style={{marginBottom:0,color:'#92400e'}}>Rounds</span>
+                                <span className="slbl" style={{marginBottom:0,color:'#94a3b8'}}>Rounds</span>
                             </div>
                             <Stepper val={rounds} min={1} max={20} onChange={setRounds}/>
                         </div>
@@ -581,20 +579,20 @@ function TournamentSetup({onGenerate}){
                 <div className="setup-panel panel-settings" style={{marginBottom:14}}>
                     <div className="panel-hdr">
                         <span className="panel-hdr-icon">⚙️</span>
-                        <span className="panel-title" style={{color:'#78350f'}}>Tournament Settings</span>
+                        <span className="panel-title" style={{color:'#6ee7b7'}}>Tournament Settings</span>
                     </div>
                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
                         <div>
                             <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8}}>
                                 <span style={{fontSize:16}}>👤</span>
-                                <span className="slbl" style={{marginBottom:0,color:'#92400e'}}>Players</span>
+                                <span className="slbl" style={{marginBottom:0,color:'#94a3b8'}}>Players</span>
                             </div>
                             <Stepper val={np} min={4} max={32} onChange={setNp}/>
                         </div>
                         <div>
                             <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8}}>
                                 <span style={{fontSize:16}}>🏟️</span>
-                                <span className="slbl" style={{marginBottom:0,color:'#92400e'}}>Courts</span>
+                                <span className="slbl" style={{marginBottom:0,color:'#94a3b8'}}>Courts</span>
                             </div>
                             <Stepper val={courts} min={1} max={10} onChange={setCourts}/>
                         </div>
@@ -607,7 +605,7 @@ function TournamentSetup({onGenerate}){
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:13}}>
                     <div className="panel-hdr" style={{marginBottom:0}}>
                         <span className="panel-hdr-icon">✏️</span>
-                        <span className="panel-title" style={{color:'#5b21b6'}}>Player Names</span>
+                        <span className="panel-title" style={{color:'#93c5fd'}}>Player Names</span>
                     </div>
                     <span className="player-badge">{filledCount} / {np} entered</span>
                 </div>
