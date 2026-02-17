@@ -2305,6 +2305,8 @@
             const [showSavedTournaments, setShowSavedTournaments] = useState(false);
             const [tournamentCreatedBy, setTournamentCreatedBy] = useState(null); // Track who created the loaded tournament
             const isSavingRef = useRef(false); // Prevent simultaneous saves
+            const isRemoteUpdateRef = useRef(false); // True when scores come from Firestore listener (skip auto-save)
+            const isInitialMountRef = useRef(true); // Skip auto-save on first render of isPublic/tournamentName
 
             // Update players array when numPlayers changes
             useEffect(() => {
@@ -2333,27 +2335,29 @@
             // Save immediately when a new tournament schedule is created
             useEffect(() => {
                 if (tournamentId && schedule.length > 0 && tournamentCreatedBy) {
-                    // Small delay to ensure all state is committed before saving
+                    isInitialMountRef.current = false; // mark that we've initialized
                     const t = setTimeout(() => saveTournament(), 300);
                     return () => clearTimeout(t);
                 }
-            }, [tournamentId]); // Only trigger when tournamentId first changes
+            }, [tournamentId]);
 
-            // Auto-save tournament whenever scores change (debounced 1.5s)
+            // Auto-save whenever scores change — but NOT when they came from the remote listener
             useEffect(() => {
                 if (!tournamentId || Object.keys(scores).length === 0) return;
-                const timer = setTimeout(() => {
-                    saveTournament();
-                }, 1500);
+                if (isRemoteUpdateRef.current) {
+                    // This change came from Firebase listener — skip saving to break the loop
+                    isRemoteUpdateRef.current = false;
+                    return;
+                }
+                const timer = setTimeout(() => saveTournament(), 1500);
                 return () => clearTimeout(timer);
             }, [scores]);
 
-            // Also auto-save when isPublic or tournamentName changes
+            // Auto-save when isPublic or tournamentName changes — skip initial mount
             useEffect(() => {
                 if (!tournamentId) return;
-                const timer = setTimeout(() => {
-                    saveTournament();
-                }, 800);
+                if (isInitialMountRef.current) return; // skip on load
+                const timer = setTimeout(() => saveTournament(), 600);
                 return () => clearTimeout(timer);
             }, [isPublic, tournamentName]);
 
@@ -2362,6 +2366,7 @@
                 if (tournamentId && isFirebaseConfigured) {
                     const unsubscribe = storage.listenToTournament(tournamentId, (data) => {
                         if (data && data.scores) {
+                            isRemoteUpdateRef.current = true; // flag as remote update — prevents auto-save loop
                             setScores(data.scores);
                         }
                     });
@@ -2507,6 +2512,8 @@
                         setTournamentId(data.id);
                         setTournamentCreatedBy(data.createdBy || null); // Track who created this
                         setShowLeaderboard(true);
+                        // After loading, mark initial mount done so future isPublic/name changes auto-save
+                        setTimeout(() => { isInitialMountRef.current = false; }, 500);
                     }
                 } catch (error) {
                     console.error('Tournament not found:', error);
@@ -3066,22 +3073,31 @@
                                         >
                                             {scoresFinalized ? '🔒 Finalized' : '✓ Finalize'}
                                         </button>
-                                        {/* Public/Private toggle for owner */}
-                                        <button
-                                            onClick={() => {
-                                                const newValue = !isPublic;
-                                                setIsPublic(newValue);
-                                                // saveTournament will be triggered by the isPublic useEffect
-                                            }}
-                                            className={`px-3 md:px-4 py-2 rounded-lg font-medium transition-all text-xs md:text-sm ${
-                                                isPublic
-                                                    ? 'bg-green-100 text-green-700 border-2 border-green-400 hover:bg-green-200'
-                                                    : 'bg-gray-100 text-gray-700 border-2 border-gray-300 hover:bg-gray-200'
-                                            }`}
-                                            title={isPublic ? 'Click to make Private' : 'Click to make Public'}
-                                        >
-                                            {isPublic ? '🌍 Public' : '🔒 Private'}
-                                        </button>
+                                        {/* Public/Private toggle — clear two-option pill for owner */}
+                                        <div className="flex items-center rounded-lg overflow-hidden border-2 border-gray-200 text-xs md:text-sm font-medium">
+                                            <button
+                                                onClick={() => { if (isPublic) setIsPublic(false); }}
+                                                className={`px-3 py-2 transition-all ${
+                                                    !isPublic
+                                                        ? 'bg-gray-700 text-white'
+                                                        : 'bg-white text-gray-400 hover:bg-gray-50'
+                                                }`}
+                                                title="Make tournament private"
+                                            >
+                                                🔒 Private
+                                            </button>
+                                            <button
+                                                onClick={() => { if (!isPublic) setIsPublic(true); }}
+                                                className={`px-3 py-2 transition-all ${
+                                                    isPublic
+                                                        ? 'bg-green-600 text-white'
+                                                        : 'bg-white text-gray-400 hover:bg-gray-50'
+                                                }`}
+                                                title="Make tournament public (shareable)"
+                                            >
+                                                🌍 Public
+                                            </button>
+                                        </div>
                                     </>
                                 )}
                                 {saveStatus && (
