@@ -3,8 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PickleConnect - Pickleball Courts & Events</title>
-    <meta name="description" content="Find pickleball courts, create tournaments, organize events, and connect with players in your area.">
+    <title>PickleConnect - Free Pickleball Tournament Organizer & Court Finder</title>
+    <meta name="description" content="Create and manage pickleball tournaments online for free. Find nearby courts, organize round-robin tournaments, track scores, and connect with players in your area. Perfect for clubs and recreational players.">
+    
+    <!-- SEO Keywords -->
+    <meta name="keywords" content="pickleball tournament, pickleball organizer, round robin generator, pickleball courts near me, pickleball scheduler, tournament bracket, pickleball events, court finder, pickleball app, free tournament software">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="PickleConnect - Free Pickleball Tournament Organizer">
+    <meta property="og:description" content="Create and manage pickleball tournaments online for free. Find courts, organize round-robin events, and track scores.">
+    <meta property="og:url" content="https://yourwebsite.com">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PickleConnect - Free Pickleball Tournament Organizer">
+    <meta name="twitter:description" content="Create and manage pickleball tournaments online for free. Find courts and organize events.">
+    
+    <!-- Additional SEO -->
+    <meta name="author" content="PickleConnect">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://yourwebsite.com">
     
     <!-- Favicon using data URI (green P icon) -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%2316a34a'/%3E%3Ctext x='50' y='50' font-family='Arial, sans-serif' font-size='60' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='central'%3EP%3C/text%3E%3C/svg%3E">
@@ -2201,7 +2220,7 @@
                 }
             };
 
-            const saveTournament = async () => {
+            const saveTournament = async (finalizedOverride = null) => {
                 if (!tournamentId) return;
                 
                 // Prevent multiple simultaneous saves
@@ -2239,7 +2258,7 @@
                     matchFormat,
                     scheduleFlat: firestoreSchedule,
                     scores: scores || {},
-                    scoresFinalized: scoresFinalized,
+                    scoresFinalized: finalizedOverride !== null ? finalizedOverride : scoresFinalized,
                     isPublic,
                     participants: [userId, ...players.filter(p => p.trim() !== '').map(p => `player-${p}`)],
                     createdBy: userId,
@@ -2737,13 +2756,20 @@
             };
 
             const leaderboard = schedule.length > 0 ? calculateLeaderboard() : [];
+            
+            // Check if current user is the tournament owner
+            const isOwner = currentUser && tournamentId && 
+                           savedTournaments.find(t => t.id === tournamentId)?.createdBy === currentUser.uid;
+            
+            // Scores are editable only if: owner AND not finalized
+            const canEditScores = isOwner && !scoresFinalized;
 
             return (
                 <div className="max-w-6xl mx-auto">
                     {/* Load Tournament by ID - Always visible at top */}
                     {!tournamentId && (
                         <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl shadow-lg p-4 md:p-6 mb-6">
-                            <div className="flex flex-col md:flex-row gap-3 items-center">
+                            <div className="flex flex-col md:flex-row gap-3 md:items-end">
                                 <div className="flex-1 w-full">
                                     <label className="text-xs font-bold text-white uppercase block mb-2">
                                         📋 Have a Tournament ID? Load it here
@@ -2771,7 +2797,7 @@
                                             alert('Please enter a tournament ID');
                                         }
                                     }}
-                                    className="bg-white text-purple-600 px-6 py-3 rounded-xl hover:bg-gray-100 transition-all font-bold shadow-lg whitespace-nowrap"
+                                    className="bg-white text-purple-600 px-6 py-3 rounded-xl hover:bg-gray-100 transition-all font-bold shadow-lg whitespace-nowrap w-full md:w-auto"
                                 >
                                     🔍 Load Tournament
                                 </button>
@@ -2782,7 +2808,7 @@
                     <div className="bg-white rounded-xl shadow-lg p-4 md:p-8">
                         <div className="flex flex-col md:flex-row md:justify-end md:items-center mb-6 space-y-4 md:space-y-0">
                             <div className="flex flex-wrap items-center gap-2">
-                                {tournamentId && schedule.length > 0 && (
+                                {tournamentId && schedule.length > 0 && isOwner && (
                                     <>
                                         <button
                                             onClick={() => {
@@ -2844,16 +2870,16 @@
                                             📤 Share
                                         </button>
                                         <button
-                                            onClick={() => {
+                                            onClick={async () => {
                                                 if (scoresFinalized) {
                                                     alert('Scores are already finalized!');
                                                     return;
                                                 }
                                                 if (confirm('Finalize scores? This will make them read-only. You cannot undo this action.')) {
                                                     setScoresFinalized(true);
-                                                    // Trigger save to persist finalized state
-                                                    setTimeout(() => saveTournament(), 100);
-                                                    alert('✓ Scores finalized! They are now read-only.');
+                                                    // Pass true directly to ensure it saves as finalized
+                                                    await saveTournament(true);
+                                                    alert('✓ Scores finalized and saved!');
                                                 }
                                             }}
                                             className={`px-3 md:px-4 py-2 rounded-lg font-medium transition-all text-xs md:text-sm ${
@@ -2861,12 +2887,120 @@
                                                     ? 'bg-gray-400 text-white cursor-not-allowed' 
                                                     : 'bg-purple-600 text-white hover:bg-purple-700'
                                             }`}
-                                            disabled={scoresFinalized}
+                                            disabled={!canEditScores}
                                         >
                                             {scoresFinalized ? '🔒 Finalized' : '✓ Finalize'}
                                         </button>
                                     </>
                                 )}
+                                
+                                {/* Feedback Button - Always visible */}
+                                <button
+                                    onClick={() => {
+                                        const modal = document.createElement('div');
+                                        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+                                        modal.innerHTML = `
+                                            <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6">
+                                                <div class="flex justify-between items-center mb-4">
+                                                    <h3 class="text-2xl font-black text-gray-800">💬 Send Feedback</h3>
+                                                    <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+                                                </div>
+                                                
+                                                <p class="text-sm text-gray-600 mb-4">
+                                                    Help us improve! Share your thoughts, report bugs, or suggest features.
+                                                </p>
+                                                
+                                                <form id="feedbackForm" class="space-y-4">
+                                                    <div>
+                                                        <label class="text-xs font-black text-gray-400 uppercase block mb-2">Your Email (optional)</label>
+                                                        <input 
+                                                            type="email" 
+                                                            id="feedbackEmail"
+                                                            placeholder="your@email.com"
+                                                            class="w-full bg-gray-100 rounded-xl p-3 font-medium focus:outline-none focus:ring-2 focus:ring-green-500"
+                                                        />
+                                                    </div>
+                                                    
+                                                    <div>
+                                                        <label class="text-xs font-black text-gray-400 uppercase block mb-2">Feedback Type</label>
+                                                        <select 
+                                                            id="feedbackType"
+                                                            class="w-full bg-gray-100 rounded-xl p-3 font-bold focus:outline-none focus:ring-2 focus:ring-green-500"
+                                                        >
+                                                            <option value="bug">🐛 Bug Report</option>
+                                                            <option value="feature">💡 Feature Request</option>
+                                                            <option value="improvement">✨ Improvement</option>
+                                                            <option value="other">💬 General Feedback</option>
+                                                        </select>
+                                                    </div>
+                                                    
+                                                    <div>
+                                                        <label class="text-xs font-black text-gray-400 uppercase block mb-2">Your Message</label>
+                                                        <textarea 
+                                                            id="feedbackMessage"
+                                                            rows="5"
+                                                            placeholder="Tell us what's on your mind..."
+                                                            class="w-full bg-gray-100 rounded-xl p-3 font-medium focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                                                            required
+                                                        ></textarea>
+                                                    </div>
+                                                    
+                                                    <button 
+                                                        type="submit"
+                                                        class="w-full bg-green-500 text-white px-6 py-3 rounded-xl hover:bg-green-600 transition-all font-bold shadow-lg"
+                                                    >
+                                                        📤 Send Feedback
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        `;
+                                        document.body.appendChild(modal);
+                                        
+                                        // Handle form submission
+                                        document.getElementById('feedbackForm').addEventListener('submit', async (e) => {
+                                            e.preventDefault();
+                                            
+                                            const email = document.getElementById('feedbackEmail').value;
+                                            const type = document.getElementById('feedbackType').value;
+                                            const message = document.getElementById('feedbackMessage').value;
+                                            
+                                            if (!message.trim()) {
+                                                alert('Please enter your feedback message');
+                                                return;
+                                            }
+                                            
+                                            // Create mailto link
+                                            const subject = encodeURIComponent(\`PickleConnect Feedback: \${type.toUpperCase()}\`);
+                                            const body = encodeURIComponent(
+                                                \`Feedback Type: \${type}\n\` +
+                                                \`From: \${email || 'Anonymous'}\n\n\` +
+                                                \`Message:\n\${message}\n\n\` +
+                                                \`---\n\` +
+                                                \`Sent from PickleConnect Tournament App\`
+                                            );
+                                            
+                                            const mailtoLink = \`mailto:rvshanker1@gmail.com?subject=\${subject}&body=\${body}\`;
+                                            
+                                            // Open email client
+                                            window.location.href = mailtoLink;
+                                            
+                                            // Close modal after a short delay
+                                            setTimeout(() => {
+                                                modal.remove();
+                                                alert('✓ Email client opened! Please send your feedback.');
+                                            }, 500);
+                                        });
+                                        
+                                        // Close on background click
+                                        modal.addEventListener('click', (e) => {
+                                            if (e.target === modal) modal.remove();
+                                        });
+                                    }}
+                                    className="bg-gradient-to-r from-orange-500 to-pink-500 text-white px-3 md:px-4 py-2 rounded-lg font-medium hover:from-orange-600 hover:to-pink-600 transition-all text-xs md:text-sm"
+                                >
+                                    💬 Feedback
+                                </button>
+                                
                                 {saveStatus && (
                                     <span className={`px-3 md:px-4 py-2 rounded-lg font-medium text-xs md:text-sm ${
                                         saveStatus.includes('✓') ? 'bg-green-100 text-green-700' : 
@@ -3382,12 +3516,14 @@
                                                             >
                                                                 👁️ View
                                                             </button>
-                                                            <button 
-                                                                onClick={() => deleteTournament(tournament.id)}
-                                                                className="flex-1 md:flex-none bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all text-sm font-bold"
-                                                            >
-                                                                🗑️ Delete
-                                                            </button>
+                                                            {currentUser && tournament.createdBy === currentUser.uid && (
+                                                                <button 
+                                                                    onClick={() => deleteTournament(tournament.id)}
+                                                                    className="flex-1 md:flex-none bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all text-sm font-bold"
+                                                                >
+                                                                    🗑️ Delete
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 ))}
@@ -3579,7 +3715,7 @@
                                                                             value={scores[match.id]?.team1 || ''}
                                                                             onChange={(e) => updateScore(match.id, 'team1', e.target.value)}
                                                                             placeholder="0"
-                                                                            disabled={scoresFinalized}
+                                                                            disabled={!canEditScores}
                                                                             className={`w-14 px-2 py-2 border-2 rounded-lg text-center font-bold focus:outline-none ml-2 ${
                                                                                 scoresFinalized 
                                                                                     ? 'bg-gray-100 border-gray-300 cursor-not-allowed' 
@@ -3599,7 +3735,7 @@
                                                                             value={scores[match.id]?.team2 || ''}
                                                                             onChange={(e) => updateScore(match.id, 'team2', e.target.value)}
                                                                             placeholder="0"
-                                                                            disabled={scoresFinalized}
+                                                                            disabled={!canEditScores}
                                                                             className={`w-14 px-2 py-2 border-2 rounded-lg text-center font-bold focus:outline-none ml-2 ${
                                                                                 scoresFinalized 
                                                                                     ? 'bg-gray-100 border-gray-300 cursor-not-allowed' 
@@ -3624,7 +3760,7 @@
                                                                             value={scores[match.id]?.team1 || ''}
                                                                             onChange={(e) => updateScore(match.id, 'team1', e.target.value)}
                                                                             placeholder="0"
-                                                                            disabled={scoresFinalized}
+                                                                            disabled={!canEditScores}
                                                                             className={`w-16 px-3 py-2 border-2 rounded-lg text-center font-bold text-lg focus:outline-none ${
                                                                                 scoresFinalized 
                                                                                     ? 'bg-gray-100 border-gray-300 cursor-not-allowed' 
@@ -3638,7 +3774,7 @@
                                                                             value={scores[match.id]?.team2 || ''}
                                                                             onChange={(e) => updateScore(match.id, 'team2', e.target.value)}
                                                                             placeholder="0"
-                                                                            disabled={scoresFinalized}
+                                                                            disabled={!canEditScores}
                                                                             className={`w-16 px-3 py-2 border-2 rounded-lg text-center font-bold text-lg focus:outline-none ${
                                                                                 scoresFinalized 
                                                                                     ? 'bg-gray-100 border-gray-300 cursor-not-allowed' 
