@@ -396,14 +396,19 @@ function genFixed(partnerships,rounds,courts){
 }
 
 function calcLB(players,schedule,scores){
-    const stats={};players.filter(p=>p.trim()).forEach(p=>{stats[p]={wins:0,losses:0,pf:0,pa:0};});
+    const stats={};players.filter(p=>p.trim()).forEach(p=>{stats[p]={wins:0,losses:0,total:0,pf:0,pa:0};});
+    // Count total scheduled matches per player
+    schedule.forEach(round=>round.forEach(match=>{
+        [...match.team1,...match.team2].forEach(p=>{if(stats[p])stats[p].total++;});
+    }));
+    // Count wins/losses from scored matches
     schedule.forEach(round=>round.forEach(match=>{
         const s=scores[match.id];if(!s||s.team1===undefined||s.team2===undefined)return;
         const s1=parseInt(s.team1)||0,s2=parseInt(s.team2)||0;
         if(s1>s2){match.team1.forEach(p=>{if(stats[p]){stats[p].wins++;stats[p].pf+=s1;stats[p].pa+=s2;}});match.team2.forEach(p=>{if(stats[p]){stats[p].losses++;stats[p].pf+=s2;stats[p].pa+=s1;}});}
         else if(s2>s1){match.team2.forEach(p=>{if(stats[p]){stats[p].wins++;stats[p].pf+=s2;stats[p].pa+=s1;}});match.team1.forEach(p=>{if(stats[p]){stats[p].losses++;stats[p].pf+=s1;stats[p].pa+=s2;}});}
     }));
-    return Object.entries(stats).map(([name,s])=>({name,...s,total:s.wins+s.losses,diff:s.pf-s.pa})).sort((a,b)=>b.wins-a.wins||b.diff-a.diff);
+    return Object.entries(stats).map(([name,s])=>({name,...s,diff:s.pf-s.pa})).sort((a,b)=>b.wins-a.wins||b.diff-a.diff);
 }
 
 // ── PDF Export — opens new tab (works on mobile) ──────────────────────
