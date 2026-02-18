@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PickleCourt Connect - Live Court Status</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background: #f1f5f9; 
+            font-size: 16px;
+            -webkit-text-size-adjust: 100%;
+        }
+        .fd { font-family: 'Barlow Condensed', sans-serif; }
+        .hero-bg { background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 50%, #052e16 100%); }
+        
+        /* Buttons */
+        .btn-g { 
+            background: linear-gradient(135deg, #059669, #10b981); 
+            color: white; 
+            border-radius: 10px; 
+            padding: 12px 22px; 
+            font-weight: 700; 
+            font-size: 15px; 
+            border: none; 
+            cursor: pointer; 
+            transition: all .2s; 
+            font-family: 'Outfit', sans-serif; 
+            box-shadow: 0 4px 12px rgba(5, 150, 105, .25);
+        }
+        .btn-g:hover { 
+            background: linear-gradient(135deg, #047857, #059669); 
+            transform: translateY(-1px); 
+            box-shadow: 0 6px 16px rgba(5, 150, 105, .35);
+        }
+        .btn-g:active { transform: translateY(0); }
+        
+        .btn-out { 
+            background: transparent; 
+            color: #059669; 
+            border: 2px solid #059669; 
+            border-radius: 10px; 
+            padding: 10px 20px; 
+            font-weight: 600; 
+            font-size: 15px; 
+            cursor: pointer; 
+            transition: all .15s; 
+            font-family: 'Outfit', sans-serif;
+        }
+        .btn-out:hover { background: #059669; color: white; }
+        
+        .btn-red {
+            background: #ef4444;
+            color: white;
+            border-radius: 8px;
+            padding: 9px 16px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            border: none;
+        }
+        .btn-red:hover { background: #dc2626; }
+        
+        /* Status Cards */
+        .status-card {
+            background: white;
+            border-radius: 14px;
+            padding: 18px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, .06);
+            border: 2px solid transparent;
+            transition: all .2s;
+        }
+        .status-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0, 0, 0, .1); }
+        
+        .status-card.green { border-color: #10b981; background: linear-gradient(135deg, #f0fdf4, #dcfce7); }
+        .status-card.yellow { border-color: #fbbf24; background: linear-gradient(135deg, #fefce8, #fef3c7); }
+        .status-card.red { border-color: #ef4444; background: linear-gradient(135deg, #fef2f2, #fee2e2); }
+        
+        /* Toggle Switch */
+        .toggle-group {
+            display: flex;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            background: white;
+        }
+        .toggle-btn {
+            flex: 1;
+            padding: 10px 16px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            background: white;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all .2s;
+            border-right: 1px solid #e2e8f0;
+        }
+        .toggle-btn:last-child { border-right: none; }
+        .toggle-btn.active { background: #059669; color: white; }
+        .toggle-btn:hover:not(.active) { background: #f1f5f9; }
+        
+        /* Player List */
+        .player-item {
+            background: white;
+            border-radius: 10px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 8px;
+        }
+        .player-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #059669, #10b981);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+        
+        /* Weather Badge */
+        .weather-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(59, 130, 246, .1);
+            border: 1px solid rgba(59, 130, 246, .2);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e40af;
+        }
+        
+        /* Page Layout */
+        .pg { padding: 16px; max-width: 740px; width: 100%; margin: 0 auto; }
+        .nav {
+            background: #0f172a;
+            padding: 13px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .nav-back {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 22px;
+            padding: 2px 8px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        .live-indicator {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @media(max-width: 540px) {
+            .grid-2 { grid-template-columns: 1fr !important; }
+            .grid-3 { grid-template-columns: 1fr !important; }
+        }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ── Firebase Setup ────────────────────────────────────────────────────
+const FB = {
+    apiKey: "AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
+    authDomain: "pickleball-app-1bba7.firebaseapp.com",
+    projectId: "pickleball-app-1bba7",
+    storageBucket: "pickleball-app-1bba7.firebasestorage.app",
+    messagingSenderId: "645604154338",
+    appId: "1:645604154338:web:b92f87c2cd11d950b737bb"
+};
+
+let db = null;
+let fbOk = false;
+try {
+    if (!firebase.apps.length) {
+        firebase.initializeApp(FB);
+    }
+    db = firebase.firestore();
+    fbOk = true;
+} catch (e) {
+    console.error('Firebase init failed:', e);
+}
+
+// ── Court Status Component ────────────────────────────────────────────
+function CourtStatus() {
+    const [courtData, setCourtData] = useState(null);
+    const [checkIns, setCheckIns] = useState([]);
+    const [userName, setUserName] = useState('');
+    const [userStatus, setUserStatus] = useState('');
+    const [showCheckIn, setShowCheckIn] = useState(false);
+    const [weather, setWeather] = useState(null);
+    const courtId = 'main-court'; // You can make this dynamic for multiple courts
+    
+    // Load user name from localStorage
+    useEffect(() => {
+        const saved = localStorage.getItem('pickleCourtUserName');
+        if (saved) setUserName(saved);
+    }, []);
+    
+    // Real-time listener for court data
+    useEffect(() => {
+        if (!fbOk || !db) return;
+        
+        const unsubscribe = db.collection('court-status').doc(courtId).onSnapshot(doc => {
+            if (doc.exists) {
+                setCourtData(doc.data());
+            } else {
+                // Initialize default court data
+                const defaultData = {
+                    courtId,
+                    crowdLevel: 'low',
+                    lightsOn: false,
+                    openCourts: 3,
+                    totalCourts: 3,
+                    lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                db.collection('court-status').doc(courtId).set(defaultData);
+            }
+        });
+        
+        return () => unsubscribe();
+    }, [courtId]);
+    
+    // Real-time listener for check-ins
+    useEffect(() => {
+        if (!fbOk || !db) return;
+        
+        const cutoff = Date.now() - (4 * 60 * 60 * 1000); // 4 hours ago
+        const unsubscribe = db.collection('check-ins')
+            .where('courtId', '==', courtId)
+            .where('timestamp', '>', cutoff)
+            .orderBy('timestamp', 'desc')
+            .onSnapshot(snapshot => {
+                const checks = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setCheckIns(checks);
+            });
+        
+        return () => unsubscribe();
+    }, [courtId]);
+    
+    // Fetch weather data
+    useEffect(() => {
+        fetchWeather();
+        const interval = setInterval(fetchWeather, 10 * 60 * 1000); // Update every 10 mins
+        return () => clearInterval(interval);
+    }, []);
+    
+    const fetchWeather = async () => {
+        try {
+            // Using open-meteo (free, no API key needed)
+            // You can replace with actual coordinates for your court
+            const lat = 38.7946; // Example: O'Fallon, MO
+            const lon = -90.6997;
+            const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph`);
+            const data = await res.json();
+            setWeather({
+                temp: Math.round(data.current.temperature_2m),
+                wind: Math.round(data.current.wind_speed_10m)
+            });
+        } catch (e) {
+            console.error('Weather fetch failed:', e);
+        }
+    };
+    
+    // Update court status
+    const updateCourtStatus = async (field, value) => {
+        if (!fbOk || !db) return;
+        try {
+            await db.collection('court-status').doc(courtId).update({
+                [field]: value,
+                lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (e) {
+            console.error('Update failed:', e);
+        }
+    };
+    
+    // Check in
+    const handleCheckIn = async (status) => {
+        if (!userName.trim()) {
+            alert('Please enter your name first');
+            return;
+        }
+        
+        if (!fbOk || !db) {
+            alert('Database not available');
+            return;
+        }
+        
+        try {
+            // Remove any existing check-in from this user today
+            const existing = await db.collection('check-ins')
+                .where('courtId', '==', courtId)
+                .where('userName', '==', userName)
+                .where('timestamp', '>', Date.now() - (4 * 60 * 60 * 1000))
+                .get();
+            
+            existing.forEach(doc => doc.ref.delete());
+            
+            // Add new check-in
+            await db.collection('check-ins').add({
+                courtId,
+                userName,
+                status,
+                timestamp: Date.now(),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            localStorage.setItem('pickleCourtUserName', userName);
+            setUserStatus(status);
+            setShowCheckIn(false);
+        } catch (e) {
+            console.error('Check-in failed:', e);
+            alert('Check-in failed. Please try again.');
+        }
+    };
+    
+    // Remove check-in
+    const handleCheckOut = async () => {
+        if (!fbOk || !db) return;
+        try {
+            const existing = await db.collection('check-ins')
+                .where('courtId', '==', courtId)
+                .where('userName', '==', userName)
+                .where('timestamp', '>', Date.now() - (4 * 60 * 60 * 1000))
+                .get();
+            
+            existing.forEach(doc => doc.ref.delete());
+            setUserStatus('');
+        } catch (e) {
+            console.error('Check-out failed:', e);
+        }
+    };
+    
+    if (!courtData) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ width: 44, height: 44, border: '4px solid #e2e8f0', borderTop: '4px solid #059669', borderRadius: '50%', animation: 'spin .8s linear infinite', margin: '0 auto 12px' }} />
+                    <div style={{ fontFamily: 'Outfit, sans-serif', color: '#64748b', fontSize: 16 }}>Loading court status…</div>
+                </div>
+            </div>
+        );
+    }
+    
+    const crowdColors = { low: 'green', medium: 'yellow', high: 'red' };
+    const crowdLabels = { low: 'Light', medium: 'Moderate', high: 'Crowded' };
+    const crowdEmojis = { low: '🟢', medium: '🟡', high: '🔴' };
+    
+    const playersComingNow = checkIns.filter(c => c.status === 'now').length;
+    const playersComingLater = checkIns.filter(c => c.status === 'later').length;
+    const activeGames = Math.floor(playersComingNow / 4);
+    const waitingPlayers = playersComingNow % 4;
+    
+    const myCheckIn = checkIns.find(c => c.userName === userName);
+    
+    return (
+        <div style={{ minHeight: '100vh', background: '#f1f5f9', display: 'flex', flexDirection: 'column' }}>
+            {/* Header */}
+            <div className="hero-bg" style={{ padding: '20px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                    <div>
+                        <div className="fd" style={{ fontSize: 28, fontWeight: 800, color: 'white', letterSpacing: .3 }}>
+                            PICKLECOURT CONNECT
+                        </div>
+                        <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, color: '#6ee7b7', marginTop: 3, display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div className="live-indicator" />
+                            Live court status
+                        </div>
+                    </div>
+                    {weather && (
+                        <div className="weather-badge">
+                            🌡️ {weather.temp}°F · 💨 {weather.wind} mph
+                        </div>
+                    )}
+                </div>
+            </div>
+            
+            <div className="pg">
+                {/* Status Overview */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }} className="grid-3">
+                    <div className={`status-card ${crowdColors[courtData.crowdLevel]}`}>
+                        <div style={{ fontSize: 28, marginBottom: 4 }}>{crowdEmojis[courtData.crowdLevel]}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 2 }}>Crowd</div>
+                        <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>{crowdLabels[courtData.crowdLevel]}</div>
+                    </div>
+                    
+                    <div className={`status-card ${courtData.lightsOn ? 'green' : 'yellow'}`}>
+                        <div style={{ fontSize: 28, marginBottom: 4 }}>{courtData.lightsOn ? '💡' : '🌙'}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 2 }}>Lights</div>
+                        <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>{courtData.lightsOn ? 'ON' : 'OFF'}</div>
+                    </div>
+                    
+                    <div className={`status-card ${courtData.openCourts > 0 ? 'green' : 'red'}`}>
+                        <div style={{ fontSize: 28, marginBottom: 4 }}>🏟️</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 2 }}>Open Courts</div>
+                        <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>{courtData.openCourts} / {courtData.totalCourts}</div>
+                    </div>
+                </div>
+                
+                {/* Check-In Section */}
+                <div style={{ background: 'white', borderRadius: 14, padding: '20px 22px', marginBottom: 16, boxShadow: '0 2px 10px rgba(0, 0, 0, .06)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                        <div>
+                            <div className="fd" style={{ fontSize: 22, fontWeight: 800, color: '#0f172a' }}>👥 WHO'S COMING?</div>
+                            <div style={{ fontSize: 14, color: '#64748b', marginTop: 2 }}>
+                                {playersComingNow} playing now · {playersComingLater} coming later
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {myCheckIn ? (
+                        <div style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '2px solid #10b981', borderRadius: 12, padding: '14px 18px', marginBottom: 14 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div>
+                                    <div style={{ fontSize: 15, fontWeight: 700, color: '#059669', marginBottom: 3 }}>✅ You're checked in</div>
+                                    <div style={{ fontSize: 14, color: '#047857' }}>
+                                        {myCheckIn.status === 'now' ? 'Playing now' : myCheckIn.status === 'later' ? 'Coming later' : 'Watching'}
+                                    </div>
+                                </div>
+                                <button className="btn-red" onClick={handleCheckOut}>Check Out</button>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {!showCheckIn ? (
+                                <button className="btn-g" onClick={() => setShowCheckIn(true)} style={{ width: '100%', padding: '14px' }}>
+                                    📍 Check In
+                                </button>
+                            ) : (
+                                <div style={{ background: '#f1f5f9', borderRadius: 12, padding: 16 }}>
+                                    <input
+                                        type="text"
+                                        value={userName}
+                                        onChange={e => setUserName(e.target.value)}
+                                        placeholder="Your name"
+                                        style={{ width: '100%', padding: '12px', fontSize: 15, borderRadius: 8, border: '2px solid #e2e8f0', marginBottom: 12, fontFamily: 'Outfit, sans-serif', outline: 'none' }}
+                                        onFocus={e => e.target.style.borderColor = '#059669'}
+                                        onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                                    />
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }} className="grid-2">
+                                        <button className="btn-g" onClick={() => handleCheckIn('now')} style={{ padding: '12px' }}>
+                                            🎾 Coming Now
+                                        </button>
+                                        <button className="btn-out" onClick={() => handleCheckIn('later')} style={{ padding: '10px' }}>
+                                            ⏰ Coming Later
+                                        </button>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }} className="grid-2">
+                                        <button className="btn-out" onClick={() => handleCheckIn('watching')} style={{ padding: '10px' }}>
+                                            👀 Just Watching
+                                        </button>
+                                        <button onClick={() => setShowCheckIn(false)} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px', cursor: 'pointer', fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, color: '#64748b' }}>
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+                
+                {/* Player List */}
+                {checkIns.length > 0 && (
+                    <div style={{ background: 'white', borderRadius: 14, padding: '20px 22px', marginBottom: 16, boxShadow: '0 2px 10px rgba(0, 0, 0, .06)' }}>
+                        <div className="fd" style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 14 }}>
+                            PLAYERS CHECKED IN
+                        </div>
+                        {checkIns.map(player => (
+                            <div key={player.id} className="player-item">
+                                <div className="player-avatar">{player.userName[0].toUpperCase()}</div>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 600, fontSize: 15, color: '#0f172a' }}>{player.userName}</div>
+                                    <div style={{ fontSize: 13, color: '#64748b' }}>
+                                        {player.status === 'now' ? '🎾 Playing now' : player.status === 'later' ? '⏰ Coming later' : '👀 Watching'}
+                                    </div>
+                                </div>
+                                <div style={{ fontSize: 12, color: '#94a3b8' }}>
+                                    {new Date(player.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                
+                {/* Court Controls - Admin Only */}
+                <div style={{ background: 'white', borderRadius: 14, padding: '20px 22px', marginBottom: 16, boxShadow: '0 2px 10px rgba(0, 0, 0, .06)' }}>
+                    <div className="fd" style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 14 }}>
+                        ⚙️ UPDATE COURT STATUS
+                    </div>
+                    
+                    <div style={{ marginBottom: 16 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.5px' }}>Crowd Level</div>
+                        <div className="toggle-group">
+                            <button className={`toggle-btn ${courtData.crowdLevel === 'low' ? 'active' : ''}`} onClick={() => updateCourtStatus('crowdLevel', 'low')}>
+                                🟢 Light
+                            </button>
+                            <button className={`toggle-btn ${courtData.crowdLevel === 'medium' ? 'active' : ''}`} onClick={() => updateCourtStatus('crowdLevel', 'medium')}>
+                                🟡 Moderate
+                            </button>
+                            <button className={`toggle-btn ${courtData.crowdLevel === 'high' ? 'active' : ''}`} onClick={() => updateCourtStatus('crowdLevel', 'high')}>
+                                🔴 Crowded
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div style={{ marginBottom: 16 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.5px' }}>Lights</div>
+                        <div className="toggle-group">
+                            <button className={`toggle-btn ${courtData.lightsOn ? 'active' : ''}`} onClick={() => updateCourtStatus('lightsOn', true)}>
+                                💡 ON
+                            </button>
+                            <button className={`toggle-btn ${!courtData.lightsOn ? 'active' : ''}`} onClick={() => updateCourtStatus('lightsOn', false)}>
+                                🌙 OFF
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.5px' }}>Open Courts</div>
+                        <div className="toggle-group">
+                            {[0, 1, 2, 3].map(num => (
+                                <button key={num} className={`toggle-btn ${courtData.openCourts === num ? 'active' : ''}`} onClick={() => updateCourtStatus('openCourts', num)}>
+                                    {num === 0 ? 'None' : num}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+                
+                {/* Quick Stats */}
+                <div style={{ background: 'linear-gradient(135deg, #eff6ff, #dbeafe)', border: '2px solid #3b82f6', borderRadius: 14, padding: '16px 20px' }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#1e40af', marginBottom: 8 }}>📊 Quick Stats</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }} className="grid-2">
+                        <div>
+                            <div style={{ fontSize: 12, color: '#64748b' }}>Active Games</div>
+                            <div style={{ fontSize: 20, fontWeight: 800, color: '#1e40af' }}>{activeGames}</div>
+                        </div>
+                        <div>
+                            <div style={{ fontSize: 12, color: '#64748b' }}>Waiting</div>
+                            <div style={{ fontSize: 20, fontWeight: 800, color: '#1e40af' }}>{waitingPlayers} players</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Main App ──────────────────────────────────────────────────────────
+function App() {
+    return <CourtStatus />;
+}
+
+// Add spin animation
+const style = document.createElement('style');
+style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+document.head.appendChild(style);
+
+ReactDOM.render(<App />, document.getElementById('root'));
+</script>
+</body>
+</html>
