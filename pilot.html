@@ -403,8 +403,10 @@ function calcLB(players,schedule,scores){
     }));
     // Count wins/losses from scored matches
     schedule.forEach(round=>round.forEach(match=>{
-        const s=scores[match.id];if(!s||s.team1===undefined||s.team2===undefined)return;
-        const s1=parseInt(s.team1)||0,s2=parseInt(s.team2)||0;
+        const s=scores[match.id];if(!s)return;
+        const v1=s.team1,v2=s.team2;
+        if(v1===undefined||v1===''||v2===undefined||v2==='')return;
+        const s1=parseInt(v1)||0,s2=parseInt(v2)||0;
         if(s1>s2){match.team1.forEach(p=>{if(stats[p]){stats[p].wins++;stats[p].pf+=s1;stats[p].pa+=s2;}});match.team2.forEach(p=>{if(stats[p]){stats[p].losses++;stats[p].pf+=s2;stats[p].pa+=s1;}});}
         else if(s2>s1){match.team2.forEach(p=>{if(stats[p]){stats[p].wins++;stats[p].pf+=s2;stats[p].pa+=s1;}});match.team1.forEach(p=>{if(stats[p]){stats[p].losses++;stats[p].pf+=s1;stats[p].pa+=s2;}});}
     }));
@@ -1017,9 +1019,26 @@ function TournamentSetup({onGenerate}){
 }
 
 // ── Schedule View ─────────────────────────────────────────────────────
-function ScheduleView({schedule,scores,onScoreChange,canEdit,tournamentName,players,isGuest,onExportPDF,finalized}){
+function ScheduleView({schedule,scores,onScoreChange,canEdit,tournamentName,players,isGuest,onExportPDF,finalized,mode}){
     const[showLB,setShowLB]=useState(false);
     const lb=calcLB(players,schedule,scores);
+
+    // For fixed mode, detect pairs from schedule and merge into pair rows
+    const pairLB=React.useMemo(()=>{
+        if(mode!=='fixed')return null;
+        const pairMap={};
+        schedule.forEach(round=>round.forEach(match=>{
+            if(match.team1.length===2){const k=[...match.team1].sort().join('|||');if(!pairMap[k])pairMap[k]=match.team1;}
+            if(match.team2.length===2){const k=[...match.team2].sort().join('|||');if(!pairMap[k])pairMap[k]=match.team2;}
+        }));
+        return Object.values(pairMap).map(pair=>{
+            const p1=lb.find(x=>x.name===pair[0])||{wins:0,losses:0,total:0,diff:0};
+            const p2=lb.find(x=>x.name===pair[1])||{wins:0,losses:0,total:0,diff:0};
+            return{name:pair.join(' & '),wins:p1.wins,losses:p1.losses,total:p1.total,diff:p1.diff};
+        }).sort((a,b)=>b.wins-a.wins||b.diff-a.diff);
+    },[mode,lb,schedule]);
+
+    const displayLB=pairLB||lb;
     return(
         <div>
             <div style={{display:'flex',flexWrap:'wrap',gap:10,marginBottom:18,alignItems:'center'}}>
@@ -1044,7 +1063,7 @@ function ScheduleView({schedule,scores,onScoreChange,canEdit,tournamentName,play
                         <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,color:'#92400e',textAlign:'right',letterSpacing:.5}}>+/−</div>
                     </div>
                     <div style={{display:'flex',flexDirection:'column',gap:4}}>
-                        {lb.map((p,i)=>(
+                        {displayLB.map((p,i)=>(
                             <div key={p.name} style={{background:'white',borderRadius:10,padding:'10px 14px',display:'grid',gridTemplateColumns:'auto 1fr 44px 44px 44px 52px',alignItems:'center',gap:0,border:`2px solid ${i===0?'#fbbf24':'#f1f5f9'}`}}>
                                 <span style={{fontSize:18,minWidth:32,lineHeight:1}}>{i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`}</span>
                                 <span style={{fontFamily:'Outfit,sans-serif',fontWeight:600,fontSize:15,color:'#0f172a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',paddingRight:8}}>{p.name}</span>
@@ -1067,8 +1086,8 @@ function ScheduleView({schedule,scores,onScoreChange,canEdit,tournamentName,play
 
                     {round.map(match=>{
                         const sc=scores[match.id]||{};
-                        const s1=sc.team1!==undefined?parseInt(sc.team1):null;
-                        const s2=sc.team2!==undefined?parseInt(sc.team2):null;
+                        const s1=(sc.team1!==undefined&&sc.team1!=='')?parseInt(sc.team1):null;
+                        const s2=(sc.team2!==undefined&&sc.team2!=='')?parseInt(sc.team2):null;
                         const w1=s1!==null&&s2!==null&&s1>s2,w2=s1!==null&&s2!==null&&s2>s1;
                         const t1=match.team1.join(' & '),t2=match.team2.join(' & ');
                         return(
@@ -1351,10 +1370,10 @@ function SimpleView({onBack,onLogin,onFeedback}){
     const foundSaveTimer=React.useRef(null);
 
     const handleGenerate=d=>{setSetup(d);setScores({});};
-    const updScore=(id,team,val)=>setScores(p=>({...p,[id]:{...(p[id]||{}),[team]:parseInt(val)||0}}));
+    const updScore=(id,team,val)=>setScores(p=>({...p,[id]:{...(p[id]||{}),[team]:val}}));
 
     const updFoundScore=(id,team,val)=>{
-        const updated=s=>({...s,[id]:{...(s[id]||{}),[team]:parseInt(val)||0}});
+        const updated=s=>({...s,[id]:{...(s[id]||{}),[team]:val}});
         setFoundScores(prev=>{
             const next=updated(prev);
             // Debounce save to Firestore
@@ -1427,7 +1446,7 @@ function SimpleView({onBack,onLogin,onFeedback}){
                                 </div>
                                 <button className="btn-out btn-sm" onClick={()=>{setSetup(null);setScores({});}}>New</button>
                             </div>
-                            <ScheduleView schedule={setup.schedule} scores={scores} onScoreChange={updScore} canEdit={true} tournamentName={setup.name} players={setup.players} isGuest={true} onExportPDF={()=>doPrint(setup.name,setup.schedule,scores,setup.players,false)} finalized={false}/>
+                            <ScheduleView schedule={setup.schedule} scores={scores} onScoreChange={updScore} canEdit={true} tournamentName={setup.name} players={setup.players} isGuest={true} onExportPDF={()=>doPrint(setup.name,setup.schedule,scores,setup.players,false)} finalized={false} mode={setup.mode}/>
                         </>
                     )
                 )}
@@ -1466,7 +1485,8 @@ function SimpleView({onBack,onLogin,onFeedback}){
                                     players={found.players||[]}
                                     isGuest={true}
                                     onExportPDF={()=>doPrint(found.name,found.schedule||[],foundScores,found.players||[],true)}
-                                    finalized={found.scoresFinalized||false}/>
+                                    finalized={found.scoresFinalized||false}
+                                    mode={found.mode||'rotating'}/>
                             </>
                         )}
                     </div>
@@ -1765,9 +1785,9 @@ function FullApp({user,onLogout,onBack,onFeedback}){
 
                 <ScheduleView
                     schedule={setup.schedule} scores={scores}
-                    onScoreChange={(id,team,val)=>{setScores(p=>({...p,[id]:{...(p[id]||{}),[team]:parseInt(val)||0}}));}}
+                    onScoreChange={(id,team,val)=>{setScores(p=>({...p,[id]:{...(p[id]||{}),[team]:val}}));}}
                     canEdit={isOwner||(isPublic&&publicMode==='edit')} tournamentName={setup.name} players={setup.players}
-                    isGuest={false} onExportPDF={()=>doPrint(setup.name,setup.schedule,scores,setup.players,true)} finalized={finalized}/>
+                    isGuest={false} onExportPDF={()=>doPrint(setup.name,setup.schedule,scores,setup.players,true)} finalized={finalized} mode={setup.mode}/>
             </div>
         </div>
     );
