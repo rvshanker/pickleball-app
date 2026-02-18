@@ -1339,25 +1339,53 @@ function SimpleView({onBack,onLogin,onFeedback}){
     const[scores,setScores]=useState({});
     const[findId,setFindId]=useState('');
     const[found,setFound]=useState(null);
+    const[foundScores,setFoundScores]=useState({});
+    const[foundSaveStatus,setFoundSaveStatus]=useState('');
     const[findErr,setFindErr]=useState('');
     const[finding,setFinding]=useState(false);
+    const foundSaveTimer=React.useRef(null);
 
     const handleGenerate=d=>{setSetup(d);setScores({});};
     const updScore=(id,team,val)=>setScores(p=>({...p,[id]:{...(p[id]||{}),[team]:parseInt(val)||0}}));
 
+    const updFoundScore=(id,team,val)=>{
+        const updated=s=>({...s,[id]:{...(s[id]||{}),[team]:parseInt(val)||0}});
+        setFoundScores(prev=>{
+            const next=updated(prev);
+            // Debounce save to Firestore
+            if(foundSaveTimer.current)clearTimeout(foundSaveTimer.current);
+            foundSaveTimer.current=setTimeout(async()=>{
+                if(!found?.id)return;
+                setFoundSaveStatus('Saving…');
+                try{
+                    if(fbOk&&db){
+                        await db.collection('tournaments').doc(found.id).update({scores:next});
+                        setFoundSaveStatus('✓ Saved');
+                    }
+                }catch(e){setFoundSaveStatus('✗ Failed');}
+                setTimeout(()=>setFoundSaveStatus(''),2500);
+            },1200);
+            return next;
+        });
+    };
+
     const findTournament=async()=>{
         const id=findId.trim();if(!id)return;
-        setFinding(true);setFindErr('');setFound(null);
+        setFinding(true);setFindErr('');setFound(null);setFoundScores({});
         const data=await storage.get(id);
         if(!data)setFindErr('Tournament not found. Check the ID and try again.');
         else if(!data.isPublic)setFindErr('This tournament is private. Only the owner can access it.');
         else{
             const map={};
             (data.scheduleFlat||[]).forEach(m=>{if(!map[m.roundIndex])map[m.roundIndex]=[];map[m.roundIndex].push({id:m.id,court:m.court,team1:typeof m.team1==='string'?m.team1.split(', ').filter(Boolean):[m.team1],team2:typeof m.team2==='string'?m.team2.split(', ').filter(Boolean):[m.team2]});});
-            setFound({...data,schedule:data.schedule||Object.keys(map).sort((a,b)=>a-b).map(k=>map[k])});
+            const t={...data,schedule:data.schedule||Object.keys(map).sort((a,b)=>a-b).map(k=>map[k])};
+            setFound(t);
+            setFoundScores(data.scores||{});
         }
         setFinding(false);
     };
+
+    const isEditMode=found?.publicMode==='edit'&&!found?.scoresFinalized;
 
     return(
         <div style={{minHeight:'100vh',background:'#f1f5f9',display:'flex',flexDirection:'column'}}>
@@ -1410,11 +1438,30 @@ function SimpleView({onBack,onLogin,onFeedback}){
                         {findErr&&<div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:10,padding:'13px 16px',fontSize:15,color:'#dc2626',marginBottom:14}}>{findErr}</div>}
                         {found&&(
                             <>
-                                <div style={{background:'#f0fdf4',border:'1px solid #a7f3d0',borderRadius:12,padding:'14px 18px',marginBottom:16}}>
-                                    <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{found.name}</div>
-                                    <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#64748b',marginTop:4}}>🌍 Public · {found.players?.length||0} players · {found.schedule?.length||0} rounds{found.scoresFinalized&&' · 🔒 Finalized'}</div>
+                                <div style={{background:isEditMode?'#fffbeb':'#f0fdf4',border:`1px solid ${isEditMode?'#fcd34d':'#a7f3d0'}`,borderRadius:12,padding:'14px 18px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}>
+                                    <div>
+                                        <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{found.name}</div>
+                                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#64748b',marginTop:4}}>
+                                            {isEditMode?'✏️ Public (Edit)':'🌍 Public (Read)'} · {found.players?.length||0} players · {found.schedule?.length||0} rounds{found.scoresFinalized&&' · 🔒 Finalized'}
+                                        </div>
+                                    </div>
+                                    {isEditMode&&(
+                                        <div style={{display:'flex',alignItems:'center',gap:8}}>
+                                            {foundSaveStatus&&<span style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:foundSaveStatus.includes('✓')?'#059669':foundSaveStatus.includes('✗')?'#dc2626':'#64748b'}}>{foundSaveStatus}</span>}
+                                            <span style={{background:'#f59e0b',color:'white',borderRadius:8,padding:'5px 11px',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700}}>✏️ Score Editing On</span>
+                                        </div>
+                                    )}
                                 </div>
-                                <ScheduleView schedule={found.schedule||[]} scores={found.scores||{}} onScoreChange={()=>{}} canEdit={false} tournamentName={found.name} players={found.players||[]} isGuest={true} onExportPDF={()=>doPrint(found.name,found.schedule||[],found.scores||{},found.players||[],true)} finalized={true}/>
+                                <ScheduleView
+                                    schedule={found.schedule||[]}
+                                    scores={foundScores}
+                                    onScoreChange={updFoundScore}
+                                    canEdit={isEditMode}
+                                    tournamentName={found.name}
+                                    players={found.players||[]}
+                                    isGuest={true}
+                                    onExportPDF={()=>doPrint(found.name,found.schedule||[],foundScores,found.players||[],true)}
+                                    finalized={found.scoresFinalized||false}/>
                             </>
                         )}
                     </div>
