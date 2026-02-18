@@ -328,6 +328,8 @@ function CourtStatus() {
     const nowPlayers  = checkIns.filter(c => c.status === 'now');
     const laterPlayers= checkIns.filter(c => c.status === 'later');
     const watchers    = checkIns.filter(c => c.status === 'watching');
+    const nowTotal    = headcount(nowPlayers);
+    const laterTotal  = headcount(laterPlayers);
     const schedule    = groupByHour(laterPlayers);
     const timeOpts    = buildTimeOptions();
     const openOpts    = Array.from({ length: courtData.totalCourts + 1 }, (_,i) => i);
@@ -374,8 +376,25 @@ function CourtStatus() {
                     </div>
                 )}
 
-                {/* Status pills — compact single scrollable row */}
+                {/* Status pills — compact single scrollable row: Playing, Coming, Court, Crowd, Lights, Open */}
                 <div className="status-bar">
+                    <div className={`status-pill ${nowTotal>0?'green':''}`}>
+                        <span style={{fontSize:13}}>🎾</span>
+                        <div><div className="pill-label">Playing</div><div className="pill-val">{nowTotal}</div></div>
+                    </div>
+                    <div className={`status-pill ${laterTotal>0?'green':''}`}>
+                        <span style={{fontSize:13}}>⏰</span>
+                        <div><div className="pill-label">Coming</div><div className="pill-val">{laterTotal}</div></div>
+                    </div>
+                    {courtData.condition && courtData.condition !== 'open' && (() => {
+                        const cond = {closed:{e:'🚫',l:'Closed',c:'red'},wet:{e:'💧',l:'Wet',c:'yellow'},hot:{e:'🥵',l:'Hot',c:'yellow'},event:{e:'🎉',l:'Event',c:'green'}}[courtData.condition];
+                        return cond ? (
+                            <div className={`status-pill ${cond.c}`}>
+                                <span style={{fontSize:13}}>{cond.e}</span>
+                                <div><div className="pill-label">Court</div><div className="pill-val">{cond.l}</div></div>
+                            </div>
+                        ) : null;
+                    })()}
                     <div className={`status-pill ${crowdColor}`}>
                         <span style={{fontSize:13}}>{crowdEmoji}</span>
                         <div><div className="pill-label">Crowd</div><div className="pill-val">{crowdNum}</div></div>
@@ -388,31 +407,14 @@ function CourtStatus() {
                         <span style={{fontSize:13}}>🏟️</span>
                         <div><div className="pill-label">Open</div><div className="pill-val">{courtData.openCourts}/{courtData.totalCourts}</div></div>
                     </div>
-                    <div className="status-pill">
-                        <span style={{fontSize:13}}>🎾</span>
-                        <div><div className="pill-label">Playing</div><div className="pill-val">{nowPlayers.length}</div></div>
-                    </div>
-                    <div className="status-pill">
-                        <span style={{fontSize:13}}>⏰</span>
-                        <div><div className="pill-label">Coming</div><div className="pill-val">{laterPlayers.length}</div></div>
-                    </div>
-                    {courtData.condition && courtData.condition !== 'open' && (() => {
-                        const cond = {closed:{e:'🚫',l:'Closed',c:'red'},wet:{e:'💧',l:'Wet',c:'yellow'},hot:{e:'🥵',l:'Hot',c:'yellow'},event:{e:'🎉',l:'Event',c:'green'}}[courtData.condition];
-                        return cond ? (
-                            <div className={`status-pill ${cond.c}`}>
-                                <span style={{fontSize:13}}>{cond.e}</span>
-                                <div><div className="pill-label">Court</div><div className="pill-val">{cond.l}</div></div>
-                            </div>
-                        ) : null;
-                    })()}
                 </div>
             </div>
 
             <div className="pg">
                 {/* Tabs */}
                 <div className="tab-bar">
-                    <button className={`tab-btn${tab==='now'?' active':''}`} onClick={()=>setTab('now')}>🎾 Now ({nowPlayers.length})</button>
-                    <button className={`tab-btn${tab==='schedule'?' active':''}`} onClick={()=>setTab('schedule')}>📅 Schedule ({headcount(laterPlayers)})</button>
+                    <button className={`tab-btn${tab==='now'?' active':''}`} onClick={()=>setTab('now')}>🎾 Now ({nowTotal})</button>
+                    <button className={`tab-btn${tab==='schedule'?' active':''}`} onClick={()=>setTab('schedule')}>📅 Schedule ({laterTotal})</button>
                     <button className={`tab-btn${tab==='controls'?' active':''}`} onClick={()=>setTab('controls')}>⚙️ Controls</button>
                 </div>
 
@@ -463,15 +465,25 @@ function CourtStatus() {
                         ) : (
                             // Step 2: time picker for "later"
                             <div style={{background:'#f8fafc',borderRadius:11,padding:13}}>
-                                <div style={{fontSize:14,fontWeight:700,color:'#0f172a',marginBottom:3}}>⏰ What time will you arrive?</div>
-                                <div style={{fontSize:12,color:'#64748b',marginBottom:10}}>Select the hour you're planning to show up</div>
-                                <select className="field" value={arrivalTime} onChange={e=>setArrivalTime(e.target.value)} style={{marginBottom:12}}>
-                                    <option value="">Select time…</option>
-                                    {timeOpts.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
-                                </select>
-                                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                                    <button className="btn-g" disabled={!arrivalTime} onClick={()=>submitCheckIn('later',parseInt(arrivalTime))} style={{padding:11}}>Confirm ✓</button>
-                                    <button className="btn-out" onClick={()=>setStep('form')} style={{padding:9}}>← Back</button>
+                                <div style={{fontSize:13,fontWeight:700,color:'#0f172a',marginBottom:10}}>⏰ What time will you arrive?</div>
+                                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12,flexWrap:'wrap'}}>
+                                    <select className="field" value={arrivalTime} onChange={e=>setArrivalTime(e.target.value)} style={{flex:'0 0 auto',width:'auto',minWidth:130}}>
+                                        <option value="">Pick time…</option>
+                                        {timeOpts.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+                                    </select>
+                                    {arrivalTime && (() => {
+                                        const hr = new Date(parseInt(arrivalTime)).getHours();
+                                        const fx = forecast.find(h => h.dt.getHours() === hr);
+                                        return fx ? (
+                                            <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'rgba(59,130,246,.08)',border:'1px solid rgba(59,130,246,.2)',borderRadius:20,padding:'5px 12px',fontSize:12,fontWeight:700,color:'#1e40af',whiteSpace:'nowrap'}}>
+                                                {wIcon(fx.temp,fx.wind)} {fx.temp}°F · 💨 {fx.wind}mph
+                                            </div>
+                                        ) : null;
+                                    })()}
+                                </div>
+                                <div style={{display:'flex',gap:8,justifyContent:'space-between'}}>
+                                    <button className="btn-out" onClick={()=>setStep('form')} style={{padding:'9px 18px'}}>← Back</button>
+                                    <button className="btn-g" disabled={!arrivalTime} onClick={()=>submitCheckIn('later',parseInt(arrivalTime))} style={{padding:'10px 22px',opacity:arrivalTime?1:.45}}>Confirm ✓</button>
                                 </div>
                             </div>
                         )}
@@ -479,7 +491,7 @@ function CourtStatus() {
 
                     {nowPlayers.length > 0 && (
                         <div className="card">
-                            <div className="fd" style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:11}}>🎾 PLAYING NOW · {nowPlayers.length}</div>
+                            <div className="fd" style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:11}}>🎾 PLAYING NOW · {nowTotal}</div>
                             {nowPlayers.map(p=><PlayerRow key={p.id} p={p}/>)}
                         </div>
                     )}
