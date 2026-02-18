@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PickleCourt Connect - Live Court Status</title>
-    
+    <title>PickleCourt Connect - Dardenne Prairie</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -12,189 +11,97 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Outfit', sans-serif; 
-            background: #f1f5f9; 
-            font-size: 16px;
-            -webkit-text-size-adjust: 100%;
-        }
+        body { font-family: 'Outfit', sans-serif; background: #f1f5f9; font-size: 16px; -webkit-text-size-adjust: 100%; }
         .fd { font-family: 'Barlow Condensed', sans-serif; }
         .hero-bg { background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 50%, #052e16 100%); }
-        
+
+        /* Compact scrollable status pills - one line */
+        .status-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .status-bar::-webkit-scrollbar { display: none; }
+        .status-pill { display: flex; align-items: center; gap: 7px; background: white; border-radius: 10px; padding: 7px 11px; white-space: nowrap; border: 2px solid transparent; flex-shrink: 0; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+        .status-pill.green { border-color: #10b981; background: linear-gradient(135deg,#f0fdf4,#dcfce7); }
+        .status-pill.yellow { border-color: #fbbf24; background: linear-gradient(135deg,#fefce8,#fef3c7); }
+        .status-pill.red { border-color: #ef4444; background: linear-gradient(135deg,#fef2f2,#fee2e2); }
+        .pill-label { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .4px; }
+        .pill-val { font-size: 13px; font-weight: 800; color: #0f172a; }
+
         /* Buttons */
-        .btn-g { 
-            background: linear-gradient(135deg, #059669, #10b981); 
-            color: white; 
-            border-radius: 10px; 
-            padding: 12px 22px; 
-            font-weight: 700; 
-            font-size: 15px; 
-            border: none; 
-            cursor: pointer; 
-            transition: all .2s; 
-            font-family: 'Outfit', sans-serif; 
-            box-shadow: 0 4px 12px rgba(5, 150, 105, .25);
-        }
-        .btn-g:hover { 
-            background: linear-gradient(135deg, #047857, #059669); 
-            transform: translateY(-1px); 
-            box-shadow: 0 6px 16px rgba(5, 150, 105, .35);
-        }
+        .btn-g { background: linear-gradient(135deg,#059669,#10b981); color: white; border-radius: 10px; padding: 12px 22px; font-weight: 700; font-size: 15px; border: none; cursor: pointer; transition: all .2s; font-family: 'Outfit',sans-serif; box-shadow: 0 4px 12px rgba(5,150,105,.25); }
+        .btn-g:hover { background: linear-gradient(135deg,#047857,#059669); transform: translateY(-1px); }
         .btn-g:active { transform: translateY(0); }
-        
-        .btn-out { 
-            background: transparent; 
-            color: #059669; 
-            border: 2px solid #059669; 
-            border-radius: 10px; 
-            padding: 10px 20px; 
-            font-weight: 600; 
-            font-size: 15px; 
-            cursor: pointer; 
-            transition: all .15s; 
-            font-family: 'Outfit', sans-serif;
-        }
+        .btn-g:disabled { opacity: .45; transform: none; cursor: not-allowed; }
+        .btn-out { background: transparent; color: #059669; border: 2px solid #059669; border-radius: 10px; padding: 10px 20px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all .15s; font-family: 'Outfit',sans-serif; }
         .btn-out:hover { background: #059669; color: white; }
-        
-        .btn-red {
-            background: #ef4444;
-            color: white;
-            border-radius: 8px;
-            padding: 9px 16px;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            font-family: 'Outfit', sans-serif;
-            border: none;
-        }
+        .btn-red { background: #ef4444; color: white; border-radius: 8px; padding: 8px 14px; font-weight: 600; font-size: 13px; cursor: pointer; font-family: 'Outfit',sans-serif; border: none; }
         .btn-red:hover { background: #dc2626; }
-        
-        /* Status Cards */
-        .status-card {
-            background: white;
-            border-radius: 14px;
-            padding: 18px 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, .06);
-            border: 2px solid transparent;
-            transition: all .2s;
-        }
-        .status-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0, 0, 0, .1); }
-        
-        .status-card.green { border-color: #10b981; background: linear-gradient(135deg, #f0fdf4, #dcfce7); }
-        .status-card.yellow { border-color: #fbbf24; background: linear-gradient(135deg, #fefce8, #fef3c7); }
-        .status-card.red { border-color: #ef4444; background: linear-gradient(135deg, #fef2f2, #fee2e2); }
-        
-        /* Toggle Switch */
-        .toggle-group {
-            display: flex;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            overflow: hidden;
-            background: white;
-        }
-        .toggle-btn {
-            flex: 1;
-            padding: 10px 16px;
-            font-family: 'Outfit', sans-serif;
-            font-size: 14px;
-            font-weight: 600;
-            border: none;
-            background: white;
-            color: #94a3b8;
-            cursor: pointer;
-            transition: all .2s;
-            border-right: 1px solid #e2e8f0;
-        }
+
+        /* Toggle group */
+        .toggle-group { display: flex; border: 2px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: white; }
+        .toggle-btn { flex: 1; padding: 8px 5px; font-family: 'Outfit',sans-serif; font-size: 12px; font-weight: 700; border: none; background: white; color: #94a3b8; cursor: pointer; transition: all .2s; border-right: 1px solid #e2e8f0; }
         .toggle-btn:last-child { border-right: none; }
         .toggle-btn.active { background: #059669; color: white; }
         .toggle-btn:hover:not(.active) { background: #f1f5f9; }
-        
-        /* Player List */
-        .player-item {
-            background: white;
-            border-radius: 10px;
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border: 1px solid #e2e8f0;
-            margin-bottom: 8px;
-        }
-        .player-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #059669, #10b981);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 15px;
-            flex-shrink: 0;
-        }
-        
-        /* Weather Badge */
-        .weather-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(59, 130, 246, .1);
-            border: 1px solid rgba(59, 130, 246, .2);
-            border-radius: 20px;
-            padding: 6px 14px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #1e40af;
-        }
-        
-        /* Page Layout */
-        .pg { padding: 16px; max-width: 740px; width: 100%; margin: 0 auto; }
-        .nav {
-            background: #0f172a;
-            padding: 13px 18px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .nav-back {
-            background: none;
-            border: none;
-            color: #94a3b8;
-            cursor: pointer;
-            font-size: 22px;
-            padding: 2px 8px;
-            line-height: 1;
-            flex-shrink: 0;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: .5; }
-        }
-        .live-indicator {
-            width: 8px;
-            height: 8px;
-            background: #10b981;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-        
-        @media(max-width: 540px) {
-            .grid-2 { grid-template-columns: 1fr !important; }
-            .grid-3 { grid-template-columns: 1fr !important; }
+
+        /* Player rows */
+        .player-item { background: white; border-radius: 10px; padding: 9px 13px; display: flex; align-items: center; gap: 10px; border: 1px solid #e2e8f0; margin-bottom: 7px; }
+        .player-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#059669,#10b981); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+
+        /* Weather strip */
+        .weather-strip { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .weather-strip::-webkit-scrollbar { display: none; }
+        .weather-hour { display: flex; flex-direction: column; align-items: center; padding: 7px 10px; min-width: 58px; border-right: 1px solid rgba(255,255,255,.08); flex-shrink: 0; }
+        .weather-hour:last-child { border-right: none; }
+        .weather-hour.now { background: rgba(16,185,129,.18); border-radius: 8px; }
+        .wh-time { font-size: 10px; font-weight: 700; color: #6ee7b7; margin-bottom: 1px; }
+        .wh-icon { font-size: 13px; line-height: 1; }
+        .wh-temp { font-size: 14px; font-weight: 800; color: white; }
+        .wh-wind { font-size: 10px; color: #94a3b8; }
+
+        /* Rating badges */
+        .rating-badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+        .rating-u3  { background: #e0e7ff; color: #3730a3; }
+        .rating-3   { background: #dbeafe; color: #1d4ed8; }
+        .rating-35  { background: #dcfce7; color: #166534; }
+        .rating-4   { background: #fef3c7; color: #92400e; }
+
+        /* Hour schedule blocks */
+        .hour-block { background: white; border-radius: 12px; padding: 12px 15px; margin-bottom: 9px; border-left: 4px solid #e2e8f0; }
+        .hour-block.has-players { border-left-color: #059669; }
+
+        /* Card */
+        .card { background: white; border-radius: 14px; padding: 15px 17px; margin-bottom: 13px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+
+        /* Tabs */
+        .tab-bar { display: flex; background: #e2e8f0; border-radius: 11px; padding: 3px; margin-bottom: 13px; }
+        .tab-btn { flex: 1; padding: 8px 4px; font-family: 'Outfit',sans-serif; font-size: 12px; font-weight: 700; border: none; background: transparent; color: #64748b; cursor: pointer; border-radius: 8px; transition: all .2s; }
+        .tab-btn.active { background: white; color: #059669; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+
+        /* Fields */
+        .field { width: 100%; padding: 10px 13px; font-size: 15px; border-radius: 9px; border: 2px solid #e2e8f0; font-family: 'Outfit',sans-serif; outline: none; background: white; transition: border-color .15s; }
+        .field:focus { border-color: #059669; }
+        select.field { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 17px; padding-right: 36px; cursor: pointer; }
+
+        .pg { padding: 13px; max-width: 740px; width: 100%; margin: 0 auto; }
+
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+        .live-dot { width: 7px; height: 7px; background: #10b981; border-radius: 50%; animation: pulse 2s infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media(max-width:380px) {
+            .weather-hour { min-width: 50px; padding: 6px 7px; }
+            .pg { padding: 10px; }
+            .card { padding: 13px 14px; }
         }
     </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect } = React;
 
-// ── Firebase Setup ────────────────────────────────────────────────────
+// ── Firebase ──────────────────────────────────────────────────────────
 const FB = {
     apiKey: "AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
     authDomain: "pickleball-app-1bba7.firebaseapp.com",
@@ -203,452 +110,451 @@ const FB = {
     messagingSenderId: "645604154338",
     appId: "1:645604154338:web:b92f87c2cd11d950b737bb"
 };
+const COURT = { id: 'dardenne-prairie', name: 'Dardenne Prairie', location: 'Dardenne Prairie, MO', lat: 38.7603, lon: -90.7187 };
 
-// ── Court Config ──────────────────────────────────────────────────────
-const COURT_CONFIG = {
-    id: 'dardenne-prairie',
-    name: 'Dardenne Prairie',
-    location: 'Dardenne Prairie, MO',
-    lat: 38.7603,
-    lon: -90.7187,
-};
-
-let db = null;
-let fbOk = false;
+let db = null, fbOk = false;
 try {
     if (!firebase.apps.length) firebase.initializeApp(FB);
     db = firebase.firestore();
     fbOk = true;
-} catch (e) {
-    console.error('Firebase init failed:', e);
-}
+} catch(e) { console.error('Firebase:', e); }
 
-// ── Weather Icon helper ───────────────────────────────────────────────
-function weatherIcon(temp, wind) {
-    if (wind > 20) return '🌬️';
-    if (temp < 32) return '🥶';
-    if (temp < 50) return '🧥';
-    if (temp > 90) return '🌞';
-    return '⛅';
-}
+// ── Helpers ───────────────────────────────────────────────────────────
+const wIcon = (temp, wind) => wind > 20 ? '🌬️' : temp < 32 ? '🥶' : temp < 50 ? '🧥' : temp > 88 ? '☀️' : '⛅';
 
-// ── Court Status Component ────────────────────────────────────────────
-function CourtStatus() {
-    const [courtData, setCourtData] = useState(null);
-    const [checkIns, setCheckIns] = useState([]);
-    const [userName, setUserName] = useState('');
-    const [showCheckIn, setShowCheckIn] = useState(false);
-    const [weather, setWeather] = useState(null);
-    const [weatherUpdated, setWeatherUpdated] = useState(null);
-    const [showTotalCourtsEdit, setShowTotalCourtsEdit] = useState(false);
-    const [newTotalCourts, setNewTotalCourts] = useState('');
+const RATINGS = [
+    { key: 'under3', label: '<3.0',     cls: 'rating-u3' },
+    { key: '3to35',  label: '3.0–3.5',  cls: 'rating-3'  },
+    { key: '35to4',  label: '3.5–4.0',  cls: 'rating-35' },
+    { key: 'over4',  label: '4.0+',     cls: 'rating-4'  },
+];
+const ratingInfo = key => RATINGS.find(r => r.key === key);
 
-    const courtId = COURT_CONFIG.id;
-
-    // Load user name from localStorage
-    useEffect(() => {
-        const saved = localStorage.getItem('pickleCourtUserName');
-        if (saved) setUserName(saved);
-    }, []);
-
-    // Real-time listener for court data
-    useEffect(() => {
-        if (!fbOk || !db) return;
-        const unsubscribe = db.collection('court-status').doc(courtId).onSnapshot(doc => {
-            if (doc.exists) {
-                setCourtData(doc.data());
-            } else {
-                const defaultData = {
-                    courtId,
-                    crowdLevel: 'low',
-                    lightsOn: false,
-                    openCourts: 4,
-                    totalCourts: 4,
-                    lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                db.collection('court-status').doc(courtId).set(defaultData);
-            }
-        });
-        return () => unsubscribe();
-    }, [courtId]);
-
-    // Real-time listener for check-ins
-    // ✅ FIX: Only filter by courtId (no compound index needed).
-    // Client-side filter handles timestamp cutoff to avoid requiring a composite index.
-    useEffect(() => {
-        if (!fbOk || !db) return;
-        const unsubscribe = db.collection('check-ins')
-            .where('courtId', '==', courtId)
-            .orderBy('timestamp', 'desc')
-            .onSnapshot(snapshot => {
-                const cutoff = Date.now() - (4 * 60 * 60 * 1000);
-                const checks = snapshot.docs
-                    .map(doc => ({ id: doc.id, ...doc.data() }))
-                    .filter(c => c.timestamp > cutoff); // client-side cutoff — no index needed
-                setCheckIns(checks);
-            }, err => {
-                // Fallback: if even courtId+timestamp index is missing, fetch without orderBy
-                console.warn('onSnapshot failed, trying simpler query:', err.message);
-                db.collection('check-ins')
-                    .where('courtId', '==', courtId)
-                    .onSnapshot(snapshot => {
-                        const cutoff = Date.now() - (4 * 60 * 60 * 1000);
-                        const checks = snapshot.docs
-                            .map(doc => ({ id: doc.id, ...doc.data() }))
-                            .filter(c => c.timestamp > cutoff)
-                            .sort((a, b) => b.timestamp - a.timestamp);
-                        setCheckIns(checks);
-                    });
-            });
-        return () => unsubscribe();
-    }, [courtId]);
-
-    // Fetch weather — on load + every hour
-    useEffect(() => {
-        fetchWeather();
-        const interval = setInterval(fetchWeather, 60 * 60 * 1000); // every 1 hour
-        return () => clearInterval(interval);
-    }, []);
-
-    const fetchWeather = async () => {
-        try {
-            const { lat, lon } = COURT_CONFIG;
-            const res = await fetch(
-                `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-                `&current=temperature_2m,wind_speed_10m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph`
-            );
-            const data = await res.json();
-            setWeather({
-                temp: Math.round(data.current.temperature_2m),
-                wind: Math.round(data.current.wind_speed_10m),
-            });
-            setWeatherUpdated(new Date());
-        } catch (e) {
-            console.error('Weather fetch failed:', e);
-        }
-    };
-
-    // Update a court field in Firestore
-    const updateCourtStatus = async (field, value) => {
-        if (!fbOk || !db) return;
-        try {
-            await db.collection('court-status').doc(courtId).update({
-                [field]: value,
-                lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        } catch (e) { console.error('Update failed:', e); }
-    };
-
-    // Update total courts (and clamp openCourts if needed)
-    const handleTotalCourtsChange = async () => {
-        const n = parseInt(newTotalCourts);
-        if (!n || n < 1 || n > 20) { alert('Enter a number between 1 and 20'); return; }
-        const openCourts = Math.min(courtData.openCourts, n);
-        try {
-            await db.collection('court-status').doc(courtId).update({
-                totalCourts: n,
-                openCourts,
-                lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            setShowTotalCourtsEdit(false);
-            setNewTotalCourts('');
-        } catch (e) { console.error('Update failed:', e); }
-    };
-
-    // ✅ FIX: Remove compound query for duplicate check — query by courtId only, filter by userName client-side
-    const handleCheckIn = async (status) => {
-        if (!userName.trim()) { alert('Please enter your name first'); return; }
-        if (!fbOk || !db) { alert('Database not available'); return; }
-        try {
-            const cutoff = Date.now() - (4 * 60 * 60 * 1000);
-            const existing = await db.collection('check-ins')
-                .where('courtId', '==', courtId)
-                .get();
-            const toDelete = existing.docs.filter(doc => {
-                const d = doc.data();
-                return d.userName === userName && d.timestamp > cutoff;
-            });
-            await Promise.all(toDelete.map(doc => doc.ref.delete()));
-
-            await db.collection('check-ins').add({
-                courtId,
-                userName,
-                status,
-                timestamp: Date.now(),
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            localStorage.setItem('pickleCourtUserName', userName);
-            setShowCheckIn(false);
-        } catch (e) {
-            console.error('Check-in failed:', e);
-            alert('Check-in failed. Please try again.');
-        }
-    };
-
-    // ✅ FIX: Same simplification for checkout
-    const handleCheckOut = async () => {
-        if (!fbOk || !db) return;
-        try {
-            const cutoff = Date.now() - (4 * 60 * 60 * 1000);
-            const existing = await db.collection('check-ins')
-                .where('courtId', '==', courtId)
-                .get();
-            const toDelete = existing.docs.filter(doc => {
-                const d = doc.data();
-                return d.userName === userName && d.timestamp > cutoff;
-            });
-            await Promise.all(toDelete.map(doc => doc.ref.delete()));
-        } catch (e) { console.error('Check-out failed:', e); }
-    };
-
-    if (!courtData) {
-        return (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-                <div style={{ textAlign: 'center' }}>
-                    <div style={{ width: 44, height: 44, border: '4px solid #e2e8f0', borderTop: '4px solid #059669', borderRadius: '50%', animation: 'spin .8s linear infinite', margin: '0 auto 12px' }} />
-                    <div style={{ fontFamily: 'Outfit, sans-serif', color: '#64748b', fontSize: 16 }}>Loading court status…</div>
-                </div>
-            </div>
-        );
+function buildTimeOptions() {
+    const opts = [];
+    const now = new Date();
+    const start = new Date(now);
+    start.setMinutes(0, 0, 0);
+    start.setHours(start.getHours() + 1);
+    const end = new Date(now); end.setHours(23, 59, 59, 0);
+    const cur = new Date(start);
+    while (cur <= end) {
+        opts.push({ label: cur.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), value: cur.getTime() });
+        cur.setHours(cur.getHours() + 1);
     }
+    return opts;
+}
 
-    const crowdColors = { low: 'green', medium: 'yellow', high: 'red' };
-    const crowdLabels = { low: 'Light', medium: 'Moderate', high: 'Crowded' };
-    const crowdEmojis = { low: '🟢', medium: '🟡', high: '🔴' };
+function groupByHour(players) {
+    const groups = {};
+    players.forEach(c => {
+        const ts = c.arrivalTime || c.timestamp;
+        const d = new Date(ts); d.setMinutes(0,0,0);
+        const key = d.getTime();
+        if (!groups[key]) groups[key] = { ts: key, players: [] };
+        groups[key].players.push(c);
+    });
+    return Object.values(groups).sort((a,b) => a.ts - b.ts);
+}
 
-    const playersComingNow = checkIns.filter(c => c.status === 'now').length;
-    const playersComingLater = checkIns.filter(c => c.status === 'later').length;
-    const activeGames = Math.floor(playersComingNow / 4);
-    const waitingPlayers = playersComingNow % 4;
-    const myCheckIn = checkIns.find(c => c.userName === userName);
-
-    // Build dynamic open courts buttons (0 … totalCourts)
-    const openCourtOptions = Array.from({ length: courtData.totalCourts + 1 }, (_, i) => i);
-
+// ── PlayerRow ─────────────────────────────────────────────────────────
+function PlayerRow({ p }) {
+    const ri = ratingInfo(p.rating);
+    const arrLabel = p.status === 'later' && p.arrivalTime
+        ? new Date(p.arrivalTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}) : null;
     return (
-        <div style={{ minHeight: '100vh', background: '#f1f5f9', display: 'flex', flexDirection: 'column' }}>
-            {/* Header */}
-            <div className="hero-bg" style={{ padding: '20px 24px 24px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <div>
-                        <div className="fd" style={{ fontSize: 28, fontWeight: 800, color: 'white', letterSpacing: .3 }}>
-                            PICKLECOURT CONNECT
-                        </div>
-                        <div style={{ fontSize: 14, color: '#6ee7b7', marginTop: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div className="live-indicator" />
-                            Live court status
-                        </div>
-                        <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
-                            📍 {COURT_CONFIG.location}
-                        </div>
-                    </div>
-
-                    {/* Weather badge */}
-                    {weather ? (
-                        <div style={{ textAlign: 'right' }}>
-                            <div className="weather-badge">
-                                {weatherIcon(weather.temp, weather.wind)} {weather.temp}°F · 💨 {weather.wind} mph
-                            </div>
-                            {weatherUpdated && (
-                                <div style={{ fontSize: 11, color: '#475569', marginTop: 5, textAlign: 'right' }}>
-                                    Updated {weatherUpdated.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="weather-badge" style={{ opacity: 0.5 }}>⛅ Loading…</div>
-                    )}
+        <div className="player-item">
+            <div className="player-avatar">{(p.userName||'?')[0].toUpperCase()}</div>
+            <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:700,fontSize:14,color:'#0f172a',display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                    {p.userName}
+                    {ri && <span className={`rating-badge ${ri.cls}`}>{ri.label}</span>}
+                </div>
+                <div style={{fontSize:12,color:'#64748b'}}>
+                    {p.status==='now' ? '🎾 Playing now' : p.status==='later' ? `⏰ Arriving ${arrLabel||'later'}` : '👀 Watching'}
                 </div>
             </div>
-
-            <div className="pg">
-                {/* Status Overview */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }} className="grid-3">
-                    <div className={`status-card ${crowdColors[courtData.crowdLevel]}`}>
-                        <div style={{ fontSize: 28, marginBottom: 4 }}>{crowdEmojis[courtData.crowdLevel]}</div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 2 }}>Crowd</div>
-                        <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>{crowdLabels[courtData.crowdLevel]}</div>
-                    </div>
-                    <div className={`status-card ${courtData.lightsOn ? 'green' : 'yellow'}`}>
-                        <div style={{ fontSize: 28, marginBottom: 4 }}>{courtData.lightsOn ? '💡' : '🌙'}</div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 2 }}>Lights</div>
-                        <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>{courtData.lightsOn ? 'ON' : 'OFF'}</div>
-                    </div>
-                    <div className={`status-card ${courtData.openCourts > 0 ? 'green' : 'red'}`}>
-                        <div style={{ fontSize: 28, marginBottom: 4 }}>🏟️</div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 2 }}>Open Courts</div>
-                        <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>{courtData.openCourts} / {courtData.totalCourts}</div>
-                    </div>
-                </div>
-
-                {/* Check-In Section */}
-                <div style={{ background: 'white', borderRadius: 14, padding: '20px 22px', marginBottom: 16, boxShadow: '0 2px 10px rgba(0,0,0,.06)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                        <div>
-                            <div className="fd" style={{ fontSize: 22, fontWeight: 800, color: '#0f172a' }}>👥 WHO'S COMING?</div>
-                            <div style={{ fontSize: 14, color: '#64748b', marginTop: 2 }}>
-                                {playersComingNow} playing now · {playersComingLater} coming later
-                            </div>
-                        </div>
-                    </div>
-
-                    {myCheckIn ? (
-                        <div style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '2px solid #10b981', borderRadius: 12, padding: '14px 18px', marginBottom: 14 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <div>
-                                    <div style={{ fontSize: 15, fontWeight: 700, color: '#059669', marginBottom: 3 }}>✅ You're checked in</div>
-                                    <div style={{ fontSize: 14, color: '#047857' }}>
-                                        {myCheckIn.status === 'now' ? 'Playing now' : myCheckIn.status === 'later' ? 'Coming later' : 'Watching'}
-                                    </div>
-                                </div>
-                                <button className="btn-red" onClick={handleCheckOut}>Check Out</button>
-                            </div>
-                        </div>
-                    ) : (
-                        <>
-                            {!showCheckIn ? (
-                                <button className="btn-g" onClick={() => setShowCheckIn(true)} style={{ width: '100%', padding: '14px' }}>
-                                    📍 Check In
-                                </button>
-                            ) : (
-                                <div style={{ background: '#f1f5f9', borderRadius: 12, padding: 16 }}>
-                                    <input
-                                        type="text"
-                                        value={userName}
-                                        onChange={e => setUserName(e.target.value)}
-                                        placeholder="Your name"
-                                        style={{ width: '100%', padding: '12px', fontSize: 15, borderRadius: 8, border: '2px solid #e2e8f0', marginBottom: 12, fontFamily: 'Outfit, sans-serif', outline: 'none' }}
-                                        onFocus={e => e.target.style.borderColor = '#059669'}
-                                        onBlur={e => e.target.style.borderColor = '#e2e8f0'}
-                                    />
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }} className="grid-2">
-                                        <button className="btn-g" onClick={() => handleCheckIn('now')} style={{ padding: '12px' }}>🎾 Coming Now</button>
-                                        <button className="btn-out" onClick={() => handleCheckIn('later')} style={{ padding: '10px' }}>⏰ Coming Later</button>
-                                    </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }} className="grid-2">
-                                        <button className="btn-out" onClick={() => handleCheckIn('watching')} style={{ padding: '10px' }}>👀 Just Watching</button>
-                                        <button onClick={() => setShowCheckIn(false)} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px', cursor: 'pointer', fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, color: '#64748b' }}>Cancel</button>
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    )}
-                </div>
-
-                {/* Player List */}
-                {checkIns.length > 0 && (
-                    <div style={{ background: 'white', borderRadius: 14, padding: '20px 22px', marginBottom: 16, boxShadow: '0 2px 10px rgba(0,0,0,.06)' }}>
-                        <div className="fd" style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 14 }}>PLAYERS CHECKED IN</div>
-                        {checkIns.map(player => (
-                            <div key={player.id} className="player-item">
-                                <div className="player-avatar">{player.userName[0].toUpperCase()}</div>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: 600, fontSize: 15, color: '#0f172a' }}>{player.userName}</div>
-                                    <div style={{ fontSize: 13, color: '#64748b' }}>
-                                        {player.status === 'now' ? '🎾 Playing now' : player.status === 'later' ? '⏰ Coming later' : '👀 Watching'}
-                                    </div>
-                                </div>
-                                <div style={{ fontSize: 12, color: '#94a3b8' }}>
-                                    {new Date(player.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* Court Controls */}
-                <div style={{ background: 'white', borderRadius: 14, padding: '20px 22px', marginBottom: 16, boxShadow: '0 2px 10px rgba(0,0,0,.06)' }}>
-                    <div className="fd" style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 14 }}>⚙️ UPDATE COURT STATUS</div>
-
-                    {/* Crowd Level */}
-                    <div style={{ marginBottom: 16 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.5px' }}>Crowd Level</div>
-                        <div className="toggle-group">
-                            {['low', 'medium', 'high'].map(level => (
-                                <button key={level} className={`toggle-btn ${courtData.crowdLevel === level ? 'active' : ''}`} onClick={() => updateCourtStatus('crowdLevel', level)}>
-                                    {level === 'low' ? '🟢 Light' : level === 'medium' ? '🟡 Moderate' : '🔴 Crowded'}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Lights */}
-                    <div style={{ marginBottom: 16 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.5px' }}>Lights</div>
-                        <div className="toggle-group">
-                            <button className={`toggle-btn ${courtData.lightsOn ? 'active' : ''}`} onClick={() => updateCourtStatus('lightsOn', true)}>💡 ON</button>
-                            <button className={`toggle-btn ${!courtData.lightsOn ? 'active' : ''}`} onClick={() => updateCourtStatus('lightsOn', false)}>🌙 OFF</button>
-                        </div>
-                    </div>
-
-                    {/* Open Courts — dynamic based on totalCourts */}
-                    <div style={{ marginBottom: 16 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.5px' }}>Open Courts</div>
-                        <div className="toggle-group" style={{ flexWrap: 'wrap' }}>
-                            {openCourtOptions.map(num => (
-                                <button key={num} className={`toggle-btn ${courtData.openCourts === num ? 'active' : ''}`} onClick={() => updateCourtStatus('openCourts', num)}>
-                                    {num === 0 ? 'None' : num}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Total Courts — dynamic config */}
-                    <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.5px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                            Total Courts
-                            <span style={{ fontSize: 11, fontWeight: 600, color: '#059669', background: '#f0fdf4', border: '1px solid #10b981', borderRadius: 6, padding: '2px 8px', cursor: 'pointer' }}
-                                onClick={() => { setShowTotalCourtsEdit(!showTotalCourtsEdit); setNewTotalCourts(String(courtData.totalCourts)); }}>
-                                ✏️ Edit
-                            </span>
-                        </div>
-                        {showTotalCourtsEdit ? (
-                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                <input
-                                    type="number"
-                                    min="1" max="20"
-                                    value={newTotalCourts}
-                                    onChange={e => setNewTotalCourts(e.target.value)}
-                                    placeholder="# of courts"
-                                    style={{ width: 110, padding: '10px 12px', fontSize: 15, borderRadius: 8, border: '2px solid #e2e8f0', fontFamily: 'Outfit, sans-serif', outline: 'none' }}
-                                    onFocus={e => e.target.style.borderColor = '#059669'}
-                                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
-                                />
-                                <button className="btn-g" onClick={handleTotalCourtsChange} style={{ padding: '10px 18px' }}>Save</button>
-                                <button onClick={() => setShowTotalCourtsEdit(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontFamily: 'Outfit, sans-serif', fontSize: 14 }}>Cancel</button>
-                            </div>
-                        ) : (
-                            <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a' }}>{courtData.totalCourts} courts</div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Quick Stats */}
-                <div style={{ background: 'linear-gradient(135deg, #eff6ff, #dbeafe)', border: '2px solid #3b82f6', borderRadius: 14, padding: '16px 20px' }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#1e40af', marginBottom: 8 }}>📊 Quick Stats</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }} className="grid-2">
-                        <div>
-                            <div style={{ fontSize: 12, color: '#64748b' }}>Active Games</div>
-                            <div style={{ fontSize: 20, fontWeight: 800, color: '#1e40af' }}>{activeGames}</div>
-                        </div>
-                        <div>
-                            <div style={{ fontSize: 12, color: '#64748b' }}>Waiting</div>
-                            <div style={{ fontSize: 20, fontWeight: 800, color: '#1e40af' }}>{waitingPlayers} players</div>
-                        </div>
-                    </div>
-                </div>
+            <div style={{fontSize:10,color:'#cbd5e1',flexShrink:0}}>
+                {new Date(p.timestamp).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
             </div>
         </div>
     );
 }
 
-function App() { return <CourtStatus />; }
+// ── Main App ──────────────────────────────────────────────────────────
+function CourtStatus() {
+    const [courtData,  setCourtData]  = useState(null);
+    const [checkIns,   setCheckIns]   = useState([]);
+    const [userName,   setUserName]   = useState('');
+    const [userRating, setUserRating] = useState('');
+    const [showForm,   setShowForm]   = useState(false);
+    const [step,       setStep]       = useState('form'); // 'form' | 'time'
+    const [arrivalTime,setArrivalTime]= useState('');
+    const [weather,    setWeather]    = useState(null);
+    const [forecast,   setForecast]   = useState([]);
+    const [wxUpdated,  setWxUpdated]  = useState(null);
+    const [tab,        setTab]        = useState('now');
+    const [showTotalEdit,setShowTotalEdit] = useState(false);
+    const [newTotal,   setNewTotal]   = useState('');
 
-const style = document.createElement('style');
-style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
-document.head.appendChild(style);
+    // Device-based identity (no login required)
+    const [deviceId] = useState(() => {
+        let id = localStorage.getItem('pickleDeviceId');
+        if (!id) { id = 'dev_' + Math.random().toString(36).slice(2,11); localStorage.setItem('pickleDeviceId', id); }
+        return id;
+    });
 
-ReactDOM.render(<App />, document.getElementById('root'));
+    useEffect(() => {
+        const n = localStorage.getItem('pickleCourtUserName');
+        const r = localStorage.getItem('pickleCourtRating');
+        if (n) setUserName(n);
+        if (r) setUserRating(r);
+    }, []);
+
+    // Court status listener
+    useEffect(() => {
+        if (!fbOk || !db) return;
+        return db.collection('court-status').doc(COURT.id).onSnapshot(doc => {
+            if (doc.exists) setCourtData(doc.data());
+            else db.collection('court-status').doc(COURT.id).set({
+                courtId: COURT.id, crowdLevel: 'low', lightsOn: false, openCourts: 4, totalCourts: 4,
+                lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        });
+    }, []);
+
+    // Check-ins listener (single where clause = no composite index needed)
+    useEffect(() => {
+        if (!fbOk || !db) return;
+        return db.collection('check-ins')
+            .where('courtId', '==', COURT.id)
+            .onSnapshot(snap => {
+                const cutoff = Date.now() - 8 * 3600000;
+                const list = snap.docs
+                    .map(d => ({ id: d.id, ...d.data() }))
+                    .filter(c => c.timestamp > cutoff)
+                    .sort((a,b) => (a.arrivalTime||a.timestamp) - (b.arrivalTime||b.timestamp));
+                setCheckIns(list);
+            }, err => console.warn('Snapshot:', err.message));
+    }, []);
+
+    // Weather: load + refresh every hour
+    useEffect(() => { fetchWeather(); const t = setInterval(fetchWeather, 3600000); return () => clearInterval(t); }, []);
+
+    const fetchWeather = async () => {
+        try {
+            const { lat, lon } = COURT;
+            const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1`);
+            const d = await r.json();
+            setWeather({ temp: Math.round(d.current.temperature_2m), wind: Math.round(d.current.wind_speed_10m) });
+            setWxUpdated(new Date());
+            const now = new Date();
+            const hrs = d.hourly.time.map((t, i) => {
+                const dt = new Date(t);
+                return { dt, temp: Math.round(d.hourly.temperature_2m[i]), wind: Math.round(d.hourly.wind_speed_10m[i]) };
+            }).filter(h => h.dt >= now && h.dt.getDate() === now.getDate());
+            setForecast(hrs);
+        } catch(e) { console.error('Weather:', e); }
+    };
+
+    // Update court field
+    const updateCourt = async (field, value) => {
+        if (!fbOk || !db) return;
+        try { await db.collection('court-status').doc(COURT.id).update({ [field]: value, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() }); }
+        catch(e) { console.error('Update:', e); }
+    };
+
+    const handleTotalSave = async () => {
+        const n = parseInt(newTotal);
+        if (!n || n < 1 || n > 20) { alert('Enter a number 1–20'); return; }
+        const open = Math.min(courtData.openCourts, n);
+        await db.collection('court-status').doc(COURT.id).update({ totalCourts: n, openCourts: open, lastUpdate: firebase.firestore.FieldValue.serverTimestamp() });
+        setShowTotalEdit(false); setNewTotal('');
+    };
+
+    // Delete this device's check-ins
+    const deleteMyCheckIns = async () => {
+        const cutoff = Date.now() - 8 * 3600000;
+        const snap = await db.collection('check-ins').where('courtId', '==', COURT.id).get();
+        const mine = snap.docs.filter(d => { const x = d.data(); return x.deviceId === deviceId && x.timestamp > cutoff; });
+        await Promise.all(mine.map(d => d.ref.delete()));
+    };
+
+    const startCheckIn = (status) => {
+        if (!userName.trim()) { alert('Please enter your name first'); return; }
+        if (status === 'later') { setStep('time'); }
+        else submitCheckIn(status, null);
+    };
+
+    const submitCheckIn = async (status, atTime) => {
+        if (!fbOk || !db) { alert('Database not available'); return; }
+        try {
+            await deleteMyCheckIns();
+            await db.collection('check-ins').add({
+                courtId: COURT.id, userName, deviceId,
+                rating: userRating || null, status,
+                arrivalTime: atTime || Date.now(),
+                timestamp: Date.now(),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            localStorage.setItem('pickleCourtUserName', userName);
+            localStorage.setItem('pickleCourtRating', userRating);
+            setShowForm(false); setStep('form'); setArrivalTime('');
+        } catch(e) { console.error('Check-in:', e); alert('Check-in failed. Try again.'); }
+    };
+
+    const handleCheckOut = async () => { if (!fbOk || !db) return; try { await deleteMyCheckIns(); } catch(e) { console.error('Checkout:', e); } };
+
+    if (!courtData) return (
+        <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh'}}>
+            <div style={{textAlign:'center'}}>
+                <div style={{width:42,height:42,border:'4px solid #e2e8f0',borderTop:'4px solid #059669',borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto 10px'}}/>
+                <div style={{color:'#64748b',fontSize:14}}>Loading…</div>
+            </div>
+        </div>
+    );
+
+    const myCheckIn   = checkIns.find(c => c.deviceId === deviceId);
+    const nowPlayers  = checkIns.filter(c => c.status === 'now');
+    const laterPlayers= checkIns.filter(c => c.status === 'later');
+    const watchers    = checkIns.filter(c => c.status === 'watching');
+    const schedule    = groupByHour(laterPlayers);
+    const timeOpts    = buildTimeOptions();
+    const openOpts    = Array.from({ length: courtData.totalCourts + 1 }, (_,i) => i);
+
+    const crowdColor  = courtData.crowdLevel === 'low' ? 'green' : courtData.crowdLevel === 'medium' ? 'yellow' : 'red';
+    const crowdEmoji  = courtData.crowdLevel === 'low' ? '🟢' : courtData.crowdLevel === 'medium' ? '🟡' : '🔴';
+    const crowdNum    = courtData.crowdLevel === 'low' ? '0–10' : courtData.crowdLevel === 'medium' ? '10–16' : '16+';
+
+    return (
+        <div style={{minHeight:'100vh',background:'#f1f5f9'}}>
+
+            {/* ── HEADER ── */}
+            <div className="hero-bg" style={{padding:'15px 17px 13px'}}>
+                <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:10}}>
+                    <div>
+                        <div className="fd" style={{fontSize:25,fontWeight:800,color:'white',letterSpacing:.3}}>PICKLECOURT CONNECT</div>
+                        <div style={{fontSize:12,color:'#6ee7b7',marginTop:2,display:'flex',alignItems:'center',gap:6}}>
+                            <span className="live-dot"/> Live · 📍 {COURT.location}
+                        </div>
+                    </div>
+                    {weather && (
+                        <div style={{textAlign:'right',flexShrink:0,marginLeft:8}}>
+                            <div style={{display:'inline-flex',alignItems:'center',gap:5,background:'rgba(255,255,255,.13)',border:'1px solid rgba(255,255,255,.2)',borderRadius:20,padding:'5px 11px',fontSize:13,fontWeight:700,color:'white'}}>
+                                {wIcon(weather.temp,weather.wind)} {weather.temp}°F · 💨{weather.wind}mph
+                            </div>
+                            {wxUpdated && <div style={{fontSize:10,color:'#475569',marginTop:3,textAlign:'right'}}>Updated {wxUpdated.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}</div>}
+                        </div>
+                    )}
+                </div>
+
+                {/* Hourly weather timeline */}
+                {forecast.length > 0 && (
+                    <div style={{background:'rgba(0,0,0,.22)',borderRadius:10,overflow:'hidden',marginBottom:10}}>
+                        <div className="weather-strip">
+                            {forecast.map((h, i) => (
+                                <div key={i} className={`weather-hour${i===0?' now':''}`}>
+                                    <div className="wh-time">{i===0?'Now':h.dt.toLocaleTimeString([],{hour:'numeric'})}</div>
+                                    <div className="wh-icon">{wIcon(h.temp,h.wind)}</div>
+                                    <div className="wh-temp">{h.temp}°</div>
+                                    <div className="wh-wind">💨{h.wind}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Status pills — compact single scrollable row */}
+                <div className="status-bar">
+                    <div className={`status-pill ${crowdColor}`}>
+                        <span style={{fontSize:13}}>{crowdEmoji}</span>
+                        <div><div className="pill-label">Crowd</div><div className="pill-val">{crowdNum}</div></div>
+                    </div>
+                    <div className={`status-pill ${courtData.lightsOn?'green':'yellow'}`}>
+                        <span style={{fontSize:13}}>{courtData.lightsOn?'💡':'🌙'}</span>
+                        <div><div className="pill-label">Lights</div><div className="pill-val">{courtData.lightsOn?'ON':'OFF'}</div></div>
+                    </div>
+                    <div className={`status-pill ${courtData.openCourts>0?'green':'red'}`}>
+                        <span style={{fontSize:13}}>🏟️</span>
+                        <div><div className="pill-label">Open</div><div className="pill-val">{courtData.openCourts}/{courtData.totalCourts}</div></div>
+                    </div>
+                    <div className="status-pill">
+                        <span style={{fontSize:13}}>🎾</span>
+                        <div><div className="pill-label">Playing</div><div className="pill-val">{nowPlayers.length}</div></div>
+                    </div>
+                    <div className="status-pill">
+                        <span style={{fontSize:13}}>⏰</span>
+                        <div><div className="pill-label">Coming</div><div className="pill-val">{laterPlayers.length}</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="pg">
+                {/* Tabs */}
+                <div className="tab-bar">
+                    <button className={`tab-btn${tab==='now'?' active':''}`} onClick={()=>setTab('now')}>🎾 Now ({nowPlayers.length})</button>
+                    <button className={`tab-btn${tab==='schedule'?' active':''}`} onClick={()=>setTab('schedule')}>📅 Schedule</button>
+                    <button className={`tab-btn${tab==='controls'?' active':''}`} onClick={()=>setTab('controls')}>⚙️ Controls</button>
+                </div>
+
+                {/* ── TAB: NOW ── */}
+                {tab==='now' && <>
+                    <div className="card">
+                        <div className="fd" style={{fontSize:19,fontWeight:800,color:'#0f172a',marginBottom:3}}>👥 WHO'S HERE?</div>
+                        <div style={{fontSize:11,color:'#94a3b8',marginBottom:12}}>🔐 Recognized by this device — no login needed</div>
+
+                        {myCheckIn ? (
+                            <div style={{background:'linear-gradient(135deg,#f0fdf4,#dcfce7)',border:'2px solid #10b981',borderRadius:12,padding:'11px 15px'}}>
+                                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}}>
+                                    <div>
+                                        <div style={{fontSize:13,fontWeight:700,color:'#059669',marginBottom:2}}>
+                                            ✅ Checked in as <strong>{myCheckIn.userName}</strong>
+                                            {ratingInfo(myCheckIn.rating) && <span className={`rating-badge ${ratingInfo(myCheckIn.rating).cls}`} style={{marginLeft:6}}>{ratingInfo(myCheckIn.rating).label}</span>}
+                                        </div>
+                                        <div style={{fontSize:12,color:'#047857'}}>
+                                            {myCheckIn.status==='now' ? '🎾 Playing now' : `⏰ Arriving ${new Date(myCheckIn.arrivalTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}`}
+                                        </div>
+                                    </div>
+                                    <button className="btn-red" onClick={handleCheckOut}>Check Out</button>
+                                </div>
+                            </div>
+                        ) : !showForm ? (
+                            <button className="btn-g" onClick={()=>setShowForm(true)} style={{width:'100%',padding:13}}>📍 Check In</button>
+                        ) : step==='form' ? (
+                            <div style={{background:'#f8fafc',borderRadius:11,padding:13}}>
+                                <input className="field" value={userName} onChange={e=>setUserName(e.target.value)} placeholder="Your name" style={{marginBottom:9}}/>
+                                <select className="field" value={userRating} onChange={e=>setUserRating(e.target.value)} style={{marginBottom:13}}>
+                                    <option value="">Skill rating (optional)</option>
+                                    {RATINGS.map(r=><option key={r.key} value={r.key}>{r.label}</option>)}
+                                </select>
+                                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+                                    <button className="btn-g" onClick={()=>startCheckIn('now')} style={{padding:11}}>🎾 Coming Now</button>
+                                    <button className="btn-out" onClick={()=>startCheckIn('later')} style={{padding:9}}>⏰ Coming Later</button>
+                                </div>
+                                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                                    <button className="btn-out" onClick={()=>startCheckIn('watching')} style={{padding:9,fontSize:13}}>👀 Watching</button>
+                                    <button onClick={()=>{setShowForm(false);setStep('form');}} style={{background:'none',border:'1px solid #e2e8f0',borderRadius:8,padding:9,cursor:'pointer',fontFamily:'Outfit,sans-serif',fontSize:13,color:'#94a3b8'}}>Cancel</button>
+                                </div>
+                            </div>
+                        ) : (
+                            // Step 2: time picker for "later"
+                            <div style={{background:'#f8fafc',borderRadius:11,padding:13}}>
+                                <div style={{fontSize:14,fontWeight:700,color:'#0f172a',marginBottom:3}}>⏰ What time will you arrive?</div>
+                                <div style={{fontSize:12,color:'#64748b',marginBottom:10}}>Select the hour you're planning to show up</div>
+                                <select className="field" value={arrivalTime} onChange={e=>setArrivalTime(e.target.value)} style={{marginBottom:12}}>
+                                    <option value="">Select time…</option>
+                                    {timeOpts.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+                                </select>
+                                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                                    <button className="btn-g" disabled={!arrivalTime} onClick={()=>submitCheckIn('later',parseInt(arrivalTime))} style={{padding:11}}>Confirm ✓</button>
+                                    <button className="btn-out" onClick={()=>setStep('form')} style={{padding:9}}>← Back</button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {nowPlayers.length > 0 && (
+                        <div className="card">
+                            <div className="fd" style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:11}}>🎾 PLAYING NOW · {nowPlayers.length}</div>
+                            {nowPlayers.map(p=><PlayerRow key={p.id} p={p}/>)}
+                        </div>
+                    )}
+                    {nowPlayers.length===0 && <div style={{textAlign:'center',padding:'28px 0',color:'#94a3b8',fontSize:13}}>No one checked in yet — be the first!</div>}
+                </>}
+
+                {/* ── TAB: SCHEDULE ── */}
+                {tab==='schedule' && <>
+                    {schedule.length===0 && laterPlayers.length===0 && (
+                        <div style={{textAlign:'center',padding:'32px 0',color:'#94a3b8',fontSize:13}}>No scheduled arrivals yet.<br/>Players who tap "Coming Later" will appear here by time slot.</div>
+                    )}
+                    {schedule.map(group => {
+                        const t = new Date(group.ts);
+                        return (
+                            <div key={group.ts} className={`hour-block ${group.players.length>0?'has-players':''}`}>
+                                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:9}}>
+                                    <div style={{fontWeight:800,fontSize:16,color:'#0f172a'}}>
+                                        {t.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
+                                    </div>
+                                    <div style={{fontSize:11,fontWeight:700,color:'#059669',background:'#f0fdf4',border:'1px solid #10b981',borderRadius:20,padding:'2px 9px'}}>
+                                        {group.players.length} player{group.players.length!==1?'s':''}
+                                    </div>
+                                </div>
+                                {group.players.map(p=><PlayerRow key={p.id} p={p}/>)}
+                            </div>
+                        );
+                    })}
+                    {watchers.length > 0 && (
+                        <div className="card" style={{marginTop:8}}>
+                            <div className="fd" style={{fontSize:15,fontWeight:800,color:'#0f172a',marginBottom:10}}>👀 WATCHING · {watchers.length}</div>
+                            {watchers.map(p=><PlayerRow key={p.id} p={p}/>)}
+                        </div>
+                    )}
+                </>}
+
+                {/* ── TAB: CONTROLS ── */}
+                {tab==='controls' && (
+                    <div className="card">
+                        <div className="fd" style={{fontSize:18,fontWeight:800,color:'#0f172a',marginBottom:15}}>⚙️ UPDATE COURT STATUS</div>
+
+                        <div style={{marginBottom:13}}>
+                            <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px'}}>Crowd Level (people)</div>
+                            <div className="toggle-group">
+                                <button className={`toggle-btn${courtData.crowdLevel==='low'?' active':''}`} onClick={()=>updateCourt('crowdLevel','low')}>🟢 0–10</button>
+                                <button className={`toggle-btn${courtData.crowdLevel==='medium'?' active':''}`} onClick={()=>updateCourt('crowdLevel','medium')}>🟡 10–16</button>
+                                <button className={`toggle-btn${courtData.crowdLevel==='high'?' active':''}`} onClick={()=>updateCourt('crowdLevel','high')}>🔴 16+</button>
+                            </div>
+                        </div>
+
+                        <div style={{marginBottom:13}}>
+                            <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px'}}>Lights</div>
+                            <div className="toggle-group">
+                                <button className={`toggle-btn${courtData.lightsOn?' active':''}`} onClick={()=>updateCourt('lightsOn',true)}>💡 ON</button>
+                                <button className={`toggle-btn${!courtData.lightsOn?' active':''}`} onClick={()=>updateCourt('lightsOn',false)}>🌙 OFF</button>
+                            </div>
+                        </div>
+
+                        <div style={{marginBottom:13}}>
+                            <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px'}}>Open Courts</div>
+                            <div className="toggle-group">
+                                {openOpts.map(n=>(
+                                    <button key={n} className={`toggle-btn${courtData.openCourts===n?' active':''}`} onClick={()=>updateCourt('openCourts',n)}>{n}</button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div style={{marginBottom:18}}>
+                            <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px',display:'flex',alignItems:'center',gap:8}}>
+                                Total Courts
+                                <span style={{fontSize:11,color:'#059669',background:'#f0fdf4',border:'1px solid #10b981',borderRadius:6,padding:'1px 7px',cursor:'pointer',textTransform:'none',letterSpacing:0}} onClick={()=>{setShowTotalEdit(!showTotalEdit);setNewTotal(String(courtData.totalCourts));}}>✏️ Edit</span>
+                            </div>
+                            {showTotalEdit ? (
+                                <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                                    <input type="number" min="1" max="20" className="field" value={newTotal} onChange={e=>setNewTotal(e.target.value)} style={{width:100}}/>
+                                    <button className="btn-g" onClick={handleTotalSave} style={{padding:'9px 16px'}}>Save</button>
+                                    <button onClick={()=>setShowTotalEdit(false)} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontFamily:'Outfit,sans-serif',fontSize:13}}>Cancel</button>
+                                </div>
+                            ) : (
+                                <div style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{courtData.totalCourts} courts</div>
+                            )}
+                        </div>
+
+                        {/* Identity explainer */}
+                        <div style={{background:'#f8fafc',borderRadius:10,border:'1px solid #e2e8f0',padding:'12px 14px'}}>
+                            <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:5}}>🔐 HOW CHECK-IN IDENTITY WORKS</div>
+                            <div style={{fontSize:12,color:'#475569',lineHeight:1.7}}>
+                                <strong>No account needed.</strong> The first time you open this app, a unique device ID is generated and saved in your browser (localStorage). Every check-in you submit is tagged with this ID.<br/><br/>
+                                When you tap "Check Out," the system finds <em>your device's</em> check-in and removes it — even if another player has the same name.<br/><br/>
+                                ⚠️ Clearing your browser data or switching browsers/devices will generate a new identity.
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+ReactDOM.render(<CourtStatus />, document.getElementById('root'));
 </script>
 </body>
 </html>
