@@ -974,7 +974,7 @@ function TournamentSetup({onGenerate}){
 
             {/* ── Fixed Partnerships ── */}
             {format==='doubles'&&mode==='fixed'&&(
-                <div style={{background:'rgba(240,253,244,.08)',borderRadius:12,padding:16,border:'2px solid rgba(167,243,208,.4)',marginBottom:14}}>
+                <div className="setup-panel" style={{background:'linear-gradient(135deg,#0f172a 0%,#1a2f22 60%,#052e16 100%)',border:'1px solid rgba(52,211,153,.2)',boxShadow:'0 4px 16px rgba(0,0,0,.2)',marginBottom:14}}>
                     <div style={{fontWeight:700,fontSize:15,color:'#6ee7b7',marginBottom:10}}>🤝 Fixed Partnerships {partnerships.length>0?`· ${partnerships.length} pairs set`:''}</div>
                     <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#94a3b8',marginBottom:10}}>Enter player names above first, then pair them up here.</div>
                     <button className="btn-out btn-sm" onClick={autoPair}>Auto-pair from player list</button>
@@ -1565,7 +1565,7 @@ function FullApp({user,onLogout,onBack,onFeedback}){
         const uid=user?.uid||'guest';
         const flat=[];
         (s.schedule||[]).forEach((round,ri)=>round.forEach((m)=>{flat.push({roundIndex:ri,id:m.id,court:m.court,team1:Array.isArray(m.team1)?m.team1.join(', '):m.team1,team2:Array.isArray(m.team2)?m.team2.join(', '):m.team2});}));
-        const data={id,name:s.name,players:s.players,courts:s.courts,numRounds:s.rounds,matchFormat:s.format,scheduleFlat:flat,scores:sc,scoresFinalized:fin,isPublic:pub,publicMode:pm,participants:[uid,...(s.players||[]).map(p=>`player-${p}`)],createdBy:cb||uid,createdAt:Date.now()};
+        const data={id,name:s.name,players:s.players,courts:s.courts,numRounds:s.rounds,matchFormat:s.format,mode:s.mode,scheduleFlat:flat,scores:sc,scoresFinalized:fin,isPublic:pub,publicMode:pm,participants:[uid,...(s.players||[]).map(p=>`player-${p}`)],createdBy:cb||uid,createdAt:Date.now()};
         try{setSaveStatus('Saving…');await storage.save(data);setSaveStatus('✓ Saved');setTimeout(()=>setSaveStatus(''),2500);}catch(e){setSaveStatus('✗ Save failed');}
         saving.current=false;
     };
@@ -1590,7 +1590,7 @@ function FullApp({user,onLogout,onBack,onFeedback}){
         const map={};
         (data.scheduleFlat||[]).forEach(m=>{if(!map[m.roundIndex])map[m.roundIndex]=[];map[m.roundIndex].push({id:m.id,court:m.court,team1:typeof m.team1==='string'?m.team1.split(', ').filter(Boolean):[m.team1],team2:typeof m.team2==='string'?m.team2.split(', ').filter(Boolean):[m.team2]});});
         const schedule=data.schedule||Object.keys(map).sort((a,b)=>a-b).map(k=>map[k]);
-        const s={name:data.name,players:data.players||[],schedule,courts:data.courts,rounds:data.numRounds,format:data.matchFormat,mode:'rotating'};
+        const s={name:data.name,players:data.players||[],schedule,courts:data.courts,rounds:data.numRounds,format:data.matchFormat,mode:data.mode||'rotating'};
         setSetup(s);setScores(data.scores||{});setTid(data.id);setCreatedBy(data.createdBy||null);setIsPublic(data.isPublic||false);setPublicMode(data.publicMode||'read');setFinalized(data.scoresFinalized||false);
         didInit.current=false;setView('tournament');setTimeout(()=>{didInit.current=true;},500);
     };
