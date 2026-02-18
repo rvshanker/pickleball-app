@@ -272,7 +272,7 @@ const storage={
         if(fbOk&&db)try{
             const mine=(await db.collection('tournaments').where('createdBy','==',uid).get()).docs.map(d=>d.data());
             return mine;
-        }catch(e){}
+        }catch(e){console.warn('Firestore getAll failed:',e.code,e.message);}
         const out=[];
         for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k?.startsWith('tournament:'))continue;try{const d=JSON.parse(localStorage.getItem(k));if(d.createdBy===uid)out.push(d);}catch(e){}}
         return out;
