@@ -268,13 +268,13 @@ const storage={
         const d=localStorage.getItem(`tournament:${id}`);return d?JSON.parse(d):null;
     },
     async getAll(uid){
+        if(!uid)return[];
         if(fbOk&&db)try{
-            const pub=(await db.collection('tournaments').where('isPublic','==',true).get()).docs.map(d=>d.data());
-            if(uid){const priv=(await db.collection('tournaments').where('isPublic','==',false).where('participants','array-contains',uid).get()).docs.map(d=>d.data());return[...pub,...priv];}
-            return pub;
+            const mine=(await db.collection('tournaments').where('createdBy','==',uid).get()).docs.map(d=>d.data());
+            return mine;
         }catch(e){}
         const out=[];
-        for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k?.startsWith('tournament:'))continue;try{const d=JSON.parse(localStorage.getItem(k));if(d.isPublic||(uid&&d.participants?.includes(uid)))out.push(d);}catch(e){}}
+        for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k?.startsWith('tournament:'))continue;try{const d=JSON.parse(localStorage.getItem(k));if(d.createdBy===uid)out.push(d);}catch(e){}}
         return out;
     },
     listen(id,cb){
