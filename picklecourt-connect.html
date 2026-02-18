@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PickleCourt Connect - Dardenne Prairie</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥒</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -157,17 +158,24 @@ function groupByHour(players) {
     return Object.values(groups).sort((a,b) => a.ts - b.ts);
 }
 
+// Total headcount for a group (player + their guests)
+function headcount(players) {
+    return players.reduce((sum, p) => sum + 1 + (p.guests || 0), 0);
+}
+
 // ── PlayerRow ─────────────────────────────────────────────────────────
 function PlayerRow({ p }) {
     const ri = ratingInfo(p.rating);
     const arrLabel = p.status === 'later' && p.arrivalTime
         ? new Date(p.arrivalTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}) : null;
+    const guests = p.guests || 0;
     return (
         <div className="player-item">
             <div className="player-avatar">{(p.userName||'?')[0].toUpperCase()}</div>
             <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:700,fontSize:14,color:'#0f172a',display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
                     {p.userName}
+                    {guests > 0 && <span style={{fontSize:11,fontWeight:700,color:'#7c3aed',background:'#ede9fe',borderRadius:10,padding:'1px 6px'}}>+{guests} guest{guests>1?'s':''}</span>}
                     {ri && <span className={`rating-badge ${ri.cls}`}>{ri.label}</span>}
                 </div>
                 <div style={{fontSize:12,color:'#64748b'}}>
@@ -196,6 +204,7 @@ function CourtStatus() {
     const [tab,        setTab]        = useState('now');
     const [showTotalEdit,setShowTotalEdit] = useState(false);
     const [newTotal,   setNewTotal]   = useState('');
+    const [guestCount, setGuestCount] = useState(0);
 
     // Device-based identity (no login required)
     const [deviceId] = useState(() => {
@@ -293,13 +302,14 @@ function CourtStatus() {
             await db.collection('check-ins').add({
                 courtId: COURT.id, userName, deviceId,
                 rating: userRating || null, status,
+                guests: guestCount,
                 arrivalTime: atTime || Date.now(),
                 timestamp: Date.now(),
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             localStorage.setItem('pickleCourtUserName', userName);
             localStorage.setItem('pickleCourtRating', userRating);
-            setShowForm(false); setStep('form'); setArrivalTime('');
+            setShowForm(false); setStep('form'); setArrivalTime(''); setGuestCount(0);
         } catch(e) { console.error('Check-in:', e); alert('Check-in failed. Try again.'); }
     };
 
@@ -386,6 +396,15 @@ function CourtStatus() {
                         <span style={{fontSize:13}}>⏰</span>
                         <div><div className="pill-label">Coming</div><div className="pill-val">{laterPlayers.length}</div></div>
                     </div>
+                    {courtData.condition && courtData.condition !== 'open' && (() => {
+                        const cond = {closed:{e:'🚫',l:'Closed',c:'red'},wet:{e:'💧',l:'Wet',c:'yellow'},hot:{e:'🥵',l:'Hot',c:'yellow'},event:{e:'🎉',l:'Event',c:'green'}}[courtData.condition];
+                        return cond ? (
+                            <div className={`status-pill ${cond.c}`}>
+                                <span style={{fontSize:13}}>{cond.e}</span>
+                                <div><div className="pill-label">Court</div><div className="pill-val">{cond.l}</div></div>
+                            </div>
+                        ) : null;
+                    })()}
                 </div>
             </div>
 
@@ -393,15 +412,14 @@ function CourtStatus() {
                 {/* Tabs */}
                 <div className="tab-bar">
                     <button className={`tab-btn${tab==='now'?' active':''}`} onClick={()=>setTab('now')}>🎾 Now ({nowPlayers.length})</button>
-                    <button className={`tab-btn${tab==='schedule'?' active':''}`} onClick={()=>setTab('schedule')}>📅 Schedule</button>
+                    <button className={`tab-btn${tab==='schedule'?' active':''}`} onClick={()=>setTab('schedule')}>📅 Schedule ({headcount(laterPlayers)})</button>
                     <button className={`tab-btn${tab==='controls'?' active':''}`} onClick={()=>setTab('controls')}>⚙️ Controls</button>
                 </div>
 
                 {/* ── TAB: NOW ── */}
                 {tab==='now' && <>
                     <div className="card">
-                        <div className="fd" style={{fontSize:19,fontWeight:800,color:'#0f172a',marginBottom:3}}>👥 WHO'S HERE?</div>
-                        <div style={{fontSize:11,color:'#94a3b8',marginBottom:12}}>🔐 Recognized by this device — no login needed</div>
+                        <div className="fd" style={{fontSize:19,fontWeight:800,color:'#0f172a',marginBottom:12}}>👥 WHO'S HERE?</div>
 
                         {myCheckIn ? (
                             <div style={{background:'linear-gradient(135deg,#f0fdf4,#dcfce7)',border:'2px solid #10b981',borderRadius:12,padding:'11px 15px'}}>
@@ -423,10 +441,16 @@ function CourtStatus() {
                         ) : step==='form' ? (
                             <div style={{background:'#f8fafc',borderRadius:11,padding:13}}>
                                 <input className="field" value={userName} onChange={e=>setUserName(e.target.value)} placeholder="Your name" style={{marginBottom:9}}/>
-                                <select className="field" value={userRating} onChange={e=>setUserRating(e.target.value)} style={{marginBottom:13}}>
+                                <select className="field" value={userRating} onChange={e=>setUserRating(e.target.value)} style={{marginBottom:10}}>
                                     <option value="">Skill rating (optional)</option>
                                     {RATINGS.map(r=><option key={r.key} value={r.key}>{r.label}</option>)}
                                 </select>
+                                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:13,background:'white',border:'2px solid #e2e8f0',borderRadius:9,padding:'8px 13px'}}>
+                                    <span style={{fontSize:13,fontWeight:600,color:'#64748b',flex:1}}>Guests (+ you)</span>
+                                    <button type="button" onClick={()=>setGuestCount(Math.max(0,guestCount-1))} style={{width:28,height:28,borderRadius:'50%',border:'1px solid #e2e8f0',background:'#f8fafc',cursor:'pointer',fontWeight:700,fontSize:16,color:'#64748b',lineHeight:1}}>−</button>
+                                    <span style={{fontSize:16,fontWeight:800,color:'#0f172a',minWidth:20,textAlign:'center'}}>{guestCount}</span>
+                                    <button type="button" onClick={()=>setGuestCount(Math.min(20,guestCount+1))} style={{width:28,height:28,borderRadius:'50%',border:'1px solid #10b981',background:'#f0fdf4',cursor:'pointer',fontWeight:700,fontSize:16,color:'#059669',lineHeight:1}}>+</button>
+                                </div>
                                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
                                     <button className="btn-g" onClick={()=>startCheckIn('now')} style={{padding:11}}>🎾 Coming Now</button>
                                     <button className="btn-out" onClick={()=>startCheckIn('later')} style={{padding:9}}>⏰ Coming Later</button>
@@ -469,14 +493,24 @@ function CourtStatus() {
                     )}
                     {schedule.map(group => {
                         const t = new Date(group.ts);
+                        const total = headcount(group.players);
+                        // Find forecast for this hour
+                        const fx = forecast.find(h => h.dt.getHours() === t.getHours());
                         return (
                             <div key={group.ts} className={`hour-block ${group.players.length>0?'has-players':''}`}>
-                                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:9}}>
-                                    <div style={{fontWeight:800,fontSize:16,color:'#0f172a'}}>
-                                        {t.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
+                                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:9,flexWrap:'wrap',gap:6}}>
+                                    <div style={{display:'flex',alignItems:'center',gap:10}}>
+                                        <div style={{fontWeight:800,fontSize:16,color:'#0f172a'}}>
+                                            {t.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
+                                        </div>
+                                        {fx && (
+                                            <div style={{fontSize:11,color:'#64748b',fontWeight:600}}>
+                                                {wIcon(fx.temp,fx.wind)} {fx.temp}°F · 💨{fx.wind}mph
+                                            </div>
+                                        )}
                                     </div>
                                     <div style={{fontSize:11,fontWeight:700,color:'#059669',background:'#f0fdf4',border:'1px solid #10b981',borderRadius:20,padding:'2px 9px'}}>
-                                        {group.players.length} player{group.players.length!==1?'s':''}
+                                        {total} player{total!==1?'s':''}
                                     </div>
                                 </div>
                                 {group.players.map(p=><PlayerRow key={p.id} p={p}/>)}
@@ -538,15 +572,17 @@ function CourtStatus() {
                             )}
                         </div>
 
-                        {/* Identity explainer */}
-                        <div style={{background:'#f8fafc',borderRadius:10,border:'1px solid #e2e8f0',padding:'12px 14px'}}>
-                            <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:5}}>🔐 HOW CHECK-IN IDENTITY WORKS</div>
-                            <div style={{fontSize:12,color:'#475569',lineHeight:1.7}}>
-                                <strong>No account needed.</strong> The first time you open this app, a unique device ID is generated and saved in your browser (localStorage). Every check-in you submit is tagged with this ID.<br/><br/>
-                                When you tap "Check Out," the system finds <em>your device's</em> check-in and removes it — even if another player has the same name.<br/><br/>
-                                ⚠️ Clearing your browser data or switching browsers/devices will generate a new identity.
+                        <div>
+                            <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px'}}>Court Condition</div>
+                            <div className="toggle-group">
+                                <button className={`toggle-btn${(courtData.condition||'open')==='open'?' active':''}`} onClick={()=>updateCourt('condition','open')}>✅ Open</button>
+                                <button className={`toggle-btn${courtData.condition==='closed'?' active':''}`} onClick={()=>updateCourt('condition','closed')} style={{color: courtData.condition==='closed'?'white':'#ef4444'}}>🚫 Closed</button>
+                                <button className={`toggle-btn${courtData.condition==='wet'?' active':''}`} onClick={()=>updateCourt('condition','wet')} style={{color: courtData.condition==='wet'?'white':'#3b82f6'}}>💧 Wet</button>
+                                <button className={`toggle-btn${courtData.condition==='hot'?' active':''}`} onClick={()=>updateCourt('condition','hot')} style={{color: courtData.condition==='hot'?'white':'#f97316'}}>🥵 Hot</button>
+                                <button className={`toggle-btn${courtData.condition==='event'?' active':''}`} onClick={()=>updateCourt('condition','event')} style={{color: courtData.condition==='event'?'white':'#7c3aed'}}>🎉 Event</button>
                             </div>
                         </div>
+
                     </div>
                 )}
             </div>
