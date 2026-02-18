@@ -204,16 +204,32 @@ const FB = {
     appId: "1:645604154338:web:b92f87c2cd11d950b737bb"
 };
 
+// ── Court Config ──────────────────────────────────────────────────────
+const COURT_CONFIG = {
+    id: 'dardenne-prairie',
+    name: 'Dardenne Prairie',
+    location: 'Dardenne Prairie, MO',
+    lat: 38.7603,
+    lon: -90.7187,
+};
+
 let db = null;
 let fbOk = false;
 try {
-    if (!firebase.apps.length) {
-        firebase.initializeApp(FB);
-    }
+    if (!firebase.apps.length) firebase.initializeApp(FB);
     db = firebase.firestore();
     fbOk = true;
 } catch (e) {
     console.error('Firebase init failed:', e);
+}
+
+// ── Weather Icon helper ───────────────────────────────────────────────
+function weatherIcon(temp, wind) {
+    if (wind > 20) return '🌬️';
+    if (temp < 32) return '🥶';
+    if (temp < 50) return '🧥';
+    if (temp > 90) return '🌞';
+    return '⛅';
 }
 
 // ── Court Status Component ────────────────────────────────────────────
@@ -221,86 +237,98 @@ function CourtStatus() {
     const [courtData, setCourtData] = useState(null);
     const [checkIns, setCheckIns] = useState([]);
     const [userName, setUserName] = useState('');
-    const [userStatus, setUserStatus] = useState('');
     const [showCheckIn, setShowCheckIn] = useState(false);
     const [weather, setWeather] = useState(null);
-    const courtId = 'main-court'; // You can make this dynamic for multiple courts
-    
+    const [weatherUpdated, setWeatherUpdated] = useState(null);
+    const [showTotalCourtsEdit, setShowTotalCourtsEdit] = useState(false);
+    const [newTotalCourts, setNewTotalCourts] = useState('');
+
+    const courtId = COURT_CONFIG.id;
+
     // Load user name from localStorage
     useEffect(() => {
         const saved = localStorage.getItem('pickleCourtUserName');
         if (saved) setUserName(saved);
     }, []);
-    
+
     // Real-time listener for court data
     useEffect(() => {
         if (!fbOk || !db) return;
-        
         const unsubscribe = db.collection('court-status').doc(courtId).onSnapshot(doc => {
             if (doc.exists) {
                 setCourtData(doc.data());
             } else {
-                // Initialize default court data
                 const defaultData = {
                     courtId,
                     crowdLevel: 'low',
                     lightsOn: false,
-                    openCourts: 3,
-                    totalCourts: 3,
+                    openCourts: 4,
+                    totalCourts: 4,
                     lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
                 };
                 db.collection('court-status').doc(courtId).set(defaultData);
             }
         });
-        
         return () => unsubscribe();
     }, [courtId]);
-    
+
     // Real-time listener for check-ins
+    // ✅ FIX: Only filter by courtId (no compound index needed).
+    // Client-side filter handles timestamp cutoff to avoid requiring a composite index.
     useEffect(() => {
         if (!fbOk || !db) return;
-        
-        const cutoff = Date.now() - (4 * 60 * 60 * 1000); // 4 hours ago
         const unsubscribe = db.collection('check-ins')
             .where('courtId', '==', courtId)
-            .where('timestamp', '>', cutoff)
             .orderBy('timestamp', 'desc')
             .onSnapshot(snapshot => {
-                const checks = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+                const cutoff = Date.now() - (4 * 60 * 60 * 1000);
+                const checks = snapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .filter(c => c.timestamp > cutoff); // client-side cutoff — no index needed
                 setCheckIns(checks);
+            }, err => {
+                // Fallback: if even courtId+timestamp index is missing, fetch without orderBy
+                console.warn('onSnapshot failed, trying simpler query:', err.message);
+                db.collection('check-ins')
+                    .where('courtId', '==', courtId)
+                    .onSnapshot(snapshot => {
+                        const cutoff = Date.now() - (4 * 60 * 60 * 1000);
+                        const checks = snapshot.docs
+                            .map(doc => ({ id: doc.id, ...doc.data() }))
+                            .filter(c => c.timestamp > cutoff)
+                            .sort((a, b) => b.timestamp - a.timestamp);
+                        setCheckIns(checks);
+                    });
             });
-        
         return () => unsubscribe();
     }, [courtId]);
-    
-    // Fetch weather data
+
+    // Fetch weather — on load + every hour
     useEffect(() => {
         fetchWeather();
-        const interval = setInterval(fetchWeather, 10 * 60 * 1000); // Update every 10 mins
+        const interval = setInterval(fetchWeather, 60 * 60 * 1000); // every 1 hour
         return () => clearInterval(interval);
     }, []);
-    
+
     const fetchWeather = async () => {
         try {
-            // Using open-meteo (free, no API key needed)
-            // You can replace with actual coordinates for your court
-            const lat = 38.7946; // Example: O'Fallon, MO
-            const lon = -90.6997;
-            const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph`);
+            const { lat, lon } = COURT_CONFIG;
+            const res = await fetch(
+                `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+                `&current=temperature_2m,wind_speed_10m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph`
+            );
             const data = await res.json();
             setWeather({
                 temp: Math.round(data.current.temperature_2m),
-                wind: Math.round(data.current.wind_speed_10m)
+                wind: Math.round(data.current.wind_speed_10m),
             });
+            setWeatherUpdated(new Date());
         } catch (e) {
             console.error('Weather fetch failed:', e);
         }
     };
-    
-    // Update court status
+
+    // Update a court field in Firestore
     const updateCourtStatus = async (field, value) => {
         if (!fbOk || !db) return;
         try {
@@ -308,34 +336,40 @@ function CourtStatus() {
                 [field]: value,
                 lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
             });
-        } catch (e) {
-            console.error('Update failed:', e);
-        }
+        } catch (e) { console.error('Update failed:', e); }
     };
-    
-    // Check in
-    const handleCheckIn = async (status) => {
-        if (!userName.trim()) {
-            alert('Please enter your name first');
-            return;
-        }
-        
-        if (!fbOk || !db) {
-            alert('Database not available');
-            return;
-        }
-        
+
+    // Update total courts (and clamp openCourts if needed)
+    const handleTotalCourtsChange = async () => {
+        const n = parseInt(newTotalCourts);
+        if (!n || n < 1 || n > 20) { alert('Enter a number between 1 and 20'); return; }
+        const openCourts = Math.min(courtData.openCourts, n);
         try {
-            // Remove any existing check-in from this user today
+            await db.collection('court-status').doc(courtId).update({
+                totalCourts: n,
+                openCourts,
+                lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            setShowTotalCourtsEdit(false);
+            setNewTotalCourts('');
+        } catch (e) { console.error('Update failed:', e); }
+    };
+
+    // ✅ FIX: Remove compound query for duplicate check — query by courtId only, filter by userName client-side
+    const handleCheckIn = async (status) => {
+        if (!userName.trim()) { alert('Please enter your name first'); return; }
+        if (!fbOk || !db) { alert('Database not available'); return; }
+        try {
+            const cutoff = Date.now() - (4 * 60 * 60 * 1000);
             const existing = await db.collection('check-ins')
                 .where('courtId', '==', courtId)
-                .where('userName', '==', userName)
-                .where('timestamp', '>', Date.now() - (4 * 60 * 60 * 1000))
                 .get();
-            
-            existing.forEach(doc => doc.ref.delete());
-            
-            // Add new check-in
+            const toDelete = existing.docs.filter(doc => {
+                const d = doc.data();
+                return d.userName === userName && d.timestamp > cutoff;
+            });
+            await Promise.all(toDelete.map(doc => doc.ref.delete()));
+
             await db.collection('check-ins').add({
                 courtId,
                 userName,
@@ -343,33 +377,30 @@ function CourtStatus() {
                 timestamp: Date.now(),
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            
             localStorage.setItem('pickleCourtUserName', userName);
-            setUserStatus(status);
             setShowCheckIn(false);
         } catch (e) {
             console.error('Check-in failed:', e);
             alert('Check-in failed. Please try again.');
         }
     };
-    
-    // Remove check-in
+
+    // ✅ FIX: Same simplification for checkout
     const handleCheckOut = async () => {
         if (!fbOk || !db) return;
         try {
+            const cutoff = Date.now() - (4 * 60 * 60 * 1000);
             const existing = await db.collection('check-ins')
                 .where('courtId', '==', courtId)
-                .where('userName', '==', userName)
-                .where('timestamp', '>', Date.now() - (4 * 60 * 60 * 1000))
                 .get();
-            
-            existing.forEach(doc => doc.ref.delete());
-            setUserStatus('');
-        } catch (e) {
-            console.error('Check-out failed:', e);
-        }
+            const toDelete = existing.docs.filter(doc => {
+                const d = doc.data();
+                return d.userName === userName && d.timestamp > cutoff;
+            });
+            await Promise.all(toDelete.map(doc => doc.ref.delete()));
+        } catch (e) { console.error('Check-out failed:', e); }
     };
-    
+
     if (!courtData) {
         return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
@@ -380,40 +411,56 @@ function CourtStatus() {
             </div>
         );
     }
-    
+
     const crowdColors = { low: 'green', medium: 'yellow', high: 'red' };
     const crowdLabels = { low: 'Light', medium: 'Moderate', high: 'Crowded' };
     const crowdEmojis = { low: '🟢', medium: '🟡', high: '🔴' };
-    
+
     const playersComingNow = checkIns.filter(c => c.status === 'now').length;
     const playersComingLater = checkIns.filter(c => c.status === 'later').length;
     const activeGames = Math.floor(playersComingNow / 4);
     const waitingPlayers = playersComingNow % 4;
-    
     const myCheckIn = checkIns.find(c => c.userName === userName);
-    
+
+    // Build dynamic open courts buttons (0 … totalCourts)
+    const openCourtOptions = Array.from({ length: courtData.totalCourts + 1 }, (_, i) => i);
+
     return (
         <div style={{ minHeight: '100vh', background: '#f1f5f9', display: 'flex', flexDirection: 'column' }}>
             {/* Header */}
-            <div className="hero-bg" style={{ padding: '20px 24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div className="hero-bg" style={{ padding: '20px 24px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
                     <div>
                         <div className="fd" style={{ fontSize: 28, fontWeight: 800, color: 'white', letterSpacing: .3 }}>
                             PICKLECOURT CONNECT
                         </div>
-                        <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, color: '#6ee7b7', marginTop: 3, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ fontSize: 14, color: '#6ee7b7', marginTop: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
                             <div className="live-indicator" />
                             Live court status
                         </div>
-                    </div>
-                    {weather && (
-                        <div className="weather-badge">
-                            🌡️ {weather.temp}°F · 💨 {weather.wind} mph
+                        <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
+                            📍 {COURT_CONFIG.location}
                         </div>
+                    </div>
+
+                    {/* Weather badge */}
+                    {weather ? (
+                        <div style={{ textAlign: 'right' }}>
+                            <div className="weather-badge">
+                                {weatherIcon(weather.temp, weather.wind)} {weather.temp}°F · 💨 {weather.wind} mph
+                            </div>
+                            {weatherUpdated && (
+                                <div style={{ fontSize: 11, color: '#475569', marginTop: 5, textAlign: 'right' }}>
+                                    Updated {weatherUpdated.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="weather-badge" style={{ opacity: 0.5 }}>⛅ Loading…</div>
                     )}
                 </div>
             </div>
-            
+
             <div className="pg">
                 {/* Status Overview */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }} className="grid-3">
@@ -422,22 +469,20 @@ function CourtStatus() {
                         <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 2 }}>Crowd</div>
                         <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>{crowdLabels[courtData.crowdLevel]}</div>
                     </div>
-                    
                     <div className={`status-card ${courtData.lightsOn ? 'green' : 'yellow'}`}>
                         <div style={{ fontSize: 28, marginBottom: 4 }}>{courtData.lightsOn ? '💡' : '🌙'}</div>
                         <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 2 }}>Lights</div>
                         <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>{courtData.lightsOn ? 'ON' : 'OFF'}</div>
                     </div>
-                    
                     <div className={`status-card ${courtData.openCourts > 0 ? 'green' : 'red'}`}>
                         <div style={{ fontSize: 28, marginBottom: 4 }}>🏟️</div>
                         <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 2 }}>Open Courts</div>
                         <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>{courtData.openCourts} / {courtData.totalCourts}</div>
                     </div>
                 </div>
-                
+
                 {/* Check-In Section */}
-                <div style={{ background: 'white', borderRadius: 14, padding: '20px 22px', marginBottom: 16, boxShadow: '0 2px 10px rgba(0, 0, 0, .06)' }}>
+                <div style={{ background: 'white', borderRadius: 14, padding: '20px 22px', marginBottom: 16, boxShadow: '0 2px 10px rgba(0,0,0,.06)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                         <div>
                             <div className="fd" style={{ fontSize: 22, fontWeight: 800, color: '#0f172a' }}>👥 WHO'S COMING?</div>
@@ -446,7 +491,7 @@ function CourtStatus() {
                             </div>
                         </div>
                     </div>
-                    
+
                     {myCheckIn ? (
                         <div style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '2px solid #10b981', borderRadius: 12, padding: '14px 18px', marginBottom: 14 }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -477,33 +522,23 @@ function CourtStatus() {
                                         onBlur={e => e.target.style.borderColor = '#e2e8f0'}
                                     />
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }} className="grid-2">
-                                        <button className="btn-g" onClick={() => handleCheckIn('now')} style={{ padding: '12px' }}>
-                                            🎾 Coming Now
-                                        </button>
-                                        <button className="btn-out" onClick={() => handleCheckIn('later')} style={{ padding: '10px' }}>
-                                            ⏰ Coming Later
-                                        </button>
+                                        <button className="btn-g" onClick={() => handleCheckIn('now')} style={{ padding: '12px' }}>🎾 Coming Now</button>
+                                        <button className="btn-out" onClick={() => handleCheckIn('later')} style={{ padding: '10px' }}>⏰ Coming Later</button>
                                     </div>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }} className="grid-2">
-                                        <button className="btn-out" onClick={() => handleCheckIn('watching')} style={{ padding: '10px' }}>
-                                            👀 Just Watching
-                                        </button>
-                                        <button onClick={() => setShowCheckIn(false)} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px', cursor: 'pointer', fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, color: '#64748b' }}>
-                                            Cancel
-                                        </button>
+                                        <button className="btn-out" onClick={() => handleCheckIn('watching')} style={{ padding: '10px' }}>👀 Just Watching</button>
+                                        <button onClick={() => setShowCheckIn(false)} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px', cursor: 'pointer', fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600, color: '#64748b' }}>Cancel</button>
                                     </div>
                                 </div>
                             )}
                         </>
                     )}
                 </div>
-                
+
                 {/* Player List */}
                 {checkIns.length > 0 && (
-                    <div style={{ background: 'white', borderRadius: 14, padding: '20px 22px', marginBottom: 16, boxShadow: '0 2px 10px rgba(0, 0, 0, .06)' }}>
-                        <div className="fd" style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 14 }}>
-                            PLAYERS CHECKED IN
-                        </div>
+                    <div style={{ background: 'white', borderRadius: 14, padding: '20px 22px', marginBottom: 16, boxShadow: '0 2px 10px rgba(0,0,0,.06)' }}>
+                        <div className="fd" style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 14 }}>PLAYERS CHECKED IN</div>
                         {checkIns.map(player => (
                             <div key={player.id} className="player-item">
                                 <div className="player-avatar">{player.userName[0].toUpperCase()}</div>
@@ -520,52 +555,74 @@ function CourtStatus() {
                         ))}
                     </div>
                 )}
-                
-                {/* Court Controls - Admin Only */}
-                <div style={{ background: 'white', borderRadius: 14, padding: '20px 22px', marginBottom: 16, boxShadow: '0 2px 10px rgba(0, 0, 0, .06)' }}>
-                    <div className="fd" style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 14 }}>
-                        ⚙️ UPDATE COURT STATUS
-                    </div>
-                    
+
+                {/* Court Controls */}
+                <div style={{ background: 'white', borderRadius: 14, padding: '20px 22px', marginBottom: 16, boxShadow: '0 2px 10px rgba(0,0,0,.06)' }}>
+                    <div className="fd" style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 14 }}>⚙️ UPDATE COURT STATUS</div>
+
+                    {/* Crowd Level */}
                     <div style={{ marginBottom: 16 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.5px' }}>Crowd Level</div>
                         <div className="toggle-group">
-                            <button className={`toggle-btn ${courtData.crowdLevel === 'low' ? 'active' : ''}`} onClick={() => updateCourtStatus('crowdLevel', 'low')}>
-                                🟢 Light
-                            </button>
-                            <button className={`toggle-btn ${courtData.crowdLevel === 'medium' ? 'active' : ''}`} onClick={() => updateCourtStatus('crowdLevel', 'medium')}>
-                                🟡 Moderate
-                            </button>
-                            <button className={`toggle-btn ${courtData.crowdLevel === 'high' ? 'active' : ''}`} onClick={() => updateCourtStatus('crowdLevel', 'high')}>
-                                🔴 Crowded
-                            </button>
+                            {['low', 'medium', 'high'].map(level => (
+                                <button key={level} className={`toggle-btn ${courtData.crowdLevel === level ? 'active' : ''}`} onClick={() => updateCourtStatus('crowdLevel', level)}>
+                                    {level === 'low' ? '🟢 Light' : level === 'medium' ? '🟡 Moderate' : '🔴 Crowded'}
+                                </button>
+                            ))}
                         </div>
                     </div>
-                    
+
+                    {/* Lights */}
                     <div style={{ marginBottom: 16 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.5px' }}>Lights</div>
                         <div className="toggle-group">
-                            <button className={`toggle-btn ${courtData.lightsOn ? 'active' : ''}`} onClick={() => updateCourtStatus('lightsOn', true)}>
-                                💡 ON
-                            </button>
-                            <button className={`toggle-btn ${!courtData.lightsOn ? 'active' : ''}`} onClick={() => updateCourtStatus('lightsOn', false)}>
-                                🌙 OFF
-                            </button>
+                            <button className={`toggle-btn ${courtData.lightsOn ? 'active' : ''}`} onClick={() => updateCourtStatus('lightsOn', true)}>💡 ON</button>
+                            <button className={`toggle-btn ${!courtData.lightsOn ? 'active' : ''}`} onClick={() => updateCourtStatus('lightsOn', false)}>🌙 OFF</button>
                         </div>
                     </div>
-                    
-                    <div>
+
+                    {/* Open Courts — dynamic based on totalCourts */}
+                    <div style={{ marginBottom: 16 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.5px' }}>Open Courts</div>
-                        <div className="toggle-group">
-                            {[0, 1, 2, 3].map(num => (
+                        <div className="toggle-group" style={{ flexWrap: 'wrap' }}>
+                            {openCourtOptions.map(num => (
                                 <button key={num} className={`toggle-btn ${courtData.openCourts === num ? 'active' : ''}`} onClick={() => updateCourtStatus('openCourts', num)}>
                                     {num === 0 ? 'None' : num}
                                 </button>
                             ))}
                         </div>
                     </div>
+
+                    {/* Total Courts — dynamic config */}
+                    <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.5px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                            Total Courts
+                            <span style={{ fontSize: 11, fontWeight: 600, color: '#059669', background: '#f0fdf4', border: '1px solid #10b981', borderRadius: 6, padding: '2px 8px', cursor: 'pointer' }}
+                                onClick={() => { setShowTotalCourtsEdit(!showTotalCourtsEdit); setNewTotalCourts(String(courtData.totalCourts)); }}>
+                                ✏️ Edit
+                            </span>
+                        </div>
+                        {showTotalCourtsEdit ? (
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                <input
+                                    type="number"
+                                    min="1" max="20"
+                                    value={newTotalCourts}
+                                    onChange={e => setNewTotalCourts(e.target.value)}
+                                    placeholder="# of courts"
+                                    style={{ width: 110, padding: '10px 12px', fontSize: 15, borderRadius: 8, border: '2px solid #e2e8f0', fontFamily: 'Outfit, sans-serif', outline: 'none' }}
+                                    onFocus={e => e.target.style.borderColor = '#059669'}
+                                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                                />
+                                <button className="btn-g" onClick={handleTotalCourtsChange} style={{ padding: '10px 18px' }}>Save</button>
+                                <button onClick={() => setShowTotalCourtsEdit(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontFamily: 'Outfit, sans-serif', fontSize: 14 }}>Cancel</button>
+                            </div>
+                        ) : (
+                            <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a' }}>{courtData.totalCourts} courts</div>
+                        )}
+                    </div>
                 </div>
-                
+
                 {/* Quick Stats */}
                 <div style={{ background: 'linear-gradient(135deg, #eff6ff, #dbeafe)', border: '2px solid #3b82f6', borderRadius: 14, padding: '16px 20px' }}>
                     <div style={{ fontSize: 15, fontWeight: 700, color: '#1e40af', marginBottom: 8 }}>📊 Quick Stats</div>
@@ -585,12 +642,8 @@ function CourtStatus() {
     );
 }
 
-// ── Main App ──────────────────────────────────────────────────────────
-function App() {
-    return <CourtStatus />;
-}
+function App() { return <CourtStatus />; }
 
-// Add spin animation
 const style = document.createElement('style');
 style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
 document.head.appendChild(style);
