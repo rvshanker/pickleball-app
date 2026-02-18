@@ -260,7 +260,7 @@ try{firebase.initializeApp(FB);db=firebase.firestore();auth=firebase.auth();fbOk
 // ── Storage ───────────────────────────────────────────────────────────
 const storage={
     async save(d){
-        if(fbOk&&db)try{await db.collection('tournaments').doc(d.id).set(d);return;}catch(e){}
+        if(fbOk&&db)try{await db.collection('tournaments').doc(d.id).set(d);return;}catch(e){console.warn('Firestore save failed:',e.code,e.message);}
         localStorage.setItem(`tournament:${d.id}`,JSON.stringify(d));
     },
     async get(id){
