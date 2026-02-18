@@ -111,7 +111,7 @@ const FB = {
     messagingSenderId: "645604154338",
     appId: "1:645604154338:web:b92f87c2cd11d950b737bb"
 };
-const COURT = { id: 'dardenne-prairie', name: 'Dardenne Prairie', location: 'Dardenne Prairie, MO', lat: 38.7603, lon: -90.7187 };
+const COURT = { id: 'dardenne-prairie', name: 'Dardenne Prairie Athletic Complex', location: '2080 Hanley Rd, O\'Fallon, MO', lat: 38.7542, lon: -90.7089 };
 
 let db = null, fbOk = false;
 try {
@@ -252,18 +252,58 @@ function CourtStatus() {
 
     const fetchWeather = async () => {
         try {
-            const { lat, lon } = COURT;
-            const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1`);
-            const d = await r.json();
-            setWeather({ temp: Math.round(d.current.temperature_2m), wind: Math.round(d.current.wind_speed_10m) });
+            // Step 1: Get NWS grid point for these coordinates
+            const pointRes = await fetch(`https://api.weather.gov/points/38.7542,-90.7089`, {
+                headers: { 'User-Agent': 'PickleCourtConnect/1.0' }
+            });
+            const pointData = await pointRes.json();
+            const { forecastHourly } = pointData.properties;
+
+            // Step 2: Fetch hourly forecast
+            const fxRes = await fetch(forecastHourly, {
+                headers: { 'User-Agent': 'PickleCourtConnect/1.0' }
+            });
+            const fxData = await fxRes.json();
+            const periods = fxData.properties.periods;
+
+            // Current conditions = first period
+            const now = periods[0];
+            const tempF = now.temperature; // NWS always returns °F when requested
+            const windStr = now.windSpeed; // e.g. "8 mph" or "5 to 10 mph"
+            const windNum = parseInt(windStr); // take first number
+
+            setWeather({ temp: tempF, wind: windNum, icon: now.shortForecast });
             setWxUpdated(new Date());
-            const now = new Date();
-            const hrs = d.hourly.time.map((t, i) => {
-                const dt = new Date(t);
-                return { dt, temp: Math.round(d.hourly.temperature_2m[i]), wind: Math.round(d.hourly.wind_speed_10m[i]) };
-            }).filter(h => h.dt >= now && h.dt.getDate() === now.getDate());
+
+            // Build hourly strip: next ~10 hours today
+            const today = new Date().getDate();
+            const hrs = periods.slice(0, 12).map(p => {
+                const dt = new Date(p.startTime);
+                return {
+                    dt,
+                    temp: p.temperature,
+                    wind: parseInt(p.windSpeed),
+                    label: p.shortForecast
+                };
+            });
             setForecast(hrs);
-        } catch(e) { console.error('Weather:', e); }
+        } catch(e) {
+            console.error('NWS weather fetch failed:', e);
+            // Fallback to Open-Meteo if NWS fails
+            try {
+                const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=38.7542&longitude=-90.7089&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1`);
+                const d = await r.json();
+                setWeather({ temp: Math.round(d.current.temperature_2m), wind: Math.round(d.current.wind_speed_10m) });
+                setWxUpdated(new Date());
+                const now = new Date();
+                const hrs = d.hourly.time.map((t, i) => ({
+                    dt: new Date(t),
+                    temp: Math.round(d.hourly.temperature_2m[i]),
+                    wind: Math.round(d.hourly.wind_speed_10m[i])
+                })).filter(h => h.dt >= now && h.dt.getDate() === now.getDate());
+                setForecast(hrs);
+            } catch(e2) { console.error('Fallback weather also failed:', e2); }
+        }
     };
 
     // Update court field
