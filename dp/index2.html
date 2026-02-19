@@ -621,12 +621,11 @@ function CourtStatus() {
         setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 5000);
     };
 
-    // ── Send notification: Service Worker first, then Notification API, then toast ──
+    // ── Send notification: Notification API + always show in-app toast too ──
     const sendNotification = (title, body) => {
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({ type: 'SHOW_NOTIFICATION', title, body });
-            return;
-        }
+        // Always show in-app toast (works everywhere, including when tab is focused)
+        showToast(title, body);
+        // Also fire a browser notification if permission granted (shows when tab is NOT focused)
         if ('Notification' in window && Notification.permission === 'granted') {
             try {
                 new Notification(title, {
@@ -636,10 +635,8 @@ function CourtStatus() {
                     requireInteraction: true,
                     silent: false
                 });
-                return;
-            } catch(e) { /* fall through */ }
+            } catch(e) { /* ignore */ }
         }
-        showToast(title, body);
     };
 
     // ── Notification monitoring ───────────────────────────────────────────
@@ -676,38 +673,40 @@ function CourtStatus() {
 
     // ── Request/enable notifications ─────────────────────────────────────
     const requestNotifPermission = async () => {
-        if ('serviceWorker' in navigator) {
-            try {
-                const swCode = `self.addEventListener('message',e=>{if(e.data&&e.data.type==='SHOW_NOTIFICATION'){self.registration.showNotification(e.data.title,{body:e.data.body,icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23059669"/></svg>',requireInteraction:true,tag:'picklecourt-'+Date.now()});}});`;
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                await navigator.serviceWorker.register(URL.createObjectURL(blob), { scope: './' }).catch(() => {});
-                await navigator.serviceWorker.ready;
-            } catch(e) { /* SW not critical */ }
-        }
         const enable = () => {
             setNotifEnabled(true);
             localStorage.setItem('pickleCourtNotifEnabled', 'true');
             setShowNotifModal(false);
         };
         if (!('Notification' in window)) {
+            // iOS Safari / unsupported — in-app toasts only
             enable();
             showToast('🔔 Alerts on!', 'Alerts will appear here in the app');
             return;
         }
         if (Notification.permission === 'granted') {
             enable();
-            setTimeout(() => sendNotification('✅ Notifications enabled!', 'You\'ll get alerts when players join your time slot'), 300);
+            showToast('✅ Notifications enabled!', "You'll get alerts when players join your time slot");
             return;
         }
+        if (Notification.permission === 'denied') {
+            enable();
+            showToast('🔔 In-app alerts on!', 'Browser notifications blocked in settings — alerts will show here instead');
+            return;
+        }
+        // 'default' — ask for permission
         try {
             const perm = await Notification.requestPermission();
             enable();
             if (perm === 'granted') {
-                setTimeout(() => sendNotification('✅ Notifications enabled!', 'You\'ll get alerts when players join your time slot'), 300);
+                showToast('✅ Notifications enabled!', "You'll get alerts when players join your time slot");
             } else {
                 showToast('🔔 In-app alerts on!', 'Browser notifications blocked — alerts will show here instead');
             }
-        } catch(e) { enable(); }
+        } catch(e) {
+            enable();
+            showToast('🔔 Alerts on!', 'Alerts will appear here in the app');
+        }
     };
 
     const disableNotifications = () => {
