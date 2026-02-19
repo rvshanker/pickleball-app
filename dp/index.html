@@ -586,6 +586,18 @@ function CourtStatus() {
                         <span style={{fontSize:13}}>🏟️</span>
                         <div><div className="pill-label">Open</div><div className="pill-val">{courtData.openCourts}/{courtData.totalCourts}</div></div>
                     </div>
+                    {courtData.restroom && courtData.restroom !== 'open' && (
+                        <div className={`status-pill red`}>
+                            <span style={{fontSize:13}}>🚫</span>
+                            <div><div className="pill-label">Restroom</div><div className="pill-val">Closed</div></div>
+                        </div>
+                    )}
+                    {courtData.parking && courtData.parking === 'full' && (
+                        <div className={`status-pill yellow`}>
+                            <span style={{fontSize:13}}>🚗</span>
+                            <div><div className="pill-label">Parking</div><div className="pill-val">Full</div></div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -682,10 +694,11 @@ function CourtStatus() {
                                                 {arrivalTime && (() => {
                                                     const hr = new Date(parseInt(arrivalTime)).getHours();
                                                     const fx = forecast.find(h => h.dt.getHours() === hr);
-                                                    const isWindy = fx && (fx.wind > 15 || (fx.gust && fx.gust > 15));
+                                                    const isWindy = fx && (fx.wind >= 12 || (fx.gust && fx.gust >= 12));
                                                     const isAfter7 = hr >= 19;
                                                     
-                                                    return fx ? (
+                                                    // Don't show weather badge for 7+ PM times
+                                                    return (fx && !isAfter7) ? (
                                                         <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'rgba(59,130,246,.1)',border:'2px solid rgba(59,130,246,.3)',borderRadius:20,padding:'6px 13px',fontSize:13,fontWeight:700,color:'#1e40af',whiteSpace:'nowrap'}}>
                                                             {wIcon(fx.temp,fx.wind)} {fx.temp}°F · 💨{fx.wind}mph{fx.gust ? ` · 💨Gusts ${fx.gust}mph` : ''}
                                                         </div>
@@ -695,7 +708,7 @@ function CourtStatus() {
                                             {arrivalTime && (() => {
                                                 const hr = new Date(parseInt(arrivalTime)).getHours();
                                                 const fx = forecast.find(h => h.dt.getHours() === hr);
-                                                const isWindy = fx && (fx.wind > 15 || (fx.gust && fx.gust > 15));
+                                                const isWindy = fx && (fx.wind >= 12 || (fx.gust && fx.gust >= 12));
                                                 const isAfter7 = hr >= 19;
                                                 
                                                 // Show wind warning if windy
