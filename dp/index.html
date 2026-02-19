@@ -98,6 +98,21 @@
         /* Timer bar */
         @keyframes shrink { from{width:100%} to{width:0%} }
         .timer-track { height: 4px; background: #e2e8f0; border-radius: 2px; overflow: hidden; margin-top: 6px; }
+        
+        /* Notification bell */
+        .notif-bell { position: relative; background: rgba(255,255,255,.1); border: none; color: white; border-radius: 10px; padding: 7px 11px; cursor: pointer; font-size: 18px; transition: all .2s; }
+        .notif-bell:hover { background: rgba(255,255,255,.18); }
+        .notif-bell.has-badge::after { content: ''; position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; border: 2px solid #0f172a; }
+        
+        /* Notification modal */
+        .notif-modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 16px; }
+        .notif-panel { background: white; border-radius: 16px; padding: 20px; max-width: 440px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+        
+        /* Toggle switch */
+        .toggle-switch { position: relative; width: 48px; height: 26px; background: #cbd5e1; border-radius: 13px; cursor: pointer; transition: background .2s; }
+        .toggle-switch.on { background: #059669; }
+        .toggle-switch .toggle-knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform .2s; box-shadow: 0 2px 4px rgba(0,0,0,.2); }
+        .toggle-switch.on .toggle-knob { transform: translateX(22px); }
         .timer-fill { height: 100%; background: linear-gradient(90deg,#10b981,#059669); border-radius: 2px; transition: width 1s linear; }
 
         /* Footer */
@@ -284,6 +299,17 @@ function CourtStatus() {
     const [funnyMsg,     setFunnyMsg]     = useState('');
     const [durationFunny,setDurationFunny]= useState('');
     const [guestFunny,   setGuestFunny]   = useState('');
+    
+    // Notification states
+    const [showNotifModal, setShowNotifModal] = useState(false);
+    const [notifEnabled, setNotifEnabled] = useState(false);
+    const [notifPrefs, setNotifPrefs] = useState({
+        newPlayerSameTime: true,
+        playerDropout: true,
+        minPlayers: 0,
+        lightsOn: false
+    });
+    const prevCheckInsRef = useRef([]);
 
     // Ticker: re-render every minute so auto-promote updates the UI without user interaction
     const [tick, setTick] = useState(0);
@@ -304,6 +330,19 @@ function CourtStatus() {
         const r = localStorage.getItem('pickleCourtRating');
         if (n) setUserName(n);
         if (r) setUserRating(r);
+        
+        // Load notification preferences
+        const prefs = localStorage.getItem('pickleCourtNotifPrefs');
+        if (prefs) {
+            try {
+                setNotifPrefs(JSON.parse(prefs));
+            } catch (e) {}
+        }
+        
+        // Check if notifications are enabled
+        if ('Notification' in window && Notification.permission === 'granted') {
+            setNotifEnabled(true);
+        }
     }, []);
 
     // Handle 5.0+ funny message
@@ -369,6 +408,61 @@ function CourtStatus() {
             }, err => console.warn('Snapshot:', err.message));
         return () => unsub();
     }, []);
+    
+    // Notification service - monitors changes and sends notifications
+    useEffect(() => {
+        if (!notifEnabled || !userName) return;
+        
+        const myCheckIn = checkIns.find(c => c.deviceId === deviceId);
+        if (!myCheckIn) {
+            prevCheckInsRef.current = checkIns;
+            return;
+        }
+        
+        const prev = prevCheckInsRef.current;
+        const myTime = myCheckIn.arrivalTime || myCheckIn.timestamp;
+        const myTimeHour = new Date(myTime).setMinutes(0, 0, 0);
+        
+        // Check for new players joining same time slot
+        if (notifPrefs.newPlayerSameTime) {
+            const newPlayers = checkIns.filter(c => {
+                if (c.deviceId === deviceId) return false; // not me
+                const cTime = c.arrivalTime || c.timestamp;
+                const cHour = new Date(cTime).setMinutes(0, 0, 0);
+                if (cHour !== myTimeHour) return false; // different hour
+                return !prev.find(p => p.id === c.id); // is new
+            });
+            
+            newPlayers.forEach(p => {
+                const time = new Date(p.arrivalTime || p.timestamp).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'});
+                sendNotification(
+                    '🎾 New player joining!',
+                    `${p.userName} is also coming at ${time}`
+                );
+            });
+        }
+        
+        // Check for player dropouts from same time slot
+        if (notifPrefs.playerDropout) {
+            const droppedPlayers = prev.filter(p => {
+                if (p.deviceId === deviceId) return false; // not me
+                const pTime = p.arrivalTime || p.timestamp;
+                const pHour = new Date(pTime).setMinutes(0, 0, 0);
+                if (pHour !== myTimeHour) return false; // different hour
+                return !checkIns.find(c => c.id === p.id); // no longer exists
+            });
+            
+            droppedPlayers.forEach(p => {
+                const time = new Date(p.arrivalTime || p.timestamp).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'});
+                sendNotification(
+                    '👋 Player dropped out',
+                    `${p.userName} cancelled their ${time} session`
+                );
+            });
+        }
+        
+        prevCheckInsRef.current = checkIns;
+    }, [checkIns, notifEnabled, notifPrefs, userName, deviceId]);
 
     // Separate interval for auto-checkout & auto-promote — runs every 60s, never inside snapshot
     useEffect(() => {
@@ -477,6 +571,62 @@ function CourtStatus() {
         if (!fbOk || !db) return;
         try { await deleteMyCheckIns(); } catch(e) { console.error('Checkout:', e); }
     };
+    
+    // Notification helper
+    const sendNotification = (title, body) => {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            try {
+                new Notification(title, {
+                    body,
+                    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23059669"/><circle cx="50" cy="50" r="28" fill="white" opacity="0.15"/></svg>',
+                    badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23059669"/></svg>',
+                    tag: 'picklecourt-' + Date.now(),
+                    requireInteraction: false
+                });
+            } catch (e) {
+                console.warn('Notification failed:', e);
+            }
+        }
+    };
+    
+    // Request notification permission
+    const requestNotifPermission = async () => {
+        if (!('Notification' in window)) {
+            alert('Your browser doesn\'t support notifications');
+            return;
+        }
+        
+        if (Notification.permission === 'granted') {
+            setNotifEnabled(true);
+            return;
+        }
+        
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                setNotifEnabled(true);
+                sendNotification('✅ Notifications enabled!', 'You\'ll get alerts when players join or leave your time slot');
+            } else {
+                alert('Notification permission denied. Enable in browser settings to get alerts.');
+            }
+        } catch (e) {
+            console.error('Permission request failed:', e);
+            alert('Could not enable notifications');
+        }
+    };
+    
+    // Toggle notification preference
+    const toggleNotifPref = (key) => {
+        const updated = { ...notifPrefs, [key]: !notifPrefs[key] };
+        setNotifPrefs(updated);
+        localStorage.setItem('pickleCourtNotifPrefs', JSON.stringify(updated));
+    };
+    
+    // Disable notifications
+    const disableNotifications = () => {
+        setNotifEnabled(false);
+        alert('Notifications disabled. Enable again from the bell icon.');
+    };
 
     if (!courtData) return (
         <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh'}}>
@@ -511,12 +661,19 @@ function CourtStatus() {
             {/* ── HEADER ── */}
             <div className="hero-bg" style={{padding:'15px 17px 13px'}}>
                 <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:10}}>
-                    <div>
+                    <div style={{flex:1}}>
                         <div className="fd" style={{fontSize:25,fontWeight:800,color:'white',letterSpacing:.3}}>PICKLECOURT CONNECT</div>
                         <div style={{fontSize:12,color:'#6ee7b7',marginTop:2,display:'flex',alignItems:'center',gap:6}}>
                             <span className="live-dot"/> Live · 📍 {COURT.location}
                         </div>
                     </div>
+                    <button 
+                        className={`notif-bell${myCheckIn && notifEnabled ? ' has-badge' : ''}`}
+                        onClick={() => setShowNotifModal(true)}
+                        title="Notification settings"
+                    >
+                        🔔
+                    </button>
                     {weather && (
                         <div style={{textAlign:'right',flexShrink:0,marginLeft:8}}>
                             <div style={{display:'inline-flex',alignItems:'center',gap:5,background:'rgba(255,255,255,.18)',border:'1.5px solid rgba(255,255,255,.45)',borderRadius:20,padding:'6px 13px',fontSize:13,fontWeight:700,color:'white',boxShadow:'0 2px 8px rgba(0,0,0,.2)'}}>
@@ -816,6 +973,94 @@ function CourtStatus() {
                     <div>© 2025 PickleConnect. All rights reserved. · Live Court Status</div>
                 </div>
             </div>
+            
+            {/* ── NOTIFICATION MODAL ── */}
+            {showNotifModal && (
+                <div className="notif-modal" onClick={() => setShowNotifModal(false)}>
+                    <div className="notif-panel" onClick={e => e.stopPropagation()}>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+                            <div className="fd" style={{fontSize:22,fontWeight:800,color:'#0f172a'}}>🔔 NOTIFICATIONS</div>
+                            <button onClick={() => setShowNotifModal(false)} style={{background:'none',border:'none',fontSize:28,cursor:'pointer',color:'#94a3b8',lineHeight:1}}>×</button>
+                        </div>
+                        
+                        {!notifEnabled ? (
+                            <div>
+                                <div style={{background:'linear-gradient(135deg,#eff6ff,#dbeafe)',border:'2px solid #3b82f6',borderRadius:12,padding:'14px 16px',marginBottom:16}}>
+                                    <div style={{fontSize:14,fontWeight:600,color:'#1e40af',marginBottom:8}}>
+                                        📬 Get real-time alerts
+                                    </div>
+                                    <div style={{fontSize:13,color:'#3730a3',lineHeight:1.5,marginBottom:12}}>
+                                        Know instantly when players join or drop from your time slot. Never miss important court updates!
+                                    </div>
+                                    <button className="btn-g" onClick={requestNotifPermission} style={{width:'100%',padding:'13px'}}>
+                                        ✅ Enable Notifications
+                                    </button>
+                                </div>
+                                <div style={{fontSize:12,color:'#64748b',lineHeight:1.5}}>
+                                    <strong>How it works:</strong> We'll ask your browser for permission. You'll get native notifications even when this tab isn't open. You can disable anytime.
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <div style={{background:'linear-gradient(135deg,#f0fdf4,#dcfce7)',border:'2px solid #10b981',borderRadius:12,padding:'12px 14px',marginBottom:16}}>
+                                    <div style={{fontSize:13,fontWeight:700,color:'#059669'}}>
+                                        ✅ Notifications are enabled
+                                    </div>
+                                </div>
+                                
+                                <div style={{fontSize:13,fontWeight:700,color:'#0f172a',marginBottom:12}}>
+                                    Alert me when:
+                                </div>
+                                
+                                <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:16}}>
+                                    {/* Same time slot notification */}
+                                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 14px',background:'#f8fafc',borderRadius:10,border:'1px solid #e2e8f0'}}>
+                                        <div style={{flex:1,marginRight:12}}>
+                                            <div style={{fontSize:14,fontWeight:600,color:'#0f172a',marginBottom:3}}>
+                                                🎾 Someone joins my time slot
+                                            </div>
+                                            <div style={{fontSize:12,color:'#64748b'}}>
+                                                Get notified when a player checks in for the same hour as you
+                                            </div>
+                                        </div>
+                                        <div 
+                                            className={`toggle-switch${notifPrefs.newPlayerSameTime ? ' on' : ''}`}
+                                            onClick={() => toggleNotifPref('newPlayerSameTime')}
+                                        >
+                                            <div className="toggle-knob" />
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Dropout notification */}
+                                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 14px',background:'#f8fafc',borderRadius:10,border:'1px solid #e2e8f0'}}>
+                                        <div style={{flex:1,marginRight:12}}>
+                                            <div style={{fontSize:14,fontWeight:600,color:'#0f172a',marginBottom:3}}>
+                                                👋 Someone drops out
+                                            </div>
+                                            <div style={{fontSize:12,color:'#64748b'}}>
+                                                Know when players cancel from your time slot
+                                            </div>
+                                        </div>
+                                        <div 
+                                            className={`toggle-switch${notifPrefs.playerDropout ? ' on' : ''}`}
+                                            onClick={() => toggleNotifPref('playerDropout')}
+                                        >
+                                            <div className="toggle-knob" />
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button 
+                                    onClick={disableNotifications}
+                                    style={{width:'100%',padding:'11px',background:'#f1f5f9',border:'1px solid #e2e8f0',borderRadius:9,fontSize:14,fontWeight:600,color:'#64748b',cursor:'pointer',fontFamily:'Outfit,sans-serif'}}
+                                >
+                                    🔕 Disable Notifications
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
