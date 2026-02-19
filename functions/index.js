@@ -1,14 +1,14 @@
-const functions = require('firebase-functions');
+const functions = require('firebase-functions/v2');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
-exports.sendPickleNotification = functions.firestore
-  .document('notification-queue/{docId}')
-  .onCreate(async (snap) => {
-    const { title, body, courtId, senderDeviceId } = snap.data();
+exports.sendPickleNotification = functions.firestore.onDocumentCreated(
+  'notification-queue/{docId}',
+  async (event) => {
+    const data = event.data.data();
+    const { title, body, courtId, senderDeviceId } = data;
 
     try {
-      // Get all FCM tokens for this court except the sender
       const tokensSnap = await admin.firestore()
         .collection('fcm-tokens')
         .where('courtId', '==', courtId)
@@ -33,7 +33,7 @@ exports.sendPickleNotification = functions.firestore
               tag: 'picklecourt-' + Date.now()
             },
             fcmOptions: {
-              link: 'https://rvshanker.github.io/pickleball-app/dp/'
+              link: 'https://pickleconnect.live/dp/index2.html'
             }
           }
         });
@@ -43,6 +43,6 @@ exports.sendPickleNotification = functions.firestore
       console.error('Send failed:', e);
     }
 
-    // Always delete the queue doc to keep Firestore clean
-    await snap.ref.delete();
-  });
+    await event.data.ref.delete();
+  }
+);
