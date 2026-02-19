@@ -4,8 +4,84 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PickleCourt Connect - Dardenne Prairie</title>
-    <!-- Matching favicon from pickleconnect.live -->
+    <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23059669'/><circle cx='50' cy='50' r='28' fill='white' opacity='0.15'/><ellipse cx='50' cy='50' rx='20' ry='20' fill='none' stroke='white' stroke-width='3'/><line x1='30' y1='50' x2='70' y2='50' stroke='white' stroke-width='3'/><line x1='50' y1='30' x2='50' y2='70' stroke='white' stroke-width='3'/><circle cx='50' cy='50' r='6' fill='white'/></svg>" type="image/svg+xml">
+
+    <!-- PWA / Home Screen Support -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PickleCourt">
+    <meta name="theme-color" content="#059669">
+
+    <!-- Dynamically generate Apple Touch Icon + Web Manifest using canvas -->
+    <script>
+    (function() {
+      var c = document.createElement('canvas');
+      c.width = c.height = 192;
+      var ctx = c.getContext('2d');
+      // Background rounded square
+      var r = 38;
+      ctx.beginPath();
+      ctx.moveTo(r, 0); ctx.lineTo(192-r, 0);
+      ctx.quadraticCurveTo(192, 0, 192, r);
+      ctx.lineTo(192, 192-r);
+      ctx.quadraticCurveTo(192, 192, 192-r, 192);
+      ctx.lineTo(r, 192);
+      ctx.quadraticCurveTo(0, 192, 0, 192-r);
+      ctx.lineTo(0, r);
+      ctx.quadraticCurveTo(0, 0, r, 0);
+      ctx.closePath();
+      var grad = ctx.createLinearGradient(0,0,192,192);
+      grad.addColorStop(0, '#059669');
+      grad.addColorStop(1, '#065f46');
+      ctx.fillStyle = grad;
+      ctx.fill();
+      // Pickleball court lines (white)
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+      ctx.lineWidth = 5;
+      ctx.lineJoin = 'round';
+      // Outer court rectangle
+      ctx.strokeRect(30, 40, 132, 112);
+      // Net (center line)
+      ctx.beginPath(); ctx.moveTo(30, 96); ctx.lineTo(162, 96); ctx.stroke();
+      // Kitchen lines (non-volley zone)
+      ctx.beginPath(); ctx.moveTo(30, 65); ctx.lineTo(162, 65); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(30, 127); ctx.lineTo(162, 127); ctx.stroke();
+      // Center line
+      ctx.beginPath(); ctx.moveTo(96, 40); ctx.lineTo(96, 65); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(96, 127); ctx.lineTo(96, 152); ctx.stroke();
+      // Ball (circle)
+      ctx.beginPath();
+      ctx.arc(96, 96, 14, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.fill();
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      var dataUrl = c.toDataURL('image/png');
+      // Apple touch icon
+      var link = document.createElement('link');
+      link.rel = 'apple-touch-icon';
+      link.href = dataUrl;
+      document.head.appendChild(link);
+      // Web manifest (Android)
+      var manifest = {
+        name: 'PickleCourt Connect',
+        short_name: 'PickleCourt',
+        start_url: window.location.href,
+        display: 'standalone',
+        background_color: '#0f172a',
+        theme_color: '#059669',
+        icons: [{ src: dataUrl, sizes: '192x192', type: 'image/png', purpose: 'any maskable' }]
+      };
+      var blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+      var mlink = document.createElement('link');
+      mlink.rel = 'manifest';
+      mlink.href = URL.createObjectURL(blob);
+      document.head.appendChild(mlink);
+    })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -164,6 +240,20 @@ const FUNNY_5PLUS = [
     "Are you sure you're not a pro? Our nets just filed a restraining order 🚨",
 ];
 
+const FUNNY_COMMENTS = [
+    "Ready to dink you into oblivion 😈",
+    "Here to body-bag anyone who lobs 🎯",
+    "Warning: I WILL poach your shot 🕵️",
+    "Brace yourselves, the spin king has arrived 👑",
+    "Just here for the vibes… and to destroy you 🫶",
+    "Came to play. Staying to dominate. 😤",
+    "I've been watching YouTube tutorials all week — fear me 📹",
+    "Don't let the smile fool you. I'm ruthless 😊⚡",
+    "Here to take names and win games 📋🏆",
+    "My therapist said this was better than revenge 🧘",
+];
+const randFunnyComment = () => FUNNY_COMMENTS[Math.floor(Math.random() * FUNNY_COMMENTS.length)];
+
 const DURATION_OPTIONS = [
     { label: '1 hr',    value: 60,  funny: null },
     { label: '2 hr',    value: 120, funny: null },
@@ -256,6 +346,11 @@ function PlayerRow({ p, isNow }) {
                         <PlayTimer checkInTime={p.timestamp} durationMins={p.duration}/>
                     )}
                 </div>
+                {p.comment && (
+                    <div style={{fontSize:12,color:'#059669',fontStyle:'italic',marginTop:3,background:'#f0fdf4',borderRadius:7,padding:'3px 8px',display:'inline-block',maxWidth:'100%',wordBreak:'break-word'}}>
+                        💬 {p.comment}
+                    </div>
+                )}
             </div>
             <div style={{fontSize:10,color:'#cbd5e1',flexShrink:0}}>
                 {new Date(p.timestamp).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
@@ -285,6 +380,8 @@ function CourtStatus() {
     const [funnyMsg,     setFunnyMsg]     = useState('');
     const [durationFunny,setDurationFunny]= useState('');
     const [guestFunny,   setGuestFunny]   = useState('');
+    const [comment,      setComment]      = useState('');
+    const [commentFocused, setCommentFocused] = useState(false);
 
     // Ticker: re-render every minute so auto-promote updates the UI without user interaction
     const [tick, setTick] = useState(0);
@@ -471,13 +568,14 @@ function CourtStatus() {
                 status,
                 guests: guestCount,
                 duration: duration,
+                comment: (comment && !FUNNY_COMMENTS.includes(comment)) ? comment.trim() : (commentFocused && comment.trim() ? comment.trim() : (FUNNY_COMMENTS.includes(comment) ? comment : '')),
                 arrivalTime: atTime || Date.now(),
                 timestamp: Date.now(),
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             localStorage.setItem('pickleCourtUserName', userName);
             localStorage.setItem('pickleCourtRating', userRating);
-            setShowForm(false); setStep('form'); setArrivalTime(''); setShowLaterTime(false); setGuestCount(0); setFunnyMsg(''); setDurationFunny(''); setGuestFunny('');
+            setShowForm(false); setStep('form'); setArrivalTime(''); setShowLaterTime(false); setGuestCount(0); setFunnyMsg(''); setDurationFunny(''); setGuestFunny(''); setComment(''); setCommentFocused(false);
         } catch(e) { console.error('Check-in:', e); alert('Check-in failed. Try again.'); }
     };
 
@@ -637,7 +735,7 @@ function CourtStatus() {
                                     </div>
                                 </div>
                             ) : !showForm ? (
-                                <button className="btn-g" onClick={()=>setShowForm(true)} style={{width:'100%',padding:13}}>📍 Check In</button>
+                                <button className="btn-g" onClick={()=>{setShowForm(true);setComment(randFunnyComment());setCommentFocused(false);}} style={{width:'100%',padding:13}}>📍 Check In</button>
                             ) : (
                                 // Single unified form — no step switching
                                 <div style={{background:'#f8fafc',borderRadius:11,padding:13}}>
@@ -666,6 +764,26 @@ function CourtStatus() {
                                             {guestFunny}
                                         </div>
                                     )}
+
+                                    {/* Trash talk / comment field */}
+                                    <div style={{position:'relative',marginBottom:13}}>
+                                        <textarea
+                                            className="field"
+                                            rows={2}
+                                            value={commentFocused ? comment : (comment || '')}
+                                            placeholder={commentFocused ? '' : ''}
+                                            onChange={e => setComment(e.target.value)}
+                                            onFocus={() => {
+                                                if (!commentFocused) {
+                                                    setCommentFocused(true);
+                                                    // Clear if it's still the placeholder text
+                                                    if (FUNNY_COMMENTS.includes(comment)) setComment('');
+                                                }
+                                            }}
+                                            style={{resize:'none',lineHeight:1.5,fontSize:14,color: (!commentFocused && FUNNY_COMMENTS.includes(comment)) ? '#94a3b8' : '#0f172a', fontStyle: (!commentFocused && FUNNY_COMMENTS.includes(comment)) ? 'italic' : 'normal'}}
+                                        />
+                                        <div style={{fontSize:10,color:'#94a3b8',marginTop:3,textAlign:'right'}}>💬 Trash talk or message (optional)</div>
+                                    </div>
 
                                     {/* Duration picker — always shown */}
                                     <div style={{marginBottom: durationFunny ? 6 : 13}}>
