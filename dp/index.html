@@ -26,6 +26,7 @@
         .status-pill.green { border-color: #10b981; background: linear-gradient(135deg,#f0fdf4,#dcfce7); }
         .status-pill.yellow { border-color: #fbbf24; background: linear-gradient(135deg,#fefce8,#fef3c7); }
         .status-pill.red { border-color: #ef4444; background: linear-gradient(135deg,#fef2f2,#fee2e2); }
+        .status-pill.dark { border-color: #059669; background: linear-gradient(135deg,#0f172a,#1e293b); }
         .pill-label { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .4px; }
         .pill-val { font-size: 13px; font-weight: 800; color: #0f172a; }
 
@@ -406,22 +407,29 @@ function CourtStatus() {
             const fxData = await fxRes.json();
             const periods = fxData.properties.periods;
             const cur = periods[0];
-            setWeather({ temp: cur.temperature, wind: parseInt(cur.windSpeed), desc: cur.shortForecast });
+            const windGust = cur.windGust ? parseInt(cur.windGust) : null;
+            setWeather({ temp: cur.temperature, wind: parseInt(cur.windSpeed), gust: windGust, desc: cur.shortForecast });
             setWxUpdated(new Date());
             setForecast(periods.slice(0, 12).map(p => ({
                 dt: new Date(p.startTime),
                 temp: p.temperature,
                 wind: parseInt(p.windSpeed),
+                gust: p.windGust ? parseInt(p.windGust) : null,
                 desc: p.shortForecast
             })));
         } catch(e) {
             try {
-                const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=38.7542&longitude=-90.7089&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1`);
+                const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=38.7542&longitude=-90.7089&current=temperature_2m,wind_speed_10m,wind_gusts_10m&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1`);
                 const d = await r.json();
-                setWeather({ temp: Math.round(d.current.temperature_2m), wind: Math.round(d.current.wind_speed_10m) });
+                setWeather({ temp: Math.round(d.current.temperature_2m), wind: Math.round(d.current.wind_speed_10m), gust: d.current.wind_gusts_10m ? Math.round(d.current.wind_gusts_10m) : null });
                 setWxUpdated(new Date());
                 const now = new Date();
-                setForecast(d.hourly.time.map((t,i) => ({ dt: new Date(t), temp: Math.round(d.hourly.temperature_2m[i]), wind: Math.round(d.hourly.wind_speed_10m[i]) })).filter(h => h.dt >= now && h.dt.getDate() === now.getDate()));
+                setForecast(d.hourly.time.map((t,i) => ({ 
+                    dt: new Date(t), 
+                    temp: Math.round(d.hourly.temperature_2m[i]), 
+                    wind: Math.round(d.hourly.wind_speed_10m[i]),
+                    gust: d.hourly.wind_gusts_10m[i] ? Math.round(d.hourly.wind_gusts_10m[i]) : null
+                })).filter(h => h.dt >= now && h.dt.getDate() === now.getDate()));
             } catch(e2) { console.error('Weather failed:', e2); }
         }
     };
@@ -520,7 +528,7 @@ function CourtStatus() {
                     {weather && (
                         <div style={{textAlign:'right',flexShrink:0,marginLeft:8}}>
                             <div style={{display:'inline-flex',alignItems:'center',gap:5,background:'rgba(255,255,255,.18)',border:'1.5px solid rgba(255,255,255,.45)',borderRadius:20,padding:'6px 13px',fontSize:13,fontWeight:700,color:'white',boxShadow:'0 2px 8px rgba(0,0,0,.2)'}}>
-                                {wIcon(weather.temp,weather.wind)} {weather.temp}°F · 💨{weather.wind}mph
+                                {wIcon(weather.temp,weather.wind)} {weather.temp}°F · 💨{weather.wind}mph{weather.gust ? ` · 💨Gusts ${weather.gust}mph` : ''}
                             </div>
                             {wxUpdated && <div style={{fontSize:10,color:'#64748b',marginTop:3,textAlign:'right'}}>Updated {wxUpdated.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}</div>}
                         </div>
@@ -540,6 +548,13 @@ function CourtStatus() {
                                 </div>
                             ))}
                         </div>
+                    </div>
+                )}
+
+                {/* Last update timestamp */}
+                {courtData.lastUpdate && (
+                    <div style={{fontSize:10,color:'#6ee7b7',marginBottom:10,textAlign:'center'}}>
+                        Court status last updated: {new Date(courtData.lastUpdate.seconds * 1000).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
                     </div>
                 )}
 
@@ -563,9 +578,9 @@ function CourtStatus() {
                         <span style={{fontSize:13}}>{crowdEmoji}</span>
                         <div><div className="pill-label">Crowd</div><div className="pill-val">{crowdNum}</div></div>
                     </div>
-                    <div className={`status-pill ${courtData.lightsOn?'green':'yellow'}`}>
-                        <span style={{fontSize:13}}>{courtData.lightsOn?'💡':'🌙'}</span>
-                        <div><div className="pill-label">Lights</div><div className="pill-val">{courtData.lightsOn?'ON':'OFF'}</div></div>
+                    <div className={`status-pill ${courtData.lightsOn?'dark':'yellow'}`}>
+                        <span style={{fontSize:13,color:courtData.lightsOn?'#fbbf24':''}}>{courtData.lightsOn?'💡':'🌙'}</span>
+                        <div><div className="pill-label" style={{color:courtData.lightsOn?'#94a3b8':''}}>Lights</div><div className="pill-val" style={{color:courtData.lightsOn?'white':''}}>{courtData.lightsOn?'ON':'OFF'}</div></div>
                     </div>
                     <div className={`status-pill ${courtData.openCourts>0?'green':'red'}`}>
                         <span style={{fontSize:13}}>🏟️</span>
@@ -667,33 +682,62 @@ function CourtStatus() {
                                                 {arrivalTime && (() => {
                                                     const hr = new Date(parseInt(arrivalTime)).getHours();
                                                     const fx = forecast.find(h => h.dt.getHours() === hr);
+                                                    const isWindy = fx && (fx.wind > 15 || (fx.gust && fx.gust > 15));
+                                                    const isAfter7 = hr >= 19;
+                                                    
                                                     return fx ? (
-                                                        <div style={{display:'inline-flex',alignItems:'center',gap:5,background:'rgba(59,130,246,.08)',border:'1px solid rgba(59,130,246,.2)',borderRadius:20,padding:'4px 10px',fontSize:11,fontWeight:700,color:'#1e40af',whiteSpace:'nowrap'}}>
-                                                            {wIcon(fx.temp,fx.wind)} {fx.temp}°F · 💨{fx.wind}mph
+                                                        <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'rgba(59,130,246,.1)',border:'2px solid rgba(59,130,246,.3)',borderRadius:20,padding:'6px 13px',fontSize:13,fontWeight:700,color:'#1e40af',whiteSpace:'nowrap'}}>
+                                                            {wIcon(fx.temp,fx.wind)} {fx.temp}°F · 💨{fx.wind}mph{fx.gust ? ` · 💨Gusts ${fx.gust}mph` : ''}
                                                         </div>
                                                     ) : null;
                                                 })()}
                                             </div>
-                                            {arrivalTime && new Date(parseInt(arrivalTime)).getHours() >= 19 && (
-                                                <div style={{background:'linear-gradient(135deg,#1e1b4b,#312e81)',border:'2px solid #6366f1',borderRadius:9,padding:'8px 11px',marginTop:8,fontSize:12,fontWeight:600,color:'#c7d2fe',lineHeight:1.5}}>
-                                                    🌙 After 7 PM? Come with extra lights — and maybe a headlamp! 😂
-                                                </div>
-                                            )}
+                                            {arrivalTime && (() => {
+                                                const hr = new Date(parseInt(arrivalTime)).getHours();
+                                                const fx = forecast.find(h => h.dt.getHours() === hr);
+                                                const isWindy = fx && (fx.wind > 15 || (fx.gust && fx.gust > 15));
+                                                const isAfter7 = hr >= 19;
+                                                
+                                                // Show wind warning if windy
+                                                if (isWindy) {
+                                                    return (
+                                                        <div style={{background:'linear-gradient(135deg,#fef3c7,#fde68a)',border:'2px solid #f59e0b',borderRadius:9,padding:'8px 11px',marginTop:8,fontSize:12,fontWeight:600,color:'#92400e',lineHeight:1.5}}>
+                                                            🌬️ It's windy! Your lob might land on the next court 😅
+                                                        </div>
+                                                    );
+                                                }
+                                                // Show after 7 PM message only if NOT windy
+                                                else if (isAfter7) {
+                                                    return (
+                                                        <div style={{background:'linear-gradient(135deg,#1e1b4b,#312e81)',border:'2px solid #6366f1',borderRadius:9,padding:'8px 11px',marginTop:8,fontSize:12,fontWeight:600,color:'#c7d2fe',lineHeight:1.5}}>
+                                                            🌙 After 7 PM? Come with extra lights — and maybe a headlamp! 😂
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            })()}
                                         </div>
                                     )}
 
                                     {/* Action buttons */}
                                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
                                         {!showLaterTime ? (
-                                            <button className="btn-g" onClick={()=>startCheckIn('now')} style={{padding:11}}>🎾 Coming Now</button>
+                                            <>
+                                                <button className="btn-g" onClick={()=>startCheckIn('now')} style={{padding:11}}>🎾 Coming Now</button>
+                                                <button onClick={()=>{setShowLaterTime(true);setArrivalTime('');}} style={{padding:9,borderRadius:10,border:'2px solid #059669',background:'transparent',color:'#059669',fontFamily:'Outfit,sans-serif',fontWeight:600,fontSize:14,cursor:'pointer',transition:'all .15s'}}>
+                                                    ⏰ Coming Later
+                                                </button>
+                                            </>
                                         ) : (
-                                            <button className="btn-g" disabled={!arrivalTime} onClick={()=>submitCheckIn('later',parseInt(arrivalTime))} style={{padding:11,opacity:arrivalTime?1:.45}}>
-                                                ✓ {arrivalTime ? new Date(parseInt(arrivalTime)).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}) : 'Confirm'}
-                                            </button>
+                                            <>
+                                                <button onClick={()=>{setShowLaterTime(false);setArrivalTime('');}} style={{padding:9,borderRadius:10,border:'2px solid #059669',background:'#059669',color:'white',fontFamily:'Outfit,sans-serif',fontWeight:600,fontSize:14,cursor:'pointer',transition:'all .15s'}}>
+                                                    🎾 Coming Now ←
+                                                </button>
+                                                <button className="btn-g" disabled={!arrivalTime} onClick={()=>submitCheckIn('later',parseInt(arrivalTime))} style={{padding:11,opacity:arrivalTime?1:.45}}>
+                                                    ✓ Confirm
+                                                </button>
+                                            </>
                                         )}
-                                        <button onClick={()=>{setShowLaterTime(!showLaterTime);setArrivalTime('');}} style={{padding:9,borderRadius:10,border:'2px solid #059669',background:showLaterTime?'#059669':'transparent',color:showLaterTime?'white':'#059669',fontFamily:'Outfit,sans-serif',fontWeight:600,fontSize:14,cursor:'pointer',transition:'all .15s'}}>
-                                            ⏰ {showLaterTime ? 'Coming Now ←' : 'Coming Later'}
-                                        </button>
                                     </div>
 
                                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
@@ -792,7 +836,7 @@ function CourtStatus() {
                                 )}
                             </div>
 
-                            <div>
+                            <div style={{marginBottom:13}}>
                                 <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px'}}>Court Condition</div>
                                 <div className="toggle-group">
                                     <button className={`toggle-btn${(courtData.condition||'open')==='open'?' active':''}`} onClick={()=>updateCourt('condition','open')}>✅ Open</button>
@@ -800,6 +844,22 @@ function CourtStatus() {
                                     <button className={`toggle-btn${courtData.condition==='wet'?' active':''}`} onClick={()=>updateCourt('condition','wet')} style={{color:courtData.condition==='wet'?'white':'#3b82f6'}}>💧 Wet</button>
                                     <button className={`toggle-btn${courtData.condition==='hot'?' active':''}`} onClick={()=>updateCourt('condition','hot')} style={{color:courtData.condition==='hot'?'white':'#f97316'}}>🥵 Hot</button>
                                     <button className={`toggle-btn${courtData.condition==='windy'?' active':''}`} onClick={()=>updateCourt('condition','windy')} style={{color:courtData.condition==='windy'?'white':'#64748b'}}>🌬️ Windy</button>
+                                </div>
+                            </div>
+                            
+                            <div style={{marginBottom:13}}>
+                                <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px'}}>Restroom</div>
+                                <div className="toggle-group">
+                                    <button className={`toggle-btn${(courtData.restroom||'open')==='open'?' active':''}`} onClick={()=>updateCourt('restroom','open')}>🚻 Open</button>
+                                    <button className={`toggle-btn${courtData.restroom==='closed'?' active':''}`} onClick={()=>updateCourt('restroom','closed')} style={{color:courtData.restroom==='closed'?'white':'#ef4444'}}>🚫 Closed</button>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px'}}>Parking</div>
+                                <div className="toggle-group">
+                                    <button className={`toggle-btn${(courtData.parking||'available')==='available'?' active':''}`} onClick={()=>updateCourt('parking','available')}>🅿️ Available</button>
+                                    <button className={`toggle-btn${courtData.parking==='full'?' active':''}`} onClick={()=>updateCourt('parking','full')} style={{color:courtData.parking==='full'?'white':'#f97316'}}>🚗 Full</button>
                                 </div>
                             </div>
                         </div>
