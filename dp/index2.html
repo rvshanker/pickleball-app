@@ -89,6 +89,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Outfit', sans-serif; background: #f1f5f9; font-size: 16px; -webkit-text-size-adjust: 100%; }
@@ -232,11 +233,15 @@ const FB = {
 };
 const COURT = { id: 'dardenne-prairie', name: 'Dardenne Prairie Athletic Complex', location: '2080 Hanley Rd, O\'Fallon, MO', lat: 38.7542, lon: -90.7089 };
 
-let db = null, fbOk = false;
+let db = null, fbOk = false, messaging = null;
 try {
     if (!firebase.apps.length) firebase.initializeApp(FB);
     db = firebase.firestore();
     fbOk = true;
+    // Initialize FCM messaging
+    if ('serviceWorker' in navigator) {
+        messaging = firebase.messaging();
+    }
 } catch(e) { console.error('Firebase:', e); }
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -409,6 +414,7 @@ function CourtStatus() {
     const [notifPrefs,    setNotifPrefs]    = useState({ newPlayerSameTime: true, playerDropout: true });
     const [showNotifModal,setShowNotifModal]= useState(false);
     const [toasts,        setToasts]        = useState([]);
+    const [fcmToken,      setFcmToken]      = useState(null);
     const prevCheckInsRef = useRef([]);
 
     // Ticker: re-render every minute so auto-promote updates the UI without user interaction
@@ -610,6 +616,10 @@ function CourtStatus() {
             });
             localStorage.setItem('pickleCourtUserName', userName);
             localStorage.setItem('pickleCourtRating', userRating);
+            // Update FCM token record with latest userName
+            if (fbOk && db && notifEnabled) {
+                db.collection('fcm-tokens').doc(deviceId).update({ userName }).catch(() => {});
+            }
             setShowForm(false); setStep('form'); setArrivalTime(''); setShowLaterTime(false); setGuestCount(0); setFunnyMsg(''); setDurationFunny(''); setGuestFunny(''); setComment(''); setCommentFocused(false);
         } catch(e) { console.error('Check-in:', e); alert('Check-in failed. Try again.'); }
     };
@@ -621,11 +631,12 @@ function CourtStatus() {
         setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 5000);
     };
 
-    // ── Send notification: Notification API + always show in-app toast too ──
+    // ── Send notification: in-app toast + browser Notification API + FCM queue ──
     const sendNotification = (title, body) => {
-        // Always show in-app toast (works everywhere, including when tab is focused)
+        // 1. Always show in-app toast (works everywhere, tab focused or not)
         showToast(title, body);
-        // Also fire a browser notification if permission granted (shows when tab is NOT focused)
+
+        // 2. Browser Notification API (shows OS popup when tab is in background)
         if ('Notification' in window && Notification.permission === 'granted') {
             try {
                 new Notification(title, {
@@ -636,6 +647,18 @@ function CourtStatus() {
                     silent: false
                 });
             } catch(e) { /* ignore */ }
+        }
+
+        // 3. Write to Firestore notification queue — a Cloud Function picks this up
+        //    and sends FCM push to all subscribed devices (works when app is closed)
+        if (fbOk && db) {
+            db.collection('notification-queue').add({
+                courtId: COURT.id,
+                title,
+                body,
+                senderDeviceId: deviceId,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).catch(() => {});
         }
     };
 
@@ -671,6 +694,39 @@ function CourtStatus() {
         prevCheckInsRef.current = checkIns;
     }, [checkIns, notifEnabled, notifPrefs, userName, deviceId]);
 
+    // ── Register SW + get FCM token + save to Firestore ─────────────────
+    const setupFCM = async () => {
+        if (!messaging) return null;
+        try {
+            // Register the service worker
+            const reg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+            await navigator.serviceWorker.ready;
+
+            // Get FCM token
+            const token = await messaging.getToken({
+                vapidKey: 'BO8kuV9zmoNdPv7zDrUgYNz82A3Nk3cE6wSDO5-4PXi4FJZ0HEy1NLri2N0BsF_mzV5pKtgYHXbKq8_cIA2a3oY',
+                serviceWorkerRegistration: reg
+            });
+
+            if (token) {
+                setFcmToken(token);
+                // Save token to Firestore so we can target this device
+                await db.collection('fcm-tokens').doc(deviceId).set({
+                    token,
+                    deviceId,
+                    userName: userName || '',
+                    courtId: COURT.id,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log('✅ FCM token saved');
+                return token;
+            }
+        } catch(e) {
+            console.warn('FCM setup failed:', e.message);
+        }
+        return null;
+    };
+
     // ── Request/enable notifications ─────────────────────────────────────
     const requestNotifPermission = async () => {
         const enable = () => {
@@ -678,34 +734,38 @@ function CourtStatus() {
             localStorage.setItem('pickleCourtNotifEnabled', 'true');
             setShowNotifModal(false);
         };
+
         if (!('Notification' in window)) {
-            // iOS Safari / unsupported — in-app toasts only
+            // iOS Safari — in-app toasts only
             enable();
             showToast('🔔 Alerts on!', 'Alerts will appear here in the app');
             return;
         }
-        if (Notification.permission === 'granted') {
-            enable();
-            showToast('✅ Notifications enabled!', "You'll get alerts when players join your time slot");
-            return;
-        }
+
         if (Notification.permission === 'denied') {
             enable();
             showToast('🔔 In-app alerts on!', 'Browser notifications blocked in settings — alerts will show here instead');
             return;
         }
-        // 'default' — ask for permission
-        try {
-            const perm = await Notification.requestPermission();
-            enable();
-            if (perm === 'granted') {
-                showToast('✅ Notifications enabled!', "You'll get alerts when players join your time slot");
+
+        // Request permission if not yet granted
+        let perm = Notification.permission;
+        if (perm !== 'granted') {
+            perm = await Notification.requestPermission();
+        }
+
+        enable();
+
+        if (perm === 'granted') {
+            // Set up FCM for true push notifications
+            const token = await setupFCM();
+            if (token) {
+                showToast('✅ Push notifications enabled!', "You'll get alerts even when the app is closed");
             } else {
-                showToast('🔔 In-app alerts on!', 'Browser notifications blocked — alerts will show here instead');
+                showToast('✅ Notifications enabled!', "You'll get alerts when players join your time slot");
             }
-        } catch(e) {
-            enable();
-            showToast('🔔 Alerts on!', 'Alerts will appear here in the app');
+        } else {
+            showToast('🔔 In-app alerts on!', 'Browser notifications blocked — alerts will show here instead');
         }
     };
 
