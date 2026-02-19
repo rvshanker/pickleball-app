@@ -1,12 +1,13 @@
-const functions = require('firebase-functions/v2');
+const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
-exports.sendPickleNotification = functions.firestore.onDocumentCreated(
-  'notification-queue/{docId}',
-  async (event) => {
-    const data = event.data.data();
-    const { title, body, courtId, senderDeviceId } = data;
+// Using v1 Firestore trigger - simpler, no Eventarc needed
+exports.sendPickleNotification = functions
+  .runWith({ runtime: 'nodejs20' })
+  .firestore.document('notification-queue/{docId}')
+  .onCreate(async (snap) => {
+    const { title, body, courtId, senderDeviceId } = snap.data();
 
     try {
       const tokensSnap = await admin.firestore()
@@ -28,7 +29,6 @@ exports.sendPickleNotification = functions.firestore.onDocumentCreated(
             notification: {
               title,
               body,
-              icon: 'https://rvshanker.github.io/pickleball-app/dp/favicon.ico',
               requireInteraction: true,
               tag: 'picklecourt-' + Date.now()
             },
@@ -43,6 +43,5 @@ exports.sendPickleNotification = functions.firestore.onDocumentCreated(
       console.error('Send failed:', e);
     }
 
-    await event.data.ref.delete();
-  }
-);
+    await snap.ref.delete();
+  });
