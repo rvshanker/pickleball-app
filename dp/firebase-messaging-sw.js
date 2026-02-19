@@ -1,6 +1,4 @@
 // firebase-messaging-sw.js
-// Place this file in the SAME folder as index.html on your GitHub repo
-
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
@@ -15,31 +13,55 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Handle background messages (app closed or tab not focused)
+// Handle background messages
 messaging.onBackgroundMessage(payload => {
-    const { title, body } = payload.notification || payload.data || {};
-    if (!title) return;
+    console.log('[SW] Background message received:', payload);
+    const title = payload.notification?.title || payload.data?.title || 'PickleCourt';
+    const body = payload.notification?.body || payload.data?.body || '';
     self.registration.showNotification(title, {
-        body: body || '',
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
+        body,
+        icon: 'https://pickleconnect.live/dp/favicon.ico',
         tag: 'picklecourt-' + Date.now(),
         requireInteraction: true,
+        vibrate: [200, 100, 200],
         data: payload.data || {}
     });
 });
 
-// Handle notification click — focus the app tab or open it
+// Handle ALL push events directly - fires even when tab is focused
+self.addEventListener('push', e => {
+    console.log('[SW] Push event received');
+    let title = 'PickleCourt Alert';
+    let body = '';
+    try {
+        const data = e.data.json();
+        title = data.notification?.title || data.data?.title || title;
+        body = data.notification?.body || data.data?.body || body;
+    } catch(err) {
+        body = e.data ? e.data.text() : '';
+    }
+    e.waitUntil(
+        self.registration.showNotification(title, {
+            body,
+            icon: 'https://pickleconnect.live/dp/favicon.ico',
+            tag: 'picklecourt-' + Date.now(),
+            requireInteraction: true,
+            vibrate: [200, 100, 200]
+        })
+    );
+});
+
+// Handle notification click
 self.addEventListener('notificationclick', e => {
     e.notification.close();
     e.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
             for (const client of list) {
-                if (client.url.includes(self.location.origin) && 'focus' in client) {
+                if (client.url.includes('pickleconnect.live') && 'focus' in client) {
                     return client.focus();
                 }
             }
-            if (clients.openWindow) return clients.openWindow('/');
+            if (clients.openWindow) return clients.openWindow('https://pickleconnect.live/dp/index2.html');
         })
     );
 });
