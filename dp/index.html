@@ -164,11 +164,11 @@ const FUNNY_5PLUS = [
 ];
 
 const DURATION_OPTIONS = [
-    { label: '1 hr',   value: 60  },
-    { label: '1.5 hr', value: 90  },
-    { label: '2 hr',   value: 120 },
-    { label: '3 hr',   value: 180 },
-    { label: 'All day',value: 480 },
+    { label: '1 hr',    value: 60,  funny: null },
+    { label: '2 hr',    value: 120, funny: null },
+    { label: '3 hr',    value: 180, funny: null },
+    { label: '4 hr',    value: 240, funny: '💧 4 hours?! Stay hydrated — bring a cooler, not just a bottle!' },
+    { label: 'All Day', value: 480, funny: '🌮 All day?! Order food, tell your family you love them, and say goodbye to your legs!' },
 ];
 
 function buildTimeOptions() {
@@ -278,6 +278,8 @@ function CourtStatus() {
     const [newTotal,     setNewTotal]     = useState('');
     const [guestCount,   setGuestCount]   = useState(0);
     const [funnyMsg,     setFunnyMsg]     = useState('');
+    const [durationFunny,setDurationFunny]= useState('');
+    const [guestFunny,   setGuestFunny]   = useState('');
 
     // Device identity
     const [deviceId] = useState(() => {
@@ -304,6 +306,28 @@ function CourtStatus() {
         }
     };
 
+    const handleDurationChange = (val) => {
+        setDuration(val);
+        const opt = DURATION_OPTIONS.find(d => d.value === val);
+        setDurationFunny(opt?.funny || '');
+    };
+
+    const handleGuestChange = (delta) => {
+        const next = Math.max(0, Math.min(20, guestCount + delta));
+        setGuestCount(next);
+        if (next > 4) {
+            const msgs = [
+                `${next} guests?! Having a party? 🎉 Better bring extra balls!`,
+                `Wow, ${next} guests! The courts are nervous 😅 Pack extra pickleballs!`,
+                `${next} people?! This is a TAKEOVER 🏟️ Reserve the whole park!`,
+                `Party of ${next+1}! 🥳 Someone better bring snacks for the whole crew!`,
+            ];
+            setGuestFunny(msgs[Math.floor(Math.random() * msgs.length)]);
+        } else {
+            setGuestFunny('');
+        }
+    };
+
     // Court status listener
     useEffect(() => {
         if (!fbOk || !db) return;
@@ -316,7 +340,8 @@ function CourtStatus() {
         });
     }, []);
 
-    // Check-ins listener + auto-checkout of expired sessions
+    // Check-ins listener — READ ONLY. No writes inside snapshot to avoid infinite loop.
+    const checkInsRef = useRef([]);
     useEffect(() => {
         if (!fbOk || !db) return;
         const unsub = db.collection('check-ins')
@@ -324,34 +349,38 @@ function CourtStatus() {
             .onSnapshot(snap => {
                 const now = Date.now();
                 const cutoff = now - 8 * 3600000;
-
-                // Auto-checkout anyone whose play duration has expired
-                snap.docs.forEach(d => {
-                    const c = d.data();
-                    if (c.status === 'now' && c.duration) {
-                        const expiry = c.timestamp + c.duration * 60000;
-                        if (now > expiry) {
-                            d.ref.delete().catch(() => {});
-                        }
-                    }
-                    // Also auto-promote 'later' players whose arrival time has passed
-                    if (c.status === 'later' && c.arrivalTime && now >= c.arrivalTime) {
-                        d.ref.update({ status: 'now', timestamp: now }).catch(() => {});
-                    }
-                });
-
                 const list = snap.docs
                     .map(d => ({ id: d.id, ...d.data() }))
-                    .filter(c => {
-                        if (c.status === 'now' && c.duration) {
-                            return now < c.timestamp + c.duration * 60000;
-                        }
-                        return c.timestamp > cutoff;
-                    })
+                    .filter(c => c.timestamp > cutoff)
                     .sort((a,b) => (a.arrivalTime||a.timestamp) - (b.arrivalTime||b.timestamp));
+                checkInsRef.current = list;
                 setCheckIns(list);
             }, err => console.warn('Snapshot:', err.message));
         return () => unsub();
+    }, []);
+
+    // Separate interval for auto-checkout & auto-promote — runs every 60s, never inside snapshot
+    useEffect(() => {
+        if (!fbOk || !db) return;
+        const tick = async () => {
+            const now = Date.now();
+            const list = checkInsRef.current;
+            for (const c of list) {
+                // Auto-checkout expired duration
+                if (c.status === 'now' && c.duration) {
+                    if (now > c.timestamp + c.duration * 60000) {
+                        await db.collection('check-ins').doc(c.id).delete().catch(() => {});
+                    }
+                }
+                // Auto-promote 'later' → 'now' when arrival time passes
+                if (c.status === 'later' && c.arrivalTime && now >= c.arrivalTime) {
+                    await db.collection('check-ins').doc(c.id).update({ status: 'now', timestamp: now }).catch(() => {});
+                }
+            }
+        };
+        tick(); // run once immediately
+        const t = setInterval(tick, 60000); // then every minute
+        return () => clearInterval(t);
     }, []);
 
     // Weather: NWS with Open-Meteo fallback, refresh hourly
@@ -429,7 +458,7 @@ function CourtStatus() {
             });
             localStorage.setItem('pickleCourtUserName', userName);
             localStorage.setItem('pickleCourtRating', userRating);
-            setShowForm(false); setStep('form'); setArrivalTime(''); setGuestCount(0); setFunnyMsg('');
+            setShowForm(false); setStep('form'); setArrivalTime(''); setGuestCount(0); setFunnyMsg(''); setDurationFunny(''); setGuestFunny('');
         } catch(e) { console.error('Check-in:', e); alert('Check-in failed. Try again.'); }
     };
 
@@ -459,7 +488,7 @@ function CourtStatus() {
 
     const crowdColor = courtData.crowdLevel === 'low' ? 'green' : courtData.crowdLevel === 'medium' ? 'yellow' : 'red';
     const crowdEmoji = courtData.crowdLevel === 'low' ? '🟢' : courtData.crowdLevel === 'medium' ? '🟡' : '🔴';
-    const crowdNum   = courtData.crowdLevel === 'low' ? '0–10' : courtData.crowdLevel === 'medium' ? '10–16' : '16+';
+    const crowdNum   = courtData.crowdLevel === 'low' ? '0–12' : courtData.crowdLevel === 'medium' ? '12–24' : '24+';
 
     const condMap = { closed:{e:'🚫',l:'Closed',c:'red'}, wet:{e:'💧',l:'Wet',c:'yellow'}, hot:{e:'🥵',l:'Hot',c:'yellow'}, windy:{e:'🌬️',l:'Windy',c:'yellow'} };
 
@@ -583,22 +612,32 @@ function CourtStatus() {
                                     )}
 
                                     {/* Guests */}
-                                    <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12,background:'white',border:'2px solid #e2e8f0',borderRadius:9,padding:'8px 13px'}}>
+                                    <div style={{display:'flex',alignItems:'center',gap:10,marginBottom: guestFunny ? 6 : 12,background:'white',border:'2px solid #e2e8f0',borderRadius:9,padding:'8px 13px'}}>
                                         <span style={{fontSize:13,fontWeight:600,color:'#64748b',flex:1}}>Guests (+ you)</span>
-                                        <button type="button" onClick={()=>setGuestCount(Math.max(0,guestCount-1))} style={{width:28,height:28,borderRadius:'50%',border:'1px solid #e2e8f0',background:'#f8fafc',cursor:'pointer',fontWeight:700,fontSize:16,color:'#64748b',lineHeight:1}}>−</button>
+                                        <button type="button" onClick={()=>handleGuestChange(-1)} style={{width:28,height:28,borderRadius:'50%',border:'1px solid #e2e8f0',background:'#f8fafc',cursor:'pointer',fontWeight:700,fontSize:16,color:'#64748b',lineHeight:1}}>−</button>
                                         <span style={{fontSize:16,fontWeight:800,color:'#0f172a',minWidth:20,textAlign:'center'}}>{guestCount}</span>
-                                        <button type="button" onClick={()=>setGuestCount(Math.min(20,guestCount+1))} style={{width:28,height:28,borderRadius:'50%',border:'1px solid #10b981',background:'#f0fdf4',cursor:'pointer',fontWeight:700,fontSize:16,color:'#059669',lineHeight:1}}>+</button>
+                                        <button type="button" onClick={()=>handleGuestChange(1)} style={{width:28,height:28,borderRadius:'50%',border:'1px solid #10b981',background:'#f0fdf4',cursor:'pointer',fontWeight:700,fontSize:16,color:'#059669',lineHeight:1}}>+</button>
                                     </div>
+                                    {guestFunny && (
+                                        <div className="funny-msg" style={{background:'linear-gradient(135deg,#ede9fe,#ddd6fe)',border:'2px solid #a78bfa',borderRadius:10,padding:'9px 12px',marginBottom:12,fontSize:12,fontWeight:600,color:'#5b21b6',lineHeight:1.5}}>
+                                            {guestFunny}
+                                        </div>
+                                    )}
 
                                     {/* Duration picker */}
-                                    <div style={{marginBottom:13}}>
+                                    <div style={{marginBottom: durationFunny ? 6 : 13}}>
                                         <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.4px'}}>How long will you play?</div>
                                         <div style={{display:'flex',gap:6}}>
                                             {DURATION_OPTIONS.map(d=>(
-                                                <button key={d.value} type="button" className={`dur-btn${duration===d.value?' active':''}`} onClick={()=>setDuration(d.value)}>{d.label}</button>
+                                                <button key={d.value} type="button" className={`dur-btn${duration===d.value?' active':''}`} onClick={()=>handleDurationChange(d.value)}>{d.label}</button>
                                             ))}
                                         </div>
                                     </div>
+                                    {durationFunny && (
+                                        <div className="funny-msg" style={{background:'linear-gradient(135deg,#fff7ed,#ffedd5)',border:'2px solid #fb923c',borderRadius:10,padding:'9px 12px',marginBottom:13,fontSize:12,fontWeight:600,color:'#9a3412',lineHeight:1.5}}>
+                                            {durationFunny}
+                                        </div>
+                                    )}
 
                                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
                                         <button className="btn-g" onClick={()=>startCheckIn('now')} style={{padding:11}}>🎾 Coming Now</button>
@@ -606,14 +645,14 @@ function CourtStatus() {
                                     </div>
                                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                                         <button className="btn-out" onClick={()=>startCheckIn('watching')} style={{padding:9,fontSize:13}}>👀 Watching</button>
-                                        <button onClick={()=>{setShowForm(false);setStep('form');setFunnyMsg('');}} style={{background:'none',border:'1px solid #e2e8f0',borderRadius:8,padding:9,cursor:'pointer',fontFamily:'Outfit,sans-serif',fontSize:13,color:'#94a3b8'}}>Cancel</button>
+                                        <button onClick={()=>{setShowForm(false);setStep('form');setFunnyMsg('');setDurationFunny('');setGuestFunny('');}} style={{background:'none',border:'1px solid #e2e8f0',borderRadius:8,padding:9,cursor:'pointer',fontFamily:'Outfit,sans-serif',fontSize:13,color:'#94a3b8'}}>Cancel</button>
                                     </div>
                                 </div>
                             ) : (
                                 // Step 2: time picker for "later"
                                 <div style={{background:'#f8fafc',borderRadius:11,padding:13}}>
                                     <div style={{fontSize:13,fontWeight:700,color:'#0f172a',marginBottom:10}}>⏰ What time will you arrive?</div>
-                                    <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12,flexWrap:'wrap'}}>
+                                    <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10,flexWrap:'wrap'}}>
                                         <select className="field" value={arrivalTime} onChange={e=>setArrivalTime(e.target.value)} style={{flex:'0 0 auto',width:'auto',minWidth:130}}>
                                             <option value="">Pick time…</option>
                                             {timeOpts.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
@@ -628,6 +667,11 @@ function CourtStatus() {
                                             ) : null;
                                         })()}
                                     </div>
+                                    {arrivalTime && new Date(parseInt(arrivalTime)).getHours() >= 19 && (
+                                        <div className="funny-msg" style={{background:'linear-gradient(135deg,#1e1b4b,#312e81)',border:'2px solid #6366f1',borderRadius:10,padding:'9px 12px',marginBottom:10,fontSize:12,fontWeight:600,color:'#c7d2fe',lineHeight:1.5}}>
+                                            🌙 After 7 PM? Come with extra lights — and maybe a headlamp! Don't blame us if you can't find the ball 😂
+                                        </div>
+                                    )}
                                     <div style={{display:'flex',gap:8,justifyContent:'space-between'}}>
                                         <button className="btn-out" onClick={()=>setStep('form')} style={{padding:'9px 18px'}}>← Back</button>
                                         <button className="btn-g" disabled={!arrivalTime} onClick={()=>submitCheckIn('later',parseInt(arrivalTime))} style={{padding:'10px 22px',opacity:arrivalTime?1:.45}}>Confirm ✓</button>
@@ -685,9 +729,9 @@ function CourtStatus() {
                             <div style={{marginBottom:13}}>
                                 <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px'}}>Crowd Level (people)</div>
                                 <div className="toggle-group">
-                                    <button className={`toggle-btn${courtData.crowdLevel==='low'?' active':''}`} onClick={()=>updateCourt('crowdLevel','low')}>🟢 0–10</button>
-                                    <button className={`toggle-btn${courtData.crowdLevel==='medium'?' active':''}`} onClick={()=>updateCourt('crowdLevel','medium')}>🟡 10–16</button>
-                                    <button className={`toggle-btn${courtData.crowdLevel==='high'?' active':''}`} onClick={()=>updateCourt('crowdLevel','high')}>🔴 16+</button>
+                                    <button className={`toggle-btn${courtData.crowdLevel==='low'?' active':''}`} onClick={()=>updateCourt('crowdLevel','low')}>🟢 0–12</button>
+                                    <button className={`toggle-btn${courtData.crowdLevel==='medium'?' active':''}`} onClick={()=>updateCourt('crowdLevel','medium')}>🟡 12–24</button>
+                                    <button className={`toggle-btn${courtData.crowdLevel==='high'?' active':''}`} onClick={()=>updateCourt('crowdLevel','high')}>🔴 24+</button>
                                 </div>
                             </div>
 
