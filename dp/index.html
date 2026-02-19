@@ -291,7 +291,7 @@ function buildTimeOptions() {
     const tmr = new Date(tomorrow);
     while (tmr <= tomorrowEnd) {
         opts.push({
-            label: 'Tomorrow ' + tmr.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+            label: tmr.toLocaleDateString([], { weekday: 'short' }) + ' ' + tmr.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
             value: tmr.getTime()
         });
         tmr.setHours(tmr.getHours() + 1);
