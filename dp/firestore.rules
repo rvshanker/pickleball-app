@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // --- Existing tournament rules (unchanged) ---
+    match /tournaments/{tournamentId} {
+      allow read: if resource.data.isPublic == true
+                  || (request.auth != null && request.auth.uid == resource.data.createdBy);
+      allow create: if request.auth != null && request.auth.uid == resource.data.createdBy;
+      allow update: if (request.auth != null && request.auth.uid == resource.data.createdBy)
+                    || (resource.data.isPublic == true
+                        && resource.data.publicMode == 'edit'
+                        && resource.data.scoresFinalized != true
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scores']));
+      allow delete: if request.auth != null && request.auth.uid == resource.data.createdBy;
+    }
+    // --- Live Court Status (picklecourt-connect.html) ---
+    match /court-status/{courtId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /check-ins/{docId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['userName', 'createdAt'])
+                    && request.resource.data.userName is string
+                    && request.resource.data.userName.size() > 0
+                    && request.resource.data.userName.size() <= 50;
+      allow delete: if true;
+      allow update: if false;
+    }
+    match /feedback/{doc} { allow create: if true; }
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // --- FCM Push Notifications ---
+    match /fcm-tokens/{deviceId} {
+      allow read, write: if true;  // device saves its own token
+    }
+    match /notification-queue/{docId} {
+      allow read, write: if true;  // app writes here, Cloud Function reads & deletes
+    }
+  }
+}
