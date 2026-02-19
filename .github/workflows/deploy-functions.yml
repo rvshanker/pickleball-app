@@ -23,9 +23,15 @@ jobs:
       - name: Install function dependencies
         run: cd functions && npm install
 
+      - name: Write service account file
+        env:
+          SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: echo "$SERVICE_ACCOUNT" > service-account.json
+
       - name: Deploy to Firebase Functions
-        run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > service-account.json
-          export GOOGLE_APPLICATION_CREDENTIALS=$PWD/service-account.json
-          firebase deploy --only functions --project pickleball-app-1bba7 --force
-          rm service-account.json
+        run: firebase deploy --only functions --project pickleball-app-1bba7 --force
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/service-account.json
+
+      - name: Cleanup
+        run: rm service-account.json
