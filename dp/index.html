@@ -232,9 +232,12 @@ function PlayTimer({ checkInTime, durationMins }) {
 }
 
 // ── PlayerRow ─────────────────────────────────────────────────────────
-function PlayerRow({ p }) {
+function PlayerRow({ p, isNow }) {
     const ri = ratingInfo(p.rating);
-    const arrLabel = p.status === 'later' && p.arrivalTime
+    const nowMs = Date.now();
+    // Treat as "now" if status is 'now' OR if 'later' but arrival time has passed
+    const effectivelyNow = isNow || p.status === 'now' || (p.status === 'later' && p.arrivalTime && nowMs >= p.arrivalTime);
+    const arrLabel = p.status === 'later' && p.arrivalTime && !effectivelyNow
         ? new Date(p.arrivalTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}) : null;
     const guests = p.guests || 0;
     return (
@@ -247,8 +250,8 @@ function PlayerRow({ p }) {
                     {ri && <span className={`rating-badge ${ri.cls}`}>{ri.label}</span>}
                 </div>
                 <div style={{fontSize:12,color:'#64748b',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-                    <span>{p.status==='now' ? '🎾 Playing' : p.status==='later' ? `⏰ Arriving ${arrLabel||'later'}` : '👀 Watching'}</span>
-                    {p.status === 'now' && p.duration && (
+                    <span>{effectivelyNow ? '🎾 Playing' : arrLabel ? `⏰ Arriving ${arrLabel}` : '👀 Watching'}</span>
+                    {effectivelyNow && p.duration && (
                         <PlayTimer checkInTime={p.timestamp} durationMins={p.duration}/>
                     )}
                 </div>
@@ -267,8 +270,9 @@ function CourtStatus() {
     const [userName,     setUserName]     = useState('');
     const [userRating,   setUserRating]   = useState('');
     const [showForm,     setShowForm]     = useState(false);
-    const [step,         setStep]         = useState('form'); // 'form' | 'time'
+    const [step,         setStep]         = useState('form'); // kept for compat but unused now
     const [arrivalTime,  setArrivalTime]  = useState('');
+    const [showLaterTime,setShowLaterTime]= useState(false);
     const [duration,     setDuration]     = useState(120);   // default 2 hours
     const [weather,      setWeather]      = useState(null);
     const [forecast,     setForecast]     = useState([]);
@@ -281,7 +285,14 @@ function CourtStatus() {
     const [durationFunny,setDurationFunny]= useState('');
     const [guestFunny,   setGuestFunny]   = useState('');
 
-    // Device identity
+    // Ticker: re-render every minute so auto-promote updates the UI without user interaction
+    const [tick, setTick] = useState(0);
+    useEffect(() => {
+        const t = setInterval(() => setTick(n => n + 1), 60000);
+        return () => clearInterval(t);
+    }, []);
+
+    // Device identity (no login needed)
     const [deviceId] = useState(() => {
         let id = localStorage.getItem('pickleDeviceId');
         if (!id) { id = 'dev_' + Math.random().toString(36).slice(2,11); localStorage.setItem('pickleDeviceId', id); }
@@ -438,7 +449,7 @@ function CourtStatus() {
 
     const startCheckIn = (status) => {
         if (!userName.trim()) { alert('Please enter your name first'); return; }
-        if (status === 'later') { setStep('time'); }
+        if (status === 'later') { setShowLaterTime(true); }
         else submitCheckIn(status, null);
     };
 
@@ -451,14 +462,14 @@ function CourtStatus() {
                 rating: userRating || null,
                 status,
                 guests: guestCount,
-                duration: status === 'now' ? duration : null,
+                duration: duration,
                 arrivalTime: atTime || Date.now(),
                 timestamp: Date.now(),
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             localStorage.setItem('pickleCourtUserName', userName);
             localStorage.setItem('pickleCourtRating', userRating);
-            setShowForm(false); setStep('form'); setArrivalTime(''); setGuestCount(0); setFunnyMsg(''); setDurationFunny(''); setGuestFunny('');
+            setShowForm(false); setStep('form'); setArrivalTime(''); setShowLaterTime(false); setGuestCount(0); setFunnyMsg(''); setDurationFunny(''); setGuestFunny('');
         } catch(e) { console.error('Check-in:', e); alert('Check-in failed. Try again.'); }
     };
 
@@ -477,8 +488,10 @@ function CourtStatus() {
     );
 
     const myCheckIn    = checkIns.find(c => c.deviceId === deviceId);
-    const nowPlayers   = checkIns.filter(c => c.status === 'now');
-    const laterPlayers = checkIns.filter(c => c.status === 'later');
+    const nowMs = Date.now();
+    // Client-side auto-promote: treat 'later' players whose arrivalTime has passed as 'now'
+    const nowPlayers   = checkIns.filter(c => c.status === 'now' || (c.status === 'later' && c.arrivalTime && nowMs >= c.arrivalTime));
+    const laterPlayers = checkIns.filter(c => c.status === 'later' && (!c.arrivalTime || nowMs < c.arrivalTime));
     const watchers     = checkIns.filter(c => c.status === 'watching');
     const nowTotal     = headcount(nowPlayers);
     const laterTotal   = headcount(laterPlayers);
@@ -585,7 +598,9 @@ function CourtStatus() {
                                                 {ratingInfo(myCheckIn.rating) && <span className={`rating-badge ${ratingInfo(myCheckIn.rating).cls}`} style={{marginLeft:6}}>{ratingInfo(myCheckIn.rating).label}</span>}
                                             </div>
                                             <div style={{fontSize:12,color:'#047857',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-                                                {myCheckIn.status==='now' ? '🎾 Playing' : `⏰ Arriving ${new Date(myCheckIn.arrivalTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}`}
+                                                {(myCheckIn.status==='now' || (myCheckIn.status==='later' && myCheckIn.arrivalTime && Date.now() >= myCheckIn.arrivalTime))
+                                                    ? '🎾 Playing'
+                                                    : `⏰ Arriving ${new Date(myCheckIn.arrivalTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}`}
                                                 {myCheckIn.status==='now' && myCheckIn.duration && (
                                                     <PlayTimer checkInTime={myCheckIn.timestamp} durationMins={myCheckIn.duration}/>
                                                 )}
@@ -596,7 +611,8 @@ function CourtStatus() {
                                 </div>
                             ) : !showForm ? (
                                 <button className="btn-g" onClick={()=>setShowForm(true)} style={{width:'100%',padding:13}}>📍 Check In</button>
-                            ) : step==='form' ? (
+                            ) : (
+                                // Single unified form — no step switching
                                 <div style={{background:'#f8fafc',borderRadius:11,padding:13}}>
                                     <input className="field" value={userName} onChange={e=>setUserName(e.target.value)} placeholder="Your name 👋" style={{marginBottom:9}}/>
 
@@ -624,57 +640,65 @@ function CourtStatus() {
                                         </div>
                                     )}
 
-                                    {/* Duration picker */}
+                                    {/* Duration picker — always shown */}
                                     <div style={{marginBottom: durationFunny ? 6 : 13}}>
-                                        <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.4px'}}>How long will you play?</div>
-                                        <div style={{display:'flex',gap:6}}>
-                                            {DURATION_OPTIONS.map(d=>(
-                                                <button key={d.value} type="button" className={`dur-btn${duration===d.value?' active':''}`} onClick={()=>handleDurationChange(d.value)}>{d.label}</button>
-                                            ))}
+                                            <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.4px'}}>How long will you play?</div>
+                                            <div style={{display:'flex',gap:6}}>
+                                                {DURATION_OPTIONS.map(d=>(
+                                                    <button key={d.value} type="button" className={`dur-btn${duration===d.value?' active':''}`} onClick={()=>handleDurationChange(d.value)}>{d.label}</button>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                    {durationFunny && (
-                                        <div className="funny-msg" style={{background:'linear-gradient(135deg,#fff7ed,#ffedd5)',border:'2px solid #fb923c',borderRadius:10,padding:'9px 12px',marginBottom:13,fontSize:12,fontWeight:600,color:'#9a3412',lineHeight:1.5}}>
-                                            {durationFunny}
+                                        {durationFunny && (
+                                            <div className="funny-msg" style={{background:'linear-gradient(135deg,#fff7ed,#ffedd5)',border:'2px solid #fb923c',borderRadius:10,padding:'9px 12px',marginBottom:13,fontSize:12,fontWeight:600,color:'#9a3412',lineHeight:1.5}}>
+                                                {durationFunny}
+                                            </div>
+                                        )}
+
+                                    {/* Arrival time — shown inline when Coming Later active */}
+                                    {showLaterTime && (
+                                        <div style={{marginBottom:10}}>
+                                            <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.4px'}}>What time will you arrive?</div>
+                                            <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+                                                <select className="field" value={arrivalTime} onChange={e=>setArrivalTime(e.target.value)} style={{flex:'0 0 auto',width:'auto',minWidth:140}}>
+                                                    <option value="">Pick time…</option>
+                                                    {timeOpts.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+                                                </select>
+                                                {arrivalTime && (() => {
+                                                    const hr = new Date(parseInt(arrivalTime)).getHours();
+                                                    const fx = forecast.find(h => h.dt.getHours() === hr);
+                                                    return fx ? (
+                                                        <div style={{display:'inline-flex',alignItems:'center',gap:5,background:'rgba(59,130,246,.08)',border:'1px solid rgba(59,130,246,.2)',borderRadius:20,padding:'4px 10px',fontSize:11,fontWeight:700,color:'#1e40af',whiteSpace:'nowrap'}}>
+                                                            {wIcon(fx.temp,fx.wind)} {fx.temp}°F · 💨{fx.wind}mph
+                                                        </div>
+                                                    ) : null;
+                                                })()}
+                                            </div>
+                                            {arrivalTime && new Date(parseInt(arrivalTime)).getHours() >= 19 && (
+                                                <div style={{background:'linear-gradient(135deg,#1e1b4b,#312e81)',border:'2px solid #6366f1',borderRadius:9,padding:'8px 11px',marginTop:8,fontSize:12,fontWeight:600,color:'#c7d2fe',lineHeight:1.5}}>
+                                                    🌙 After 7 PM? Come with extra lights — and maybe a headlamp! 😂
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
+                                    {/* Action buttons */}
                                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
-                                        <button className="btn-g" onClick={()=>startCheckIn('now')} style={{padding:11}}>🎾 Coming Now</button>
-                                        <button className="btn-out" onClick={()=>startCheckIn('later')} style={{padding:9}}>⏰ Coming Later</button>
+                                        {!showLaterTime ? (
+                                            <button className="btn-g" onClick={()=>startCheckIn('now')} style={{padding:11}}>🎾 Coming Now</button>
+                                        ) : (
+                                            <button className="btn-g" disabled={!arrivalTime} onClick={()=>submitCheckIn('later',parseInt(arrivalTime))} style={{padding:11,opacity:arrivalTime?1:.45}}>
+                                                ✓ {arrivalTime ? new Date(parseInt(arrivalTime)).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}) : 'Confirm'}
+                                            </button>
+                                        )}
+                                        <button onClick={()=>{setShowLaterTime(!showLaterTime);setArrivalTime('');}} style={{padding:9,borderRadius:10,border:'2px solid #059669',background:showLaterTime?'#059669':'transparent',color:showLaterTime?'white':'#059669',fontFamily:'Outfit,sans-serif',fontWeight:600,fontSize:14,cursor:'pointer',transition:'all .15s'}}>
+                                            ⏰ {showLaterTime ? 'Coming Now ←' : 'Coming Later'}
+                                        </button>
                                     </div>
+
                                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                                         <button className="btn-out" onClick={()=>startCheckIn('watching')} style={{padding:9,fontSize:13}}>👀 Watching</button>
-                                        <button onClick={()=>{setShowForm(false);setStep('form');setFunnyMsg('');setDurationFunny('');setGuestFunny('');}} style={{background:'none',border:'1px solid #e2e8f0',borderRadius:8,padding:9,cursor:'pointer',fontFamily:'Outfit,sans-serif',fontSize:13,color:'#94a3b8'}}>Cancel</button>
-                                    </div>
-                                </div>
-                            ) : (
-                                // Step 2: time picker for "later"
-                                <div style={{background:'#f8fafc',borderRadius:11,padding:13}}>
-                                    <div style={{fontSize:13,fontWeight:700,color:'#0f172a',marginBottom:10}}>⏰ What time will you arrive?</div>
-                                    <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10,flexWrap:'wrap'}}>
-                                        <select className="field" value={arrivalTime} onChange={e=>setArrivalTime(e.target.value)} style={{flex:'0 0 auto',width:'auto',minWidth:130}}>
-                                            <option value="">Pick time…</option>
-                                            {timeOpts.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
-                                        </select>
-                                        {arrivalTime && (() => {
-                                            const hr = new Date(parseInt(arrivalTime)).getHours();
-                                            const fx = forecast.find(h => h.dt.getHours() === hr);
-                                            return fx ? (
-                                                <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'rgba(59,130,246,.08)',border:'1px solid rgba(59,130,246,.2)',borderRadius:20,padding:'5px 12px',fontSize:12,fontWeight:700,color:'#1e40af',whiteSpace:'nowrap'}}>
-                                                    {wIcon(fx.temp,fx.wind)} {fx.temp}°F · 💨{fx.wind}mph
-                                                </div>
-                                            ) : null;
-                                        })()}
-                                    </div>
-                                    {arrivalTime && new Date(parseInt(arrivalTime)).getHours() >= 19 && (
-                                        <div className="funny-msg" style={{background:'linear-gradient(135deg,#1e1b4b,#312e81)',border:'2px solid #6366f1',borderRadius:10,padding:'9px 12px',marginBottom:10,fontSize:12,fontWeight:600,color:'#c7d2fe',lineHeight:1.5}}>
-                                            🌙 After 7 PM? Come with extra lights — and maybe a headlamp! Don't blame us if you can't find the ball 😂
-                                        </div>
-                                    )}
-                                    <div style={{display:'flex',gap:8,justifyContent:'space-between'}}>
-                                        <button className="btn-out" onClick={()=>setStep('form')} style={{padding:'9px 18px'}}>← Back</button>
-                                        <button className="btn-g" disabled={!arrivalTime} onClick={()=>submitCheckIn('later',parseInt(arrivalTime))} style={{padding:'10px 22px',opacity:arrivalTime?1:.45}}>Confirm ✓</button>
+                                        <button onClick={()=>{setShowForm(false);setShowLaterTime(false);setArrivalTime('');setFunnyMsg('');setDurationFunny('');setGuestFunny('');}} style={{background:'none',border:'1px solid #e2e8f0',borderRadius:8,padding:9,cursor:'pointer',fontFamily:'Outfit,sans-serif',fontSize:13,color:'#94a3b8'}}>Cancel</button>
                                     </div>
                                 </div>
                             )}
@@ -683,7 +707,7 @@ function CourtStatus() {
                         {nowPlayers.length > 0 && (
                             <div className="card">
                                 <div className="fd" style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:11}}>🎾 PLAYING NOW · {nowTotal}</div>
-                                {nowPlayers.map(p=><PlayerRow key={p.id} p={p}/>)}
+                                {nowPlayers.map(p=><PlayerRow key={p.id} p={p} isNow={true}/>)}
                             </div>
                         )}
                         {nowPlayers.length===0 && <div style={{textAlign:'center',padding:'28px 0',color:'#94a3b8',fontSize:13}}>No one checked in yet — be the first! 🥒</div>}
