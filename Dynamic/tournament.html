@@ -1295,12 +1295,20 @@ function LandingView({onSimple,onAdvanced,user,onFeedback}){
                     </div>
                 </div>
             </div>
-            <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:24,padding:'16px',fontFamily:'Outfit,sans-serif',fontSize:13,color:'#94a3b8',flexWrap:'wrap'}}>
-                <span>© 2025 PickleConnect. All rights reserved.</span>
-                <span>·</span>
-                <span>Built for pickleball players</span>
-                <span>·</span>
-                <button onClick={onFeedback} style={{background:'none',border:'none',color:'#059669',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:700,cursor:'pointer'}}>💬 Feedback</button>
+            </div>
+            {/* Courts Banner */}
+            <div style={{background:'linear-gradient(90deg,#0f172a,#1e3a2f)',padding:'12px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}>
+                <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#6ee7b7'}}>📍 Check court availability &amp; see who's playing near you</div>
+                <a href="index.html" style={{background:'#059669',color:'white',padding:'7px 16px',borderRadius:8,fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap',flexShrink:0}}>Find Courts →</a>
+            </div>
+            <div style={{textAlign:'center',padding:'18px 16px 24px',fontSize:12,color:'#94a3b8',borderTop:'1px solid #e2e8f0',background:'white'}}>
+                <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+                    <span>© 2025 PickleConnect. All rights reserved.</span>
+                    <span>·</span>
+                    <span>Built for pickleball players</span>
+                    <span>·</span>
+                    <button onClick={onFeedback} style={{background:'none',border:'none',color:'#059669',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',padding:0}}>💬 Feedback</button>
+                </div>
             </div>
         </div>
     );
@@ -1423,8 +1431,13 @@ function SimpleView({onBack,onLogin,onFeedback}){
                     <span style={{color:'white'}}>PICKLE</span><span style={{color:'#34d399'}}>CONNECT</span>
                 </div>
                 <button className="back-home-btn" onClick={()=>window.location.href='index.html'}>🎾 Courts</button>
-                <button onClick={onFeedback} style={{background:'rgba(255,255,255,.1)',color:'#94a3b8',border:'none',borderRadius:8,padding:'8px 13px',fontFamily:'Outfit,sans-serif',fontSize:14,cursor:'pointer',marginRight:6}}>💬</button>
                 <button onClick={onLogin} style={{background:'#059669',color:'white',border:'none',borderRadius:8,padding:'9px 16px',fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:600,cursor:'pointer'}}>Login</button>
+            </div>
+
+            {/* Courts Banner */}
+            <div style={{background:'linear-gradient(90deg,#0f172a,#1e3a2f)',padding:'10px 18px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}}>
+                <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#6ee7b7'}}>📍 Check court availability &amp; who's playing near you</div>
+                <a href="index.html" style={{background:'#059669',color:'white',padding:'6px 14px',borderRadius:8,fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap',flexShrink:0}}>Find Courts →</a>
             </div>
 
             <div style={{background:'#fffbeb',borderBottom:'1px solid #fcd34d',padding:'11px 18px',display:'flex',gap:10,alignItems:'flex-start'}}>
@@ -1498,6 +1511,17 @@ function SimpleView({onBack,onLogin,onFeedback}){
                         )}
                     </div>
                 )}
+            </div>
+
+            {/* Footer */}
+            <div style={{textAlign:'center',padding:'20px 16px 28px',fontSize:12,color:'#94a3b8',borderTop:'1px solid #e2e8f0',background:'white',marginTop:8}}>
+                <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+                    <span>© 2025 PickleConnect. All rights reserved.</span>
+                    <span>·</span>
+                    <span>Built for pickleball players</span>
+                    <span>·</span>
+                    <button onClick={onFeedback} style={{background:'none',border:'none',color:'#059669',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',padding:0}}>💬 Feedback</button>
+                </div>
             </div>
         </div>
     );
@@ -1681,7 +1705,6 @@ function FullApp({user,onLogout,onBack,onFeedback}){
                 </div>
             )}
             <button className="back-home-btn" onClick={()=>window.location.href='index.html'}>🎾 Courts</button>
-            <button onClick={onFeedback} style={{background:'rgba(255,255,255,.1)',color:'#94a3b8',border:'none',borderRadius:8,padding:'8px 13px',fontFamily:'Outfit,sans-serif',fontSize:14,cursor:'pointer',marginRight:6}}>💬</button>
             <button className="logout-btn-desktop" onClick={onLogout} style={{background:'rgba(255,255,255,.1)',color:'white',border:'none',borderRadius:8,padding:'9px 14px',fontFamily:'Outfit,sans-serif',fontSize:13,cursor:'pointer'}}>Logout</button>
         </div>
     );
@@ -1690,6 +1713,11 @@ function FullApp({user,onLogout,onBack,onFeedback}){
     if(view==='dashboard')return(
         <div style={{minHeight:'100vh',background:'#f1f5f9',display:'flex',flexDirection:'column'}}>
             <Nav showBack={false}/>
+            {/* Courts Banner */}
+            <div style={{background:'linear-gradient(90deg,#0f172a,#1e3a2f)',padding:'10px 18px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}}>
+                <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#6ee7b7'}}>📍 Check court availability &amp; who's playing near you</div>
+                <a href="index.html" style={{background:'#059669',color:'white',padding:'6px 14px',borderRadius:8,fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap',flexShrink:0}}>Find Courts →</a>
+            </div>
             <div className="pg">
                 <div style={{background:'linear-gradient(135deg,#0f172a,#1e3a2f)',borderRadius:16,padding:'22px 24px',marginBottom:16,display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12}}>
                     <div>
@@ -1725,6 +1753,16 @@ function FullApp({user,onLogout,onBack,onFeedback}){
                             ))}
                         </div>
                     )}
+                </div>
+            </div>
+            {/* Footer */}
+            <div style={{textAlign:'center',padding:'20px 16px 28px',fontSize:12,color:'#94a3b8',borderTop:'1px solid #e2e8f0',background:'white',marginTop:8}}>
+                <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+                    <span>© 2025 PickleConnect. All rights reserved.</span>
+                    <span>·</span>
+                    <span>Built for pickleball players</span>
+                    <span>·</span>
+                    <button onClick={onFeedback} style={{background:'none',border:'none',color:'#059669',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',padding:0}}>💬 Feedback</button>
                 </div>
             </div>
         </div>
