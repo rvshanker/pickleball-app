@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PickleConnect – Tournament Generator</title>
+    <style>
+        .back-home-btn{background:rgba(255,255,255,.1);color:#94a3b8;border:none;border-radius:8px;padding:8px 13px;font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:600;transition:all .15s;}
+        .back-home-btn:hover{background:rgba(255,255,255,.18);color:white;}
+    </style>
+    
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8VE2FTD711"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-8VE2FTD711');
+    </script>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Free pickleball tournament generator. Create round-robin brackets instantly for singles and doubles. Real-time scoring, leaderboards, and PDF export. No signup required for quick tournaments.">
+    <meta name="keywords" content="pickleball tournament generator, pickleball bracket, round robin pickleball, pickleball scheduler, pickleball tournament app, doubles tournament, singles tournament, pickleball scorecard, free tournament maker, pickleball organizer, pickleball match scheduler, rotating partners pickleball, pickleball round robin generator, tournament bracket generator, pickleball scoring app">
+    <meta name="author" content="PickleConnect">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://rvhanker.github.io/">
+    <meta property="og:title" content="PickleConnect – Free Pickleball Tournament Generator">
+    <meta property="og:description" content="Generate pickleball round-robin brackets instantly. Free tournament maker with real-time scoring, rotating partners, and PDF export.">
+    <meta property="og:image" content="https://rvhanker.github.io/og-image.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://rvhanker.github.io/">
+    <meta property="twitter:title" content="PickleConnect – Free Pickleball Tournament Generator">
+    <meta property="twitter:description" content="Generate pickleball round-robin brackets instantly. Free tournament maker with real-time scoring, rotating partners, and PDF export.">
+    <meta property="twitter:image" content="https://rvhanker.github.io/og-image.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://rvhanker.github.io/">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23059669'/><circle cx='50' cy='50' r='28' fill='white' opacity='0.15'/><ellipse cx='50' cy='50' rx='20' ry='20' fill='none' stroke='white' stroke-width='3'/><line x1='30' y1='50' x2='70' y2='50' stroke='white' stroke-width='3'/><line x1='50' y1='30' x2='50' y2='70' stroke='white' stroke-width='3'/><circle cx='50' cy='50' r='6' fill='white'/></svg>" type="image/svg+xml">
+    
+    <!-- Structured Data / JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "PickleConnect",
+      "description": "Free pickleball tournament generator for creating round-robin brackets with real-time scoring",
+      "url": "https://rvhanker.github.io/",
+      "applicationCategory": "SportsApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Round-robin tournament generation",
+        "Singles and doubles formats",
+        "Rotating partner mode",
+        "Real-time scoring",
+        "Live leaderboards",
+        "PDF export",
+        "Cloud saving",
+        "Tournament sharing"
+      ],
+      "keywords": "pickleball, tournament, generator, bracket, round-robin, scoring, sports"
+    }
+    </script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        html{scroll-behavior:smooth;}
+        body{font-family:'Outfit',sans-serif;background:#f1f5f9;font-size:16px;-webkit-text-size-adjust:100%;}
+        .fd{font-family:'Barlow Condensed',sans-serif;}
+        .hero-bg{background:linear-gradient(135deg,#0f172a 0%,#1e3a2f 50%,#052e16 100%);}
+        .card-lift{transition:transform .2s,box-shadow .2s;}
+        .card-lift:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.2);}
+
+        /* Inputs */
+        .inp{width:100%;background:#f1f5f9;border:2px solid transparent;border-radius:10px;padding:11px 14px;font-size:15px;font-family:'Outfit',sans-serif;transition:all .15s;outline:none;}
+        .inp:focus{border-color:#059669;background:white;box-shadow:0 0 0 3px rgba(5,150,105,.1);}
+        .inp:hover:not(:focus){background:#e2e8f0;}
+        .score-inp{width:58px;text-align:center;border:2px solid #e2e8f0;border-radius:8px;padding:9px 4px;font-size:17px;font-weight:700;font-family:'Outfit',sans-serif;outline:none;transition:border-color .15s;}
+        .score-inp:focus{border-color:#059669;}
+        .score-inp:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed;}
+
+        /* Buttons */
+        .btn-g{background:linear-gradient(135deg,#059669,#10b981);color:white;border-radius:10px;padding:12px 22px;font-weight:700;font-size:15px;border:none;cursor:pointer;transition:all .2s;font-family:'Outfit',sans-serif;box-shadow:0 4px 12px rgba(5,150,105,.25);}
+        .btn-g:hover{background:linear-gradient(135deg,#047857,#059669);transform:translateY(-1px);box-shadow:0 6px 16px rgba(5,150,105,.35);}
+        .btn-g:active{transform:translateY(0);}
+        .btn-g:disabled{background:#a7f3d0;cursor:not-allowed;box-shadow:none;transform:none;}
+        .btn-out{background:transparent;color:#059669;border:2px solid #059669;border-radius:10px;padding:10px 20px;font-weight:600;font-size:15px;cursor:pointer;transition:all .15s;font-family:'Outfit',sans-serif;}
+        .btn-out:hover{background:#059669;color:white;}
+        .btn-dark{background:#0f172a;color:white;border-radius:10px;padding:12px 22px;font-weight:600;font-size:15px;cursor:pointer;font-family:'Outfit',sans-serif;border:none;}
+        .btn-dark:hover{background:#1e293b;}
+        .btn-red{background:#ef4444;color:white;border-radius:8px;padding:9px 16px;font-weight:600;font-size:14px;cursor:pointer;font-family:'Outfit',sans-serif;border:none;}
+        .btn-red:hover{background:#dc2626;}
+        .btn-sm{padding:8px 14px!important;font-size:14px!important;}
+
+        /* Pill toggle */
+        .pill{border:none;border-radius:10px;padding:10px 20px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;}
+        .pill-on{background:#059669;color:white;box-shadow:0 3px 8px rgba(5,150,105,.3);}
+        .pill-off{background:#f1f5f9;color:#64748b;}
+        .pill-off:hover{background:#e2e8f0;transform:translateY(-1px);}
+
+        /* Section label */
+        .slbl{font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:8px;}
+
+        /* ── Setup form panels ── */
+        .setup-panel{border-radius:14px;padding:18px 20px;margin-bottom:14px;}
+        .panel-name{background:linear-gradient(135deg,#0f172a 0%,#1a2f22 60%,#052e16 100%);border:1px solid rgba(52,211,153,.2);box-shadow:0 4px 16px rgba(0,0,0,.2);}
+        .panel-format{background:linear-gradient(135deg,#0f172a 0%,#1a2f22 60%,#052e16 100%);border:1px solid rgba(52,211,153,.2);box-shadow:0 4px 16px rgba(0,0,0,.2);}
+        .panel-settings{background:linear-gradient(135deg,#0f172a 0%,#1a2f22 60%,#052e16 100%);border:1px solid rgba(52,211,153,.2);box-shadow:0 4px 16px rgba(0,0,0,.2);}
+        .panel-players{background:linear-gradient(135deg,#0f172a 0%,#1a2f22 60%,#052e16 100%);border:1px solid rgba(52,211,153,.2);box-shadow:0 4px 16px rgba(0,0,0,.2);}
+        .panel-guide{background:linear-gradient(135deg,#0f172a 0%,#1a2f22 60%,#052e16 100%);border:1px solid rgba(52,211,153,.2);overflow:hidden;}
+
+        /* Panel header row */
+        .panel-hdr{display:flex;align-items:center;gap:9px;margin-bottom:13px;}
+        .panel-hdr-icon{font-size:18px;line-height:1;}
+        .panel-title{font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;}
+
+        /* Pills on dark bg */
+        .pill-off{background:rgba(255,255,255,.08);color:#94a3b8;border:1px solid rgba(255,255,255,.12);}
+        .pill-off:hover{background:rgba(255,255,255,.14);color:#e2e8f0;transform:translateY(-1px);}
+
+        /* Stepper control — smaller */
+        .stepper{display:flex;align-items:center;gap:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:9px;overflow:hidden;}
+        .stepper-btn{background:linear-gradient(135deg,#059669,#10b981);color:white;border:none;width:34px;height:38px;font-size:16px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;}
+        .stepper-btn:hover{background:linear-gradient(135deg,#047857,#059669);}
+        .stepper-btn:active{transform:scale(.94);}
+        .stepper-val{flex:1;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:white;background:transparent;border:none;outline:none;padding:0 4px;height:38px;min-width:0;}
+        input.stepper-val[type=number]::-webkit-inner-spin-button,
+        input.stepper-val[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+
+        /* Numbered player input */
+        .player-inp-wrap{position:relative;}
+        .player-inp-num{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:#6ee7b7;letter-spacing:.03em;pointer-events:none;}
+        .player-inp{padding-left:34px!important;background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.15)!important;color:white!important;transition:all .15s!important;}
+        .player-inp::placeholder{color:rgba(255,255,255,.3)!important;}
+        .player-inp:focus{border-color:#34d399!important;background:rgba(255,255,255,.1)!important;box-shadow:0 0 0 3px rgba(52,211,153,.15)!important;}
+        .player-inp:hover:not(:focus){background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.25)!important;}
+
+        /* Name input on dark panel */
+        .inp-dark{background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.15)!important;color:white!important;}
+        .inp-dark::placeholder{color:rgba(255,255,255,.3)!important;}
+        .inp-dark:focus{border-color:#34d399!important;background:rgba(255,255,255,.1)!important;box-shadow:0 0 0 3px rgba(52,211,153,.15)!important;}
+
+        /* Player count badge */
+        .player-badge{font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:#6ee7b7;background:rgba(52,211,153,.15);padding:4px 10px;border-radius:20px;border:1px solid rgba(52,211,153,.25);}
+
+        /* Clear names btn */
+        .btn-clear{margin-top:12px;background:rgba(255,255,255,.1);color:#e2e8f0;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:9px 16px;font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
+        .btn-clear:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);transform:translateY(-1px);}
+
+        /* Generate button */
+        .btn-generate{width:100%;padding:17px;font-size:17px;font-weight:800;letter-spacing:.02em;background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 6px 20px rgba(5,150,105,.3);border:none;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;color:white;font-family:'Outfit',sans-serif;cursor:pointer;}
+        .btn-generate:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(5,150,105,.4);}
+        .btn-generate:active{transform:translateY(0);}
+        .btn-generate:disabled{background:#a7f3d0;box-shadow:none;cursor:not-allowed;transform:none;}
+
+        /* Round card */
+        .round-card{background:white;border-radius:14px;border:2px solid #e2e8f0;margin-bottom:18px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+        .round-hd{background:linear-gradient(90deg,#0f172a,#1e3a2f);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;}
+
+        /* Match row */
+        .match-row{display:grid;align-items:center;padding:14px 16px;gap:10px;border-bottom:1px solid #f1f5f9;grid-template-columns:auto 1fr auto 1fr;}
+        .match-row:last-of-type{border-bottom:none;}
+        .match-row:nth-child(even){background:#fafafa;}
+
+        /* Player name — wraps, never truncates */
+        .pname{font-family:'Outfit',sans-serif;font-size:15px;font-weight:500;word-break:break-word;line-height:1.4;color:#1e293b;}
+        .pname.win{font-weight:700;color:#059669;}
+
+        /* Bye row */
+        .bye-row{background:#fffbeb;padding:12px 18px;font-family:'Outfit',sans-serif;font-size:14px;color:#92400e;border-top:1px dashed #fcd34d;display:flex;align-items:center;gap:8px;}
+
+        /* Nav */
+        .nav{background:#0f172a;padding:13px 18px;display:flex;align-items:center;gap:12px;}
+        .nav-back{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:22px;padding:2px 8px;line-height:1;flex-shrink:0;}
+
+        /* Page container */
+        .pg{padding:16px;max-width:740px;width:100%;margin:0 auto;}
+
+        /* Card */
+        .card{background:white;border-radius:14px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,.06);}
+
+        /* Score block */
+        .score-block{display:flex;align-items:center;gap:6px;justify-content:center;flex-shrink:0;}
+
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        /* Mobile */
+        @media(max-width:540px){
+            .match-row{grid-template-columns:1fr;grid-template-rows:auto;gap:0;padding:12px 14px;}
+            .court-badge{margin-bottom:6px;}
+            .pname-desktop{display:none!important;}
+            .score-block{display:none!important;}
+            .match-row-inner{display:flex;flex-direction:column;gap:5px;width:100%;}
+            .mobile-team-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+            .mobile-team-row .pname{font-size:16px;line-height:1.3;}
+            .mobile-divider{text-align:center;font-size:11px;font-weight:700;color:#cbd5e1;letter-spacing:1.5px;padding:1px 0;}
+            .mobile-score{font-size:20px;font-weight:800;font-family:'Outfit',sans-serif;color:#1e293b;min-width:34px;text-align:right;flex-shrink:0;}
+            .mobile-score.win{color:#059669;}
+            .mobile-score.pending{color:#94a3b8;font-size:15px;font-weight:600;}
+            .score-inp{width:66px;padding:11px 4px;font-size:18px;}
+            .landing-cards{grid-template-columns:1fr!important;}
+            /* 2-column player name grid on mobile */
+            .player-names-grid{grid-template-columns:repeat(2,1fr)!important;}
+            .player-name-input{min-width:0!important;font-size:16px!important;}
+            /* Prevent zoom on input focus */
+            .inp{font-size:16px!important;}
+            input[type="number"]{font-size:16px!important;}
+            /* Hide desktop logout button on mobile */
+            .logout-btn-desktop{display:none!important;}
+            /* Hide email on very small screens */
+            @media(max-width:380px){
+                .user-name-email span:last-child{display:none;}
+            }
+        }
+        @media(min-width:541px){
+            .match-row-inner{display:none!important;}
+            .mobile-divider{display:none;}
+            .mobile-score{display:none;}
+            .pname-desktop{display:block;}
+            .court-badge{align-self:start;margin-top:2px;}
+        }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef} = React;
+
+// ── Firebase ──────────────────────────────────────────────────────────
+const FB = {
+    apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
+    authDomain:"pickleball-app-1bba7.firebaseapp.com",
+    projectId:"pickleball-app-1bba7",
+    storageBucket:"pickleball-app-1bba7.firebasestorage.app",
+    messagingSenderId:"645604154338",
+    appId:"1:645604154338:web:b92f87c2cd11d950b737bb"
+};
+let db=null,auth=null,fbOk=false;
+const oErr=console.error;
+console.error=(...a)=>{const s=a.join(' ');if(s.includes('permission-denied')||s.includes('insufficient permissions')||s.includes('Firestore'))return;oErr(...a);};
+try{firebase.initializeApp(FB);db=firebase.firestore();auth=firebase.auth();fbOk=true;}catch(e){}
+
+// ── Storage ───────────────────────────────────────────────────────────
+const storage={
+    async save(d){
+        if(fbOk&&db)try{await db.collection('tournaments').doc(d.id).set(d);return;}catch(e){console.warn('Firestore save failed:',e.code,e.message);}
+        localStorage.setItem(`tournament:${d.id}`,JSON.stringify(d));
+    },
+    async get(id){
+        if(fbOk&&db)try{const doc=await db.collection('tournaments').doc(id).get();if(doc.exists)return doc.data();}catch(e){}
+        const d=localStorage.getItem(`tournament:${id}`);return d?JSON.parse(d):null;
+    },
+    async getAll(uid){
+        if(!uid)return[];
+        if(fbOk&&db)try{
+            const mine=(await db.collection('tournaments').where('createdBy','==',uid).get()).docs.map(d=>d.data());
+            return mine;
+        }catch(e){console.warn('Firestore getAll failed:',e.code,e.message);}
+        const out=[];
+        for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k?.startsWith('tournament:'))continue;try{const d=JSON.parse(localStorage.getItem(k));if(d.createdBy===uid)out.push(d);}catch(e){}}
+        return out;
+    },
+    listen(id,cb){
+        if(fbOk&&db)return db.collection('tournaments').doc(id).onSnapshot(doc=>{if(doc.exists)cb(doc.data());});
+        const t=setInterval(async()=>{const d=await storage.get(id);if(d)cb(d);},2000);
+        return()=>clearInterval(t);
+    },
+    del(id){if(fbOk&&db)try{db.collection('tournaments').doc(id).delete();}catch(e){}localStorage.removeItem(`tournament:${id}`);},
+    async saveFeedback(d){
+        if(fbOk&&db)try{await db.collection('feedback').add(d);return;}catch(e){}
+        try{const a=JSON.parse(localStorage.getItem('pendingFeedback')||'[]');a.push(d);localStorage.setItem('pendingFeedback',JSON.stringify(a));}catch(e){}
+    }
+};
+
+// ── Algorithms ────────────────────────────────────────────────────────
+function genSingles(players,rounds,courts){
+    const list=[...players];
+    if(list.length%2!==0)list.push('BYE');
+    const actual=Math.min(rounds,list.length-1),half=list.length/2,all=[];
+    for(let r=0;r<actual;r++){
+        const matches=[],byes=[];
+        for(let i=0;i<half;i++){const p1=list[i],p2=list[list.length-1-i];if(p1==='BYE')byes.push(p2);else if(p2==='BYE')byes.push(p1);else matches.push({id:`r${r}-m${i}`,court:(i%courts)+1,team1:[p1],team2:[p2]});}
+        if(byes.length)matches.byePlayers=byes;
+        all.push(matches);list.splice(1,0,list.pop());
+    }
+    return all;
+}
+
+function genRotating(players,rounds,courts){
+    const stats={};
+    players.forEach(p=>{stats[p]={games:0,sitOuts:0,partners:{},opponents:{},lastPartner:null};});
+    const all=[];
+
+    for(let round=0;round<rounds;round++){
+        // Prioritise players who have sat out most AND played least
+        const sorted=[...players].sort((a,b)=>{
+            const sitDiff=stats[b].sitOuts-stats[a].sitOuts; // more sit-outs → play first
+            if(sitDiff!==0)return sitDiff;
+            return stats[a].games-stats[b].games; // fewer games → play first
+        });
+
+        const playN=Math.floor(Math.min(courts*4,sorted.length)/4)*4;
+        const playing=sorted.slice(0,playN);
+        const byes=sorted.slice(playN);
+        byes.forEach(p=>stats[p].sitOuts++);
+
+        const matches=[];
+        let remaining=[...playing];
+        let courtNum=0;
+
+        while(remaining.length>=4&&courtNum<courts){
+            let bestScore=Infinity,bestMatch=null,bestUsed=null;
+
+            // Try every combination of 4 players and all 3 possible team pairings
+            for(let a=0;a<remaining.length;a++)
+            for(let b=a+1;b<remaining.length;b++)
+            for(let c=b+1;c<remaining.length;c++)
+            for(let d=c+1;d<remaining.length;d++){
+                const[p1,p2,p3,p4]=[remaining[a],remaining[b],remaining[c],remaining[d]];
+                const pairings=[
+                    {team1:[p1,p2],team2:[p3,p4]},
+                    {team1:[p1,p3],team2:[p2,p4]},
+                    {team1:[p1,p4],team2:[p2,p3]},
+                ];
+                for(const pair of pairings){
+                    const[t1a,t1b]=pair.team1,[t2a,t2b]=pair.team2;
+                    // Very strong penalty for any repeat partnership
+                    let sc=(stats[t1a].partners[t1b]||0)*2000
+                          +(stats[t2a].partners[t2b]||0)*2000;
+                    // Extra penalty if they were partners LAST round
+                    if(stats[t1a].lastPartner===t1b||stats[t1b].lastPartner===t1a)sc+=5000;
+                    if(stats[t2a].lastPartner===t2b||stats[t2b].lastPartner===t2a)sc+=5000;
+                    // Mild penalty for repeat opponents
+                    sc+=(stats[t1a].opponents[t2a]||0)*10+(stats[t1a].opponents[t2b]||0)*10
+                       +(stats[t1b].opponents[t2a]||0)*10+(stats[t1b].opponents[t2b]||0)*10;
+                    if(sc<bestScore){bestScore=sc;bestMatch={id:`r${round}-m${courtNum}`,court:courtNum+1,team1:pair.team1,team2:pair.team2};bestUsed=[t1a,t1b,t2a,t2b];}
+                }
+            }
+
+            if(!bestMatch)break;
+            matches.push(bestMatch);
+            const[t1a,t1b,t2a,t2b]=[bestMatch.team1[0],bestMatch.team1[1],bestMatch.team2[0],bestMatch.team2[1]];
+
+            // Update stats
+            [t1a,t1b,t2a,t2b].forEach(p=>stats[p].games++);
+            stats[t1a].partners[t1b]=(stats[t1a].partners[t1b]||0)+1;
+            stats[t1b].partners[t1a]=(stats[t1b].partners[t1a]||0)+1;
+            stats[t2a].partners[t2b]=(stats[t2a].partners[t2b]||0)+1;
+            stats[t2b].partners[t2a]=(stats[t2b].partners[t2a]||0)+1;
+            stats[t1a].lastPartner=t1b;stats[t1b].lastPartner=t1a;
+            stats[t2a].lastPartner=t2b;stats[t2b].lastPartner=t2a;
+            [t1a,t1b].forEach(x=>[t2a,t2b].forEach(y=>{
+                stats[x].opponents[y]=(stats[x].opponents[y]||0)+1;
+                stats[y].opponents[x]=(stats[y].opponents[x]||0)+1;
+            }));
+            remaining=remaining.filter(p=>!bestUsed.includes(p));
+            courtNum++;
+        }
+
+        if(byes.length)matches.byePlayers=byes;
+        all.push(matches);
+    }
+    return all;
+}
+
+function genFixed(partnerships,rounds,courts){
+    const teams=partnerships.map(p=>p.players),tg={};teams.forEach((_,i)=>tg[i]=0);
+    const all=[];
+    for(let r=0;r<rounds;r++){
+        const sorted=teams.map((t,i)=>({t,i})).sort((a,b)=>tg[a.i]-tg[b.i]);
+        const playN=Math.floor(Math.min(courts*2,sorted.length)/2)*2;
+        const playing=sorted.slice(0,playN),byes=sorted.slice(playN).flatMap(x=>x.t);
+        const matches=[];let c=0;
+        for(let i=0;i<playing.length-1;i+=2){if(c>=courts)break;matches.push({id:`r${r}-m${c}`,court:c+1,team1:playing[i].t,team2:playing[i+1].t});tg[playing[i].i]++;tg[playing[i+1].i]++;c++;}
+        if(byes.length)matches.byePlayers=byes;
+        all.push(matches);
+    }
+    return all;
+}
+
+function calcLB(players,schedule,scores){
+    const stats={};players.filter(p=>p.trim()).forEach(p=>{stats[p]={wins:0,losses:0,total:0,pf:0,pa:0};});
+    // Count total scheduled matches per player
+    schedule.forEach(round=>round.forEach(match=>{
+        [...match.team1,...match.team2].forEach(p=>{if(stats[p])stats[p].total++;});
+    }));
+    // Count wins/losses from scored matches
+    schedule.forEach(round=>round.forEach(match=>{
+        const s=scores[match.id];if(!s)return;
+        const v1=s.team1,v2=s.team2;
+        if(v1===undefined||v1===''||v2===undefined||v2==='')return;
+        const s1=parseInt(v1)||0,s2=parseInt(v2)||0;
+        if(s1>s2){match.team1.forEach(p=>{if(stats[p]){stats[p].wins++;stats[p].pf+=s1;stats[p].pa+=s2;}});match.team2.forEach(p=>{if(stats[p]){stats[p].losses++;stats[p].pf+=s2;stats[p].pa+=s1;}});}
+        else if(s2>s1){match.team2.forEach(p=>{if(stats[p]){stats[p].wins++;stats[p].pf+=s2;stats[p].pa+=s1;}});match.team1.forEach(p=>{if(stats[p]){stats[p].losses++;stats[p].pf+=s1;stats[p].pa+=s2;}});}
+    }));
+    return Object.entries(stats).map(([name,s])=>({name,...s,diff:s.pf-s.pa})).sort((a,b)=>b.wins-a.wins||b.diff-a.diff);
+}
+
+// ── PDF Export — opens new tab (works on mobile) ──────────────────────
+function doPrint(name,schedule,scores,players,withScores){
+    const date=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+    let html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${name||'Scorecard'}</title>
+    <style>body{font-family:Arial,sans-serif;padding:24px;max-width:820px;margin:0 auto;color:#1e293b;font-size:14px;}
+    h1{font-size:26px;font-weight:900;margin:0 0 4px;}
+    .meta{font-size:13px;color:#64748b;margin-bottom:22px;}
+    .rnd{font-size:13px;font-weight:800;color:#059669;text-transform:uppercase;letter-spacing:1px;margin:20px 0 8px;border-bottom:2px solid #059669;padding-bottom:4px;}
+    table{width:100%;border-collapse:collapse;margin-bottom:4px;}
+    th{background:#f1f5f9;padding:9px 10px;text-align:left;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;border:1px solid #e2e8f0;}
+    td{padding:11px 10px;border:1px solid #e2e8f0;vertical-align:middle;}
+    tr:nth-child(even) td{background:#fafafa;}
+    .ct{background:#f0fdf4;color:#059669;font-weight:700;font-size:12px;padding:3px 9px;border-radius:6px;}
+    .sc{text-align:center;font-weight:700;font-size:20px;color:#059669;}
+    .scb{text-align:center;font-size:14px;color:#cbd5e1;min-width:50px;}
+    .w{font-weight:700;color:#059669;}
+    .bye{background:#fffbeb;padding:9px 12px;font-size:13px;color:#92400e;margin-top:5px;border-radius:6px;}
+    .pls{margin-top:20px;background:#f0fdf4;border-radius:8px;padding:13px;}
+    .ft{margin-top:24px;font-size:11px;color:#94a3b8;text-align:center;border-top:1px solid #e2e8f0;padding-top:12px;}
+    @media print{@page{margin:.45in;size:A4;}body{padding:0;}}</style></head><body>
+    <h1>${name||'Tournament Scorecard'}</h1>
+    <div class="meta">Generated ${date} · ${players.filter(p=>p.trim()).length} players · ${schedule.length} rounds · PickleConnect Lite</div>`;
+
+    schedule.forEach((round,ri)=>{
+        html+=`<div class="rnd">Round ${ri+1}</div>
+        <table><thead><tr><th>Court</th><th>Team 1</th><th>Score</th><th></th><th>Score</th><th>Team 2</th></tr></thead><tbody>`;
+        round.forEach(m=>{
+            const sc=scores[m.id];
+            const sv1=withScores&&sc?.team1!==undefined?sc.team1:null;
+            const sv2=withScores&&sc?.team2!==undefined?sc.team2:null;
+            const w1=sv1!==null&&sv2!==null&&parseInt(sv1)>parseInt(sv2);
+            const w2=sv1!==null&&sv2!==null&&parseInt(sv2)>parseInt(sv1);
+            const t1=m.team1.join(' & '),t2=m.team2.join(' & ');
+            html+=`<tr><td><span class="ct">Court ${m.court}</span></td>
+                <td class="${w1?'w':''}">${w1?'🏆 ':''}${t1}</td>
+                <td class="${sv1!==null?'sc':'scb'}">${sv1!==null?sv1:'___'}</td>
+                <td style="text-align:center;color:#94a3b8;font-weight:700;">vs</td>
+                <td class="${sv2!==null?'sc':'scb'}">${sv2!==null?sv2:'___'}</td>
+                <td class="${w2?'w':''}">${t2}${w2?' 🏆':''}</td></tr>`;
+        });
+        html+=`</tbody></table>`;
+        if(round.byePlayers?.length)html+=`<div class="bye">⏸ Sitting out: ${round.byePlayers.join(', ')}</div>`;
+    });
+
+    const vp=players.filter(p=>p.trim());
+    if(vp.length)html+=`<div class="pls"><strong>Players (${vp.length}):</strong> ${vp.join(' · ')}</div>`;
+    html+=`<div class="ft">© 2025 PickleConnect. All rights reserved. · Pickleball Tournament Generator</div></body></html>`;
+
+    const w=window.open('','_blank');
+    if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
+    else alert('Allow popups to export. Or try on a desktop browser.');
+}
+
+// ── Shared Helpers ────────────────────────────────────────────────────
+function Pill({val,cur,set,label}){return <button className={`pill ${cur===val?'pill-on':'pill-off'}`} onClick={()=>set(val)}>{label}</button>;}
+function SL({children}){return <span className="slbl">{children}</span>;}
+
+// Stepper: +/- control for numbers
+function Stepper({val,min,max,onChange}){
+    const dec=()=>onChange(Math.max(min,val-1));
+    const inc=()=>onChange(Math.min(max,val+1));
+    return(
+        <div className="stepper">
+            <button className="stepper-btn" onClick={dec} type="button">−</button>
+            <input className="stepper-val" type="number" value={val} min={min} max={max}
+                onChange={e=>{const v=parseInt(e.target.value)||min;onChange(Math.max(min,Math.min(max,v)));}}
+                onBlur={e=>{if(!e.target.value||parseInt(e.target.value)<min)onChange(min);}}/>
+            <button className="stepper-btn" onClick={inc} type="button">+</button>
+        </div>
+    );
+}
+
+// ── Tournament Setup ──────────────────────────────────────────────────
+function TournamentSetup({onGenerate}){
+    const[formMode,setFormMode]=useState(null); // null=choose, 'standard', 'guided'
+    const[name,setName]=useState('');
+    const[format,setFormat]=useState('doubles');
+    const[mode,setMode]=useState('rotating');
+    const[np,setNp]=useState(8);
+    const[players,setPlayers]=useState(Array.from({length:8},()=>''));
+    const[courts,setCourts]=useState(2);
+    const[rounds,setRounds]=useState(3);
+    const[partnerships,setPartnerships]=useState([]);
+    const[customs,setCustoms]=useState([{team1:['',''],team2:['','']}]);
+    const[showGuide,setShowGuide]=useState(false);
+    // Guided form state
+    const[guidedStep,setGuidedStep]=useState(0);
+
+    useEffect(()=>setPlayers(prev=>Array.from({length:np},(_,i)=>prev[i]||'')),[np]);
+
+    const valid=players.filter(p=>p.trim());
+    const filledCount=players.filter(p=>p.trim()).length;
+
+    const autoPair=()=>{
+        const pairs=[];for(let i=0;i<valid.length-1;i+=2)pairs.push({players:[valid[i],valid[i+1]]});
+        setPartnerships(pairs);
+    };
+
+    const updCust=(mi,team,pi,v)=>setCustoms(prev=>{const n=prev.map((m,i)=>i===mi?{...m,[team]:[...m[team]]}:m);n[mi][team][pi]=v;return n;});
+
+    const generate=()=>{
+        if(format==='singles'&&valid.length<2){alert('Need at least 2 players');return;}
+        if(format==='doubles'&&valid.length<4){alert('Need at least 4 players for doubles');return;}
+        if(format==='doubles'&&mode==='fixed'&&partnerships.length<2){alert('Set up partnerships first');return;}
+        if(format==='doubles'&&mode==='custom'&&customs.every(m=>m.team1.every(p=>!p.trim())&&m.team2.every(p=>!p.trim()))){alert('Add players to at least one custom match');return;}
+        let schedule;
+        if(format==='singles') schedule=genSingles(valid,rounds,courts);
+        else if(mode==='rotating') schedule=genRotating(valid,rounds,courts);
+        else if(mode==='fixed') schedule=genFixed(partnerships,rounds,courts);
+        else{
+            const ml=customs.filter(m=>m.team1.some(p=>p.trim())||m.team2.some(p=>p.trim()))
+                .map((m,i)=>({id:`r0-m${i}`,court:(i%courts)+1,team1:m.team1.filter(p=>p.trim()),team2:m.team2.filter(p=>p.trim())}));
+            schedule=[ml];
+        }
+        onGenerate({name:name||`Tournament ${new Date().toLocaleDateString()}`,players:valid,schedule,courts,rounds,format,mode});
+    };
+
+    const PSel=({value,onChange,placeholder})=>(
+        <select className="inp" value={value} onChange={e=>onChange(e.target.value)} style={{fontSize:14,padding:'9px 12px'}}>
+            <option value="">{placeholder}</option>
+            {valid.map(p=><option key={p} value={p}>{p}</option>)}
+        </select>
+    );
+
+    const numFmt=n=>String(n).padStart(2,'0');
+
+    // ── Mode chooser ──
+    if(!formMode) return(
+        <div style={{display:'flex',flexDirection:'column',gap:0}}>
+            <div style={{textAlign:'center',marginBottom:24}}>
+                <div className="fd" style={{fontSize:26,fontWeight:800,color:'#0f172a',marginBottom:6}}>HOW WOULD YOU LIKE TO SET UP?</div>
+                <div style={{fontFamily:'Outfit,sans-serif',fontSize:15,color:'#64748b'}}>Choose the setup experience that works best for you</div>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:14}}>
+                <div onClick={()=>setFormMode('standard')} style={{border:'2px solid #e2e8f0',borderRadius:14,padding:'22px 20px',cursor:'pointer',textAlign:'center',transition:'all .2s',background:'white'}}
+                    onMouseEnter={e=>e.currentTarget.style.borderColor='#059669'}
+                    onMouseLeave={e=>e.currentTarget.style.borderColor='#e2e8f0'}>
+                    <div style={{fontSize:36,marginBottom:10}}>📋</div>
+                    <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:6}}>STANDARD FORM</div>
+                    <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#64748b',lineHeight:1.5}}>See all fields at once. Quick and familiar for experienced users.</div>
+                    <div style={{marginTop:14,background:'#f1f5f9',color:'#374151',borderRadius:8,padding:'10px',fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:600}}>Fill all at once →</div>
+                </div>
+                <div onClick={()=>{setFormMode('guided');setGuidedStep(0);}} style={{border:'2px solid #059669',borderRadius:14,padding:'22px 20px',cursor:'pointer',textAlign:'center',transition:'all .2s',background:'linear-gradient(135deg,#0f172a,#1e3a2f)'}}
+                    >
+                    <div style={{fontSize:36,marginBottom:10}}>🧭</div>
+                    <div className="fd" style={{fontSize:20,fontWeight:800,color:'white',marginBottom:6}}>GUIDED FORM</div>
+                    <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#94a3b8',lineHeight:1.5}}>Step-by-step setup. One question at a time — review before generating.</div>
+                    <div style={{marginTop:14,background:'#059669',color:'white',borderRadius:8,padding:'10px',fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:700}}>Walk me through it →</div>
+                </div>
+            </div>
+        </div>
+    );
+
+    // ── Guided form ──
+    if(formMode==='guided'){
+        // Define steps dynamically based on current state
+        const isDoubles=format==='doubles';
+        const needsPartnerConfig=isDoubles&&(mode==='fixed'||mode==='custom');
+
+        const STEPS=[
+            {id:'name',label:'Tournament Name',icon:'🏆'},
+            {id:'format',label:'Format',icon:'🏅'},
+            ...(isDoubles?[{id:'partnermode',label:'Partner Mode',icon:'👥'}]:[]),
+            {id:'settings',label:'Players & Settings',icon:'⚙️'},
+            {id:'players',label:'Player Names',icon:'✏️'},
+            ...(needsPartnerConfig?[{id:'partnerconfig',label:mode==='fixed'?'Fixed Partnerships':'Custom Matches',icon:mode==='fixed'?'🤝':'✏️'}]:[]),
+            {id:'review',label:'Review & Generate',icon:'🚀'},
+        ];
+
+        const step=STEPS[guidedStep]||STEPS[STEPS.length-1];
+        const totalSteps=STEPS.length;
+        const isLast=guidedStep===totalSteps-1;
+        const canNext=()=>{
+            if(step.id==='name') return true;
+            if(step.id==='format') return true;
+            if(step.id==='partnermode') return true;
+            if(step.id==='settings') return true;
+            if(step.id==='players'){
+                if(format==='singles') return valid.length>=2;
+                return valid.length>=4;
+            }
+            if(step.id==='partnerconfig'){
+                if(mode==='fixed') return partnerships.length>=2;
+                return true;
+            }
+            return true;
+        };
+
+        const goNext=()=>{if(guidedStep<totalSteps-1)setGuidedStep(g=>g+1);};
+        const goPrev=()=>{if(guidedStep>0)setGuidedStep(g=>g-1);};
+
+        return(
+            <div style={{display:'flex',flexDirection:'column',gap:0}}>
+                {/* Top bar */}
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+                    <button onClick={()=>{setFormMode(null);setGuidedStep(0);}} style={{background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.15)',color:'#94a3b8',borderRadius:8,padding:'7px 14px',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:600,cursor:'pointer'}}>← Change Mode</button>
+                    <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#6ee7b7',fontWeight:600}}>Step {guidedStep+1} of {totalSteps}</div>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{height:5,background:'rgba(255,255,255,.1)',borderRadius:99,marginBottom:22,overflow:'hidden'}}>
+                    <div style={{height:'100%',width:`${((guidedStep+1)/totalSteps)*100}%`,background:'linear-gradient(90deg,#059669,#34d399)',borderRadius:99,transition:'width .3s'}}/>
+                </div>
+
+                {/* Step pills */}
+                <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:20}}>
+                    {STEPS.map((s,i)=>(
+                        <button key={s.id} onClick={()=>i<=guidedStep&&setGuidedStep(i)}
+                            style={{background:i===guidedStep?'#059669':i<guidedStep?'rgba(52,211,153,.2)':'rgba(255,255,255,.06)',color:i===guidedStep?'white':i<guidedStep?'#34d399':'#64748b',border:`1px solid ${i===guidedStep?'transparent':i<guidedStep?'rgba(52,211,153,.3)':'rgba(255,255,255,.12)'}`,borderRadius:20,padding:'5px 12px',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:600,cursor:i<=guidedStep?'pointer':'default',transition:'all .2s'}}>
+                            {s.icon} {s.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Step content */}
+                <div className="setup-panel panel-format" style={{marginBottom:16,minHeight:180}}>
+                    <div className="panel-hdr" style={{marginBottom:16}}>
+                        <span className="panel-hdr-icon">{step.icon}</span>
+                        <span className="panel-title" style={{color:'#6ee7b7',fontSize:14}}>{step.label}</span>
+                    </div>
+
+                    {step.id==='name'&&(
+                        <div>
+                            <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#94a3b8',marginBottom:12}}>Give your tournament a name (optional — we'll auto-generate one if left blank)</div>
+                            <input className="inp inp-dark" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Sunday Doubles Bash" style={{fontSize:16,fontWeight:500}}/>
+                        </div>
+                    )}
+
+                    {step.id==='format'&&(
+                        <div>
+                            <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#94a3b8',marginBottom:14}}>How many players per team?</div>
+                            <div style={{display:'flex',gap:12}}>
+                                {[['singles','🧍 Singles','1v1 — each player competes alone'],['doubles','👥 Doubles','2v2 — teams of two players']].map(([v,lbl,desc])=>(
+                                    <div key={v} onClick={()=>{setFormat(v);if(v==='singles')setMode('rotating');}} style={{flex:1,background:format===v?'rgba(5,150,105,.25)':'rgba(255,255,255,.06)',border:`2px solid ${format===v?'#059669':'rgba(255,255,255,.15)'}`,borderRadius:12,padding:'16px 14px',cursor:'pointer',textAlign:'center',transition:'all .2s'}}>
+                                        <div style={{fontSize:28,marginBottom:6}}>{lbl.split(' ')[0]}</div>
+                                        <div style={{fontFamily:'Outfit,sans-serif',fontWeight:700,color:'white',fontSize:14,marginBottom:4}}>{lbl.split(' ').slice(1).join(' ')}</div>
+                                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,color:'#64748b'}}>{desc}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {step.id==='partnermode'&&(
+                        <div>
+                            <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#94a3b8',marginBottom:14}}>How should partners be assigned each round?</div>
+                            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                                {[
+                                    ['rotating','🔄 Rotating Partners','Players get new partners every round — great for social play'],
+                                    ['fixed','🔒 Fixed Partners','Same partner throughout the whole tournament'],
+                                    ['custom','✏️ Custom Matches','You manually pick who plays who in each match'],
+                                ].map(([v,lbl,desc])=>(
+                                    <div key={v} onClick={()=>setMode(v)} style={{background:mode===v?'rgba(5,150,105,.2)':'rgba(255,255,255,.05)',border:`2px solid ${mode===v?'#059669':'rgba(255,255,255,.12)'}`,borderRadius:12,padding:'14px 16px',cursor:'pointer',transition:'all .2s',display:'flex',alignItems:'center',gap:12}}>
+                                        <div style={{fontSize:22,flexShrink:0}}>{lbl.split(' ')[0]}</div>
+                                        <div>
+                                            <div style={{fontFamily:'Outfit,sans-serif',fontWeight:700,color:'white',fontSize:14,marginBottom:2}}>{lbl.split(' ').slice(1).join(' ')}</div>
+                                            <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#64748b'}}>{desc}</div>
+                                        </div>
+                                        {mode===v&&<div style={{marginLeft:'auto',color:'#34d399',fontSize:18}}>✓</div>}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {step.id==='settings'&&(
+                        <div>
+                            <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#94a3b8',marginBottom:14}}>Set the number of players, courts, and rounds</div>
+                            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:14}}>
+                                <div>
+                                    <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:7}}>
+                                        <span style={{fontSize:13}}>👤</span>
+                                        <span className="slbl" style={{marginBottom:0,color:'#94a3b8',fontSize:11}}>Players</span>
+                                    </div>
+                                    <Stepper val={np} min={format==='singles'?2:4} max={32} onChange={setNp}/>
+                                </div>
+                                <div>
+                                    <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:7}}>
+                                        <span style={{fontSize:13}}>🏟️</span>
+                                        <span className="slbl" style={{marginBottom:0,color:'#94a3b8',fontSize:11}}>Courts</span>
+                                    </div>
+                                    <Stepper val={courts} min={1} max={10} onChange={setCourts}/>
+                                </div>
+                                {mode!=='custom'&&(
+                                    <div>
+                                        <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:7}}>
+                                            <span style={{fontSize:13}}>🔢</span>
+                                            <span className="slbl" style={{marginBottom:0,color:'#94a3b8',fontSize:11}}>Rounds</span>
+                                        </div>
+                                        <Stepper val={rounds} min={1} max={20} onChange={setRounds}/>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {step.id==='players'&&(
+                        <div>
+                            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+                                <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#94a3b8'}}>Enter names for all {np} players</div>
+                                <span className="player-badge">{filledCount} / {np}</span>
+                            </div>
+                            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(170px,1fr))',gap:9}} className="player-names-grid">
+                                {players.map((p,i)=>(
+                                    <div key={i} className="player-inp-wrap">
+                                        <span className="player-inp-num">{numFmt(i+1)}</span>
+                                        <input className="inp player-inp player-name-input" value={p}
+                                            onChange={e=>{const n=[...players];n[i]=e.target.value;setPlayers(n);}}
+                                            placeholder={`Player ${i+1}`} style={{fontSize:14}}/>
+                                    </div>
+                                ))}
+                            </div>
+                            <button className="btn-clear" onClick={()=>setPlayers(Array.from({length:np},()=>''))}>↻ Clear All Names</button>
+                        </div>
+                    )}
+
+                    {step.id==='partnerconfig'&&mode==='fixed'&&(
+                        <div>
+                            <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#94a3b8',marginBottom:12}}>Pair up your players. You need at least 2 pairs.</div>
+                            <button className="btn-out btn-sm" onClick={autoPair} style={{marginBottom:10}}>Auto-pair from player list</button>
+                            {partnerships.length>0&&<div style={{marginTop:10,display:'flex',flexDirection:'column',gap:5}}>{partnerships.map((p,i)=><div key={i} style={{fontSize:14,color:'#e2e8f0'}}>🤝 <strong>Pair {i+1}:</strong> {p.players.join(' & ')}</div>)}</div>}
+                            {partnerships.length===0&&<div style={{color:'#64748b',fontSize:13,marginTop:8}}>No pairs yet — click Auto-pair or set them up manually</div>}
+                        </div>
+                    )}
+
+                    {step.id==='partnerconfig'&&mode==='custom'&&(
+                        <div>
+                            <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#94a3b8',marginBottom:12}}>Define each match manually. Select players for each team.</div>
+                            {customs.map((match,mi)=>(
+                                <div key={mi} style={{background:'rgba(255,255,255,.05)',borderRadius:10,padding:12,marginBottom:10,border:'1px solid rgba(255,255,255,.1)'}}>
+                                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+                                        <span style={{fontWeight:600,fontSize:14,color:'white'}}>Match {mi+1}</span>
+                                        {customs.length>1&&<button onClick={()=>setCustoms(p=>p.filter((_,j)=>j!==mi))} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontSize:22,lineHeight:1}}>×</button>}
+                                    </div>
+                                    <div style={{display:'grid',gridTemplateColumns:'1fr auto 1fr',gap:10,alignItems:'center'}}>
+                                        <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                                            <PSel value={match.team1[0]} onChange={v=>updCust(mi,'team1',0,v)} placeholder="Player 1"/>
+                                            <PSel value={match.team1[1]} onChange={v=>updCust(mi,'team1',1,v)} placeholder="Player 2"/>
+                                        </div>
+                                        <div style={{textAlign:'center',fontWeight:800,color:'#94a3b8',fontSize:15}}>vs</div>
+                                        <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                                            <PSel value={match.team2[0]} onChange={v=>updCust(mi,'team2',0,v)} placeholder="Player 3"/>
+                                            <PSel value={match.team2[1]} onChange={v=>updCust(mi,'team2',1,v)} placeholder="Player 4"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            <button className="btn-out btn-sm" onClick={()=>setCustoms(p=>[...p,{team1:['',''],team2:['','']}])}>+ Add Match</button>
+                        </div>
+                    )}
+
+                    {step.id==='review'&&(
+                        <div>
+                            <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#94a3b8',marginBottom:14}}>Review your tournament settings before generating</div>
+                            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                                {[
+                                    ['🏆 Name',name||`Tournament ${new Date().toLocaleDateString()}`],
+                                    ['🏅 Format',format==='singles'?'Singles (1v1)':'Doubles (2v2)'],
+                                    ...(format==='doubles'?[['👥 Partner Mode',mode==='rotating'?'🔄 Rotating':mode==='fixed'?'🔒 Fixed':'✏️ Custom']]:[]),
+                                    ['👤 Players',`${filledCount} / ${np} entered`],
+                                    ['🏟️ Courts',`${courts}`],
+                                    ...(mode!=='custom'?[['🔢 Rounds',`${rounds}`]]:[]),
+                                    ...(format==='doubles'&&mode==='fixed'?[['🤝 Pairs',`${partnerships.length} pair${partnerships.length!==1?'s':''} set`]]:[]),
+                                ].map(([k,v])=>(
+                                    <div key={k} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'rgba(255,255,255,.06)',borderRadius:9}}>
+                                        <span style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#94a3b8'}}>{k}</span>
+                                        <span style={{fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:700,color:'white'}}>{v}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            {filledCount>0&&(
+                                <div style={{marginTop:12,padding:'10px 14px',background:'rgba(52,211,153,.08)',borderRadius:9,border:'1px solid rgba(52,211,153,.2)'}}>
+                                    <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#6ee7b7',fontWeight:600,marginBottom:5}}>Players</div>
+                                    <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#94a3b8'}}>{valid.join(' · ')}</div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Nav buttons */}
+                <div style={{display:'flex',gap:10}}>
+                    {guidedStep>0&&<button className="btn-dark" onClick={goPrev} style={{flex:1,padding:'13px'}}>← Back</button>}
+                    {!isLast&&(
+                        <button className="btn-g" onClick={goNext} disabled={!canNext()} style={{flex:2,padding:'13px',fontSize:16}}>
+                            Next →
+                        </button>
+                    )}
+                    {isLast&&(
+                        <button className="btn-generate" onClick={generate} style={{flex:2}}>
+                            <span style={{fontSize:22}}>🚀</span> Generate Tournament
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // ── Standard form ──
+    return(
+        <div style={{display:'flex',flexDirection:'column',gap:0}}>
+
+            {/* Mode switcher */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+                <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#6ee7b7',fontWeight:600}}>📋 Standard Form</div>
+                <button onClick={()=>setFormMode(null)} style={{background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.15)',color:'#94a3b8',borderRadius:8,padding:'6px 12px',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:600,cursor:'pointer'}}>Change Mode</button>
+            </div>
+
+            {/* ── Quick Start Guide ── */}
+            <div className="setup-panel panel-guide" style={{marginBottom:14,padding:0}}>
+                <button onClick={()=>setShowGuide(!showGuide)} style={{width:'100%',background:'none',border:'none',padding:'14px 18px',display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer',fontFamily:'Outfit,sans-serif'}}>
+                    <div style={{display:'flex',alignItems:'center',gap:10}}>
+                        <span style={{fontSize:20}}>📖</span>
+                        <span style={{fontWeight:700,fontSize:15,color:'#6ee7b7'}}>Quick Start Guide</span>
+                    </div>
+                    <span style={{color:'#34d399',fontSize:20,fontWeight:800,lineHeight:1}}>{showGuide?'−':'+'}</span>
+                </button>
+                {showGuide&&(
+                    <div style={{padding:'0 18px 18px',fontFamily:'Outfit,sans-serif',fontSize:14,color:'#94a3b8',lineHeight:1.7}}>
+                        <strong style={{color:'#6ee7b7'}}>🎯 Steps to Generate Your Tournament:</strong>
+                        <ol style={{paddingLeft:20,margin:'10px 0 14px',display:'flex',flexDirection:'column',gap:6}}>
+                            <li><strong>Name your tournament</strong> (optional)</li>
+                            <li><strong>Choose format</strong> — Singles (1v1) or Doubles (2v2)</li>
+                            <li><strong>Set players, courts & rounds</strong> using the +/− controls</li>
+                            <li><strong>Enter player names</strong></li>
+                            <li><strong>Tap "Generate Tournament"</strong> — brackets appear instantly!</li>
+                        </ol>
+
+                        <div style={{height:1,background:'rgba(52,211,153,.15)',marginBottom:14}}/>
+                        <strong style={{color:'#6ee7b7'}}>👥 Partner Modes (Doubles only):</strong>
+                        <div style={{display:'flex',flexDirection:'column',gap:10,marginTop:10}}>
+                            <div style={{padding:'10px 12px',background:'rgba(52,211,153,.07)',border:'1px solid rgba(52,211,153,.2)',borderRadius:8}}>
+                                <div style={{color:'#34d399',fontWeight:700,marginBottom:3}}>🔄 Rotating Partners</div>
+                                <div style={{color:'#94a3b8',fontSize:13}}>Players are automatically shuffled into different teams each round. Great for social play — everyone gets to partner with everyone. Just enter player names; the algorithm handles the rest and avoids repeat pairings.</div>
+                            </div>
+                            <div style={{padding:'10px 12px',background:'rgba(52,211,153,.07)',border:'1px solid rgba(52,211,153,.2)',borderRadius:8}}>
+                                <div style={{color:'#34d399',fontWeight:700,marginBottom:3}}>🔒 Fixed Partners</div>
+                                <div style={{color:'#94a3b8',fontSize:13}}>Each player stays with the same partner for the entire tournament. Enter all player names first, then use "Auto-pair" to pair them in order (Player 1 & 2, Player 3 & 4…) or set your own pairs manually. You need at least 2 pairs (4 players) to generate.</div>
+                            </div>
+                            <div style={{padding:'10px 12px',background:'rgba(52,211,153,.07)',border:'1px solid rgba(52,211,153,.2)',borderRadius:8}}>
+                                <div style={{color:'#34d399',fontWeight:700,marginBottom:3}}>✏️ Custom Matches</div>
+                                <div style={{color:'#94a3b8',fontSize:13}}>You control every match. Enter player names first, then manually pick which players face each other in each match. Add as many matches as you need. Perfect for pre-planned or special-event brackets.</div>
+                            </div>
+                        </div>
+
+                        <div style={{marginTop:12,padding:'9px 12px',background:'rgba(52,211,153,.08)',border:'1px solid rgba(52,211,153,.2)',borderRadius:8,fontSize:13}}>
+                            💡 <strong>Pro tip:</strong> Change player count to auto-adjust the name list!
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* ── Tournament Name ── */}
+            <div className="setup-panel panel-name" style={{marginBottom:14}}>
+                <div className="panel-hdr">
+                    <span className="panel-hdr-icon">🏆</span>
+                    <span className="panel-title" style={{color:'#6ee7b7'}}>Tournament Name</span>
+                </div>
+                <input className="inp inp-dark" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Sunday Doubles Bash"
+                    style={{fontSize:16,fontWeight:500}}/>
+            </div>
+
+            {/* ── Format & Partner Mode ── */}
+            <div className="setup-panel panel-format" style={{marginBottom:14}}>
+                <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:13}}>
+                    <span className="panel-hdr-icon">🏅</span>
+                    <span className="panel-title" style={{color:'#6ee7b7'}}>Format</span>
+                </div>
+                <div style={{display:'flex',gap:8,marginBottom: format==='doubles'?16:0}}>
+                    <Pill val="singles" cur={format} set={v=>{setFormat(v);setMode('rotating');}} label="🧍 Singles"/>
+                    <Pill val="doubles" cur={format} set={setFormat} label="👥 Doubles"/>
+                </div>
+                {format==='doubles'&&(
+                    <div>
+                        <div style={{height:1,background:'rgba(255,255,255,.1)',marginBottom:14}}/>
+                        <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:11}}>
+                            <span className="panel-hdr-icon">👥</span>
+                            <span className="panel-title" style={{color:'#6ee7b7'}}>Partner Mode</span>
+                        </div>
+                        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                            <Pill val="rotating" cur={mode} set={setMode} label="🔄 Rotating"/>
+                            <Pill val="fixed" cur={mode} set={setMode} label="🔒 Fixed"/>
+                            <Pill val="custom" cur={mode} set={setMode} label="✏️ Custom"/>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* ── Tournament Settings (steppers) ── */}
+            {mode!=='custom'&&(
+                <div className="setup-panel panel-settings" style={{marginBottom:14}}>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:14}}>
+                        <div>
+                            <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:7}}>
+                                <span style={{fontSize:13}}>👤</span>
+                                <span className="slbl" style={{marginBottom:0,color:'#94a3b8',fontSize:11}}>Players</span>
+                            </div>
+                            <Stepper val={np} min={format==='singles'?2:4} max={32} onChange={setNp}/>
+                        </div>
+                        <div>
+                            <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:7}}>
+                                <span style={{fontSize:13}}>🏟️</span>
+                                <span className="slbl" style={{marginBottom:0,color:'#94a3b8',fontSize:11}}>Courts</span>
+                            </div>
+                            <Stepper val={courts} min={1} max={10} onChange={setCourts}/>
+                        </div>
+                        <div>
+                            <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:7}}>
+                                <span style={{fontSize:13}}>🔢</span>
+                                <span className="slbl" style={{marginBottom:0,color:'#94a3b8',fontSize:11}}>Rounds</span>
+                            </div>
+                            <Stepper val={rounds} min={1} max={20} onChange={setRounds}/>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {mode==='custom'&&(
+                <div className="setup-panel panel-settings" style={{marginBottom:14}}>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+                        <div>
+                            <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:7}}>
+                                <span style={{fontSize:13}}>👤</span>
+                                <span className="slbl" style={{marginBottom:0,color:'#94a3b8',fontSize:11}}>Players</span>
+                            </div>
+                            <Stepper val={np} min={4} max={32} onChange={setNp}/>
+                        </div>
+                        <div>
+                            <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:7}}>
+                                <span style={{fontSize:13}}>🏟️</span>
+                                <span className="slbl" style={{marginBottom:0,color:'#94a3b8',fontSize:11}}>Courts</span>
+                            </div>
+                            <Stepper val={courts} min={1} max={10} onChange={setCourts}/>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Player Names ── */}
+            <div className="setup-panel panel-players" style={{marginBottom:14}}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:13}}>
+                    <div className="panel-hdr" style={{marginBottom:0}}>
+                        <span className="panel-hdr-icon">✏️</span>
+                        <span className="panel-title" style={{color:'#6ee7b7'}}>Player Names</span>
+                    </div>
+                    <span className="player-badge">{filledCount} / {np} entered</span>
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(170px,1fr))',gap:9}} className="player-names-grid">
+                    {players.map((p,i)=>(
+                        <div key={i} className="player-inp-wrap">
+                            <span className="player-inp-num">{numFmt(i+1)}</span>
+                            <input className="inp player-inp player-name-input" value={p}
+                                onChange={e=>{const n=[...players];n[i]=e.target.value;setPlayers(n);}}
+                                placeholder={`Player ${i+1}`} style={{fontSize:14}}/>
+                        </div>
+                    ))}
+                </div>
+                <button className="btn-clear" onClick={()=>setPlayers(Array.from({length:np},()=>''))}>↻ Clear All Names</button>
+            </div>
+
+            {/* ── Fixed Partnerships ── */}
+            {format==='doubles'&&mode==='fixed'&&(
+                <div className="setup-panel" style={{background:'linear-gradient(135deg,#0f172a 0%,#1a2f22 60%,#052e16 100%)',border:'1px solid rgba(52,211,153,.2)',boxShadow:'0 4px 16px rgba(0,0,0,.2)',marginBottom:14}}>
+                    <div style={{fontWeight:700,fontSize:15,color:'#6ee7b7',marginBottom:10}}>🤝 Fixed Partnerships {partnerships.length>0?`· ${partnerships.length} pairs set`:''}</div>
+                    <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#94a3b8',marginBottom:10}}>Enter player names above first, then pair them up here.</div>
+                    <button className="btn-out btn-sm" onClick={autoPair}>Auto-pair from player list</button>
+                    {partnerships.length>0&&<div style={{marginTop:10,display:'flex',flexDirection:'column',gap:5}}>{partnerships.map((p,i)=><div key={i} style={{fontSize:14,color:'#e2e8f0'}}>🤝 <strong>Pair {i+1}:</strong> {p.players.join(' & ')}</div>)}</div>}
+                </div>
+            )}
+
+            {/* ── Custom Matches ── */}
+            {format==='doubles'&&mode==='custom'&&(
+                <div style={{background:'rgba(248,250,252,.06)',borderRadius:12,padding:16,border:'2px solid rgba(226,232,240,.2)',marginBottom:14}}>
+                    <div style={{fontWeight:700,fontSize:15,color:'#6ee7b7',marginBottom:6}}>✏️ Custom Matches</div>
+                    <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#94a3b8',marginBottom:14}}>Enter player names above first, then assign them to matches below.</div>
+                    {customs.map((match,mi)=>(
+                        <div key={mi} style={{background:'rgba(255,255,255,.05)',borderRadius:10,padding:14,marginBottom:10,border:'1px solid rgba(255,255,255,.1)'}}>
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+                                <span style={{fontWeight:600,fontSize:15,color:'white'}}>Match {mi+1}</span>
+                                {customs.length>1&&<button onClick={()=>setCustoms(p=>p.filter((_,j)=>j!==mi))} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontSize:22,lineHeight:1}}>×</button>}
+                            </div>
+                            <div style={{display:'grid',gridTemplateColumns:'1fr auto 1fr',gap:10,alignItems:'center'}}>
+                                <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                                    <PSel value={match.team1[0]} onChange={v=>updCust(mi,'team1',0,v)} placeholder="Player 1"/>
+                                    <PSel value={match.team1[1]} onChange={v=>updCust(mi,'team1',1,v)} placeholder="Player 2"/>
+                                </div>
+                                <div style={{textAlign:'center',fontWeight:800,color:'#94a3b8',fontSize:15}}>vs</div>
+                                <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                                    <PSel value={match.team2[0]} onChange={v=>updCust(mi,'team2',0,v)} placeholder="Player 3"/>
+                                    <PSel value={match.team2[1]} onChange={v=>updCust(mi,'team2',1,v)} placeholder="Player 4"/>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                    <button className="btn-out btn-sm" onClick={()=>setCustoms(p=>[...p,{team1:['',''],team2:['','']}])}>+ Add Match</button>
+                </div>
+            )}
+
+            {/* ── Generate Button ── */}
+            <button className="btn-generate" onClick={generate}>
+                <span style={{fontSize:22}}>🚀</span> Generate Tournament
+            </button>
+        </div>
+    );
+}
+
+// ── Schedule View ─────────────────────────────────────────────────────
+function ScheduleView({schedule,scores,onScoreChange,canEdit,tournamentName,players,isGuest,onExportPDF,finalized,mode}){
+    const[showLB,setShowLB]=useState(false);
+    const lb=calcLB(players,schedule,scores);
+
+    // For fixed mode, detect pairs from schedule and merge into pair rows
+    const pairLB=React.useMemo(()=>{
+        if(mode!=='fixed')return null;
+        const pairMap={};
+        schedule.forEach(round=>round.forEach(match=>{
+            if(match.team1.length===2){const k=[...match.team1].sort().join('|||');if(!pairMap[k])pairMap[k]=match.team1;}
+            if(match.team2.length===2){const k=[...match.team2].sort().join('|||');if(!pairMap[k])pairMap[k]=match.team2;}
+        }));
+        return Object.values(pairMap).map(pair=>{
+            const p1=lb.find(x=>x.name===pair[0])||{wins:0,losses:0,total:0,diff:0};
+            const p2=lb.find(x=>x.name===pair[1])||{wins:0,losses:0,total:0,diff:0};
+            return{name:pair.join(' & '),wins:p1.wins,losses:p1.losses,total:p1.total,diff:p1.diff};
+        }).sort((a,b)=>b.wins-a.wins||b.diff-a.diff);
+    },[mode,lb,schedule]);
+
+    const displayLB=pairLB||lb;
+    return(
+        <div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:10,marginBottom:18,alignItems:'center'}}>
+                <button onClick={()=>setShowLB(!showLB)} style={{background:showLB?'#0f172a':'white',color:showLB?'white':'#0f172a',border:`2px solid ${showLB?'#0f172a':'#0f172a'}`,borderRadius:9,padding:'11px 18px',fontFamily:'Outfit,sans-serif',fontSize:15,fontWeight:600,cursor:'pointer',transition:'all .15s',flex:'1 1 auto',minWidth:160}}>
+                    {showLB?'✕ Hide Leaderboard':'🏆 Show Leaderboard'}
+                </button>
+                <button className="btn-out btn-sm" onClick={onExportPDF} style={{padding:'11px 18px',fontSize:14,flex:'1 1 auto',minWidth:160,whiteSpace:'nowrap'}}>
+                    📄 {isGuest?'Export PDF (Blank)':'Export PDF'}
+                </button>
+            </div>
+
+            {showLB&&(
+                <div style={{background:'linear-gradient(135deg,#fefce8,#fff7ed)',border:'2px solid #fbbf24',borderRadius:14,padding:18,marginBottom:20}}>
+                    <div className="fd" style={{fontSize:22,fontWeight:800,color:'#0f172a',marginBottom:14}}>🏆 LEADERBOARD</div>
+                    {/* Table header */}
+                    <div style={{display:'grid',gridTemplateColumns:'auto 1fr 44px 44px 44px 52px',gap:0,alignItems:'center',padding:'0 14px 8px',borderBottom:'2px solid #fbbf24',marginBottom:6}}>
+                        <div style={{minWidth:32}}/>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,color:'#92400e',letterSpacing:.8,textTransform:'uppercase'}}>Player</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:800,color:'#92400e',textAlign:'center'}}>T</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:800,color:'#059669',textAlign:'center'}}>W</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:800,color:'#dc2626',textAlign:'center'}}>L</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,color:'#92400e',textAlign:'right',letterSpacing:.5}}>+/−</div>
+                    </div>
+                    <div style={{display:'flex',flexDirection:'column',gap:4}}>
+                        {displayLB.map((p,i)=>(
+                            <div key={p.name} style={{background:'white',borderRadius:10,padding:'10px 14px',display:'grid',gridTemplateColumns:'auto 1fr 44px 44px 44px 52px',alignItems:'center',gap:0,border:`2px solid ${i===0?'#fbbf24':'#f1f5f9'}`}}>
+                                <span style={{fontSize:18,minWidth:32,lineHeight:1}}>{i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`}</span>
+                                <span style={{fontFamily:'Outfit,sans-serif',fontWeight:600,fontSize:15,color:'#0f172a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',paddingRight:8}}>{p.name}</span>
+                                <span style={{fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:700,color:'#64748b',textAlign:'center'}}>{p.total}</span>
+                                <span style={{fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:700,color:'#059669',textAlign:'center'}}>{p.wins}</span>
+                                <span style={{fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:700,color:'#dc2626',textAlign:'center'}}>{p.losses}</span>
+                                <span style={{fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:700,color:p.diff>0?'#059669':p.diff<0?'#dc2626':'#64748b',textAlign:'right'}}>{p.diff>0?'+':''}{p.diff}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {schedule.map((round,ri)=>(
+                <div key={ri} className="round-card">
+                    <div className="round-hd">
+                        <div className="fd" style={{fontSize:19,fontWeight:800,color:'white',letterSpacing:.5}}>ROUND {ri+1}</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#6ee7b7'}}>{round.length} match{round.length!==1?'es':''}</div>
+                    </div>
+
+                    {round.map(match=>{
+                        const sc=scores[match.id]||{};
+                        const s1=(sc.team1!==undefined&&sc.team1!=='')?parseInt(sc.team1):null;
+                        const s2=(sc.team2!==undefined&&sc.team2!=='')?parseInt(sc.team2):null;
+                        const w1=s1!==null&&s2!==null&&s1>s2,w2=s1!==null&&s2!==null&&s2>s1;
+                        const t1=match.team1.join(' & '),t2=match.team2.join(' & ');
+                        return(
+                            <div key={match.id} className="match-row">
+                                {/* Desktop layout (via grid) */}
+                                <span className="court-badge" style={{fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:700,color:'#059669',background:'#f0fdf4',borderRadius:7,padding:'5px 9px',whiteSpace:'nowrap'}}>
+                                    Court {match.court}
+                                </span>
+                                <span className={`pname pname-desktop${w1?' win':''}`}>{w1&&'🏆 '}{t1}</span>
+                                <div className="score-block">
+                                    <input className="score-inp" type="number" min={0}
+                                        value={sc.team1!==undefined?sc.team1:''}
+                                        onChange={e=>canEdit&&onScoreChange(match.id,'team1',e.target.value)}
+                                        placeholder="0" disabled={!canEdit||finalized}/>
+                                    <span style={{color:'#94a3b8',fontWeight:800,fontSize:18}}>:</span>
+                                    <input className="score-inp" type="number" min={0}
+                                        value={sc.team2!==undefined?sc.team2:''}
+                                        onChange={e=>canEdit&&onScoreChange(match.id,'team2',e.target.value)}
+                                        placeholder="0" disabled={!canEdit||finalized}/>
+                                </div>
+                                <span className={`pname pname-desktop${w2?' win':''}`} style={{textAlign:'right'}}>{t2}{w2&&' 🏆'}</span>
+
+                                {/* Mobile layout — team name + score on same line */}
+                                <div className="match-row-inner" style={{}}>
+                                    <div className="mobile-team-row">
+                                        <span className={`pname${w1?' win':''}`} style={{flex:1}}>{w1&&'🏆 '}{t1}</span>
+                                        {canEdit&&!finalized?(
+                                            <input className="score-inp" type="number" min={0}
+                                                value={sc.team1!==undefined?sc.team1:''}
+                                                onChange={e=>onScoreChange(match.id,'team1',e.target.value)}
+                                                placeholder="—"/>
+                                        ):(
+                                            <span className={`mobile-score${w1?' win':s1===null?' pending':''}`}>
+                                                {s1!==null?s1:'—'}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="mobile-divider">vs</div>
+                                    <div className="mobile-team-row">
+                                        <span className={`pname${w2?' win':''}`} style={{flex:1}}>{w2&&'🏆 '}{t2}</span>
+                                        {canEdit&&!finalized?(
+                                            <input className="score-inp" type="number" min={0}
+                                                value={sc.team2!==undefined?sc.team2:''}
+                                                onChange={e=>onScoreChange(match.id,'team2',e.target.value)}
+                                                placeholder="—"/>
+                                        ):(
+                                            <span className={`mobile-score${w2?' win':s2===null?' pending':''}`}>
+                                                {s2!==null?s2:'—'}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    {round.byePlayers?.length>0&&(
+                        <div className="bye-row">
+                            <span style={{fontSize:16}}>⏸</span>
+                            <span><strong>Sitting out this round:</strong> {round.byePlayers.join(', ')}</span>
+                        </div>
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+}
+
+// ── Feedback Modal ────────────────────────────────────────────────────
+function FeedbackModal({onClose,user}){
+    const[type,setType]=useState('bug');
+    const[email,setEmail]=useState(user?.email||'');
+    const[msg,setMsg]=useState('');
+    const[status,setStatus]=useState('');
+    const[busy,setBusy]=useState(false);
+
+    const submit=async()=>{
+        if(!msg.trim()){alert('Please enter a message');return;}
+        setBusy(true);
+        await storage.saveFeedback({email:email||'Anonymous',type,message:msg,userId:user?.uid||'guest',timestamp:Date.now(),createdAt:new Date().toISOString()});
+        setStatus('✓ Thanks for your feedback!');setMsg('');setBusy(false);
+        setTimeout(()=>{setStatus('');onClose();},2000);
+    };
+
+    return(
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:16}}>
+            <div style={{background:'white',borderRadius:16,padding:28,maxWidth:460,width:'100%',boxShadow:'0 20px 60px rgba(0,0,0,.2)'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+                    <div className="fd" style={{fontSize:24,fontWeight:800,color:'#0f172a'}}>💬 SEND FEEDBACK</div>
+                    <button onClick={onClose} style={{background:'none',border:'none',fontSize:26,cursor:'pointer',color:'#94a3b8',lineHeight:1}}>×</button>
+                </div>
+                <div style={{display:'flex',flexDirection:'column',gap:16}}>
+                    <div><SL>Your Email (optional)</SL><input className="inp" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="your@email.com"/></div>
+                    <div>
+                        <SL>Type</SL>
+                        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                            {[['bug','🐛 Bug'],['feature','💡 Feature'],['improvement','✨ Improvement'],['other','💬 Other']].map(([v,l])=>(
+                                <Pill key={v} val={v} cur={type} set={setType} label={l}/>
+                            ))}
+                        </div>
+                    </div>
+                    <div><SL>Message</SL><textarea className="inp" rows={5} value={msg} onChange={e=>setMsg(e.target.value)} placeholder="Tell us what's on your mind…" style={{resize:'vertical'}}/></div>
+                    {status&&<div style={{background:'#f0fdf4',border:'1px solid #a7f3d0',borderRadius:8,padding:'11px 14px',fontSize:15,color:'#059669',fontWeight:600}}>{status}</div>}
+                    <button className="btn-g" onClick={submit} disabled={busy} style={{width:'100%',padding:'14px'}}>
+                        {busy?'Sending…':'📤 Send Feedback'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── App Root ──────────────────────────────────────────────────────────
+function App(){
+    const[view,setView]=useState('landing');
+    const[user,setUser]=useState(null);
+    const[authReady,setAuthReady]=useState(false);
+    const[showFB,setShowFB]=useState(false);
+
+    useEffect(()=>{
+        if(!fbOk||!auth){setAuthReady(true);return;}
+        const u=auth.onAuthStateChanged(async u=>{
+            if(u&&!u.isAnonymous){
+                let p={uid:u.uid,email:u.email,name:u.displayName||u.email.split('@')[0]};
+                try{const doc=await db.collection('users').doc(u.uid).get();if(doc.exists)p=doc.data();else await db.collection('users').doc(u.uid).set(p);}catch(e){}
+                setUser(p);
+            }else setUser(null);
+            setAuthReady(true);
+        });
+        return()=>u();
+    },[]);
+
+    const logout=async()=>{if(auth)await auth.signOut();setUser(null);setView('landing');};
+
+    if(!authReady) return(
+        <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',background:'#f1f5f9'}}>
+            <div style={{textAlign:'center'}}>
+                <div style={{width:44,height:44,border:'4px solid #e2e8f0',borderTop:'4px solid #059669',borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto 12px'}}/>
+                <div style={{fontFamily:'Outfit,sans-serif',color:'#64748b',fontSize:16}}>Loading…</div>
+            </div>
+        </div>
+    );
+
+    return(
+        <>
+            {showFB&&<FeedbackModal onClose={()=>setShowFB(false)} user={user}/>}
+            {view==='landing'&&<LandingView onSimple={()=>setView('simple')} onAdvanced={()=>user?setView('app'):setView('login')} user={user} onFeedback={()=>setShowFB(true)}/>}
+            {view==='simple'&&<SimpleView onBack={()=>setView('landing')} onLogin={()=>setView('login')} onFeedback={()=>setShowFB(true)}/>}
+            {view==='login'&&<LoginView onBack={()=>setView('landing')} onSuccess={()=>setView('app')}/>}
+            {view==='app'&&<FullApp user={user} onLogout={logout} onBack={()=>setView('landing')} onFeedback={()=>setShowFB(true)}/>}
+        </>
+    );
+}
+
+// ── Landing ───────────────────────────────────────────────────────────
+function LandingView({onSimple,onAdvanced,user,onFeedback}){
+    return(
+        <div style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
+            <div className="hero-bg" style={{padding:'52px 20px 68px',textAlign:'center'}}>
+                <div style={{display:'inline-flex',alignItems:'center',gap:8,marginBottom:22,background:'rgba(5,150,105,.2)',padding:'7px 20px',borderRadius:99}}>
+                    <span style={{fontFamily:'Outfit,sans-serif',color:'#6ee7b7',fontSize:13,fontWeight:700,letterSpacing:1.2}}>PICKLEBALL TOURNAMENT GENERATOR</span>
+                </div>
+                <h1 className="fd" style={{fontSize:'clamp(50px,9vw,82px)',fontWeight:800,color:'white',lineHeight:1,marginBottom:16,letterSpacing:'-1px'}}>
+                    PICKLE<span style={{color:'#34d399'}}>CONNECT</span>
+                </h1>
+                <p style={{fontFamily:'Outfit,sans-serif',color:'#94a3b8',fontSize:17,maxWidth:460,margin:'0 auto 48px',lineHeight:1.6}}>
+                    Generate round-robin brackets in seconds. No setup, no waiting.
+                </p>
+                <div className="landing-cards" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(290px,1fr))',gap:18,maxWidth:660,margin:'0 auto'}}>
+                    {/* Quick Generation */}
+                    <div className="card-lift" onClick={onSimple} style={{background:'white',borderRadius:18,padding:'30px 26px',cursor:'pointer',textAlign:'left',border:'2px solid transparent',position:'relative',overflow:'visible'}}>
+                        <div style={{position:'absolute',top:-8,right:-8,background:'#10b981',color:'white',fontSize:13,fontWeight:800,padding:'6px 14px',borderRadius:99,fontFamily:'Outfit,sans-serif',letterSpacing:.5,boxShadow:'0 4px 12px rgba(16,185,129,.4)'}}>FREE</div>
+                        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+                            <span style={{fontSize:36,lineHeight:1}}>⚡</span>
+                            <div className="fd" style={{fontSize:30,fontWeight:800,color:'#0f172a',lineHeight:1}}>QUICK GENERATION</div>
+                        </div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:15,color:'#64748b',marginBottom:18,lineHeight:1.6}}>Generate & play immediately. No account needed.</div>
+                        <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:24}}>
+                            {['✓ Instant bracket generator','✓ Enter scores live','✓ Export blank scorecard (PDF)','✓ Look up public tournaments','✗ No cloud saving','✗ No sharing'].map(t=>(
+                                <div key={t} style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:t.startsWith('✗')?'#cbd5e1':'#059669'}}>{t}</div>
+                            ))}
+                        </div>
+                        <div style={{background:'#059669',color:'white',borderRadius:10,padding:'13px 0',textAlign:'center',fontWeight:700,fontSize:16,fontFamily:'Outfit,sans-serif'}}>Start Generating →</div>
+                    </div>
+                    {/* Full Tournament */}
+                    <div className="card-lift" onClick={onAdvanced} style={{background:'#0f172a',borderRadius:18,padding:'30px 26px',cursor:'pointer',textAlign:'left',border:'2px solid #059669',position:'relative',overflow:'visible'}}>
+                        <div style={{position:'absolute',top:-8,right:-8,background:'#fbbf24',color:'#78350f',fontSize:13,fontWeight:800,padding:'6px 14px',borderRadius:99,fontFamily:'Outfit,sans-serif',letterSpacing:.5,boxShadow:'0 4px 12px rgba(251,191,36,.4)'}}>FREE</div>
+                        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+                            <span style={{fontSize:36,lineHeight:1}}>🏆</span>
+                            <div className="fd" style={{fontSize:30,fontWeight:800,color:'white',lineHeight:1}}>FULL TOURNAMENT</div>
+                        </div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:15,color:'#94a3b8',marginBottom:18,lineHeight:1.6}}>Save, share & manage tournaments. Login required.</div>
+                        <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:24}}>
+                            {['✓ Everything in Quick Generation','✓ Cloud save & real-time sync','✓ Share via tournament ID','✓ Public / Private control','✓ Finalize & lock scores','✓ Export with scores (PDF)'].map(t=>(
+                                <div key={t} style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#6ee7b7'}}>{t}</div>
+                            ))}
+                        </div>
+                        <div style={{background:'#059669',color:'white',borderRadius:10,padding:'13px 0',textAlign:'center',fontWeight:700,fontSize:16,fontFamily:'Outfit,sans-serif'}}>
+                            {user?'Go to Dashboard →':'Login / Sign Up →'}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:24,padding:'16px',fontFamily:'Outfit,sans-serif',fontSize:13,color:'#94a3b8',flexWrap:'wrap'}}>
+                <span>© 2025 PickleConnect. All rights reserved.</span>
+                <span>·</span>
+                <span>Built for pickleball players</span>
+                <span>·</span>
+                <button onClick={onFeedback} style={{background:'none',border:'none',color:'#059669',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:700,cursor:'pointer'}}>💬 Feedback</button>
+            </div>
+        </div>
+    );
+}
+
+// ── Login View ────────────────────────────────────────────────────────
+function LoginView({onBack,onSuccess}){
+    const[email,setEmail]=useState('');
+    const[pw,setPw]=useState('');
+    const[pwc,setPwc]=useState('');
+    const[isSignup,setIsSignup]=useState(false);
+    const[err,setErr]=useState('');
+    const[msg,setMsg]=useState('');
+    const[busy,setBusy]=useState(false);
+
+    const submit=async e=>{
+        e.preventDefault();setErr('');setMsg('');setBusy(true);
+        if(!fbOk){setErr('Firebase not configured');setBusy(false);return;}
+        if(isSignup&&pw!==pwc){setErr('Passwords do not match');setBusy(false);return;}
+        if(isSignup&&pw.length<6){setErr('Password must be 6+ characters');setBusy(false);return;}
+        try{
+            if(isSignup){const c=await auth.createUserWithEmailAndPassword(email,pw);try{await c.user.sendEmailVerification();}catch(e){}setMsg('Account created! Redirecting…');setTimeout(onSuccess,1500);}
+            else{await auth.signInWithEmailAndPassword(email,pw);onSuccess();}
+        }catch(e){const m={'auth/email-already-in-use':'Email already registered.','auth/invalid-email':'Invalid email.','auth/wrong-password':'Incorrect password.','auth/user-not-found':'No account with this email.','auth/invalid-credential':'Incorrect email or password.'};setErr(m[e.code]||e.message);}
+        setBusy(false);
+    };
+
+    const reset=async()=>{
+        if(!email){setErr('Enter your email first');return;}
+        try{await auth.sendPasswordResetEmail(email);setMsg('Reset email sent!');}catch(e){setErr(e.message);}
+    };
+
+    return(
+        <div style={{minHeight:'100vh',background:'#f1f5f9',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:20}}>
+            <div style={{width:'100%',maxWidth:420}}>
+                <button onClick={onBack} style={{background:'none',border:'none',color:'#64748b',cursor:'pointer',fontFamily:'Outfit,sans-serif',fontSize:16,marginBottom:24,display:'flex',alignItems:'center',gap:6}}>← Back to Home</button>
+                <div className="card">
+                    <div className="fd" style={{fontSize:32,fontWeight:800,color:'#0f172a',marginBottom:4}}>{isSignup?'CREATE ACCOUNT':'WELCOME BACK'}</div>
+                    <div style={{fontFamily:'Outfit,sans-serif',fontSize:15,color:'#64748b',marginBottom:24}}>{isSignup?'Get access to all tournament features':'Log in to your tournament dashboard'}</div>
+                    <form onSubmit={submit} style={{display:'flex',flexDirection:'column',gap:16}}>
+                        <div><SL>Email</SL><input className="inp" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" required/></div>
+                        <div><SL>Password</SL><input className="inp" type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="••••••••" required minLength={6}/></div>
+                        {isSignup&&<div><SL>Confirm Password</SL><input className="inp" type="password" value={pwc} onChange={e=>setPwc(e.target.value)} placeholder="••••••••" required minLength={6}/></div>}
+                        {err&&<div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',fontSize:15,color:'#dc2626'}}>{err}</div>}
+                        {msg&&<div style={{background:'#f0fdf4',border:'1px solid #a7f3d0',borderRadius:8,padding:'11px 14px',fontSize:15,color:'#059669'}}>{msg}</div>}
+                        <button className="btn-g" type="submit" disabled={busy} style={{width:'100%',padding:'14px',marginTop:4}}>{busy?'Please wait…':isSignup?'Create Account':'Log In'}</button>
+                    </form>
+                    <div style={{marginTop:18,textAlign:'center',display:'flex',flexDirection:'column',gap:10}}>
+                        <button onClick={()=>{setIsSignup(!isSignup);setErr('');setMsg('');}} style={{background:'none',border:'none',color:'#059669',fontFamily:'Outfit,sans-serif',fontSize:15,cursor:'pointer',fontWeight:600}}>
+                            {isSignup?'Already have an account? Log in':"Don't have an account? Sign up"}
+                        </button>
+                        {!isSignup&&<button onClick={reset} style={{background:'none',border:'none',color:'#94a3b8',fontFamily:'Outfit,sans-serif',fontSize:14,cursor:'pointer'}}>Forgot password?</button>}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Simple (Guest) View ───────────────────────────────────────────────
+function SimpleView({onBack,onLogin,onFeedback}){
+    const[tab,setTab]=useState('create');
+    const[setup,setSetup]=useState(null);
+    const[scores,setScores]=useState({});
+    const[findId,setFindId]=useState('');
+    const[found,setFound]=useState(null);
+    const[foundScores,setFoundScores]=useState({});
+    const[foundSaveStatus,setFoundSaveStatus]=useState('');
+    const[findErr,setFindErr]=useState('');
+    const[finding,setFinding]=useState(false);
+    const foundSaveTimer=React.useRef(null);
+
+    const handleGenerate=d=>{setSetup(d);setScores({});};
+    const updScore=(id,team,val)=>setScores(p=>({...p,[id]:{...(p[id]||{}),[team]:val}}));
+
+    const updFoundScore=(id,team,val)=>{
+        const updated=s=>({...s,[id]:{...(s[id]||{}),[team]:val}});
+        setFoundScores(prev=>{
+            const next=updated(prev);
+            // Debounce save to Firestore
+            if(foundSaveTimer.current)clearTimeout(foundSaveTimer.current);
+            foundSaveTimer.current=setTimeout(async()=>{
+                if(!found?.id)return;
+                setFoundSaveStatus('Saving…');
+                try{
+                    if(fbOk&&db){
+                        await db.collection('tournaments').doc(found.id).update({scores:next});
+                        setFoundSaveStatus('✓ Saved');
+                    }
+                }catch(e){setFoundSaveStatus('✗ Failed');}
+                setTimeout(()=>setFoundSaveStatus(''),2500);
+            },1200);
+            return next;
+        });
+    };
+
+    const findTournament=async()=>{
+        const id=findId.trim();if(!id)return;
+        setFinding(true);setFindErr('');setFound(null);setFoundScores({});
+        const data=await storage.get(id);
+        if(!data)setFindErr('Tournament not found. Check the ID and try again.');
+        else if(!data.isPublic)setFindErr('This tournament is private. Only the owner can access it.');
+        else{
+            const map={};
+            (data.scheduleFlat||[]).forEach(m=>{if(!map[m.roundIndex])map[m.roundIndex]=[];map[m.roundIndex].push({id:m.id,court:m.court,team1:typeof m.team1==='string'?m.team1.split(', ').filter(Boolean):[m.team1],team2:typeof m.team2==='string'?m.team2.split(', ').filter(Boolean):[m.team2]});});
+            const t={...data,schedule:data.schedule||Object.keys(map).sort((a,b)=>a-b).map(k=>map[k])};
+            setFound(t);
+            setFoundScores(data.scores||{});
+        }
+        setFinding(false);
+    };
+
+    const isEditMode=found?.publicMode==='edit'&&!found?.scoresFinalized;
+
+    return(
+        <div style={{minHeight:'100vh',background:'#f1f5f9',display:'flex',flexDirection:'column'}}>
+            <div className="nav">
+                <button className="nav-back" onClick={()=>setup?setSetup(null):onBack()}>←</button>
+                <div className="fd" style={{fontSize:22,fontWeight:800,flex:1,cursor:'pointer'}}>
+                    <span style={{color:'white'}}>PICKLE</span><span style={{color:'#34d399'}}>CONNECT</span>
+                </div>
+                <button className="back-home-btn" onClick={()=>window.location.href='index.html'}>🏓 Courts</button>
+                <button onClick={onFeedback} style={{background:'rgba(255,255,255,.1)',color:'#94a3b8',border:'none',borderRadius:8,padding:'8px 13px',fontFamily:'Outfit,sans-serif',fontSize:14,cursor:'pointer',marginRight:6}}>💬</button>
+                <button onClick={onLogin} style={{background:'#059669',color:'white',border:'none',borderRadius:8,padding:'9px 16px',fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:600,cursor:'pointer'}}>Login</button>
+            </div>
+
+            <div style={{background:'#fffbeb',borderBottom:'1px solid #fcd34d',padding:'11px 18px',display:'flex',gap:10,alignItems:'flex-start'}}>
+                <span style={{fontSize:17,flexShrink:0}}>⚡</span>
+                <span style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#92400e',lineHeight:1.5}}>
+                    <strong>Guest Mode:</strong> Tournaments are not saved to the cloud. Export your scorecard before leaving.
+                </span>
+            </div>
+
+            <div style={{background:'white',borderBottom:'1px solid #e2e8f0',padding:'0 18px',display:'flex'}}>
+                {[['create','Create Tournament'],['find','Search Tournament']].map(([k,l])=>(
+                    <button key={k} onClick={()=>setTab(k)} style={{background:'none',border:'none',borderBottom:`3px solid ${tab===k?'#059669':'transparent'}`,padding:'15px 18px',fontFamily:'Outfit,sans-serif',fontSize:15,fontWeight:600,color:tab===k?'#059669':'#64748b',cursor:'pointer',transition:'all .15s'}}>{l}</button>
+                ))}
+            </div>
+
+            <div style={{flex:1,padding:16,maxWidth:740,width:'100%',margin:'0 auto'}}>
+                {tab==='create'&&(
+                    !setup?(
+                        <div className="card"><TournamentSetup onGenerate={handleGenerate}/></div>
+                    ):(
+                        <>
+                            <div style={{background:'white',borderRadius:14,padding:'15px 18px',marginBottom:14,display:'flex',justifyContent:'space-between',alignItems:'center',boxShadow:'0 1px 6px rgba(0,0,0,.05)'}}>
+                                <div>
+                                    <div className="fd" style={{fontSize:22,fontWeight:800,color:'#0f172a'}}>{setup.name}</div>
+                                    <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#64748b',marginTop:2}}>{setup.players.length} players · {setup.schedule.length} rounds</div>
+                                </div>
+                                <button className="btn-out btn-sm" onClick={()=>{setSetup(null);setScores({});}}>New</button>
+                            </div>
+                            <ScheduleView schedule={setup.schedule} scores={scores} onScoreChange={updScore} canEdit={true} tournamentName={setup.name} players={setup.players} isGuest={true} onExportPDF={()=>doPrint(setup.name,setup.schedule,scores,setup.players,false)} finalized={false} mode={setup.mode}/>
+                        </>
+                    )
+                )}
+
+                {tab==='find'&&(
+                    <div className="card">
+                        <div className="fd" style={{fontSize:22,fontWeight:800,color:'#0f172a',marginBottom:6}}>FIND A TOURNAMENT</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:15,color:'#64748b',marginBottom:18,lineHeight:1.6}}>Enter a tournament ID shared by the organizer to view any public tournament.</div>
+                        <div style={{display:'flex',gap:8,marginBottom:18}}>
+                            <input className="inp" value={findId} onChange={e=>setFindId(e.target.value)} placeholder="e.g. tournament-1739746800" onKeyDown={e=>e.key==='Enter'&&findTournament()} style={{flex:1}}/>
+                            <button className="btn-g" onClick={findTournament} disabled={finding}>{finding?'Searching…':'Find →'}</button>
+                        </div>
+                        {findErr&&<div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:10,padding:'13px 16px',fontSize:15,color:'#dc2626',marginBottom:14}}>{findErr}</div>}
+                        {found&&(
+                            <>
+                                <div style={{background:isEditMode?'#fffbeb':'#f0fdf4',border:`1px solid ${isEditMode?'#fcd34d':'#a7f3d0'}`,borderRadius:12,padding:'14px 18px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}>
+                                    <div>
+                                        <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{found.name}</div>
+                                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#64748b',marginTop:4}}>
+                                            {isEditMode?'✏️ Public (Edit)':'🌍 Public (Read)'} · {found.players?.length||0} players · {found.schedule?.length||0} rounds{found.scoresFinalized&&' · 🔒 Finalized'}
+                                        </div>
+                                    </div>
+                                    {isEditMode&&(
+                                        <div style={{display:'flex',alignItems:'center',gap:8}}>
+                                            {foundSaveStatus&&<span style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:foundSaveStatus.includes('✓')?'#059669':foundSaveStatus.includes('✗')?'#dc2626':'#64748b'}}>{foundSaveStatus}</span>}
+                                            <span style={{background:'#f59e0b',color:'white',borderRadius:8,padding:'5px 11px',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700}}>✏️ Score Editing On</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <ScheduleView
+                                    schedule={found.schedule||[]}
+                                    scores={foundScores}
+                                    onScoreChange={updFoundScore}
+                                    canEdit={isEditMode}
+                                    tournamentName={found.name}
+                                    players={found.players||[]}
+                                    isGuest={true}
+                                    onExportPDF={()=>doPrint(found.name,found.schedule||[],foundScores,found.players||[],true)}
+                                    finalized={found.scoresFinalized||false}
+                                    mode={found.mode||'rotating'}/>
+                            </>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── Full App (Authenticated) ──────────────────────────────────────────
+function FullApp({user,onLogout,onBack,onFeedback}){
+    const[view,setView]=useState('dashboard');
+    const[setup,setSetup]=useState(null);
+    const[scores,setScores]=useState({});
+    const[tid,setTid]=useState(null);
+    const[createdBy,setCreatedBy]=useState(null);
+    const[isPublic,setIsPublic]=useState(false);
+    const[publicMode,setPublicMode]=useState('read'); // 'read' | 'edit'
+    const[finalized,setFinalized]=useState(false);
+    const[saveStatus,setSaveStatus]=useState('');
+    const[myT,setMyT]=useState([]);
+    const[loadId,setLoadId]=useState('');
+    const saving=useRef(false);
+    const isRemote=useRef(false);
+    const didInit=useRef(false);
+
+    // Refs so save() always sees fresh state
+    const rSetup=useRef(null),rScores=useRef({}),rTid=useRef(null);
+    const rCreatedBy=useRef(null),rPublic=useRef(false),rPublicMode=useRef('read'),rFinalized=useRef(false);
+    useEffect(()=>{rSetup.current=setup;},[setup]);
+    useEffect(()=>{rScores.current=scores;},[scores]);
+    useEffect(()=>{rTid.current=tid;},[tid]);
+    useEffect(()=>{rCreatedBy.current=createdBy;},[createdBy]);
+    useEffect(()=>{rPublic.current=isPublic;},[isPublic]);
+    useEffect(()=>{rPublicMode.current=publicMode;},[publicMode]);
+    useEffect(()=>{rFinalized.current=finalized;},[finalized]);
+
+    useEffect(()=>{loadAll();},[user]);
+
+    const loadAll=async()=>{
+        if(!user)return;
+        try{const list=await storage.getAll(user.uid);setMyT(list.sort((a,b)=>b.createdAt-a.createdAt));}catch(e){}
+    };
+
+    // Auto-save on score change (debounced)
+    useEffect(()=>{
+        if(!tid||Object.keys(scores).length===0)return;
+        if(isRemote.current){isRemote.current=false;return;}
+        const t=setTimeout(()=>doSave(),1500);return()=>clearTimeout(t);
+    },[scores]);
+
+    // Auto-save on visibility toggle
+    useEffect(()=>{
+        if(!tid||!didInit.current)return;
+        const t=setTimeout(()=>doSave(),600);return()=>clearTimeout(t);
+    },[isPublic,publicMode]);
+
+    // Real-time listener
+    useEffect(()=>{
+        if(!tid)return;
+        const u=storage.listen(tid,data=>{if(data?.scores){isRemote.current=true;setScores(data.scores);}});
+        return()=>{if(typeof u==='function')u();};
+    },[tid]);
+
+    const doSave=async(overrides={})=>{
+        const id=overrides.tid??rTid.current;
+        const s=overrides.setup??rSetup.current;
+        const sc=overrides.scores??rScores.current;
+        const pub=overrides.isPublic??rPublic.current;
+        const pm=overrides.publicMode??rPublicMode.current;
+        const fin=overrides.finalized??rFinalized.current;
+        const cb=overrides.createdBy??rCreatedBy.current;
+        if(!id||!s)return;
+        if(saving.current)return;
+        saving.current=true;
+        const uid=user?.uid||'guest';
+        const flat=[];
+        (s.schedule||[]).forEach((round,ri)=>round.forEach((m)=>{flat.push({roundIndex:ri,id:m.id,court:m.court,team1:Array.isArray(m.team1)?m.team1.join(', '):m.team1,team2:Array.isArray(m.team2)?m.team2.join(', '):m.team2});}));
+        const data={id,name:s.name,players:s.players,courts:s.courts,numRounds:s.rounds,matchFormat:s.format,mode:s.mode,scheduleFlat:flat,scores:sc,scoresFinalized:fin,isPublic:pub,publicMode:pm,participants:[uid,...(s.players||[]).map(p=>`player-${p}`)],createdBy:cb||uid,createdAt:Date.now()};
+        try{setSaveStatus('Saving…');await storage.save(data);setSaveStatus('✓ Saved');setTimeout(()=>setSaveStatus(''),2500);}catch(e){setSaveStatus('✗ Save failed');}
+        saving.current=false;
+    };
+
+    const handleGenerate=d=>{
+        const newTid=`tournament-${Date.now()}`;
+        const uid=user?.uid||'guest';
+        setSetup(d);setScores({});setTid(newTid);setCreatedBy(uid);setIsPublic(false);setPublicMode('read');setFinalized(false);
+        didInit.current=false;
+        setView('tournament');
+        // Save immediately with explicit values (avoids stale closure issue)
+        setTimeout(()=>{
+            didInit.current=true;
+            doSave({tid:newTid,setup:d,scores:{},isPublic:false,publicMode:'read',finalized:false,createdBy:uid});
+        },150);
+    };
+
+    const loadTournament=async id=>{
+        if(!id.trim())return;
+        const data=await storage.get(id.trim());
+        if(!data){alert('Tournament not found');return;}
+        const map={};
+        (data.scheduleFlat||[]).forEach(m=>{if(!map[m.roundIndex])map[m.roundIndex]=[];map[m.roundIndex].push({id:m.id,court:m.court,team1:typeof m.team1==='string'?m.team1.split(', ').filter(Boolean):[m.team1],team2:typeof m.team2==='string'?m.team2.split(', ').filter(Boolean):[m.team2]});});
+        const schedule=data.schedule||Object.keys(map).sort((a,b)=>a-b).map(k=>map[k]);
+        const s={name:data.name,players:data.players||[],schedule,courts:data.courts,rounds:data.numRounds,format:data.matchFormat,mode:data.mode||'rotating'};
+        setSetup(s);setScores(data.scores||{});setTid(data.id);setCreatedBy(data.createdBy||null);setIsPublic(data.isPublic||false);setPublicMode(data.publicMode||'read');setFinalized(data.scoresFinalized||false);
+        didInit.current=false;setView('tournament');setTimeout(()=>{didInit.current=true;},500);
+    };
+
+    const delTournament=async id=>{
+        if(!confirm('Delete this tournament?'))return;
+        storage.del(id);loadAll();
+        if(tid===id){setView('dashboard');setSetup(null);setTid(null);}
+    };
+
+    const isOwner=tid&&createdBy===user?.uid;
+
+    const share=()=>{
+        if(!tid)return;
+        const el=document.createElement('div');
+        el.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;';
+        el.innerHTML=`<div style="background:white;border-radius:16px;padding:28px;max-width:440px;width:100%;font-family:Outfit,sans-serif;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:#0f172a;">📤 SHARE TOURNAMENT</div>
+                <button id="__cls" style="background:none;border:none;font-size:28px;cursor:pointer;color:#94a3b8;line-height:1;">×</button>
+            </div>
+            <div style="background:#f1f5f9;border-radius:12px;padding:14px;margin-bottom:14px;">
+                <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Tournament ID</div>
+                <div style="display:flex;gap:10px;">
+                    <input id="__tid" value="${tid}" readonly style="flex:1;background:white;border:2px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-size:14px;font-family:monospace;outline:none;" onclick="this.select()"/>
+                    <button id="__cp" style="background:#059669;color:white;border:none;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer;font-size:15px;font-family:Outfit,sans-serif;">Copy</button>
+                </div>
+            </div>
+            <div style="background:#eff6ff;border-left:4px solid #3b82f6;border-radius:8px;padding:12px 14px;font-size:14px;color:#1e40af;line-height:1.5;">
+                Share this ID. Others can paste it in Quick Generation → Search Tournament to view your public tournament.
+            </div>
+        </div>`;
+        el.onclick=e=>{if(e.target===el)el.remove();};
+        document.body.appendChild(el);
+        el.querySelector('#__cls').onclick=()=>el.remove();
+        el.querySelector('#__cp').onclick=()=>{navigator.clipboard.writeText(tid).then(()=>{const b=el.querySelector('#__cp');b.textContent='✓ Copied!';setTimeout(()=>b.textContent='Copy',1500);});};
+    };
+
+    const doFinalize=()=>{
+        if(finalized){alert('Already finalized');return;}
+        if(confirm('Finalize scores? This makes them read-only.')){
+            setFinalized(true);
+            setTimeout(()=>doSave({finalized:true}),100);
+        }
+    };
+
+    // Nav (defined inside FullApp so it can call setView)
+    const[showUserMenu,setShowUserMenu]=useState(false);
+    const userMenuRef=useRef(null);
+    
+    useEffect(()=>{
+        const handleClick=(e)=>{if(userMenuRef.current&&!userMenuRef.current.contains(e.target))setShowUserMenu(false);};
+        if(showUserMenu)document.addEventListener('click',handleClick);
+        return()=>document.removeEventListener('click',handleClick);
+    },[showUserMenu]);
+    
+
+                <span style={{color:'white'}}>PICKLE</span><span style={{color:'#34d399'}}>CONNECT</span>
+            </div>
+            {user&&(
+                <div ref={userMenuRef} style={{position:'relative'}}>
+                    <div onClick={()=>setShowUserMenu(!showUserMenu)} style={{display:'flex',alignItems:'center',gap:8,marginRight:4,background:'rgba(255,255,255,.07)',borderRadius:9,padding:'5px 10px 5px 8px',border:'1px solid rgba(255,255,255,.1)',cursor:'pointer'}}>
+                        <div style={{width:28,height:28,borderRadius:'50%',background:'#059669',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'white',fontFamily:'Outfit,sans-serif',flexShrink:0}}>
+                            {(user.name||user.email||'?')[0].toUpperCase()}
+                        </div>
+                        <div className="user-name-email" style={{display:'flex',flexDirection:'column',lineHeight:1.2}}>
+                            <span style={{fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:700,color:'white',maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.name||user.email?.split('@')[0]||'Player'}</span>
+                            {user.email&&<span style={{fontFamily:'Outfit,sans-serif',fontSize:10,color:'#6ee7b7',maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.email}</span>}
+                        </div>
+                    </div>
+                    {showUserMenu&&(
+                        <div onClick={()=>{setShowUserMenu(false);onLogout();}} style={{position:'absolute',top:'100%',right:0,marginTop:8,background:'white',borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.15)',border:'1px solid #e2e8f0',padding:'8px 0',minWidth:140,zIndex:1000}}>
+                            <button style={{width:'100%',background:'none',border:'none',padding:'10px 16px',fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:600,color:'#dc2626',cursor:'pointer',textAlign:'left',display:'flex',alignItems:'center',gap:8}}>
+                                <span style={{fontSize:16}}>🚪</span> Logout
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+            <button className="back-home-btn" onClick={()=>window.location.href='index.html'}>🏓 Courts</button>
+            <button onClick={onFeedback} style={{background:'rgba(255,255,255,.1)',color:'#94a3b8',border:'none',borderRadius:8,padding:'8px 13px',fontFamily:'Outfit,sans-serif',fontSize:14,cursor:'pointer',marginRight:6}}>💬</button>
+            <button className="logout-btn-desktop" onClick={onLogout} style={{background:'rgba(255,255,255,.1)',color:'white',border:'none',borderRadius:8,padding:'9px 14px',fontFamily:'Outfit,sans-serif',fontSize:13,cursor:'pointer'}}>Logout</button>
+        </div>
+    );
+
+    // Dashboard
+    if(view==='dashboard')return(
+        <div style={{minHeight:'100vh',background:'#f1f5f9',display:'flex',flexDirection:'column'}}>
+            <Nav showBack={false}/>
+            <div className="pg">
+                <div style={{background:'linear-gradient(135deg,#0f172a,#1e3a2f)',borderRadius:16,padding:'22px 24px',marginBottom:16,display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12}}>
+                    <div>
+                        <div className="fd" style={{fontSize:28,fontWeight:800,color:'white'}}>DASHBOARD</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:15,color:'#6ee7b7',marginTop:2}}>Welcome back, {user?.name||'Player'}!</div>
+                    </div>
+                    <button className="btn-g" onClick={()=>setView('create')}>+ New Tournament</button>
+                </div>
+
+                <div className="card" style={{marginBottom:14}}>
+                    <div style={{fontFamily:'Outfit,sans-serif',fontSize:15,fontWeight:700,color:'#374151',marginBottom:10}}>🔍 View Tournament by ID</div>
+                    <div style={{display:'flex',gap:8}}>
+                        <input className="inp" value={loadId} onChange={e=>setLoadId(e.target.value)} placeholder="Paste tournament ID…" onKeyDown={e=>e.key==='Enter'&&loadTournament(loadId)} style={{flex:1}}/>
+                        <button className="btn-g" onClick={()=>loadTournament(loadId)} style={{whiteSpace:'nowrap'}}>View</button>
+                    </div>
+                </div>
+
+                <div className="card">
+                    <div className="fd" style={{fontSize:22,fontWeight:800,color:'#0f172a',marginBottom:14}}>MY TOURNAMENTS</div>
+                    {myT.length===0?(
+                        <div style={{textAlign:'center',padding:'40px 0',color:'#94a3b8',fontFamily:'Outfit,sans-serif',fontSize:16}}>No tournaments yet.<br/>Create your first one!</div>
+                    ):(
+                        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                            {myT.map(t=>(
+                                <div key={t.id} style={{border:'1px solid #e2e8f0',borderRadius:12,padding:'14px 16px',display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+                                    <div style={{flex:1,minWidth:0}}>
+                                        <div style={{fontFamily:'Outfit,sans-serif',fontWeight:600,fontSize:15,color:'#0f172a'}}>{t.name}</div>
+                                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#94a3b8',marginTop:3}}>{t.isPublic?(t.publicMode==='edit'?'✏️ Public (Edit)':'🌍 Public (Read)'):'🔒 Private'} · {t.players?.length||0} players · {t.scoresFinalized?'🔒 Finalized':'In progress'}</div>
+                                    </div>
+                                    <button onClick={()=>loadTournament(t.id)} style={{background:'#f1f5f9',border:'none',borderRadius:8,padding:'9px 16px',fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:600,color:'#374151',cursor:'pointer'}}>Open</button>
+                                    {t.createdBy===user?.uid&&<button className="btn-red" onClick={()=>delTournament(t.id)}>Delete</button>}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
+    // Create
+    if(view==='create')return(
+        <div style={{minHeight:'100vh',background:'#f1f5f9',display:'flex',flexDirection:'column'}}>
+            <Nav showBack={true}/>
+            <div className="pg">
+                {/* Header banner */}
+                <div style={{background:'linear-gradient(135deg,#0f172a 0%,#1e3a2f 55%,#052e16 100%)',borderRadius:16,padding:'20px 24px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
+                    <div>
+                        <div className="fd" style={{fontSize:30,fontWeight:800,color:'white',letterSpacing:.3}}>NEW TOURNAMENT</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#6ee7b7',marginTop:3}}>Set up your bracket in seconds</div>
+                    </div>
+                    <div style={{display:'flex',gap:10,alignItems:'center'}}>
+                        <div style={{background:'rgba(5,150,105,.15)',border:'1px solid rgba(52,211,153,.25)',borderRadius:10,padding:'7px 13px',fontFamily:'Outfit,sans-serif',fontSize:12,color:'#6ee7b7',textAlign:'center'}}>
+                            <div style={{fontWeight:700,fontSize:18,fontFamily:'Barlow Condensed,sans-serif',color:'white'}}>🏆</div>
+                            <div>Round Robin</div>
+                        </div>
+                        <div style={{background:'rgba(5,150,105,.15)',border:'1px solid rgba(52,211,153,.25)',borderRadius:10,padding:'7px 13px',fontFamily:'Outfit,sans-serif',fontSize:12,color:'#6ee7b7',textAlign:'center'}}>
+                            <div style={{fontWeight:700,fontSize:18,fontFamily:'Barlow Condensed,sans-serif',color:'white'}}>📊</div>
+                            <div>Live Scores</div>
+                        </div>
+                        <div style={{background:'rgba(5,150,105,.15)',border:'1px solid rgba(52,211,153,.25)',borderRadius:10,padding:'7px 13px',fontFamily:'Outfit,sans-serif',fontSize:12,color:'#6ee7b7',textAlign:'center'}}>
+                            <div style={{fontWeight:700,fontSize:18,fontFamily:'Barlow Condensed,sans-serif',color:'white'}}>📄</div>
+                            <div>PDF Export</div>
+                        </div>
+                    </div>
+                </div>
+                <div className="card">
+                    <TournamentSetup onGenerate={handleGenerate}/>
+                </div>
+            </div>
+        </div>
+    );
+
+    // Tournament
+    if(view==='tournament'&&setup)return(
+        <div style={{minHeight:'100vh',background:'#f1f5f9',display:'flex',flexDirection:'column'}}>
+            <Nav showBack={true}/>
+            <div className="pg">
+                <div className="card" style={{marginBottom:14}}>
+                    <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start',gap:12}}>
+                        <div style={{flex:1,minWidth:0}}>
+                            <div className="fd" style={{fontSize:24,fontWeight:800,color:'#0f172a',wordBreak:'break-word'}}>{setup.name}</div>
+                            <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#64748b',marginTop:3}}>
+                                {setup.players.length} players · {setup.schedule.length} rounds · {isPublic?(publicMode==='edit'?'✏️ Public (Edit)':'🌍 Public (Read)'):'🔒 Private'}{finalized?' · 🔒 Finalized':''}
+                            </div>
+                        </div>
+                        <div style={{display:'flex',flexWrap:'wrap',gap:8,alignItems:'center'}}>
+                            {saveStatus&&<span style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:saveStatus.includes('✓')?'#059669':saveStatus.includes('✗')?'#dc2626':'#64748b'}}>{saveStatus}</span>}
+                            {isOwner&&!finalized&&(
+                                <div style={{display:'flex',border:'2px solid #e2e8f0',borderRadius:10,overflow:'hidden'}}>
+                                    <button onClick={()=>setIsPublic(false)} style={{padding:'9px 12px',background:!isPublic?'#0f172a':'white',color:!isPublic?'white':'#94a3b8',border:'none',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>🔒 Private</button>
+                                    <button onClick={()=>{setIsPublic(true);setPublicMode('read');}} style={{padding:'9px 12px',background:isPublic&&publicMode==='read'?'#059669':'white',color:isPublic&&publicMode==='read'?'white':'#94a3b8',border:'none',borderLeft:'1px solid #e2e8f0',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>🌍 Public</button>
+                                    <button onClick={()=>{setIsPublic(true);setPublicMode('edit');}} style={{padding:'9px 12px',background:isPublic&&publicMode==='edit'?'#f59e0b':'white',color:isPublic&&publicMode==='edit'?'white':'#94a3b8',border:'none',borderLeft:'1px solid #e2e8f0',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>✏️ Edit</button>
+                                </div>
+                            )}
+                            {tid&&<button onClick={share} style={{background:'#3b82f6',color:'white',border:'none',borderRadius:8,padding:'10px 14px',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:600,cursor:'pointer'}}>📤 Share</button>}
+                            {isOwner&&<button onClick={doFinalize} disabled={finalized} style={{background:finalized?'#f1f5f9':'#7c3aed',color:finalized?'#94a3b8':'white',border:'none',borderRadius:8,padding:'10px 14px',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:600,cursor:finalized?'not-allowed':'pointer'}}>{finalized?'🔒 Finalized':'✓ Finalize'}</button>}
+                        </div>
+                    </div>
+                </div>
+
+                <ScheduleView
+                    schedule={setup.schedule} scores={scores}
+                    onScoreChange={(id,team,val)=>{setScores(p=>({...p,[id]:{...(p[id]||{}),[team]:val}}));}}
+                    canEdit={isOwner||(isPublic&&publicMode==='edit')} tournamentName={setup.name} players={setup.players}
+                    isGuest={false} onExportPDF={()=>doPrint(setup.name,setup.schedule,scores,setup.players,true)} finalized={finalized} mode={setup.mode}/>
+            </div>
+        </div>
+    );
+
+    return null;
+}
+
+ReactDOM.render(<App/>,document.getElementById('root'));
+</script>
+</body>
+</html>
