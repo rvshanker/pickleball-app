@@ -27,7 +27,7 @@
         .nav{background:#0f172a;padding:13px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;}
 
         /* Page */
-        .pg{padding:16px;max-width:740px;width:100%;margin:0 auto;padding-bottom:90px;}
+        .pg{padding:16px;max-width:740px;width:100%;margin:0 auto;padding-bottom:16px;}
 
         /* Cards */
         .card{background:white;border-radius:14px;padding:18px 20px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:13px;}
@@ -113,6 +113,91 @@
 <div id="root"></div>
 <script type="text/babel">
 const {useState, useEffect, useRef, useCallback} = React;
+const PKBALL = 'pickleball.png';
+
+// ── Feedback Modal ────────────────────────────────────────────────────
+function FeedbackModal({onClose}) {
+    const [name, setName] = React.useState('');
+    const [email, setEmail] = React.useState('');
+    const [type, setType] = React.useState('general');
+    const [rating, setRating] = React.useState(0);
+    const [hoverRating, setHoverRating] = React.useState(0);
+    const [msg, setMsg] = React.useState('');
+    const [busy, setBusy] = React.useState(false);
+    const [done, setDone] = React.useState(false);
+
+    const submit = async () => {
+        if (!msg.trim()) { alert('Please enter a message.'); return; }
+        setBusy(true);
+        try {
+            if (fbOk && db) {
+                await db.collection('feedback').add({
+                    name: name.trim() || 'Anonymous', email: email.trim() || '', type, rating,
+                    message: msg.trim(), page: 'home', timestamp: Date.now(), createdAt: new Date().toISOString()
+                });
+            }
+        } catch(e) {}
+        setBusy(false);
+        setDone(true);
+        setTimeout(() => { setDone(false); onClose(); }, 2200);
+    };
+    const types = [['general','💬 General'],['bug','🐛 Bug'],['feature','💡 Feature'],['compliment','⭐ Compliment']];
+    return (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:16}}>
+            <div style={{background:'white',borderRadius:20,padding:28,maxWidth:460,width:'100%',boxShadow:'0 24px 64px rgba(0,0,0,.25)',maxHeight:'90vh',overflowY:'auto'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:26,fontWeight:800,color:'#0f172a'}}>💬 SEND FEEDBACK</div>
+                    <button onClick={onClose} style={{background:'none',border:'none',fontSize:26,cursor:'pointer',color:'#94a3b8',lineHeight:1}}>×</button>
+                </div>
+                {done ? (
+                    <div style={{textAlign:'center',padding:'32px 0'}}>
+                        <div style={{fontSize:48,marginBottom:12}}>🎉</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:18,fontWeight:700,color:'#059669'}}>Thanks for your feedback!</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#64748b',marginTop:6}}>We really appreciate it.</div>
+                    </div>
+                ) : (
+                    <div style={{display:'flex',flexDirection:'column',gap:16}}>
+                        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                            <div>
+                                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>Name (optional)</div>
+                                <input style={{width:'100%',padding:'10px 13px',fontSize:14,border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',outline:'none'}} value={name} onChange={e=>setName(e.target.value)} placeholder="Your name"/>
+                            </div>
+                            <div>
+                                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>Email (optional)</div>
+                                <input type="email" style={{width:'100%',padding:'10px 13px',fontSize:14,border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',outline:'none'}} value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@email.com"/>
+                            </div>
+                        </div>
+                        <div>
+                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Feedback Type</div>
+                            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                                {types.map(([v,l])=>(
+                                    <button key={v} onClick={()=>setType(v)} style={{padding:'8px 14px',border:'2px solid '+(type===v?'#059669':'#e2e8f0'),borderRadius:99,background:type===v?'#f0fdf4':'white',color:type===v?'#059669':'#64748b',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:600,cursor:'pointer'}}>
+                                        {l}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Overall Rating</div>
+                            <div style={{display:'flex',gap:4}}>
+                                {[1,2,3,4,5].map(s=>(
+                                    <button key={s} onClick={()=>setRating(s)} onMouseEnter={()=>setHoverRating(s)} onMouseLeave={()=>setHoverRating(0)} style={{background:'none',border:'none',fontSize:28,cursor:'pointer',opacity:s<=(hoverRating||rating)?1:.3}}>⭐</button>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>Message *</div>
+                            <textarea style={{width:'100%',padding:'10px 13px',fontSize:14,border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',outline:'none',resize:'vertical',minHeight:90}} value={msg} onChange={e=>setMsg(e.target.value)} placeholder="Tell us what's on your mind…"/>
+                        </div>
+                        <button onClick={submit} disabled={busy} style={{background:'linear-gradient(135deg,#059669,#10b981)',color:'white',border:'none',borderRadius:10,padding:'14px',fontFamily:'Outfit,sans-serif',fontSize:15,fontWeight:700,cursor:'pointer',width:'100%',boxShadow:'0 4px 12px rgba(5,150,105,.3)'}}>
+                            {busy ? '⏳ Sending…' : '📤 Send Feedback'}
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
 
 // ── Firebase ──────────────────────────────────────────────────────────
 const FB = {
@@ -334,7 +419,7 @@ function CourtCard({court, userLat, userLng, isHero}) {
                         </div>
                         {checkinCount !== null && (
                             <div style={{background:'rgba(16,185,129,.2)',borderRadius:8,padding:'5px 11px',fontSize:13,color:'#6ee7b7',fontWeight:600}}>
-                                🎾 {checkinCount} playing
+                                {React.createElement("img",{src:PKBALL,style:{width:16,height:16,verticalAlign:"middle",marginRight:4}})}{checkinCount} playing
                             </div>
                         )}
                         {dist !== null && (
@@ -353,13 +438,13 @@ function CourtCard({court, userLat, userLng, isHero}) {
 
     return (
         <div className="court-item" onClick={goToCourt}>
-            <div className="court-icon">🎾</div>
+            <div className="court-icon"><img src={PKBALL} style={{width:26,height:26}}/></div>
             <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:700,fontSize:15,color:'#0f172a',marginBottom:3}}>{court.name}</div>
                 <div style={{fontSize:13,color:'#64748b',marginBottom:5,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'100%'}}>{court.address}</div>
                 <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
                     <span className={`player-pill ${pillClass}`}>
-                        🎾 {checkinCount === null ? '…' : checkinCount} playing
+                        {React.createElement("img",{src:PKBALL,style:{width:14,height:14,verticalAlign:"middle",marginRight:3}})}{checkinCount === null ? '…' : checkinCount} playing
                     </span>
                     <span style={{fontSize:12,color:'#94a3b8'}}>🏟️ {open}/{total}</span>
                     {court.condition && court.condition !== 'open' && (
@@ -383,6 +468,7 @@ function App() {
     const [userLng, setUserLng] = useState(null);
     const [search, setSearch] = useState('');
     const [showAdd, setShowAdd] = useState(false);
+    const [showFB, setShowFB] = useState(false);
     const [lastCourt, setLastCourt] = useState(null);
 
     // Load last visited court info
@@ -468,7 +554,7 @@ function App() {
                 {/* Section header */}
                 <div className="sec-hdr">
                     <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>
-                        {userLat ? '📍 NEARBY COURTS' : '🎾 ALL COURTS'}
+                        {userLat ? '📍 NEARBY COURTS' : <span><img src={PKBALL} style={{width:18,height:18,verticalAlign:'middle',marginRight:4}}/> ALL COURTS</span>}
                     </div>
                     <button className="btn-g" onClick={()=>setShowAdd(true)} style={{padding:'8px 16px',fontSize:13}}>
                         + Add Court
@@ -494,7 +580,7 @@ function App() {
                     </div>
                 ) : listCourts.length === 0 && !lastCourt ? (
                     <div className="empty-state">
-                        <div style={{fontSize:48,marginBottom:12}}>🎾</div>
+                        <div style={{marginBottom:12}}><img src={PKBALL} style={{width:52,height:52}}/></div>
                         <div style={{fontSize:18,fontWeight:700,color:'#374151',marginBottom:6}}>
                             {search ? 'No courts found' : 'No courts yet'}
                         </div>
@@ -517,28 +603,29 @@ function App() {
                 )}
             </div>
 
-            {/* Floating Tournament Button */}
-            <button className="float-btn" onClick={()=>window.location.href='tournament.html'}>
-                <span style={{fontSize:20}}>🏆</span>
-                <div className="float-btn-label">
-                    <span className="float-btn-title">Tournament Generator</span>
-                    <span className="float-btn-sub">Round-robin brackets &amp; scoring</span>
-                </div>
-            </button>
-
             {/* Footer */}
-            <div style={{textAlign:'center',padding:'20px 16px 28px',fontSize:12,color:'#94a3b8',borderTop:'1px solid #e2e8f0',background:'white',marginTop:4}}>
-                <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:12,flexWrap:'wrap'}}>
-                    <span>© 2025 PickleConnect. All rights reserved.</span>
-                    <span>·</span>
-                    <span>Built for pickleball players</span>
-                    <span>·</span>
-                    <button onClick={()=>{const msg=prompt('Your feedback:');if(msg?.trim())db&&db.collection('feedback').add({message:msg,page:'home',timestamp:Date.now()}).catch(()=>{});}} style={{background:'none',border:'none',color:'#059669',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',padding:0}}>💬 Feedback</button>
+            <div style={{marginTop:'auto'}}>
+                {/* Tournament Generator Banner */}
+                <div style={{background:'linear-gradient(135deg,#4c1d95 0%,#7c3aed 50%,#a855f7 100%)',padding:'18px 20px',display:'flex',alignItems:'center',gap:16}}>
+                    <div style={{width:48,height:48,background:'rgba(255,255,255,.15)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,flexShrink:0}}>🏆</div>
+                    <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:20,fontWeight:800,color:'white',letterSpacing:.3}}>TOURNAMENT GENERATOR</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#e9d5ff',marginTop:1}}>Round-robin brackets & live scoring</div>
+                    </div>
+                    <a href="tournament.html" style={{background:'white',color:'#7c3aed',padding:'10px 18px',borderRadius:10,fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:800,textDecoration:'none',whiteSpace:'nowrap',boxShadow:'0 4px 12px rgba(0,0,0,.2)',flexShrink:0}}>Open →</a>
+                </div>
+                <div style={{textAlign:'center',padding:'16px 16px 24px',fontSize:12,color:'#94a3b8',borderTop:'1px solid #e2e8f0',background:'white'}}>
+                    <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+                        <span>© 2025 PickleConnect. All rights reserved.</span>
+                        <span>·</span>
+                        <button onClick={()=>setShowFB(true)} style={{background:'none',border:'none',color:'#059669',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',padding:0}}>💬 Feedback</button>
+                    </div>
                 </div>
             </div>
 
             {/* Add court modal */}
             {showAdd && <AddCourtModal onClose={()=>setShowAdd(false)} onAdded={handleAdded}/>}
+            {showFB && <FeedbackModal onClose={()=>setShowFB(false)}/>}
         </div>
     );
 }

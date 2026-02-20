@@ -136,6 +136,7 @@
 <div id="root"></div>
 <script type="text/babel">
 const {useState, useEffect, useRef} = React;
+const PKBALL = 'pickleball.png';
 
 // ── Firebase ──────────────────────────────────────────────────────────
 const FB = {
@@ -355,6 +356,91 @@ function EditCourtModal({court, onClose, onSaved}) {
 }
 
 // ── Main Court Page ───────────────────────────────────────────────────
+// ── Feedback Modal ────────────────────────────────────────────────────
+function FeedbackModal({onClose, courtId}) {
+    const [name, setName] = React.useState('');
+    const [email, setEmail] = React.useState('');
+    const [type, setType] = React.useState('general');
+    const [rating, setRating] = React.useState(0);
+    const [hoverRating, setHoverRating] = React.useState(0);
+    const [msg, setMsg] = React.useState('');
+    const [busy, setBusy] = React.useState(false);
+    const [done, setDone] = React.useState(false);
+
+    const submit = async () => {
+        if (!msg.trim()) { alert('Please enter a message.'); return; }
+        setBusy(true);
+        try {
+            if (fbOk && db) {
+                await db.collection('feedback').add({
+                    name: name.trim() || 'Anonymous', email: email.trim() || '', type, rating,
+                    message: msg.trim(), page: 'court', courtId: courtId || '', timestamp: Date.now(),
+                    createdAt: new Date().toISOString()
+                });
+            }
+        } catch(e) {}
+        setBusy(false);
+        setDone(true);
+        setTimeout(() => { setDone(false); onClose(); }, 2200);
+    };
+    const types = [['general','💬 General'],['bug','🐛 Bug'],['feature','💡 Feature'],['compliment','⭐ Compliment']];
+    return (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:16}}>
+            <div style={{background:'white',borderRadius:20,padding:28,maxWidth:460,width:'100%',boxShadow:'0 24px 64px rgba(0,0,0,.25)',maxHeight:'90vh',overflowY:'auto'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:26,fontWeight:800,color:'#0f172a'}}>💬 SEND FEEDBACK</div>
+                    <button onClick={onClose} style={{background:'none',border:'none',fontSize:26,cursor:'pointer',color:'#94a3b8',lineHeight:1}}>×</button>
+                </div>
+                {done ? (
+                    <div style={{textAlign:'center',padding:'32px 0'}}>
+                        <div style={{fontSize:48,marginBottom:12}}>🎉</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:18,fontWeight:700,color:'#059669'}}>Thanks for your feedback!</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#64748b',marginTop:6}}>We really appreciate it.</div>
+                    </div>
+                ) : (
+                    <div style={{display:'flex',flexDirection:'column',gap:16}}>
+                        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                            <div>
+                                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>Name (optional)</div>
+                                <input style={{width:'100%',padding:'10px 13px',fontSize:14,border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',outline:'none'}} value={name} onChange={e=>setName(e.target.value)} placeholder="Your name"/>
+                            </div>
+                            <div>
+                                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>Email (optional)</div>
+                                <input type="email" style={{width:'100%',padding:'10px 13px',fontSize:14,border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',outline:'none'}} value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@email.com"/>
+                            </div>
+                        </div>
+                        <div>
+                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Feedback Type</div>
+                            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                                {types.map(([v,l])=>(
+                                    <button key={v} onClick={()=>setType(v)} style={{padding:'8px 14px',border:'2px solid '+(type===v?'#059669':'#e2e8f0'),borderRadius:99,background:type===v?'#f0fdf4':'white',color:type===v?'#059669':'#64748b',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:600,cursor:'pointer'}}>
+                                        {l}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Overall Rating</div>
+                            <div style={{display:'flex',gap:4}}>
+                                {[1,2,3,4,5].map(s=>(
+                                    <button key={s} onClick={()=>setRating(s)} onMouseEnter={()=>setHoverRating(s)} onMouseLeave={()=>setHoverRating(0)} style={{background:'none',border:'none',fontSize:28,cursor:'pointer',opacity:s<=(hoverRating||rating)?1:.3}}>⭐</button>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>Message *</div>
+                            <textarea style={{width:'100%',padding:'10px 13px',fontSize:14,border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',outline:'none',resize:'vertical',minHeight:90}} value={msg} onChange={e=>setMsg(e.target.value)} placeholder="Tell us what's on your mind…"/>
+                        </div>
+                        <button onClick={submit} disabled={busy} style={{background:'linear-gradient(135deg,#059669,#10b981)',color:'white',border:'none',borderRadius:10,padding:'14px',fontFamily:'Outfit,sans-serif',fontSize:15,fontWeight:700,cursor:'pointer',width:'100%',boxShadow:'0 4px 12px rgba(5,150,105,.3)'}}>
+                            {busy ? '⏳ Sending…' : '📤 Send Feedback'}
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 function CourtPage() {
     const courtId = getCourtId();
     const [courtData,   setCourtData]   = useState(null);
@@ -378,6 +464,7 @@ function CourtPage() {
     const [flashMsg,    setFlashMsg]    = useState('');
     const [flashInput,  setFlashInput]  = useState('');
     const [showEdit,    setShowEdit]    = useState(false);
+    const [showFB,      setShowFB]      = useState(false);
     const [showTotalEdit,setShowTotalEdit]=useState(false);
     const [newTotal,    setNewTotal]    = useState('');
     const [tick,        setTick]        = useState(0);
@@ -577,7 +664,7 @@ function CourtPage() {
 
     if (!courtId || !courtData) return (
         <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',flexDirection:'column',gap:12}}>
-            <div style={{fontSize:48}}>🎾</div>
+            <div><img src={PKBALL} style={{width:52,height:52}}/></div>
             <div style={{fontSize:18,fontWeight:700,color:'#374151'}}>Court not found</div>
             <a href="index.html" style={{color:'#059669',fontSize:14,fontWeight:600}}>← Back to courts</a>
         </div>
@@ -664,7 +751,7 @@ function CourtPage() {
                 {/* Status pills */}
                 <div className="status-bar">
                     <div className={`status-pill ${nowTotal>0?'green':''}`}>
-                        <span style={{fontSize:13}}>🎾</span>
+                        <img src={PKBALL} style={{width:16,height:16,verticalAlign:"middle"}}/>
                         <div><div className="pill-label">Playing</div><div className="pill-val">{nowTotal}</div></div>
                     </div>
                     <div className={`status-pill ${laterTotal>0?'green':''}`}>
@@ -716,7 +803,7 @@ function CourtPage() {
             <div style={{flex:1}}>
                 <div className="pg">
                     <div className="tab-bar">
-                        <button className={`tab-btn${tab==='now'?' active':''}`} onClick={()=>setTab('now')}>🎾 Now ({nowTotal})</button>
+                        <button className={`tab-btn${tab==='now'?' active':''}`} onClick={()=>setTab('now')}><img src={PKBALL} style={{width:14,height:14,verticalAlign:"middle",marginRight:4}}/> Now ({nowTotal})</button>
                         <button className={`tab-btn${tab==='schedule'?' active':''}`} onClick={()=>setTab('schedule')}>📅 Schedule ({laterTotal})</button>
                         <button className={`tab-btn${tab==='controls'?' active':''}`} onClick={()=>setTab('controls')}>⚙️ Controls</button>
                         <button className={`tab-btn${tab==='info'?' active':''}`} onClick={()=>setTab('info')}>ℹ️ Info</button>
@@ -747,7 +834,7 @@ function CourtPage() {
                                     <div style={{background:'linear-gradient(135deg,#f8fafc,#f1f5f9)',border:'2px dashed #cbd5e1',borderRadius:12,padding:'18px',marginBottom:14,textAlign:'center'}}>
                                         <div style={{fontSize:14,color:'#64748b',marginBottom:12}}>Let others know you're here!</div>
                                         <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>
-                                            <button className="btn-g" onClick={()=>setShowForm(true)}>🎾 Check In</button>
+                                            <button className="btn-g" onClick={()=>setShowForm(true)}><img src={PKBALL} style={{width:16,height:16,verticalAlign:"middle",marginRight:5}}/> Check In</button>
                                         </div>
                                     </div>
                                 ):(
@@ -795,7 +882,7 @@ function CourtPage() {
                                         </div>
                                         {!showLaterTime?(
                                             <div style={{display:'flex',gap:8}}>
-                                                <button className="btn-g" onClick={()=>submitCheckIn('now',null)} disabled={!userName.trim()} style={{flex:1}}>🎾 Playing Now</button>
+                                                <button className="btn-g" onClick={()=>submitCheckIn('now',null)} disabled={!userName.trim()} style={{flex:1}}><img src={PKBALL} style={{width:16,height:16,verticalAlign:"middle",marginRight:5}}/> Playing Now</button>
                                                 <button className="btn-out" onClick={()=>setShowLaterTime(true)} disabled={!userName.trim()}>⏰ Later</button>
                                                 <button onClick={()=>setShowForm(false)} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontFamily:'Outfit,sans-serif',fontSize:13,padding:'0 8px'}}>Cancel</button>
                                             </div>
@@ -847,98 +934,129 @@ function CourtPage() {
 
                     {/* ── TAB: CONTROLS ── */}
                     {tab==='controls'&&(
-                        <div className="card">
-                            <div className="fd" style={{fontSize:19,fontWeight:800,color:'#0f172a',marginBottom:16}}>⚙️ COURT CONTROLS</div>
-
-                            {/* Flash message */}
-                            <div style={{marginBottom:16}}>
-                                <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px'}}>📣 Flash Announcement</div>
-                                {flashMsg?(
+                        <div>
+                            {/* Flash Announcement */}
+                            <div className="card" style={{marginBottom:12,borderLeft:'4px solid #7c3aed'}}>
+                                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
+                                    <div style={{width:36,height:36,borderRadius:10,background:'linear-gradient(135deg,#7c3aed,#a855f7)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>📣</div>
                                     <div>
-                                        <div style={{background:'white',border:'1px solid #c4b5fd',borderRadius:8,padding:'9px 12px',fontSize:13,fontWeight:600,color:'#4c1d95',marginBottom:10,lineHeight:1.4}}>
-                                            📣 {flashMsg}
-                                        </div>
-                                        <div style={{display:'flex',gap:8}}>
-                                            <input className="field" value={flashInput} onChange={e=>setFlashInput(e.target.value)} placeholder="Update message…" style={{flex:1,fontSize:13,padding:'8px 11px'}}/>
-                                            <button className="btn-g" onClick={saveFlashMsg} style={{padding:'8px 14px',fontSize:13}}>Update</button>
-                                            <button onClick={clearFlashMsg} style={{padding:'8px 12px',borderRadius:9,border:'2px solid #e2e8f0',background:'white',color:'#94a3b8',fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'Outfit,sans-serif'}}>Clear</button>
-                                        </div>
+                                        <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:16,fontWeight:800,color:'#0f172a',letterSpacing:.3}}>FLASH ANNOUNCEMENT</div>
+                                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,color:'#64748b'}}>Broadcast a message to all visitors</div>
                                     </div>
-                                ):(
-                                    <div style={{display:'flex',gap:8}}>
-                                        <input className="field" value={flashInput} onChange={e=>setFlashInput(e.target.value)} placeholder="e.g. Court 3 is closed today" style={{flex:1,fontSize:13,padding:'8px 11px'}}
-                                            onKeyDown={e=>{if(e.key==='Enter'&&flashInput.trim())saveFlashMsg();}}/>
-                                        <button className="btn-g" onClick={saveFlashMsg} disabled={!flashInput.trim()} style={{padding:'8px 14px',fontSize:13,opacity:flashInput.trim()?1:.45}}>Post</button>
+                                </div>
+                                {flashMsg&&(
+                                    <div style={{background:'linear-gradient(135deg,#f5f3ff,#ede9fe)',border:'1px solid #c4b5fd',borderRadius:10,padding:'10px 14px',fontSize:14,fontWeight:600,color:'#4c1d95',marginBottom:10,lineHeight:1.4,display:'flex',gap:8,alignItems:'flex-start'}}>
+                                        <span>📣</span><span style={{flex:1}}>{flashMsg}</span>
                                     </div>
                                 )}
-                            </div>
-
-                            <div style={{marginBottom:13}}>
-                                <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px'}}>Crowd Level (people)</div>
-                                <div className="toggle-group">
-                                    <button className={`toggle-btn${courtData.crowdLevel==='low'?' active':''}`} onClick={()=>updateCourt('crowdLevel','low')}>🟢 0–12</button>
-                                    <button className={`toggle-btn${courtData.crowdLevel==='medium'?' active':''}`} onClick={()=>updateCourt('crowdLevel','medium')}>🟡 12–24</button>
-                                    <button className={`toggle-btn${courtData.crowdLevel==='high'?' active':''}`} onClick={()=>updateCourt('crowdLevel','high')}>🔴 24+</button>
+                                <div style={{display:'flex',gap:8}}>
+                                    <input className="field" value={flashInput} onChange={e=>setFlashInput(e.target.value)} placeholder={flashMsg?'Update message…':'e.g. Court 3 is closed today'} style={{flex:1,fontSize:14}} onKeyDown={e=>{if(e.key==='Enter'&&flashInput.trim())saveFlashMsg();}}/>
+                                    <button className="btn-g" onClick={saveFlashMsg} disabled={!flashInput.trim()} style={{padding:'10px 16px',fontSize:13,flexShrink:0}}>{flashMsg?'Update':'Post'}</button>
+                                    {flashMsg&&<button onClick={clearFlashMsg} style={{padding:'10px 12px',borderRadius:9,border:'2px solid #e2e8f0',background:'white',color:'#94a3b8',fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'Outfit,sans-serif',flexShrink:0}}>Clear</button>}
                                 </div>
                             </div>
 
-                            <div style={{marginBottom:13}}>
-                                <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px'}}>Lights</div>
-                                <div className="toggle-group">
-                                    <button className={`toggle-btn${courtData.lightsOn?' active':''}`} onClick={()=>updateCourt('lightsOn',true)}>💡 ON</button>
-                                    <button className={`toggle-btn${!courtData.lightsOn?' active':''}`} onClick={()=>updateCourt('lightsOn',false)}>🌙 OFF</button>
+                            {/* Status Grid */}
+                            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                                {/* Crowd Level */}
+                                <div className="card" style={{borderLeft:'4px solid '+(courtData.crowdLevel==='high'?'#ef4444':courtData.crowdLevel==='medium'?'#f59e0b':'#10b981'),marginBottom:0}}>
+                                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+                                        <span style={{fontSize:20}}>{courtData.crowdLevel==='high'?'🔴':courtData.crowdLevel==='medium'?'🟡':'🟢'}</span>
+                                        <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:14,fontWeight:800,color:'#0f172a',letterSpacing:.3}}>CROWD LEVEL</div>
+                                    </div>
+                                    <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                                        {[['low','🟢 Light','0–12 people'],['medium','🟡 Busy','12–24 people'],['high','🔴 Packed','24+ people']].map(([v,label,sub])=>(
+                                            <button key={v} onClick={()=>updateCourt('crowdLevel',v)} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',borderRadius:8,border:'2px solid '+(courtData.crowdLevel===v?'#059669':'#e2e8f0'),background:courtData.crowdLevel===v?'#f0fdf4':'white',cursor:'pointer',textAlign:'left',transition:'all .15s'}}>
+                                                <span style={{fontSize:14}}>{label.split(' ')[0]}</span>
+                                                <div style={{minWidth:0}}>
+                                                    <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,color:courtData.crowdLevel===v?'#059669':'#374151'}}>{label.slice(3)}</div>
+                                                    <div style={{fontFamily:'Outfit,sans-serif',fontSize:10,color:'#94a3b8'}}>{sub}</div>
+                                                </div>
+                                                {courtData.crowdLevel===v&&<span style={{marginLeft:'auto',color:'#059669',fontSize:14}}>✓</span>}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Court Condition */}
+                                <div className="card" style={{borderLeft:'4px solid '+(courtData.condition==='closed'?'#ef4444':courtData.condition&&courtData.condition!=='open'?'#f59e0b':'#10b981'),marginBottom:0}}>
+                                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+                                        <span style={{fontSize:20}}>{courtData.condition==='closed'?'🚫':courtData.condition==='wet'?'💧':courtData.condition==='hot'?'🥵':courtData.condition==='windy'?'🌬️':'✅'}</span>
+                                        <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:14,fontWeight:800,color:'#0f172a',letterSpacing:.3}}>CONDITION</div>
+                                    </div>
+                                    <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                                        {[['open','✅','Open'],['closed','🚫','Closed'],['wet','💧','Wet'],['hot','🥵','Hot'],['windy','🌬️','Windy']].map(([v,icon,label])=>(
+                                            <button key={v} onClick={()=>updateCourt('condition',v)} style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',borderRadius:8,border:'2px solid '+((courtData.condition||'open')===v?'#059669':'#e2e8f0'),background:(courtData.condition||'open')===v?'#f0fdf4':'white',cursor:'pointer',textAlign:'left',transition:'all .15s'}}>
+                                                <span style={{fontSize:14,flexShrink:0}}>{icon}</span>
+                                                <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,color:(courtData.condition||'open')===v?'#059669':'#374151',flex:1}}>{label}</div>
+                                                {(courtData.condition||'open')===v&&<span style={{color:'#059669',fontSize:14}}>✓</span>}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
 
-                            <div style={{marginBottom:13}}>
-                                <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px'}}>Courts in Rotation</div>
-                                <div className="toggle-group">
+                            {/* Courts in Rotation */}
+                            <div className="card" style={{marginBottom:10,borderLeft:'4px solid #3b82f6'}}>
+                                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
+                                    <div style={{width:36,height:36,borderRadius:10,background:'linear-gradient(135deg,#3b82f6,#60a5fa)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>🏟️</div>
+                                    <div style={{flex:1}}>
+                                        <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:16,fontWeight:800,color:'#0f172a',letterSpacing:.3}}>COURTS IN ROTATION</div>
+                                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,color:'#64748b'}}>Courts currently active for play</div>
+                                    </div>
+                                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:28,fontWeight:800,color:'#3b82f6'}}>{open}<span style={{fontSize:16,color:'#94a3b8'}}>/{total}</span></div>
+                                </div>
+                                <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
                                     {openOpts.map(n=>(
-                                        <button key={n} className={`toggle-btn${open===n?' active':''}`} onClick={()=>updateCourt('openCourts',n)}>{n}</button>
+                                        <button key={n} onClick={()=>updateCourt('openCourts',n)} style={{minWidth:48,padding:'9px 8px',border:'2px solid '+(open===n?'#3b82f6':'#e2e8f0'),borderRadius:8,background:open===n?'#eff6ff':'white',color:open===n?'#3b82f6':'#64748b',fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:700,cursor:'pointer',transition:'all .15s',textAlign:'center'}}>{n}</button>
                                     ))}
                                 </div>
                             </div>
 
-                            <div style={{marginBottom:18}}>
-                                <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px',display:'flex',alignItems:'center',gap:8}}>
-                                    Total Courts
-                                    <span style={{fontSize:11,color:'#059669',background:'#f0fdf4',border:'1px solid #10b981',borderRadius:6,padding:'1px 7px',cursor:'pointer',textTransform:'none',letterSpacing:0}} onClick={()=>{setShowTotalEdit(!showTotalEdit);setNewTotal(String(total));}}>✏️ Edit</span>
+                            {/* Total Courts + Lights + Restroom + Parking in a grid */}
+                            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                                {/* Total Courts */}
+                                <div className="card" style={{marginBottom:0,borderLeft:'4px solid #0f172a'}}>
+                                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:14,fontWeight:800,color:'#0f172a',letterSpacing:.3,marginBottom:8}}>🏗️ TOTAL COURTS</div>
+                                    {showTotalEdit?(
+                                        <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                                            <input type="number" min="1" max="30" className="field" value={newTotal} onChange={e=>setNewTotal(e.target.value)} style={{flex:1,padding:'8px 10px',fontSize:15}}/>
+                                            <button className="btn-g" onClick={handleTotalSave} style={{padding:'8px 12px',fontSize:13,flexShrink:0}}>✓</button>
+                                            <button onClick={()=>setShowTotalEdit(false)} style={{padding:'8px 10px',background:'none',border:'2px solid #e2e8f0',borderRadius:8,color:'#94a3b8',cursor:'pointer',fontFamily:'Outfit,sans-serif',fontSize:12,flexShrink:0}}>✕</button>
+                                        </div>
+                                    ):(
+                                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                                            <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:36,fontWeight:800,color:'#0f172a'}}>{total}</div>
+                                            <button onClick={()=>{setShowTotalEdit(true);setNewTotal(String(total));}} style={{background:'#f0fdf4',border:'1px solid #10b981',borderRadius:8,padding:'6px 12px',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:600,color:'#059669',cursor:'pointer'}}>✏️ Edit</button>
+                                        </div>
+                                    )}
                                 </div>
-                                {showTotalEdit?(
-                                    <div style={{display:'flex',gap:8,alignItems:'center'}}>
-                                        <input type="number" min="1" max="30" className="field" value={newTotal} onChange={e=>setNewTotal(e.target.value)} style={{width:100}}/>
-                                        <button className="btn-g" onClick={handleTotalSave} style={{padding:'9px 16px'}}>Save</button>
-                                        <button onClick={()=>setShowTotalEdit(false)} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontFamily:'Outfit,sans-serif',fontSize:13}}>Cancel</button>
+
+                                {/* Lights */}
+                                <div className="card" style={{marginBottom:0,borderLeft:'4px solid '+(courtData.lightsOn?'#f59e0b':'#94a3b8')}}>
+                                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:14,fontWeight:800,color:'#0f172a',letterSpacing:.3,marginBottom:8}}>💡 LIGHTS</div>
+                                    <div style={{display:'flex',border:'2px solid #e2e8f0',borderRadius:10,overflow:'hidden'}}>
+                                        <button onClick={()=>updateCourt('lightsOn',true)} style={{flex:1,padding:'10px 8px',background:courtData.lightsOn?'#f59e0b':'white',color:courtData.lightsOn?'white':'#94a3b8',border:'none',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',transition:'all .15s'}}>💡 ON</button>
+                                        <button onClick={()=>updateCourt('lightsOn',false)} style={{flex:1,padding:'10px 8px',background:!courtData.lightsOn?'#1e293b':'white',color:!courtData.lightsOn?'white':'#94a3b8',border:'none',borderLeft:'1px solid #e2e8f0',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',transition:'all .15s'}}>🌙 OFF</button>
                                     </div>
-                                ):(
-                                    <div style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{total} courts</div>
-                                )}
-                            </div>
-
-                            <div style={{marginBottom:13}}>
-                                <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px'}}>Court Condition</div>
-                                <div className="toggle-group">
-                                    <button className={`toggle-btn${(courtData.condition||'open')==='open'?' active':''}`} onClick={()=>updateCourt('condition','open')}>✅ Open</button>
-                                    <button className={`toggle-btn${courtData.condition==='closed'?' active':''}`} onClick={()=>updateCourt('condition','closed')} style={{color:courtData.condition==='closed'?'white':'#ef4444'}}>🚫 Closed</button>
-                                    <button className={`toggle-btn${courtData.condition==='wet'?' active':''}`} onClick={()=>updateCourt('condition','wet')} style={{color:courtData.condition==='wet'?'white':'#3b82f6'}}>💧 Wet</button>
-                                    <button className={`toggle-btn${courtData.condition==='hot'?' active':''}`} onClick={()=>updateCourt('condition','hot')} style={{color:courtData.condition==='hot'?'white':'#f97316'}}>🥵 Hot</button>
-                                    <button className={`toggle-btn${courtData.condition==='windy'?' active':''}`} onClick={()=>updateCourt('condition','windy')}>🌬️ Windy</button>
                                 </div>
-                            </div>
 
-                            <div style={{marginBottom:13}}>
-                                <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px'}}>Restroom</div>
-                                <div className="toggle-group">
-                                    <button className={`toggle-btn${(courtData.restroom||'open')==='open'?' active':''}`} onClick={()=>updateCourt('restroom','open')}>🚻 Open</button>
-                                    <button className={`toggle-btn${courtData.restroom==='closed'?' active':''}`} onClick={()=>updateCourt('restroom','closed')}>🚫 Closed</button>
+                                {/* Restrooms */}
+                                <div className="card" style={{marginBottom:0,borderLeft:'4px solid '+((courtData.restroom||'open')==='open'?'#10b981':'#ef4444')}}>
+                                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:14,fontWeight:800,color:'#0f172a',letterSpacing:.3,marginBottom:8}}>🚻 RESTROOMS</div>
+                                    <div style={{display:'flex',border:'2px solid #e2e8f0',borderRadius:10,overflow:'hidden'}}>
+                                        <button onClick={()=>updateCourt('restroom','open')} style={{flex:1,padding:'10px 8px',background:(courtData.restroom||'open')==='open'?'#10b981':'white',color:(courtData.restroom||'open')==='open'?'white':'#94a3b8',border:'none',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',transition:'all .15s'}}>✅ Open</button>
+                                        <button onClick={()=>updateCourt('restroom','closed')} style={{flex:1,padding:'10px 8px',background:courtData.restroom==='closed'?'#ef4444':'white',color:courtData.restroom==='closed'?'white':'#94a3b8',border:'none',borderLeft:'1px solid #e2e8f0',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',transition:'all .15s'}}>🚫 Closed</button>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div>
-                                <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px'}}>Parking</div>
-                                <div className="toggle-group">
-                                    <button className={`toggle-btn${(courtData.parking||'available')==='available'?' active':''}`} onClick={()=>updateCourt('parking','available')}>🅿️ Available</button>
-                                    <button className={`toggle-btn${courtData.parking==='full'?' active':''}`} onClick={()=>updateCourt('parking','full')}>🚗 Full</button>
+                                {/* Parking */}
+                                <div className="card" style={{marginBottom:0,borderLeft:'4px solid '+((courtData.parking||'available')==='available'?'#059669':'#ef4444')}}>
+                                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:14,fontWeight:800,color:'#0f172a',letterSpacing:.3,marginBottom:8}}>🅿️ PARKING</div>
+                                    <div style={{display:'flex',border:'2px solid #e2e8f0',borderRadius:10,overflow:'hidden'}}>
+                                        <button onClick={()=>updateCourt('parking','available')} style={{flex:1,padding:'10px 8px',background:(courtData.parking||'available')==='available'?'#059669':'white',color:(courtData.parking||'available')==='available'?'white':'#94a3b8',border:'none',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',transition:'all .15s'}}>✅ Available</button>
+                                        <button onClick={()=>updateCourt('parking','full')} style={{flex:1,padding:'10px 8px',background:courtData.parking==='full'?'#ef4444':'white',color:courtData.parking==='full'?'white':'#94a3b8',border:'none',borderLeft:'1px solid #e2e8f0',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',transition:'all .15s'}}>🚗 Full</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -998,7 +1116,8 @@ function CourtPage() {
             </div>
 
             {/* Edit modal */}
-            {showEdit&&<EditCourtModal court={courtData} onClose={()=>setShowEdit(false)} onSaved={c=>{setCourtData(c);setShowEdit(false);}}/>}
+            {showEdit&&<EditCourtModal court={courtData} onClose={()=>setShowEdit(false)} onSaved={c=>{setCourtData(c);setShowEdit(false);}}/> }
+            {showFB&&<FeedbackModal onClose={()=>setShowFB(false)} courtId={courtId}/>}
         </div>
     );
 }

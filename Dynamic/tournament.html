@@ -1295,7 +1295,6 @@ function LandingView({onSimple,onAdvanced,user,onFeedback}){
                     </div>
                 </div>
             </div>
-            </div>
             {/* Courts Banner */}
             <div style={{background:'linear-gradient(90deg,#0f172a,#1e3a2f)',padding:'12px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}>
                 <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#6ee7b7'}}>📍 Check court availability &amp; see who's playing near you</div>
@@ -1430,7 +1429,7 @@ function SimpleView({onBack,onLogin,onFeedback}){
                 <div className="fd" style={{fontSize:22,fontWeight:800,flex:1,cursor:'pointer'}}>
                     <span style={{color:'white'}}>PICKLE</span><span style={{color:'#34d399'}}>CONNECT</span>
                 </div>
-                <button className="back-home-btn" onClick={()=>window.location.href='index.html'}>🎾 Courts</button>
+                <button className="back-home-btn" onClick={()=>window.location.href='index.html'}><img src='pickleball.png' style={{width:16,height:16,verticalAlign:'middle',marginRight:4}}/> Courts</button>
                 <button onClick={onLogin} style={{background:'#059669',color:'white',border:'none',borderRadius:8,padding:'9px 16px',fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:600,cursor:'pointer'}}>Login</button>
             </div>
 
@@ -1704,7 +1703,7 @@ function FullApp({user,onLogout,onBack,onFeedback}){
                     )}
                 </div>
             )}
-            <button className="back-home-btn" onClick={()=>window.location.href='index.html'}>🎾 Courts</button>
+            <button className="back-home-btn" onClick={()=>window.location.href='index.html'}><img src='pickleball.png' style={{width:16,height:16,verticalAlign:'middle',marginRight:4}}/> Courts</button>
             <button className="logout-btn-desktop" onClick={onLogout} style={{background:'rgba(255,255,255,.1)',color:'white',border:'none',borderRadius:8,padding:'9px 14px',fontFamily:'Outfit,sans-serif',fontSize:13,cursor:'pointer'}}>Logout</button>
         </div>
     );
