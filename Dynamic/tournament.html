@@ -1422,7 +1422,7 @@ function SimpleView({onBack,onLogin,onFeedback}){
                 <div className="fd" style={{fontSize:22,fontWeight:800,flex:1,cursor:'pointer'}}>
                     <span style={{color:'white'}}>PICKLE</span><span style={{color:'#34d399'}}>CONNECT</span>
                 </div>
-                <button className="back-home-btn" onClick={()=>window.location.href='index.html'}>🏓 Courts</button>
+                <button className="back-home-btn" onClick={()=>window.location.href='index.html'}>🎾 Courts</button>
                 <button onClick={onFeedback} style={{background:'rgba(255,255,255,.1)',color:'#94a3b8',border:'none',borderRadius:8,padding:'8px 13px',fontFamily:'Outfit,sans-serif',fontSize:14,cursor:'pointer',marginRight:6}}>💬</button>
                 <button onClick={onLogin} style={{background:'#059669',color:'white',border:'none',borderRadius:8,padding:'9px 16px',fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:600,cursor:'pointer'}}>Login</button>
             </div>
@@ -1654,7 +1654,10 @@ function FullApp({user,onLogout,onBack,onFeedback}){
         return()=>document.removeEventListener('click',handleClick);
     },[showUserMenu]);
     
-
+    const Nav=({showBack})=>(
+        <div className="nav">
+            <button className="nav-back" onClick={()=>showBack?setView('dashboard'):onBack()}>←</button>
+            <div className="fd" style={{fontSize:22,fontWeight:800,flex:1,cursor:'pointer'}} onClick={()=>setView('dashboard')}>
                 <span style={{color:'white'}}>PICKLE</span><span style={{color:'#34d399'}}>CONNECT</span>
             </div>
             {user&&(
@@ -1677,7 +1680,7 @@ function FullApp({user,onLogout,onBack,onFeedback}){
                     )}
                 </div>
             )}
-            <button className="back-home-btn" onClick={()=>window.location.href='index.html'}>🏓 Courts</button>
+            <button className="back-home-btn" onClick={()=>window.location.href='index.html'}>🎾 Courts</button>
             <button onClick={onFeedback} style={{background:'rgba(255,255,255,.1)',color:'#94a3b8',border:'none',borderRadius:8,padding:'8px 13px',fontFamily:'Outfit,sans-serif',fontSize:14,cursor:'pointer',marginRight:6}}>💬</button>
             <button className="logout-btn-desktop" onClick={onLogout} style={{background:'rgba(255,255,255,.1)',color:'white',border:'none',borderRadius:8,padding:'9px 14px',fontFamily:'Outfit,sans-serif',fontSize:13,cursor:'pointer'}}>Logout</button>
         </div>

@@ -577,7 +577,7 @@ function CourtPage() {
 
     if (!courtId || !courtData) return (
         <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',flexDirection:'column',gap:12}}>
-            <div style={{fontSize:48}}>🏓</div>
+            <div style={{fontSize:48}}>🎾</div>
             <div style={{fontSize:18,fontWeight:700,color:'#374151'}}>Court not found</div>
             <a href="index.html" style={{color:'#059669',fontSize:14,fontWeight:600}}>← Back to courts</a>
         </div>
@@ -606,7 +606,6 @@ function CourtPage() {
                 <div className="fd" style={{fontSize:22,fontWeight:800,flex:1,cursor:'pointer'}} onClick={()=>window.location.href='index.html'}>
                     <span style={{color:'white'}}>PICKLE</span><span style={{color:'#34d399'}}>CONNECT</span>
                 </div>
-                <button onClick={()=>setShowEdit(true)} style={{background:'rgba(255,255,255,.1)',color:'white',border:'none',borderRadius:8,padding:'8px 13px',fontFamily:'Outfit,sans-serif',fontSize:13,cursor:'pointer'}}>✏️ Edit</button>
             </div>
 
             {/* ── HEADER ── */}
@@ -614,8 +613,8 @@ function CourtPage() {
                 <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:10}}>
                     <div>
                         <div className="fd" style={{fontSize:24,fontWeight:800,color:'white',letterSpacing:.3,lineHeight:1.1}}>{courtData.name}</div>
-                        <div style={{fontSize:12,color:'#6ee7b7',marginTop:4,display:'flex',alignItems:'center',gap:6}}>
-                            <span className="live-dot"/> Live · 📍 {courtData.address}
+                        <div style={{fontSize:12,color:'#6ee7b7',marginTop:4,display:'flex',alignItems:'center',gap:6,overflow:'hidden'}}>
+                            <span className="live-dot" style={{flexShrink:0}}/> <span style={{whiteSpace:'nowrap'}}>Live ·</span> <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>📍 {courtData.address}</span>
                         </div>
                         {courtData.amenities?.length>0 && (
                             <div style={{display:'flex',gap:5,flexWrap:'wrap',marginTop:8}}>
@@ -693,9 +692,23 @@ function CourtPage() {
                         <span style={{fontSize:13,color:courtData.lightsOn?'#fbbf24':''}}>{courtData.lightsOn?'💡':'🌙'}</span>
                         <div><div className="pill-label" style={{color:courtData.lightsOn?'#94a3b8':''}}>Lights</div><div className="pill-val" style={{color:courtData.lightsOn?'white':''}}>{courtData.lightsOn?'ON':'OFF'}</div></div>
                     </div>
-                    <div className={`status-pill ${open>0?'green':'red'}`}>
-                        <span style={{fontSize:13}}>🏟️</span>
-                        <div><div className="pill-label">Open</div><div className="pill-val">{open}/{total}</div></div>
+                    <div className={`status-pill ${open>0?'green':'red'}`} style={{flexShrink:0}}>
+                        <div style={{display:'flex',flexDirection:'column',gap:3}}>
+                            <div className="pill-label">Courts</div>
+                            <div style={{display:'flex',gap:3,flexWrap:'wrap',maxWidth:120}}>
+                                {Array.from({length:total}).map((_,i)=>(
+                                    <div key={i} style={{
+                                        width:14,height:14,borderRadius:3,
+                                        background: i < open ? '#059669' : '#e2e8f0',
+                                        display:'flex',alignItems:'center',justifyContent:'center',
+                                        fontSize:8,lineHeight:1,transition:'background .2s'
+                                    }}>
+                                        {i < open ? '⚽' : ''}
+                                    </div>
+                                ))}
+                            </div>
+                            <div style={{fontSize:10,fontWeight:700,color: open>0?'#059669':'#ef4444'}}>{open}/{total} active</div>
+                        </div>
                     </div>
                     {courtData.restroom&&courtData.restroom!=='open'&&(
                         <div className="status-pill red"><span style={{fontSize:13}}>🚫</span><div><div className="pill-label">Restroom</div><div className="pill-val">Closed</div></div></div>
@@ -814,7 +827,7 @@ function CourtPage() {
                                 nowPlayers.map(p=><PlayerRow key={p.id} p={p} isNow={true}/>)
                             ):(
                                 <div style={{textAlign:'center',padding:'24px 0',color:'#94a3b8',fontSize:14}}>
-                                    No one here yet — be the first! 🏓
+                                    No one here yet — be the first! 🎾
                                 </div>
                             )}
                         </div>
