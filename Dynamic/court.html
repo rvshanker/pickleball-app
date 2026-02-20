@@ -136,7 +136,6 @@
 <div id="root"></div>
 <script type="text/babel">
 const {useState, useEffect, useRef} = React;
-const PKBALL = 'pickleball.png';
 
 // ── Firebase ──────────────────────────────────────────────────────────
 const FB = {
@@ -664,7 +663,7 @@ function CourtPage() {
 
     if (!courtId || !courtData) return (
         <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',flexDirection:'column',gap:12}}>
-            <div><img src={PKBALL} style={{width:52,height:52}}/></div>
+            <div style={{fontSize:48}}>🏟️</div>
             <div style={{fontSize:18,fontWeight:700,color:'#374151'}}>Court not found</div>
             <a href="index.html" style={{color:'#059669',fontSize:14,fontWeight:600}}>← Back to courts</a>
         </div>
@@ -751,7 +750,7 @@ function CourtPage() {
                 {/* Status pills */}
                 <div className="status-bar">
                     <div className={`status-pill ${nowTotal>0?'green':''}`}>
-                        <img src={PKBALL} style={{width:16,height:16,verticalAlign:"middle"}}/>
+                        👥
                         <div><div className="pill-label">Playing</div><div className="pill-val">{nowTotal}</div></div>
                     </div>
                     <div className={`status-pill ${laterTotal>0?'green':''}`}>
@@ -803,7 +802,7 @@ function CourtPage() {
             <div style={{flex:1}}>
                 <div className="pg">
                     <div className="tab-bar">
-                        <button className={`tab-btn${tab==='now'?' active':''}`} onClick={()=>setTab('now')}><img src={PKBALL} style={{width:14,height:14,verticalAlign:"middle",marginRight:4}}/> Now ({nowTotal})</button>
+                        <button className={`tab-btn${tab==='now'?' active':''}`} onClick={()=>setTab('now')}>👥 Now ({nowTotal})</button>
                         <button className={`tab-btn${tab==='schedule'?' active':''}`} onClick={()=>setTab('schedule')}>📅 Schedule ({laterTotal})</button>
                         <button className={`tab-btn${tab==='controls'?' active':''}`} onClick={()=>setTab('controls')}>⚙️ Controls</button>
                         <button className={`tab-btn${tab==='info'?' active':''}`} onClick={()=>setTab('info')}>ℹ️ Info</button>
@@ -834,7 +833,7 @@ function CourtPage() {
                                     <div style={{background:'linear-gradient(135deg,#f8fafc,#f1f5f9)',border:'2px dashed #cbd5e1',borderRadius:12,padding:'18px',marginBottom:14,textAlign:'center'}}>
                                         <div style={{fontSize:14,color:'#64748b',marginBottom:12}}>Let others know you're here!</div>
                                         <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>
-                                            <button className="btn-g" onClick={()=>setShowForm(true)}><img src={PKBALL} style={{width:16,height:16,verticalAlign:"middle",marginRight:5}}/> Check In</button>
+                                            <button className="btn-g" onClick={()=>setShowForm(true)}>🏟️ Check In</button>
                                         </div>
                                     </div>
                                 ):(
@@ -882,7 +881,7 @@ function CourtPage() {
                                         </div>
                                         {!showLaterTime?(
                                             <div style={{display:'flex',gap:8}}>
-                                                <button className="btn-g" onClick={()=>submitCheckIn('now',null)} disabled={!userName.trim()} style={{flex:1}}><img src={PKBALL} style={{width:16,height:16,verticalAlign:"middle",marginRight:5}}/> Playing Now</button>
+                                                <button className="btn-g" onClick={()=>submitCheckIn('now',null)} disabled={!userName.trim()} style={{flex:1}}>👥 Playing Now</button>
                                                 <button className="btn-out" onClick={()=>setShowLaterTime(true)} disabled={!userName.trim()}>⏰ Later</button>
                                                 <button onClick={()=>setShowForm(false)} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontFamily:'Outfit,sans-serif',fontSize:13,padding:'0 8px'}}>Cancel</button>
                                             </div>
@@ -1111,7 +1110,7 @@ function CourtPage() {
                     <span>·</span>
                     <span>Built for pickleball players</span>
                     <span>·</span>
-                    <button onClick={()=>{const msg=prompt('Your feedback:');if(msg?.trim())db&&db.collection('feedback').add({message:msg,page:'court',courtId,timestamp:Date.now()}).catch(()=>{});}} style={{background:'none',border:'none',color:'#059669',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',padding:0}}>💬 Feedback</button>
+                    <button onClick={()=>setShowFB(true)} style={{background:'none',border:'none',color:'#059669',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',padding:0}}>💬 Feedback</button>
                 </div>
             </div>
 

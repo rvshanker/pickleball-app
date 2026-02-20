@@ -1296,9 +1296,9 @@ function LandingView({onSimple,onAdvanced,user,onFeedback}){
                 </div>
             </div>
             {/* Courts Banner */}
-            <div style={{background:'linear-gradient(90deg,#0f172a,#1e3a2f)',padding:'12px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}>
-                <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#6ee7b7'}}>📍 Check court availability &amp; see who's playing near you</div>
-                <a href="index.html" style={{background:'#059669',color:'white',padding:'7px 16px',borderRadius:8,fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap',flexShrink:0}}>Find Courts →</a>
+            <div style={{background:'linear-gradient(90deg,#0f172a,#1e3a2f)',padding:'11px 20px',display:'flex',alignItems:'center',gap:14}}>
+                <span style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#6ee7b7',flex:1,minWidth:0}}>📍 Check court availability & see who's playing near you</span>
+                <a href="index.html" style={{background:'#059669',color:'white',padding:'7px 14px',borderRadius:8,fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap',flexShrink:0}}>Find Courts →</a>
             </div>
             <div style={{textAlign:'center',padding:'18px 16px 24px',fontSize:12,color:'#94a3b8',borderTop:'1px solid #e2e8f0',background:'white'}}>
                 <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:12,flexWrap:'wrap'}}>
@@ -1429,13 +1429,12 @@ function SimpleView({onBack,onLogin,onFeedback}){
                 <div className="fd" style={{fontSize:22,fontWeight:800,flex:1,cursor:'pointer'}}>
                     <span style={{color:'white'}}>PICKLE</span><span style={{color:'#34d399'}}>CONNECT</span>
                 </div>
-                <button className="back-home-btn" onClick={()=>window.location.href='index.html'}><img src='pickleball.png' style={{width:16,height:16,verticalAlign:'middle',marginRight:4}}/> Courts</button>
                 <button onClick={onLogin} style={{background:'#059669',color:'white',border:'none',borderRadius:8,padding:'9px 16px',fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:600,cursor:'pointer'}}>Login</button>
             </div>
 
             {/* Courts Banner */}
-            <div style={{background:'linear-gradient(90deg,#0f172a,#1e3a2f)',padding:'10px 18px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}}>
-                <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#6ee7b7'}}>📍 Check court availability &amp; who's playing near you</div>
+            <div style={{background:'linear-gradient(90deg,#0f172a,#1e3a2f)',padding:'10px 20px',display:'flex',alignItems:'center',gap:14}}>
+                <span style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#6ee7b7',flex:1,minWidth:0}}>📍 Check court availability & who's playing near you</span>
                 <a href="index.html" style={{background:'#059669',color:'white',padding:'6px 14px',borderRadius:8,fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap',flexShrink:0}}>Find Courts →</a>
             </div>
 
@@ -1703,7 +1702,6 @@ function FullApp({user,onLogout,onBack,onFeedback}){
                     )}
                 </div>
             )}
-            <button className="back-home-btn" onClick={()=>window.location.href='index.html'}><img src='pickleball.png' style={{width:16,height:16,verticalAlign:'middle',marginRight:4}}/> Courts</button>
             <button className="logout-btn-desktop" onClick={onLogout} style={{background:'rgba(255,255,255,.1)',color:'white',border:'none',borderRadius:8,padding:'9px 14px',fontFamily:'Outfit,sans-serif',fontSize:13,cursor:'pointer'}}>Logout</button>
         </div>
     );
@@ -1713,8 +1711,8 @@ function FullApp({user,onLogout,onBack,onFeedback}){
         <div style={{minHeight:'100vh',background:'#f1f5f9',display:'flex',flexDirection:'column'}}>
             <Nav showBack={false}/>
             {/* Courts Banner */}
-            <div style={{background:'linear-gradient(90deg,#0f172a,#1e3a2f)',padding:'10px 18px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}}>
-                <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#6ee7b7'}}>📍 Check court availability &amp; who's playing near you</div>
+            <div style={{background:'linear-gradient(90deg,#0f172a,#1e3a2f)',padding:'10px 20px',display:'flex',alignItems:'center',gap:14}}>
+                <span style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#6ee7b7',flex:1,minWidth:0}}>📍 Check court availability & who's playing near you</span>
                 <a href="index.html" style={{background:'#059669',color:'white',padding:'6px 14px',borderRadius:8,fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap',flexShrink:0}}>Find Courts →</a>
             </div>
             <div className="pg">
