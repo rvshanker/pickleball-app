@@ -53,15 +53,15 @@ exports.cleanupExpiredCheckIns = functions
 
       // Auto-promote 'later' → 'now' when arrival time has passed
       if (c.status === 'later' && c.arrivalTime && now >= c.arrivalTime) {
-        await doc.ref.update({ status: 'now', timestamp: now });
-        // Re-read to get updated timestamp for duration check below
+        await doc.ref.update({ status: 'now', timestamp: c.arrivalTime }); // use arrivalTime, not now
         c.status = 'now';
-        c.timestamp = now;
+        c.timestamp = c.arrivalTime; // duration counts from actual arrival, not promotion time
       }
 
       // Delete 'now' players whose duration has expired
       if (c.status === 'now' && c.duration) {
-        if (now > c.timestamp + c.duration * 60000) {
+        const startTime = c.arrivalTime || c.timestamp;
+        if (now > startTime + c.duration * 60000) {
           deletes.push(doc.ref.delete());
         }
       }
