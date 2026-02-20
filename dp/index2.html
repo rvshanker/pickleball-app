@@ -89,7 +89,6 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Outfit', sans-serif; background: #f1f5f9; font-size: 16px; -webkit-text-size-adjust: 100%; }
@@ -127,6 +126,26 @@
         /* Player rows */
         .player-item { background: white; border-radius: 10px; padding: 9px 13px; display: flex; align-items: center; gap: 10px; border: 1px solid #e2e8f0; margin-bottom: 7px; }
         .player-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#059669,#10b981); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+
+        /* DM Chat */
+        .dm-btn { background: none; border: none; cursor: pointer; padding: 4px 6px; border-radius: 8px; font-size: 15px; color: #94a3b8; transition: all .15s; flex-shrink: 0; position: relative; }
+        .dm-btn:hover { background: #f0fdf4; color: #059669; }
+        .dm-btn.has-unread::after { content: ''; position: absolute; top: 2px; right: 2px; width: 7px; height: 7px; background: #ef4444; border-radius: 50%; border: 1.5px solid white; }
+        @keyframes dmSlide { from{transform:translateY(100%)} to{transform:translateY(0)} }
+        .dm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; display: flex; align-items: flex-end; }
+        .dm-panel { background: white; width: 100%; max-height: 85vh; border-radius: 20px 20px 0 0; display: flex; flex-direction: column; animation: dmSlide .25s ease; }
+        .dm-header { padding: 16px 16px 12px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 10px; }
+        .dm-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#059669,#10b981); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 15px; flex-shrink: 0; }
+        .dm-messages { flex: 1; overflow-y: auto; padding: 14px 14px 8px; display: flex; flex-direction: column; gap: 8px; min-height: 200px; }
+        .dm-msg { max-width: 78%; padding: 9px 13px; border-radius: 16px; font-size: 14px; line-height: 1.4; word-break: break-word; }
+        .dm-msg.mine { background: linear-gradient(135deg,#059669,#10b981); color: white; border-bottom-right-radius: 4px; align-self: flex-end; }
+        .dm-msg.theirs { background: #f1f5f9; color: #0f172a; border-bottom-left-radius: 4px; align-self: flex-start; }
+        .dm-msg-time { font-size: 10px; opacity: .65; margin-top: 3px; }
+        .dm-input-row { padding: 10px 12px 16px; border-top: 1px solid #f1f5f9; display: flex; gap: 8px; align-items: flex-end; }
+        .dm-input { flex: 1; border: 2px solid #e2e8f0; border-radius: 20px; padding: 9px 15px; font-size: 14px; font-family: 'Outfit',sans-serif; outline: none; resize: none; max-height: 100px; }
+        .dm-input:focus { border-color: #10b981; }
+        .dm-send { background: linear-gradient(135deg,#059669,#10b981); border: none; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; color: white; font-size: 16px; }
+        .dm-send:disabled { opacity: .4; cursor: not-allowed; }
 
         /* Weather strip - now with visible border/bg */
         .weather-strip { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
@@ -189,26 +208,11 @@
         .live-dot { width: 7px; height: 7px; background: #10b981; border-radius: 50%; animation: pulse 2s infinite; display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Notification bell */
-        .notif-bell { position: relative; background: rgba(255,255,255,.1); border: none; color: white; border-radius: 10px; padding: 7px 10px; cursor: pointer; font-size: 18px; transition: all .2s; flex-shrink: 0; }
-        .notif-bell:hover { background: rgba(255,255,255,.2); }
-        .notif-bell.active { background: rgba(16,185,129,.3); border: 1.5px solid rgba(16,185,129,.6); }
-        .notif-bell.has-badge::after { content: ''; position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; border: 2px solid #0f172a; }
-
-        /* Notification modal */
-        .notif-modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 16px; }
-        .notif-panel { background: white; border-radius: 16px; padding: 20px; max-width: 420px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
-
-        /* In-app toast for mobile / no-notification fallback */
-        @keyframes slideDown { from{transform:translateY(-100%);opacity:0} to{transform:translateY(0);opacity:1} }
-        @keyframes fadeOut { from{opacity:1} to{opacity:0} }
-        .toast-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 99999; background: linear-gradient(135deg,#059669,#10b981); color: white; padding: 13px 18px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.25); animation: slideDown .3s ease; }
-        .toast-banner.hiding { animation: fadeOut .4s ease forwards; }
-        .toast-icon { font-size: 22px; flex-shrink: 0; }
-        .toast-body { flex: 1; min-width: 0; }
-        .toast-title { font-weight: 700; font-size: 14px; }
-        .toast-msg { font-size: 12px; opacity: .9; margin-top: 1px; }
-        .toast-close { background: none; border: none; color: white; font-size: 20px; cursor: pointer; flex-shrink: 0; opacity: .7; padding: 0 4px; }
+        /* Flash message banner */
+        @keyframes flashSlide { from{transform:translateY(-8px);opacity:0} to{transform:translateY(0);opacity:1} }
+        .flash-banner { background: linear-gradient(135deg,#7c3aed,#a855f7); color: white; padding: 10px 17px; display: flex; align-items: center; gap: 10px; animation: flashSlide .3s ease; }
+        .flash-banner-text { flex: 1; font-size: 13px; font-weight: 600; line-height: 1.4; }
+        .flash-banner-close { background: none; border: none; color: white; font-size: 18px; cursor: pointer; opacity: .7; padding: 0 4px; flex-shrink: 0; }
 
         @media(max-width:380px) {
             .weather-hour { min-width: 50px; padding: 6px 7px; }
@@ -233,15 +237,11 @@ const FB = {
 };
 const COURT = { id: 'dardenne-prairie', name: 'Dardenne Prairie Athletic Complex', location: '2080 Hanley Rd, O\'Fallon, MO', lat: 38.7542, lon: -90.7089 };
 
-let db = null, fbOk = false, messaging = null;
+let db = null, fbOk = false;
 try {
     if (!firebase.apps.length) firebase.initializeApp(FB);
     db = firebase.firestore();
     fbOk = true;
-    // Initialize FCM messaging
-    if ('serviceWorker' in navigator) {
-        messaging = firebase.messaging();
-    }
 } catch(e) { console.error('Firebase:', e); }
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -291,15 +291,32 @@ const DURATION_OPTIONS = [
 function buildTimeOptions() {
     const opts = [];
     const now = new Date();
-    const start = new Date(now);
-    start.setMinutes(0, 0, 0);
-    start.setHours(start.getHours() + 1);
-    const end = new Date(now); end.setHours(23, 59, 59, 0);
-    const cur = new Date(start);
-    while (cur <= end) {
+
+    // Today: next full hour up to midnight
+    const todayStart = new Date(now);
+    todayStart.setMinutes(0, 0, 0);
+    todayStart.setHours(todayStart.getHours() + 1);
+    const todayEnd = new Date(now); todayEnd.setHours(23, 0, 0, 0);
+    const cur = new Date(todayStart);
+    while (cur <= todayEnd) {
         opts.push({ label: cur.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), value: cur.getTime() });
         cur.setHours(cur.getHours() + 1);
     }
+
+    // Tomorrow: 6 AM to 10 PM
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(6, 0, 0, 0);
+    const tomorrowEnd = new Date(tomorrow); tomorrowEnd.setHours(22, 0, 0, 0);
+    const tmr = new Date(tomorrow);
+    while (tmr <= tomorrowEnd) {
+        opts.push({
+            label: tmr.toLocaleDateString([], { weekday: 'short' }) + ' ' + tmr.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+            value: tmr.getTime()
+        });
+        tmr.setHours(tmr.getHours() + 1);
+    }
+
     return opts;
 }
 
@@ -349,10 +366,9 @@ function PlayTimer({ checkInTime, durationMins }) {
 }
 
 // ── PlayerRow ─────────────────────────────────────────────────────────
-function PlayerRow({ p, isNow }) {
+function PlayerRow({ p, isNow, onDm, hasUnread, isMe }) {
     const ri = ratingInfo(p.rating);
     const nowMs = Date.now();
-    // Treat as "now" if status is 'now' OR if 'later' but arrival time has passed
     const effectivelyNow = isNow || p.status === 'now' || (p.status === 'later' && p.arrivalTime && nowMs >= p.arrivalTime);
     const arrLabel = p.status === 'later' && p.arrivalTime && !effectivelyNow
         ? new Date(p.arrivalTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}) : null;
@@ -378,8 +394,15 @@ function PlayerRow({ p, isNow }) {
                     </div>
                 )}
             </div>
-            <div style={{fontSize:10,color:'#cbd5e1',flexShrink:0}}>
-                {new Date(p.timestamp).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
+            <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
+                <div style={{fontSize:10,color:'#cbd5e1'}}>
+                    {new Date(p.timestamp).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
+                </div>
+                {onDm && !isMe && (
+                    <button className={`dm-btn${hasUnread?' has-unread':''}`} onClick={()=>onDm(p)} title={`Message ${p.userName}`}>
+                        💬
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -408,14 +431,13 @@ function CourtStatus() {
     const [guestFunny,   setGuestFunny]   = useState('');
     const [comment,      setComment]      = useState('');
     const [commentFocused, setCommentFocused] = useState(false);
-
-    // Notification states
-    const [notifEnabled,  setNotifEnabled]  = useState(false);
-    const [notifPrefs,    setNotifPrefs]    = useState({ newPlayerSameTime: true, playerDropout: true });
-    const [showNotifModal,setShowNotifModal]= useState(false);
-    const [toasts,        setToasts]        = useState([]);
-    const [fcmToken,      setFcmToken]      = useState(null);
-    const prevCheckInsRef = useRef([]);
+    const [flashMsg,     setFlashMsg]     = useState('');
+    const [flashInput,   setFlashInput]   = useState('');
+    const [dmOpen,       setDmOpen]       = useState(null);  // { deviceId, userName } of other player
+    const [dmMessages,   setDmMessages]   = useState([]);
+    const [dmInput,      setDmInput]      = useState('');
+    const [dmUnread,     setDmUnread]     = useState({});    // { deviceId: count }
+    const dmEndRef = useRef(null);
 
     // Ticker: re-render every minute so auto-promote updates the UI without user interaction
     const [tick, setTick] = useState(0);
@@ -436,13 +458,6 @@ function CourtStatus() {
         const r = localStorage.getItem('pickleCourtRating');
         if (n) setUserName(n);
         if (r) setUserRating(r);
-        // Load notification prefs
-        const prefs = localStorage.getItem('pickleCourtNotifPrefs');
-        if (prefs) { try { setNotifPrefs(JSON.parse(prefs)); } catch(e) {} }
-        if ('Notification' in window && Notification.permission === 'granted') {
-            const enabled = localStorage.getItem('pickleCourtNotifEnabled');
-            if (enabled === 'true') setNotifEnabled(true);
-        }
     }, []);
 
     // Handle 5.0+ funny message
@@ -482,13 +497,129 @@ function CourtStatus() {
     useEffect(() => {
         if (!fbOk || !db) return;
         return db.collection('court-status').doc(COURT.id).onSnapshot(doc => {
-            if (doc.exists) setCourtData(doc.data());
+            if (doc.exists) {
+                const data = doc.data();
+                setCourtData(data);
+                // Load flash message — clear if older than 4 hours
+                if (data.flashMsg && data.flashMsgTime) {
+                    const age = Date.now() - data.flashMsgTime;
+                    if (age < 4 * 3600000) {
+                        setFlashMsg(data.flashMsg);
+                    } else {
+                        setFlashMsg('');
+                    }
+                } else {
+                    setFlashMsg('');
+                }
+            }
             else db.collection('court-status').doc(COURT.id).set({
                 courtId: COURT.id, crowdLevel: 'low', lightsOn: false, openCourts: 4, totalCourts: 4,
                 lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
             });
         });
     }, []);
+
+    const saveFlashMsg = async () => {
+        if (!fbOk || !db) return;
+        const msg = flashInput.trim();
+        await db.collection('court-status').doc(COURT.id).update({
+            flashMsg: msg,
+            flashMsgTime: msg ? Date.now() : null,
+            lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        setFlashInput('');
+    };
+
+    const clearFlashMsg = async () => {
+        if (!fbOk || !db) return;
+        await db.collection('court-status').doc(COURT.id).update({
+            flashMsg: '',
+            flashMsgTime: null,
+            lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    };
+
+    // ── DM helpers ───────────────────────────────────────────────────────
+    const dmThreadId = (a, b) => [a, b].sort().join('__');
+
+    const openDm = (otherPlayer) => {
+        if (!myCheckIn) { alert('Check in first to send messages'); return; }
+        setDmOpen(otherPlayer);
+        setDmInput('');
+        // Clear unread for this player
+        setDmUnread(prev => ({ ...prev, [otherPlayer.deviceId]: 0 }));
+    };
+
+    // Listen to DM messages when panel is open
+    useEffect(() => {
+        if (!dmOpen || !fbOk || !db) return;
+        const threadId = dmThreadId(deviceId, dmOpen.deviceId);
+        const today = new Date(); today.setHours(0,0,0,0);
+        const unsub = db.collection('dm-messages')
+            .where('threadId', '==', threadId)
+            .where('createdAt', '>=', today)
+            .orderBy('createdAt', 'asc')
+            .onSnapshot(snap => {
+                setDmMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                setTimeout(() => dmEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+            });
+        return () => unsub();
+    }, [dmOpen, deviceId]);
+
+    // Listen for unread messages across all threads
+    useEffect(() => {
+        if (!fbOk || !db || !deviceId) return;
+        const today = new Date(); today.setHours(0,0,0,0);
+        const unsub = db.collection('dm-messages')
+            .where('toDeviceId', '==', deviceId)
+            .where('createdAt', '>=', today)
+            .where('read', '==', false)
+            .onSnapshot(snap => {
+                const counts = {};
+                snap.docs.forEach(d => {
+                    const from = d.data().fromDeviceId;
+                    counts[from] = (counts[from] || 0) + 1;
+                });
+                setDmUnread(counts);
+            });
+        return () => unsub();
+    }, [deviceId]);
+
+    const sendDm = async () => {
+        if (!dmInput.trim() || !dmOpen || !myCheckIn) return;
+        const threadId = dmThreadId(deviceId, dmOpen.deviceId);
+        const msg = dmInput.trim();
+        setDmInput('');
+        await db.collection('dm-messages').add({
+            threadId,
+            fromDeviceId: deviceId,
+            fromName: userName,
+            toDeviceId: dmOpen.deviceId,
+            toName: dmOpen.userName,
+            courtId: COURT.id,
+            text: msg,
+            read: false,
+            createdAt: new Date()
+        });
+        // Mark messages from the other person in this thread as read
+        const snap = await db.collection('dm-messages')
+            .where('threadId', '==', threadId)
+            .where('toDeviceId', '==', deviceId)
+            .where('read', '==', false)
+            .get();
+        snap.docs.forEach(d => d.ref.update({ read: true }));
+    };
+
+    const markDmRead = async (otherDeviceId) => {
+        if (!fbOk || !db) return;
+        const threadId = dmThreadId(deviceId, otherDeviceId);
+        const snap = await db.collection('dm-messages')
+            .where('threadId', '==', threadId)
+            .where('toDeviceId', '==', deviceId)
+            .where('read', '==', false)
+            .get();
+        snap.docs.forEach(d => d.ref.update({ read: true }));
+    };
 
     // Check-ins listener — READ ONLY. No writes inside snapshot to avoid infinite loop.
     const checkInsRef = useRef([]);
@@ -498,7 +629,7 @@ function CourtStatus() {
             .where('courtId', '==', COURT.id)
             .onSnapshot(snap => {
                 const now = Date.now();
-                const cutoff = now - 8 * 3600000;
+                const cutoff = now - 24 * 3600000;
                 const list = snap.docs
                     .map(d => ({ id: d.id, ...d.data() }))
                     .filter(c => c.timestamp > cutoff)
@@ -587,7 +718,7 @@ function CourtStatus() {
     };
 
     const deleteMyCheckIns = async () => {
-        const cutoff = Date.now() - 8 * 3600000;
+        const cutoff = Date.now() - 24 * 3600000;
         const snap = await db.collection('check-ins').where('courtId', '==', COURT.id).get();
         const mine = snap.docs.filter(d => { const x = d.data(); return x.deviceId === deviceId && x.timestamp > cutoff; });
         await Promise.all(mine.map(d => d.ref.delete()));
@@ -609,176 +740,15 @@ function CourtStatus() {
                 status,
                 guests: guestCount,
                 duration: duration,
-                comment: (comment && !FUNNY_COMMENTS.includes(comment)) ? comment.trim() : (commentFocused && comment.trim() ? comment.trim() : (FUNNY_COMMENTS.includes(comment) ? comment : '')),
+                comment: comment.trim() || '',
                 arrivalTime: atTime || Date.now(),
                 timestamp: Date.now(),
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             localStorage.setItem('pickleCourtUserName', userName);
             localStorage.setItem('pickleCourtRating', userRating);
-            // Update FCM token record with latest userName
-            if (fbOk && db && notifEnabled) {
-                db.collection('fcm-tokens').doc(deviceId).update({ userName }).catch(() => {});
-            }
-            setShowForm(false); setStep('form'); setArrivalTime(''); setShowLaterTime(false); setGuestCount(0); setFunnyMsg(''); setDurationFunny(''); setGuestFunny(''); setComment(''); setCommentFocused(false);
+            setShowForm(false); setStep('form'); setArrivalTime(''); setShowLaterTime(false); setGuestCount(0); setFunnyMsg(''); setDurationFunny(''); setGuestFunny(''); setComment('');
         } catch(e) { console.error('Check-in:', e); alert('Check-in failed. Try again.'); }
-    };
-
-    // ── Toast helper (in-app fallback, works on all devices) ─────────────
-    const showToast = (title, body) => {
-        const id = Date.now() + Math.random();
-        setToasts(prev => [...prev, { id, title, body }]);
-        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 5000);
-    };
-
-    // ── Send notification: in-app toast + browser Notification API + FCM queue ──
-    const sendNotification = (title, body) => {
-        // 1. Always show in-app toast (works everywhere, tab focused or not)
-        showToast(title, body);
-
-        // 2. Browser Notification API (shows OS popup when tab is in background)
-        if ('Notification' in window && Notification.permission === 'granted') {
-            try {
-                new Notification(title, {
-                    body,
-                    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23059669"/></svg>',
-                    tag: 'picklecourt-' + Date.now(),
-                    requireInteraction: true,
-                    silent: false
-                });
-            } catch(e) { /* ignore */ }
-        }
-
-        // 3. Write to Firestore notification queue — a Cloud Function picks this up
-        //    and sends FCM push to all subscribed devices (works when app is closed)
-        if (fbOk && db) {
-            db.collection('notification-queue').add({
-                courtId: COURT.id,
-                title,
-                body,
-                senderDeviceId: deviceId,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }).catch(() => {});
-        }
-    };
-
-    // ── Notification monitoring ───────────────────────────────────────────
-    useEffect(() => {
-        if (!notifEnabled || !userName) return;
-        const myCheckIn = checkIns.find(c => c.deviceId === deviceId);
-        if (!myCheckIn) { prevCheckInsRef.current = checkIns; return; }
-        const prev = prevCheckInsRef.current;
-        if (!prev || prev.length === 0) { prevCheckInsRef.current = checkIns; return; }
-        const myTime = myCheckIn.arrivalTime || myCheckIn.timestamp;
-        const myHour = new Date(myTime).setMinutes(0, 0, 0);
-        if (notifPrefs.newPlayerSameTime) {
-            checkIns.filter(c => {
-                if (c.deviceId === deviceId) return false;
-                const cHour = new Date(c.arrivalTime || c.timestamp).setMinutes(0, 0, 0);
-                return cHour === myHour && !prev.find(p => p.id === c.id);
-            }).forEach(p => {
-                const time = new Date(p.arrivalTime || p.timestamp).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
-                sendNotification('🎾 New player joining!', `${p.userName} is also coming at ${time}`);
-            });
-        }
-        if (notifPrefs.playerDropout) {
-            prev.filter(p => {
-                if (p.deviceId === deviceId) return false;
-                const pHour = new Date(p.arrivalTime || p.timestamp).setMinutes(0, 0, 0);
-                return pHour === myHour && !checkIns.find(c => c.id === p.id);
-            }).forEach(p => {
-                const time = new Date(p.arrivalTime || p.timestamp).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
-                sendNotification('👋 Player dropped out', `${p.userName} cancelled their ${time} session`);
-            });
-        }
-        prevCheckInsRef.current = checkIns;
-    }, [checkIns, notifEnabled, notifPrefs, userName, deviceId]);
-
-    // ── Register SW + get FCM token + save to Firestore ─────────────────
-    const setupFCM = async () => {
-        if (!messaging) return null;
-        try {
-            // Register the service worker
-            const reg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
-            await navigator.serviceWorker.ready;
-
-            // Get FCM token
-            const token = await messaging.getToken({
-                vapidKey: 'BO8kuV9zmoNdPv7zDrUgYNz82A3Nk3cE6wSDO5-4PXi4FJZ0HEy1NLri2N0BsF_mzV5pKtgYHXbKq8_cIA2a3oY',
-                serviceWorkerRegistration: reg
-            });
-
-            if (token) {
-                setFcmToken(token);
-                // Save token to Firestore so we can target this device
-                await db.collection('fcm-tokens').doc(deviceId).set({
-                    token,
-                    deviceId,
-                    userName: userName || '',
-                    courtId: COURT.id,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                console.log('✅ FCM token saved');
-                return token;
-            }
-        } catch(e) {
-            console.warn('FCM setup failed:', e.message);
-        }
-        return null;
-    };
-
-    // ── Request/enable notifications ─────────────────────────────────────
-    const requestNotifPermission = async () => {
-        const enable = () => {
-            setNotifEnabled(true);
-            localStorage.setItem('pickleCourtNotifEnabled', 'true');
-            setShowNotifModal(false);
-        };
-
-        if (!('Notification' in window)) {
-            // iOS Safari — in-app toasts only
-            enable();
-            showToast('🔔 Alerts on!', 'Alerts will appear here in the app');
-            return;
-        }
-
-        if (Notification.permission === 'denied') {
-            enable();
-            showToast('🔔 In-app alerts on!', 'Browser notifications blocked in settings — alerts will show here instead');
-            return;
-        }
-
-        // Request permission if not yet granted
-        let perm = Notification.permission;
-        if (perm !== 'granted') {
-            perm = await Notification.requestPermission();
-        }
-
-        enable();
-
-        if (perm === 'granted') {
-            // Set up FCM for true push notifications
-            const token = await setupFCM();
-            if (token) {
-                showToast('✅ Push notifications enabled!', "You'll get alerts even when the app is closed");
-            } else {
-                showToast('✅ Notifications enabled!', "You'll get alerts when players join your time slot");
-            }
-        } else {
-            showToast('🔔 In-app alerts on!', 'Browser notifications blocked — alerts will show here instead');
-        }
-    };
-
-    const disableNotifications = () => {
-        setNotifEnabled(false);
-        localStorage.setItem('pickleCourtNotifEnabled', 'false');
-        setShowNotifModal(false);
-    };
-
-    const toggleNotifPref = (key) => {
-        const updated = { ...notifPrefs, [key]: !notifPrefs[key] };
-        setNotifPrefs(updated);
-        localStorage.setItem('pickleCourtNotifPrefs', JSON.stringify(updated));
     };
 
     const handleCheckOut = async () => {
@@ -818,31 +788,21 @@ function CourtStatus() {
 
             {/* ── HEADER ── */}
             <div className="hero-bg" style={{padding:'15px 17px 13px'}}>
-                <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:10,gap:8}}>
-                    {/* Title block — min-width:0 so it can shrink, no wrapping on title */}
-                    <div style={{flex:1,minWidth:0}}>
-                        <div className="fd" style={{fontSize:22,fontWeight:800,color:'white',letterSpacing:.3,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>PICKLECOURT CONNECT</div>
-                        <div style={{fontSize:11,color:'#6ee7b7',marginTop:2,display:'flex',alignItems:'center',gap:5,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-                            <span className="live-dot" style={{flexShrink:0}}/> <span style={{overflow:'hidden',textOverflow:'ellipsis'}}>Live · 📍 {COURT.location}</span>
+                <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:10}}>
+                    <div>
+                        <div className="fd" style={{fontSize:25,fontWeight:800,color:'white',letterSpacing:.3}}>PICKLECOURT CONNECT</div>
+                        <div style={{fontSize:12,color:'#6ee7b7',marginTop:2,display:'flex',alignItems:'center',gap:6}}>
+                            <span className="live-dot"/> Live · 📍 {COURT.location}
                         </div>
                     </div>
-                    {/* Right side: weather + bell */}
-                    <div style={{display:'flex',alignItems:'flex-start',gap:6,flexShrink:0}}>
-                        {weather && (
-                            <div style={{textAlign:'right'}}>
-                                <div style={{display:'inline-flex',alignItems:'center',gap:5,background:'rgba(255,255,255,.18)',border:'1.5px solid rgba(255,255,255,.45)',borderRadius:20,padding:'6px 11px',fontSize:12,fontWeight:700,color:'white',boxShadow:'0 2px 8px rgba(0,0,0,.2)',whiteSpace:'nowrap'}}>
-                                    {wIcon(weather.temp,weather.wind)} {weather.temp}°F · 💨{weather.wind}mph{weather.gust ? ` G${weather.gust}` : ''}
-                                </div>
-                                {wxUpdated && <div style={{fontSize:10,color:'#64748b',marginTop:3,textAlign:'right'}}>Updated {wxUpdated.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}</div>}
+                    {weather && (
+                        <div style={{textAlign:'right',flexShrink:0,marginLeft:8}}>
+                            <div style={{display:'inline-flex',alignItems:'center',gap:5,background:'rgba(255,255,255,.18)',border:'1.5px solid rgba(255,255,255,.45)',borderRadius:20,padding:'6px 13px',fontSize:13,fontWeight:700,color:'white',boxShadow:'0 2px 8px rgba(0,0,0,.2)'}}>
+                                {wIcon(weather.temp,weather.wind)} {weather.temp}°F · 💨{weather.wind}mph{weather.gust ? ` · 💨Gusts ${weather.gust}mph` : ''}
                             </div>
-                        )}
-                        {/* Notification bell */}
-                        <button
-                            className={`notif-bell${notifEnabled?' active':''}${notifEnabled&&checkIns.find(c=>c.deviceId===deviceId)?' has-badge':''}`}
-                            onClick={()=>setShowNotifModal(true)}
-                            title="Notification settings"
-                        >🔔</button>
-                    </div>
+                            {wxUpdated && <div style={{fontSize:10,color:'#64748b',marginTop:3,textAlign:'right'}}>Updated {wxUpdated.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}</div>}
+                        </div>
+                    )}
                 </div>
 
                 {/* Hourly weather timeline — highlighted with white border */}
@@ -865,6 +825,15 @@ function CourtStatus() {
                 {courtData.lastUpdate && (
                     <div style={{fontSize:10,color:'#6ee7b7',marginBottom:10,textAlign:'center'}}>
                         Court status last updated: {new Date(courtData.lastUpdate.seconds * 1000).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
+                    </div>
+                )}
+
+                {/* Flash message banner */}
+                {flashMsg && (
+                    <div className="flash-banner" style={{borderRadius:10,marginBottom:10}}>
+                        <span style={{fontSize:18}}>📣</span>
+                        <div className="flash-banner-text">{flashMsg}</div>
+                        <button className="flash-banner-close" onClick={clearFlashMsg}>×</button>
                     </div>
                 )}
 
@@ -947,7 +916,7 @@ function CourtStatus() {
                                     </div>
                                 </div>
                             ) : !showForm ? (
-                                <button className="btn-g" onClick={()=>{setShowForm(true);setComment(randFunnyComment());setCommentFocused(false);}} style={{width:'100%',padding:13}}>📍 Check In</button>
+                                <button className="btn-g" onClick={()=>{setShowForm(true);setComment('');}} style={{width:'100%',padding:13}}>📍 Check In</button>
                             ) : (
                                 // Single unified form — no step switching
                                 <div style={{background:'#f8fafc',borderRadius:11,padding:13}}>
@@ -982,17 +951,10 @@ function CourtStatus() {
                                         <textarea
                                             className="field"
                                             rows={2}
-                                            value={commentFocused ? comment : (comment || '')}
-                                            placeholder={commentFocused ? '' : ''}
+                                            value={comment}
+                                            placeholder={randFunnyComment()}
                                             onChange={e => setComment(e.target.value)}
-                                            onFocus={() => {
-                                                if (!commentFocused) {
-                                                    setCommentFocused(true);
-                                                    // Clear if it's still the placeholder text
-                                                    if (FUNNY_COMMENTS.includes(comment)) setComment('');
-                                                }
-                                            }}
-                                            style={{resize:'none',lineHeight:1.5,fontSize:14,color: (!commentFocused && FUNNY_COMMENTS.includes(comment)) ? '#94a3b8' : '#0f172a', fontStyle: (!commentFocused && FUNNY_COMMENTS.includes(comment)) ? 'italic' : 'normal'}}
+                                            style={{resize:'none',lineHeight:1.5,fontSize:14}}
                                         />
                                         <div style={{fontSize:10,color:'#94a3b8',marginTop:3,textAlign:'right'}}>💬 Trash talk or message (optional)</div>
                                     </div>
@@ -1085,7 +1047,7 @@ function CourtStatus() {
 
                                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                                         <button className="btn-out" onClick={()=>startCheckIn('watching')} style={{padding:9,fontSize:13}}>👀 Watching</button>
-                                        <button onClick={()=>{setShowForm(false);setShowLaterTime(false);setArrivalTime('');setFunnyMsg('');setDurationFunny('');setGuestFunny('');}} style={{background:'none',border:'1px solid #e2e8f0',borderRadius:8,padding:9,cursor:'pointer',fontFamily:'Outfit,sans-serif',fontSize:13,color:'#94a3b8'}}>Cancel</button>
+                                        <button onClick={()=>{setShowForm(false);setShowLaterTime(false);setArrivalTime('');setFunnyMsg('');setDurationFunny('');setGuestFunny('');setComment('');}} style={{background:'none',border:'1px solid #e2e8f0',borderRadius:8,padding:9,cursor:'pointer',fontFamily:'Outfit,sans-serif',fontSize:13,color:'#94a3b8'}}>Cancel</button>
                                     </div>
                                 </div>
                             )}
@@ -1094,7 +1056,7 @@ function CourtStatus() {
                         {nowPlayers.length > 0 && (
                             <div className="card">
                                 <div className="fd" style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:11}}>🎾 PLAYING NOW · {nowTotal}</div>
-                                {nowPlayers.map(p=><PlayerRow key={p.id} p={p} isNow={true}/>)}
+                                {nowPlayers.map(p=><PlayerRow key={p.id} p={p} isNow={true} onDm={myCheckIn ? openDm : null} hasUnread={!!dmUnread[p.deviceId]} isMe={p.deviceId===deviceId}/>)}
                             </div>
                         )}
                         {nowPlayers.length===0 && <div style={{textAlign:'center',padding:'28px 0',color:'#94a3b8',fontSize:13}}>No one checked in yet — be the first! 🥒</div>}
@@ -1120,14 +1082,14 @@ function CourtStatus() {
                                             {total} player{total!==1?'s':''}
                                         </div>
                                     </div>
-                                    {group.players.map(p=><PlayerRow key={p.id} p={p}/>)}
+                                    {group.players.map(p=><PlayerRow key={p.id} p={p} onDm={myCheckIn ? openDm : null} hasUnread={!!dmUnread[p.deviceId]} isMe={p.deviceId===deviceId}/>)}
                                 </div>
                             );
                         })}
                         {watchers.length > 0 && (
                             <div className="card" style={{marginTop:8}}>
                                 <div className="fd" style={{fontSize:15,fontWeight:800,color:'#0f172a',marginBottom:10}}>👀 WATCHING · {watchers.length}</div>
-                                {watchers.map(p=><PlayerRow key={p.id} p={p}/>)}
+                                {watchers.map(p=><PlayerRow key={p.id} p={p} onDm={myCheckIn ? openDm : null} hasUnread={!!dmUnread[p.deviceId]} isMe={p.deviceId===deviceId}/>)}
                             </div>
                         )}
                     </>}
@@ -1136,6 +1098,31 @@ function CourtStatus() {
                     {tab==='controls' && (
                         <div className="card">
                             <div className="fd" style={{fontSize:18,fontWeight:800,color:'#0f172a',marginBottom:15}}>⚙️ UPDATE COURT STATUS</div>
+
+                            {/* Flash Message */}
+                            <div style={{marginBottom:18,background:'linear-gradient(135deg,#faf5ff,#ede9fe)',border:'2px solid #a78bfa',borderRadius:12,padding:'13px 15px'}}>
+                                <div style={{fontSize:11,fontWeight:700,color:'#7c3aed',marginBottom:8,textTransform:'uppercase',letterSpacing:'.5px'}}>📣 Flash Update</div>
+                                <div style={{fontSize:12,color:'#6d28d9',marginBottom:10}}>Shows on home page for 4 hours. Use for urgent updates like court closures, events, etc.</div>
+                                {flashMsg ? (
+                                    <div>
+                                        <div style={{background:'white',border:'1px solid #c4b5fd',borderRadius:8,padding:'9px 12px',fontSize:13,fontWeight:600,color:'#4c1d95',marginBottom:10,lineHeight:1.4}}>
+                                            📣 {flashMsg}
+                                        </div>
+                                        <div style={{display:'flex',gap:8}}>
+                                            <input className="field" value={flashInput} onChange={e=>setFlashInput(e.target.value)} placeholder="Update message…" style={{flex:1,fontSize:13,padding:'8px 11px'}}/>
+                                            <button className="btn-g" onClick={saveFlashMsg} style={{padding:'8px 14px',fontSize:13}}>Update</button>
+                                            <button onClick={clearFlashMsg} style={{padding:'8px 12px',borderRadius:9,border:'2px solid #e2e8f0',background:'white',color:'#94a3b8',fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'Outfit,sans-serif'}}>Clear</button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div style={{display:'flex',gap:8}}>
+                                        <input className="field" value={flashInput} onChange={e=>setFlashInput(e.target.value)} placeholder="Type a flash update… e.g. Court 3 is closed today" style={{flex:1,fontSize:13,padding:'8px 11px'}}
+                                            onKeyDown={e=>{ if(e.key==='Enter' && flashInput.trim()) saveFlashMsg(); }}
+                                        />
+                                        <button className="btn-g" onClick={saveFlashMsg} disabled={!flashInput.trim()} style={{padding:'8px 14px',fontSize:13,opacity:flashInput.trim()?1:.45}}>Post</button>
+                                    </div>
+                                )}
+                            </div>
 
                             <div style={{marginBottom:13}}>
                                 <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:7,textTransform:'uppercase',letterSpacing:'.5px'}}>Crowd Level (people)</div>
@@ -1220,67 +1207,50 @@ function CourtStatus() {
                 </div>
             </div>
 
-            {/* ── IN-APP TOAST BANNERS ── */}
-            {toasts.map(t => (
-                <div key={t.id} className="toast-banner">
-                    <div className="toast-icon">🎾</div>
-                    <div className="toast-body">
-                        <div className="toast-title">{t.title}</div>
-                        <div className="toast-msg">{t.body}</div>
-                    </div>
-                    <button className="toast-close" onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}>×</button>
-                </div>
-            ))}
-
-            {/* ── NOTIFICATION MODAL ── */}
-            {showNotifModal && (
-                <div className="notif-modal" onClick={e => { if (e.target.classList.contains('notif-modal')) setShowNotifModal(false); }}>
-                    <div className="notif-panel">
-                        <div className="fd" style={{fontSize:22,fontWeight:800,color:'#0f172a',marginBottom:4}}>🔔 NOTIFICATIONS</div>
-                        <div style={{fontSize:13,color:'#64748b',marginBottom:18}}>
-                            Get alerts when players join or leave your time slot.
-                            {!('Notification' in window) && <span style={{color:'#f97316',fontWeight:600}}> (Browser alerts not supported — in-app alerts will be used instead.)</span>}
+            {/* ── DM Chat Panel ── */}
+            {dmOpen && (
+                <div className="dm-overlay" onClick={e=>{ if(e.target.classList.contains('dm-overlay')){setDmOpen(null);} }}>
+                    <div className="dm-panel">
+                        <div className="dm-header">
+                            <div className="dm-avatar">{dmOpen.userName[0].toUpperCase()}</div>
+                            <div style={{flex:1}}>
+                                <div style={{fontWeight:800,fontSize:15,color:'#0f172a'}}>{dmOpen.userName}</div>
+                                <div style={{fontSize:11,color:'#64748b'}}>Private message · today only</div>
+                            </div>
+                            <button onClick={()=>setDmOpen(null)} style={{background:'none',border:'none',fontSize:22,color:'#94a3b8',cursor:'pointer',padding:'0 4px'}}>×</button>
                         </div>
-
-                        {!notifEnabled ? (
-                            <button className="btn-g" style={{width:'100%',marginBottom:12}} onClick={requestNotifPermission}>
-                                Enable Notifications
-                            </button>
-                        ) : (
-                            <>
-                                <div style={{background:'#f0fdf4',border:'2px solid #10b981',borderRadius:10,padding:'10px 14px',marginBottom:14,display:'flex',alignItems:'center',gap:8}}>
-                                    <span style={{fontSize:18}}>✅</span>
-                                    <span style={{fontSize:13,fontWeight:700,color:'#059669'}}>Notifications are ON</span>
+                        <div className="dm-messages">
+                            {dmMessages.length === 0 && (
+                                <div style={{textAlign:'center',color:'#94a3b8',fontSize:13,padding:'20px 0'}}>
+                                    No messages yet.<br/>Say hi to {dmOpen.userName}! 👋
                                 </div>
-
-                                <div style={{marginBottom:14}}>
-                                    <div style={{fontSize:12,fontWeight:700,color:'#64748b',marginBottom:10,textTransform:'uppercase',letterSpacing:'.4px'}}>Alert me when…</div>
-                                    {[
-                                        { key: 'newPlayerSameTime', label: '🎾 New player joins my time slot', desc: 'Someone checks in for your hour' },
-                                        { key: 'playerDropout',     label: '👋 Player drops out of my slot',  desc: 'Someone cancels from your hour' },
-                                    ].map(opt => (
-                                        <div key={opt.key} onClick={() => toggleNotifPref(opt.key)}
-                                            style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'11px 13px',background:notifPrefs[opt.key]?'#f0fdf4':'#f8fafc',border:`2px solid ${notifPrefs[opt.key]?'#10b981':'#e2e8f0'}`,borderRadius:10,cursor:'pointer',marginBottom:8,transition:'all .15s'}}>
-                                            <div>
-                                                <div style={{fontSize:13,fontWeight:700,color:'#0f172a'}}>{opt.label}</div>
-                                                <div style={{fontSize:11,color:'#64748b'}}>{opt.desc}</div>
-                                            </div>
-                                            <div style={{width:36,height:20,borderRadius:10,background:notifPrefs[opt.key]?'#059669':'#cbd5e1',position:'relative',transition:'background .2s',flexShrink:0}}>
-                                                <div style={{position:'absolute',top:2,left:notifPrefs[opt.key]?16:2,width:16,height:16,borderRadius:'50%',background:'white',transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,.2)'}}/>
+                            )}
+                            {dmMessages.map(msg => {
+                                const isMine = msg.fromDeviceId === deviceId;
+                                return (
+                                    <div key={msg.id} style={{display:'flex',flexDirection:'column',alignItems:isMine?'flex-end':'flex-start'}}>
+                                        <div className={`dm-msg ${isMine?'mine':'theirs'}`}>
+                                            {msg.text}
+                                            <div className="dm-msg-time">
+                                                {msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}) : ''}
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-
-                                <button onClick={disableNotifications} style={{width:'100%',padding:'10px',background:'none',border:'2px solid #e2e8f0',borderRadius:10,color:'#94a3b8',fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'Outfit,sans-serif'}}>
-                                    Turn Off Notifications
-                                </button>
-                            </>
-                        )}
-
-                        <button onClick={() => setShowNotifModal(false)} style={{marginTop:12,width:'100%',padding:'10px',background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontSize:13,fontFamily:'Outfit,sans-serif'}}>
-                            Close
-                        </button>
+                                    </div>
+                                );
+                            })}
+                            <div ref={dmEndRef}/>
+                        </div>
+                        <div className="dm-input-row">
+                            <textarea
+                                className="dm-input"
+                                rows={1}
+                                value={dmInput}
+                                onChange={e=>setDmInput(e.target.value)}
+                                onKeyDown={e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendDm(); } }}
+                                placeholder={`Message ${dmOpen.userName}…`}
+                            />
+                            <button className="dm-send" onClick={sendDm} disabled={!dmInput.trim()}>➤</button>
+                        </div>
                     </div>
                 </div>
             )}
