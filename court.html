@@ -830,12 +830,16 @@ function CourtPage() {
                 const defaultMsg = buildStatusMsg(cName, field, value);
                 if (defaultMsg) fireGroupMeEvent(courtId, trigger, defaultMsg, {court:cName, players, courts});
             }
+        } else if (field === 'lightsOn') {
+            const trigger = value ? 'lights_on' : 'lights_off';
+            const defaultMsg = value ? `💡 Lights are ON at ${cName}` : `🌙 Lights are OFF at ${cName}`;
+            fireGroupMeEvent(courtId, trigger, defaultMsg, {court:cName, players, courts});
         } else if (field === 'crowdLevel') {
-            const triggerMap = {high:'crowd_high', low:'crowd_low'};
-            const trigger = triggerMap[value];
-            if (trigger) {
+            const crowdTriggerMap = {high:'crowd_high', low:'crowd_low'};
+            const crowdTrigger = crowdTriggerMap[value];
+            if (crowdTrigger) {
                 const defaultMsg = buildStatusMsg(cName, field, value);
-                if (defaultMsg) fireGroupMeEvent(courtId, trigger, defaultMsg, {court:cName, players, courts});
+                if (defaultMsg) fireGroupMeEvent(courtId, crowdTrigger, defaultMsg, {court:cName, players, courts});
             }
         }
     };
