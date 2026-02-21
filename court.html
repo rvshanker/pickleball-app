@@ -536,7 +536,7 @@ async function postGroupMe(text, botId) {
 
 function buildCheckInMsg(name, status, guests, courtName, nowTotal, openCourts) {
     const statusLabel = status === 'active' ? '🎾 Playing Now' : '⏰ Coming Soon';
-    const totalPlayers = nowTotal; // includes the new check-in
+    const totalPlayers = nowTotal;
     return `${statusLabel} – ${name}${guests > 0 ? ` (+${guests} guests)` : ''} checked in at ${courtName}
 👥 ${totalPlayers} player${totalPlayers !== 1 ? 's' : ''} on-site  🏟 ${openCourts} court${openCourts !== 1 ? 's' : ''} rotating`;
 }
@@ -546,19 +546,48 @@ function buildCheckOutMsg(name, courtName, nowTotal, openCourts) {
 👥 ${nowTotal} player${nowTotal !== 1 ? 's' : ''} remaining  🏟 ${openCourts} court${openCourts !== 1 ? 's' : ''} rotating`;
 }
 
-function buildStatusMsg(courtName, field, value, crowdLevel) {
+function buildStatusMsg(courtName, field, value) {
     const labels = {
         condition: { open: '✅ Courts Open', closed: '🚫 Courts Closed', wet: '💧 Courts Wet', hot: '🥵 Very Hot', windy: '🌬️ Windy Conditions' },
         crowdLevel: { low: '🟢 Light crowd (0–12)', medium: '🟡 Busy (12–24)', high: '🔴 Packed (24+)' },
-        flashMsg: v => `📣 Announcement: ${v}`
     };
-    if (field === 'flashMsg') return `📣 ${courtName} Announcement:
-${value}`;
     const map = labels[field];
     if (!map) return null;
     const label = map[value];
     if (!label) return null;
     return `${label} at ${courtName}`;
+}
+
+function applyPlaceholders(template, {name='', court='', players='', courts=''}) {
+    return template
+        .replace(/\{name\}/g, name)
+        .replace(/\{court\}/g, court)
+        .replace(/\{players\}/g, players)
+        .replace(/\{courts\}/g, courts);
+}
+
+// Fire a GroupMe event for a given trigger type, using event_rules from Firestore if available
+async function fireGroupMeEvent(courtId, trigger, defaultMsg, placeholders) {
+    if (!fbOk || !db || !courtId) return;
+    // Get bot config
+    const botDoc = await db.collection('groupme_bots').doc(courtId).get().catch(()=>null);
+    const botCfg = botDoc?.exists ? botDoc.data() : null;
+    // Fallback: check localStorage
+    const botId = (botCfg?.enabled && botCfg?.botId) ? botCfg.botId : localStorage.getItem(GROUPME_BOT_KEY);
+    if (!botId) return;
+
+    // Check event_rules
+    const rulesSnap = await db.collection('groupme_bots').doc(courtId).collection('event_rules')
+        .where('trigger','==',trigger).where('enabled','==',true).get().catch(()=>null);
+
+    let msg;
+    if (rulesSnap && !rulesSnap.empty) {
+        const rule = rulesSnap.docs[0].data();
+        msg = rule.customMsg ? applyPlaceholders(rule.customMsg, placeholders||{}) : defaultMsg;
+    } else {
+        msg = defaultMsg;
+    }
+    if (msg) await postGroupMe(msg, botId);
 }
 
 function GroupMeSettingsModal({onClose}) {
@@ -789,11 +818,25 @@ function CourtPage() {
     const updateCourt = async (field, value) => {
         if (!fbOk || !db || !courtId) return;
         await db.collection('courts').doc(courtId).update({[field]:value,lastUpdate:firebase.firestore.FieldValue.serverTimestamp()}).catch(console.error);
-        // GroupMe notification for meaningful status changes
-        const botId = localStorage.getItem(GROUPME_BOT_KEY);
-        if (botId && ['condition','crowdLevel'].includes(field)) {
-            const msg = buildStatusMsg(courtData?.name||'Court', field, value, courtData?.crowdLevel);
-            if (msg) postGroupMe(msg, botId);
+        // GroupMe notifications for status changes
+        const cName = courtData?.name||'Court';
+        const openC = courtData?.openCourts !== undefined ? courtData.openCourts : (courtData?.numberOfCourts||4);
+        const players = String(checkInsRef.current.filter(c=>c.status==='active').length||0);
+        const courts = String(openC);
+        if (field === 'condition') {
+            const triggerMap = {closed:'status_closed', open:'status_open', wet:'status_wet'};
+            const trigger = triggerMap[value];
+            if (trigger) {
+                const defaultMsg = buildStatusMsg(cName, field, value);
+                if (defaultMsg) fireGroupMeEvent(courtId, trigger, defaultMsg, {court:cName, players, courts});
+            }
+        } else if (field === 'crowdLevel') {
+            const triggerMap = {high:'crowd_high', low:'crowd_low'};
+            const trigger = triggerMap[value];
+            if (trigger) {
+                const defaultMsg = buildStatusMsg(cName, field, value);
+                if (defaultMsg) fireGroupMeEvent(courtId, trigger, defaultMsg, {court:cName, players, courts});
+            }
         }
     };
 
@@ -802,10 +845,10 @@ function CourtPage() {
         await db.collection('courts').doc(courtId).update({flashMsg:msg,flashMsgTime:msg?Date.now():null,lastUpdate:firebase.firestore.FieldValue.serverTimestamp()});
         setFlashInput('');
         // GroupMe notification for flash announcements
-        const botId = localStorage.getItem(GROUPME_BOT_KEY);
-        if (botId && msg) {
-            postGroupMe(`📣 ${courtData?.name||'Court'} Announcement:
-${msg}`, botId);
+        if (msg) {
+            const cName = courtData?.name||'Court';
+            const defaultMsg = `📣 ${cName} Announcement:\n${msg}`;
+            fireGroupMeEvent(courtId, 'flash', defaultMsg, {court:cName});
         }
     };
 
@@ -847,25 +890,24 @@ ${msg}`, botId);
             localStorage.setItem('pickleCourtRating', userRating);
             setShowForm(false); setArrivalTime(''); setShowLaterTime(false); setGuestCount(0); setFunnyMsg(''); setDurationFunny(''); setGuestFunny(''); setComment('');
             // GroupMe notification
-            const botId = localStorage.getItem(GROUPME_BOT_KEY);
-            if (botId) {
-                const newTotal = nowTotal + 1 + guestCount;
-                const openC = courtData?.openCourts !== undefined ? courtData.openCourts : (courtData?.numberOfCourts||4);
-                const msg = buildCheckInMsg(userName, ciStatus, guestCount, courtData?.name||'the court', newTotal, openC);
-                postGroupMe(msg, botId);
-            }
+            const newTotalCount = nowTotal + 1 + guestCount;
+            const openC = courtData?.openCourts !== undefined ? courtData.openCourts : (courtData?.numberOfCourts||4);
+            const cName = courtData?.name||'the court';
+            const defaultMsg = buildCheckInMsg(userName, ciStatus, guestCount, cName, newTotalCount, openC);
+            fireGroupMeEvent(courtId, 'checkin', defaultMsg, {name:userName, court:cName, players:String(newTotalCount), courts:String(openC)});
         } catch(e) { alert('Check-in failed: '+e.message); }
     };
 
     const handleCheckOut = async () => {
         if (!fbOk || !db) return;
-        const botId = localStorage.getItem(GROUPME_BOT_KEY);
         const name = myCheckIn?.userName || userName;
+        const openC = courtData?.openCourts !== undefined ? courtData.openCourts : (courtData?.numberOfCourts||4);
+        const cName = courtData?.name||'the court';
+        const remaining = Math.max(0, nowTotal - 1 - (myCheckIn?.guests||0));
         await deleteMyCheckIns();
-        if (botId && name) {
-            const remaining = Math.max(0, nowTotal - 1 - (myCheckIn?.guests||0));
-            const openC = courtData?.openCourts !== undefined ? courtData.openCourts : (courtData?.numberOfCourts||4);
-            postGroupMe(buildCheckOutMsg(name, courtData?.name||'the court', remaining, openC), botId);
+        if (name) {
+            const defaultMsg = buildCheckOutMsg(name, cName, remaining, openC);
+            fireGroupMeEvent(courtId, 'checkout', defaultMsg, {name, court:cName, players:String(remaining), courts:String(openC)});
         }
     };
 
@@ -1173,13 +1215,6 @@ ${msg}`, botId);
                     {/* ── TAB: CONTROLS ── */}
                     {tab==='controls'&&(
                         <div>
-                            {/* GroupMe Button */}
-                            <div style={{display:'flex',justifyContent:'flex-end',marginBottom:10}}>
-                                <button onClick={()=>setShowGroupMe(true)} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',borderRadius:9,border:'2px solid '+(localStorage.getItem(GROUPME_BOT_KEY)?'#10b981':'#e2e8f0'),background:localStorage.getItem(GROUPME_BOT_KEY)?'#f0fdf4':'white',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,color:localStorage.getItem(GROUPME_BOT_KEY)?'#059669':'#64748b',cursor:'pointer'}}>
-                                    <span style={{fontSize:16}}>💬</span>
-                                    <span>{localStorage.getItem(GROUPME_BOT_KEY) ? 'GroupMe Connected ✓' : 'Connect GroupMe'}</span>
-                                </button>
-                            </div>
                             {/* Flash Announcement */}
                             <div className="card" style={{marginBottom:12,borderLeft:'4px solid #7c3aed'}}>
                                 <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>

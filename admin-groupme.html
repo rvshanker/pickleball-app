@@ -176,9 +176,9 @@ function AuthGate({onAuth}) {
 function ComposeModal({court, botConfig, courtData, checkins, onClose}) {
     const [type, setType] = useState('onetime');   // onetime | scheduled | event
     const [msg, setMsg] = useState('');
-    const [schedDate, setSchedDate] = useState('');
+    const [schedDate, setSchedDate] = useState(() => new Date().toISOString().split('T')[0]);
     const [schedTime, setSchedTime] = useState('07:00');
-    const [repeat, setRepeat] = useState('none');   // none | daily | weekly
+    const [repeat, setRepeat] = useState('none');   // none | daily | every2h | every4h | weekly
     const [eventTrigger, setEventTrigger] = useState('checkin'); // checkin | checkout | status | flash
     const [sending, setSending] = useState(false);
     const [result, setResult] = useState(null);
@@ -276,17 +276,50 @@ function ComposeModal({court, botConfig, courtData, checkins, onClose}) {
                             <select className="field" value={repeat} onChange={e=>setRepeat(e.target.value)}>
                                 <option value="none">No repeat (one-time)</option>
                                 <option value="daily">Every day</option>
+                                <option value="every2h">Every 2 hours (daily)</option>
+                                <option value="every4h">Every 4 hours (daily)</option>
                                 <option value="weekly">Every week (same day)</option>
                                 <option value="weekdays">Weekdays only</option>
                                 <option value="weekends">Weekends only</option>
                             </select>
+                            {(repeat==='every2h'||repeat==='every4h') && (
+                                <div style={{marginTop:6,padding:'8px 12px',background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:8,fontSize:12,color:'#1d4ed8',fontWeight:600}}>
+                                    ℹ️ Starting at {schedTime}, posts every {repeat==='every2h'?'2':'4'} hours throughout the day. Requires a Cloud Function or cron to process.
+                                </div>
+                            )}
                         </div>
                         <div style={{marginBottom:14}}>
-                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6,flexWrap:'wrap',gap:6}}>
                                 <label className="flbl" style={{margin:0}}>Message</label>
-                                <button onClick={()=>setMsg(summaryPreview)} style={{background:'none',border:'none',color:'#059669',fontSize:12,fontWeight:700,cursor:'pointer',padding:0}}>Use Court Summary ↓</button>
+                                <div style={{display:'flex',gap:8}}>
+                                    <button onClick={()=>setMsg(summaryPreview)} style={{background:'none',border:'none',color:'#059669',fontSize:12,fontWeight:700,cursor:'pointer',padding:0}}>📋 Summary</button>
+                                    <span style={{color:'#cbd5e1'}}>|</span>
+                                    <button onClick={()=>{
+                                        const d = courtData;
+                                        const playing = checkins.filter(c=>c.status==='active');
+                                        const coming = checkins.filter(c=>c.status==='later'&&c.arrivalTime>Date.now());
+                                        const open = d?.openCourts ?? d?.numberOfCourts ?? 4;
+                                        const total = d?.numberOfCourts ?? 4;
+                                        const crowd = {low:'🟢 Light',medium:'🟡 Busy',high:'🔴 Packed'}[d?.crowdLevel]||'';
+                                        const condLabel = d?.condition && d.condition!=='open' ? `⚠️ Court: ${d.condition.charAt(0).toUpperCase()+d.condition.slice(1)}\n` : '';
+                                        const dynMsg = [
+                                            `🎾 ${court.name} — Live Update`,
+                                            `📅 ${new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'})} · ${new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}`,
+                                            ``,
+                                            `👥 Playing now: ${playing.length>0 ? playing.map(c=>c.userName).join(', ') : 'No one yet'}`,
+                                            `⏰ Coming soon: ${coming.length>0 ? coming.length+' player'+(coming.length!==1?'s':'') : 'None scheduled'}`,
+                                            `🏟 Courts: ${open}/${total} open${crowd ? '  '+crowd : ''}`,
+                                            condLabel,
+                                            d?.flashMsg ? `📣 ${d.flashMsg}` : '',
+                                            ``,
+                                            `🔗 Check in: court.html?id=${court.id}`
+                                        ].filter(l=>l!==undefined&&l!=='').join('\n');
+                                        setMsg(dynMsg);
+                                    }} style={{background:'none',border:'none',color:'#3b82f6',fontSize:12,fontWeight:700,cursor:'pointer',padding:0}}>⚡ Live Data</button>
+                                </div>
                             </div>
-                            <textarea className="field" value={msg} onChange={e=>setMsg(e.target.value)} rows={5} placeholder="e.g. Good morning picklers! Courts open at 8am today 🎾"/>
+                            <textarea className="field" value={msg} onChange={e=>setMsg(e.target.value)} rows={5} placeholder="e.g. Good morning picklers! Courts open at 8am 🎾&#10;&#10;Tip: click ⚡ Live Data to fill with current court info"/>
+                            <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>💡 <strong>⚡ Live Data</strong> fills in real-time player count, open courts, crowd level &amp; more</div>
                         </div>
                         {msg && <div className="msg-preview" style={{marginBottom:12}}>{msg}</div>}
                         {result && <div style={{padding:'9px 14px',borderRadius:9,background:result.ok?'#f0fdf4':'#fef2f2',border:'1px solid '+(result.ok?'#a7f3d0':'#fca5a5'),color:result.ok?'#065f46':'#b91c1c',fontSize:13,fontWeight:600,marginBottom:12}}>{result.msg}</div>}
@@ -415,7 +448,7 @@ function CourtConfigPanel({court}) {
 
     const nowPlaying = checkins.filter(c=>c.status==='active');
     const comingSoon = checkins.filter(c=>c.status==='later'&&c.arrivalTime>Date.now());
-    const repeatLabels = {none:'No repeat',daily:'Daily',weekly:'Weekly',weekdays:'Weekdays',weekends:'Weekends'};
+    const repeatLabels = {none:'No repeat',daily:'Daily',every2h:'Every 2h',every4h:'Every 4h',weekly:'Weekly',weekdays:'Weekdays',weekends:'Weekends'};
     const triggerLabels = {
         checkin:'🎾 Check In', checkout:'👋 Check Out',
         status_closed:'🚫 Closed', status_open:'✅ Opened', status_wet:'💧 Wet',
