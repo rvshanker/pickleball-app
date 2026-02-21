@@ -322,6 +322,7 @@ function EditCourtModal({court, onClose, onSaved}) {
     const [geoFixing, setGeoFixing] = useState(false);
     const [lat, setLat] = useState(court.lat||null);
     const [lng, setLng] = useState(court.lng||null);
+    const geoDebounceRef = useRef(null);
 
     const toggleAmenity = key => setAmenities(a => a.includes(key)?a.filter(x=>x!==key):[...a,key]);
 
@@ -332,6 +333,26 @@ function EditCourtModal({court, onClose, onSaved}) {
             if (d.length) return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon), display: d[0].display_name };
         } catch(e) {}
         return null;
+    };
+
+    // Auto-geocode when address changes, debounced 900ms
+    const handleAddressChange = (val) => {
+        setAddress(val);
+        setGeoStatus(null);
+        if (geoDebounceRef.current) clearTimeout(geoDebounceRef.current);
+        if (!val.trim() || val.trim().length < 8) return;
+        geoDebounceRef.current = setTimeout(async () => {
+            setGeoFixing(true);
+            const geo = await geocodeAddress(val.trim());
+            if (geo) {
+                setLat(geo.lat);
+                setLng(geo.lng);
+                setGeoStatus({ok:true, msg:`📍 Auto-located: ${geo.lat.toFixed(4)}, ${geo.lng.toFixed(4)}`});
+            } else {
+                setGeoStatus({ok:false, msg:'Could not auto-locate. Try clicking Fix Location.'});
+            }
+            setGeoFixing(false);
+        }, 900);
     };
 
     const fixCoords = async () => {
@@ -384,18 +405,20 @@ function EditCourtModal({court, onClose, onSaved}) {
                 </div>
                 <div style={{marginBottom:14}}>
                     <span className="flbl">Address</span>
-                    <input className="field" value={address} onChange={e=>{setAddress(e.target.value);setGeoStatus(null);}}/>
+                    <input className="field" value={address} onChange={e=>handleAddressChange(e.target.value)} placeholder="e.g. 123 Main St, Springfield, IL"/>
                 </div>
                 {/* Coordinates row */}
-                <div style={{marginBottom:14,background:'#f8fafc',border:'2px solid',borderColor:hasCoords&&lat!==0?'#a7f3d0':'#fca5a5',borderRadius:10,padding:'12px 14px'}}>
+                <div style={{marginBottom:14,background:'#f8fafc',border:'2px solid',borderColor:geoFixing?'#fbbf24':hasCoords&&lat!==0?'#a7f3d0':'#fca5a5',borderRadius:10,padding:'12px 14px'}}>
                     <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}>
                         <div>
-                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:2}}>📍 Stored Coordinates</div>
-                            {hasCoords && lat !== 0
-                                ? <div style={{fontSize:13,color:'#059669',fontWeight:600}}>{lat.toFixed(5)}, {lng.toFixed(5)}</div>
-                                : <div style={{fontSize:13,color:'#ef4444',fontWeight:600}}>⚠️ Missing or incorrect — distances will be wrong</div>
+                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:2}}>📍 Coordinates</div>
+                            {geoFixing
+                                ? <div style={{fontSize:13,color:'#d97706',fontWeight:600}}>⏳ Auto-locating…</div>
+                                : hasCoords && lat !== 0
+                                    ? <div style={{fontSize:13,color:'#059669',fontWeight:600}}>{lat.toFixed(5)}, {lng.toFixed(5)}</div>
+                                    : <div style={{fontSize:13,color:'#ef4444',fontWeight:600}}>⚠️ Missing — type address above to auto-locate</div>
                             }
-                            {geoStatus && (
+                            {geoStatus && !geoFixing && (
                                 <div style={{fontSize:12,color:geoStatus.ok?'#059669':'#ef4444',marginTop:4,fontWeight:600}}>{geoStatus.msg}</div>
                             )}
                         </div>

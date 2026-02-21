@@ -370,21 +370,15 @@ function ComposeModal({court, botConfig, courtData, checkins, onClose}) {
                             {isDynamic ? (
                                 <div style={{background:'linear-gradient(135deg,#eff6ff,#dbeafe)',border:'2px solid #3b82f6',borderRadius:10,padding:'14px 16px'}}>
                                     <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:15,fontWeight:800,color:'#1d4ed8',marginBottom:8}}>⚡ DYNAMIC MESSAGE</div>
-                                    <div style={{background:'#1e3a2f',borderRadius:8,padding:'10px 12px',fontFamily:'monospace',fontSize:12,color:'#6ee7b7',lineHeight:1.8,marginBottom:10}}>
-                                        🎾 {court.name} — Live Update{'
-'}
-                                        📅 [date & time at send]{'
-'}
-                                        👥 Playing now: [live players]{'
-'}
-                                        ⏰ Coming soon: [live count]{'
-'}
-                                        🏟 Courts: [live open/total]{'
-'}
-                                        {includeWeather && '🌤 Weather: [temp, wind, conditions for next 4h]
-'}
-                                        🔗 pickleconnect.live
-                                    </div>
+                                    <pre style={{background:'#1e3a2f',borderRadius:8,padding:'10px 12px',fontFamily:'monospace',fontSize:12,color:'#6ee7b7',lineHeight:1.8,marginBottom:10,whiteSpace:'pre-wrap',margin:'0 0 10px 0'}}>{[
+                                        `🎾 ${court.name} — Live Update`,
+                                        `📅 [date & time at send]`,
+                                        `👥 Playing now: [live players]`,
+                                        `⏰ Coming soon: [live count]`,
+                                        `🏟 Courts: [live open/total]`,
+                                        includeWeather ? `🌤 Next 4 hours: [temp, wind, forecast]` : null,
+                                        `🔗 pickleconnect.live`,
+                                    ].filter(Boolean).join('\n')}</pre>
                                     <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:'rgba(59,130,246,.08)',borderRadius:8,marginBottom:8}}>
                                         <div onClick={()=>setIncludeWeather(w=>!w)} style={{width:36,height:20,borderRadius:10,background:includeWeather?'#059669':'#cbd5e1',cursor:'pointer',position:'relative',transition:'background .2s',flexShrink:0}}>
                                             <div style={{position:'absolute',top:2,left:includeWeather?17:2,width:16,height:16,borderRadius:'50%',background:'white',transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,.3)'}}/>
