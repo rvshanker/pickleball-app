@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PickleConnect — Promo</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #10b981;
+    --green-light: #6ee7b7;
+    --green-dark: #065f46;
+    --yellow: #fbbf24;
+    --dark: #0a1628;
+    --darker: #060e1a;
+    --white: #f8fafc;
+    --slate: #94a3b8;
+  }
+
+  html, body {
+    width: 1280px; height: 720px;
+    overflow: hidden;
+    background: var(--darker);
+    font-family: 'Barlow', sans-serif;
+    cursor: none;
+  }
+
+  /* ── SCENE SYSTEM ── */
+  .scene {
+    position: absolute; inset: 0;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.6s ease;
+  }
+  .scene.active { opacity: 1; pointer-events: all; }
+
+  /* ── BACKGROUND GRID ── */
+  .grid-bg {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(16,185,129,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(16,185,129,.06) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridMove 20s linear infinite;
+  }
+  @keyframes gridMove {
+    0% { background-position: 0 0; }
+    100% { background-position: 60px 60px; }
+  }
+
+  /* ── NOISE OVERLAY ── */
+  .noise {
+    position: absolute; inset: 0; opacity: .03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+
+  /* ── PROGRESS BAR ── */
+  #progress-bar {
+    position: fixed; bottom: 0; left: 0; height: 3px;
+    background: linear-gradient(90deg, var(--green), var(--yellow));
+    z-index: 1000; transition: width 0.3s ease;
+    box-shadow: 0 0 12px var(--green);
+  }
+
+  /* ── SCENE DOTS ── */
+  #dots {
+    position: fixed; bottom: 18px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 8px; z-index: 1000;
+  }
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,.25);
+    transition: all .3s;
+  }
+  .dot.active { background: var(--green); width: 24px; border-radius: 3px; }
+
+  /* ══════════════════════════════════════════
+     SCENE 1 — TITLE
+  ══════════════════════════════════════════ */
+  #s1 {
+    background: radial-gradient(ellipse 80% 60% at 50% 40%, #0d2818 0%, var(--darker) 70%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .ball-orbit {
+    position: absolute; width: 600px; height: 600px;
+    border: 1px solid rgba(16,185,129,.1);
+    border-radius: 50%; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    animation: orbit 12s linear infinite;
+  }
+  .ball-orbit:nth-child(2) { width: 400px; height: 400px; animation-duration: 8s; animation-direction: reverse; border-color: rgba(251,191,36,.08); }
+  @keyframes orbit { to { transform: translate(-50%,-50%) rotate(360deg); } }
+  .orbit-dot {
+    position: absolute; width: 8px; height: 8px;
+    background: var(--green); border-radius: 50%;
+    top: -4px; left: 50%; margin-left: -4px;
+    box-shadow: 0 0 16px var(--green);
+  }
+  .orbit-dot-y { background: var(--yellow); box-shadow: 0 0 16px var(--yellow); }
+
+  #s1 .logo-badge {
+    width: 90px; height: 90px; border-radius: 24px;
+    background: linear-gradient(135deg, #0d4f30, #0a3d25);
+    border: 2px solid rgba(16,185,129,.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 44px; margin-bottom: 28px;
+    box-shadow: 0 0 60px rgba(16,185,129,.3);
+    animation: s1Badge 1s cubic-bezier(.34,1.56,.64,1) both;
+    animation-delay: .3s;
+  }
+  @keyframes s1Badge {
+    from { transform: scale(0) rotate(-20deg); opacity: 0; }
+    to { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+  #s1 h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 96px; font-weight: 900;
+    color: var(--white); letter-spacing: -2px;
+    line-height: 1; text-align: center;
+    animation: s1Title 1s cubic-bezier(.22,1,.36,1) both;
+    animation-delay: .5s;
+  }
+  @keyframes s1Title {
+    from { transform: translateY(40px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  #s1 h1 span { color: var(--green); }
+  #s1 .tagline {
+    font-size: 22px; color: var(--slate); font-weight: 500;
+    letter-spacing: 3px; text-transform: uppercase; margin-top: 16px;
+    animation: s1Title 1s cubic-bezier(.22,1,.36,1) both;
+    animation-delay: .7s;
+  }
+  #s1 .url-pill {
+    margin-top: 40px; padding: 10px 28px;
+    background: rgba(16,185,129,.12);
+    border: 1px solid rgba(16,185,129,.3);
+    border-radius: 99px; color: var(--green-light);
+    font-size: 16px; font-weight: 600; letter-spacing: 1px;
+    animation: s1Title 1s cubic-bezier(.22,1,.36,1) both;
+    animation-delay: .9s;
+  }
+
+  /* ══════════════════════════════════════════
+     SCENE 2 — PROBLEM
+  ══════════════════════════════════════════ */
+  #s2 {
+    background: var(--darker);
+    display: flex; align-items: center; justify-content: center;
+    gap: 80px; padding: 60px;
+  }
+  .problem-left { flex: 1; }
+  .problem-left .eyebrow {
+    font-size: 13px; font-weight: 700; letter-spacing: 4px;
+    text-transform: uppercase; color: var(--yellow);
+    margin-bottom: 20px;
+    animation: fadeUp .7s both; animation-delay: .2s;
+  }
+  .problem-left h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 64px; font-weight: 900; color: var(--white);
+    line-height: 1.05; margin-bottom: 32px;
+    animation: fadeUp .7s both; animation-delay: .35s;
+  }
+  .problem-left h2 em { color: var(--yellow); font-style: normal; }
+  .pain-point {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 16px; padding: 14px 18px;
+    background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+    border-radius: 12px; font-size: 16px; color: #cbd5e1;
+    animation: fadeUp .7s both;
+  }
+  .pain-point:nth-child(1) { animation-delay: .5s; }
+  .pain-point:nth-child(2) { animation-delay: .65s; }
+  .pain-point:nth-child(3) { animation-delay: .8s; }
+  .pain-icon { font-size: 22px; flex-shrink: 0; }
+
+  .phone-mockup {
+    width: 260px; flex-shrink: 0;
+    animation: floatIn .9s cubic-bezier(.22,1,.36,1) both;
+    animation-delay: .4s;
+  }
+  @keyframes floatIn {
+    from { transform: translateX(60px) rotate(6deg); opacity: 0; }
+    to { transform: translateX(0) rotate(2deg); opacity: 1; }
+  }
+  .phone-frame {
+    background: #1e293b; border-radius: 36px;
+    border: 2px solid rgba(255,255,255,.1);
+    padding: 16px 12px; overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05);
+  }
+  .phone-screen {
+    background: linear-gradient(160deg, #0d2818 0%, #0a1628 100%);
+    border-radius: 24px; padding: 20px 16px; min-height: 360px;
+  }
+  .phone-header {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px; font-weight: 800; color: white;
+    margin-bottom: 4px;
+  }
+  .phone-live {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--green-light); margin-bottom: 16px;
+  }
+  .live-dot-sm {
+    width: 6px; height: 6px; background: var(--green);
+    border-radius: 50%; animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+  .phone-stat {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,.06); border-radius: 10px;
+    padding: 10px 12px; margin-bottom: 8px; font-size: 13px; color: #e2e8f0;
+  }
+  .phone-stat-icon { font-size: 18px; }
+  .phone-checkin-btn {
+    margin-top: 16px; width: 100%; padding: 12px;
+    background: var(--green); border-radius: 12px; border: none;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px; font-weight: 800; color: white; letter-spacing: .5px;
+    cursor: none;
+  }
+
+  @keyframes fadeUp {
+    from { transform: translateY(24px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* ══════════════════════════════════════════
+     SCENE 3 — CHECK-IN FEATURE
+  ══════════════════════════════════════════ */
+  #s3 {
+    background: radial-gradient(ellipse 70% 70% at 30% 50%, #0a2e1a 0%, var(--darker) 70%);
+    display: flex; align-items: center; padding: 80px;
+    gap: 80px;
+  }
+  .feature-phone {
+    width: 300px; flex-shrink: 0;
+    animation: slideRight .9s cubic-bezier(.22,1,.36,1) both;
+    animation-delay: .2s;
+  }
+  @keyframes slideRight {
+    from { transform: translateX(-50px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .feature-content { flex: 1; }
+  .feature-number {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 140px; font-weight: 900;
+    color: rgba(16,185,129,.08); line-height: 1;
+    position: absolute; top: 40px; right: 80px;
+  }
+  .feature-eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: 4px;
+    text-transform: uppercase; color: var(--green);
+    margin-bottom: 16px;
+    animation: fadeUp .6s both; animation-delay: .3s;
+  }
+  .feature-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 72px; font-weight: 900; color: var(--white);
+    line-height: 1.0; margin-bottom: 20px;
+    animation: fadeUp .6s both; animation-delay: .45s;
+  }
+  .feature-title span { color: var(--green); }
+  .feature-desc {
+    font-size: 18px; color: #94a3b8; line-height: 1.6;
+    max-width: 480px; margin-bottom: 32px;
+    animation: fadeUp .6s both; animation-delay: .6s;
+  }
+  .feature-bullets { list-style: none; }
+  .feature-bullets li {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 16px; color: #cbd5e1; margin-bottom: 12px;
+    animation: fadeUp .6s both;
+  }
+  .feature-bullets li:nth-child(1) { animation-delay: .7s; }
+  .feature-bullets li:nth-child(2) { animation-delay: .8s; }
+  .feature-bullets li:nth-child(3) { animation-delay: .9s; }
+  .bullet-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(16,185,129,.15); border: 1px solid var(--green);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; flex-shrink: 0;
+  }
+
+  /* ══════════════════════════════════════════
+     SCENE 4 — GROUPME / NOTIFICATIONS
+  ══════════════════════════════════════════ */
+  #s4 {
+    background: radial-gradient(ellipse 70% 70% at 70% 50%, #1a1a0a 0%, var(--darker) 70%);
+    display: flex; align-items: center; padding: 80px;
+    gap: 80px;
+  }
+  .notif-stack { flex: 1; position: relative; }
+  .notif-card {
+    background: #1e293b; border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.08);
+    padding: 16px 20px; margin-bottom: 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.4);
+    display: flex; align-items: flex-start; gap: 14px;
+    animation: notifSlide .6s cubic-bezier(.22,1,.36,1) both;
+  }
+  .notif-card:nth-child(1) { animation-delay: .3s; }
+  .notif-card:nth-child(2) { animation-delay: .55s; }
+  .notif-card:nth-child(3) { animation-delay: .8s; }
+  .notif-card:nth-child(4) { animation-delay: 1.05s; }
+  @keyframes notifSlide {
+    from { transform: translateX(40px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .notif-icon-wrap {
+    width: 42px; height: 42px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .notif-icon-green { background: rgba(16,185,129,.15); }
+  .notif-icon-yellow { background: rgba(251,191,36,.15); }
+  .notif-icon-blue { background: rgba(59,130,246,.15); }
+  .notif-icon-red { background: rgba(239,68,68,.15); }
+  .notif-body { flex: 1; }
+  .notif-title { font-size: 14px; font-weight: 700; color: #f1f5f9; margin-bottom: 2px; }
+  .notif-msg { font-size: 13px; color: #64748b; line-height: 1.4; }
+  .notif-time { font-size: 11px; color: #475569; flex-shrink: 0; margin-top: 2px; }
+
+  /* ══════════════════════════════════════════
+     SCENE 5 — LIVE DASHBOARD
+  ══════════════════════════════════════════ */
+  #s5 {
+    background: var(--darker);
+    padding: 60px 80px;
+    display: flex; flex-direction: column;
+  }
+  .dashboard-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 40px;
+    animation: fadeUp .6s both; animation-delay: .2s;
+  }
+  .dashboard-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 52px; font-weight: 900; color: var(--white);
+  }
+  .dashboard-title span { color: var(--green); }
+  .dashboard-live {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 18px; background: rgba(16,185,129,.1);
+    border: 1px solid rgba(16,185,129,.3); border-radius: 99px;
+    font-size: 13px; font-weight: 700; color: var(--green);
+    letter-spacing: 1px;
+  }
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 20px; margin-bottom: 30px;
+  }
+  .stat-card {
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px; padding: 24px 20px;
+    animation: fadeUp .6s both;
+  }
+  .stat-card:nth-child(1) { animation-delay: .3s; border-color: rgba(16,185,129,.3); }
+  .stat-card:nth-child(2) { animation-delay: .45s; }
+  .stat-card:nth-child(3) { animation-delay: .6s; }
+  .stat-card:nth-child(4) { animation-delay: .75s; }
+  .stat-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #475569; margin-bottom: 8px; }
+  .stat-value { font-family: 'Barlow Condensed', sans-serif; font-size: 48px; font-weight: 900; color: var(--white); line-height: 1; }
+  .stat-value.green { color: var(--green); }
+  .stat-sub { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+  .players-row {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    animation: fadeUp .6s both; animation-delay: .9s;
+  }
+  .player-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.2);
+    border-radius: 99px; padding: 6px 14px 6px 8px;
+    font-size: 14px; font-weight: 600; color: #e2e8f0;
+  }
+  .player-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, #059669, #0d9488);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; color: white;
+  }
+
+  /* ══════════════════════════════════════════
+     SCENE 6 — WEATHER + SCHEDULE
+  ══════════════════════════════════════════ */
+  #s6 {
+    background: radial-gradient(ellipse 80% 60% at 50% 60%, #0a1f2e 0%, var(--darker) 70%);
+    display: flex; align-items: center; padding: 80px; gap: 60px;
+  }
+  .weather-card {
+    flex: 1; background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.08); border-radius: 20px;
+    padding: 28px; animation: fadeUp .7s both; animation-delay: .2s;
+  }
+  .weather-card-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px; font-weight: 800; color: var(--white);
+    margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+  }
+  .weather-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.05);
+    animation: fadeUp .5s both;
+  }
+  .weather-row:nth-child(2) { animation-delay: .4s; }
+  .weather-row:nth-child(3) { animation-delay: .55s; }
+  .weather-row:nth-child(4) { animation-delay: .7s; }
+  .weather-row:nth-child(5) { animation-delay: .85s; border-bottom: none; }
+  .weather-time { font-size: 14px; font-weight: 600; color: #94a3b8; width: 70px; }
+  .weather-icon { font-size: 22px; }
+  .weather-temp { font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 800; color: var(--white); }
+  .weather-wind { font-size: 13px; color: #64748b; }
+
+  .schedule-card {
+    flex: 1; background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.08); border-radius: 20px;
+    padding: 28px; animation: fadeUp .7s both; animation-delay: .35s;
+  }
+  .schedule-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 14px; border-radius: 10px;
+    margin-bottom: 8px; background: rgba(255,255,255,.03);
+    animation: fadeUp .5s both;
+  }
+  .schedule-item:nth-child(2) { animation-delay: .5s; }
+  .schedule-item:nth-child(3) { animation-delay: .65s; border: 1px solid rgba(16,185,129,.2); background: rgba(16,185,129,.06); }
+  .schedule-item:nth-child(4) { animation-delay: .8s; }
+  .sched-time { font-size: 13px; font-weight: 700; color: #94a3b8; width: 60px; }
+  .sched-label { flex: 1; font-size: 14px; color: #e2e8f0; }
+  .sched-badge {
+    font-size: 11px; font-weight: 700; padding: 3px 10px;
+    border-radius: 99px; background: rgba(16,185,129,.15);
+    color: var(--green); border: 1px solid rgba(16,185,129,.3);
+  }
+
+  /* ══════════════════════════════════════════
+     SCENE 7 — CTA
+  ══════════════════════════════════════════ */
+  #s7 {
+    background: radial-gradient(ellipse 100% 80% at 50% 50%, #0a2e1a 0%, var(--darker) 65%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+  }
+  .cta-courts {
+    display: flex; gap: 16px; margin-bottom: 52px;
+    animation: fadeUp .8s both; animation-delay: .2s;
+  }
+  .mini-court {
+    width: 140px; height: 90px; border-radius: 12px;
+    border: 2px solid rgba(16,185,129,.3);
+    background: rgba(16,185,129,.05);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 6px;
+    font-size: 12px; color: #64748b; font-weight: 600;
+  }
+  .mini-court.active { border-color: var(--green); background: rgba(16,185,129,.12); }
+  .mini-court .mc-icon { font-size: 24px; }
+  .mini-court .mc-count { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 900; color: var(--white); }
+  .mini-court.active .mc-count { color: var(--green); }
+
+  #s7 .cta-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 88px; font-weight: 900; color: var(--white);
+    line-height: .95; margin-bottom: 20px;
+    animation: fadeUp .8s both; animation-delay: .4s;
+  }
+  #s7 .cta-title span { color: var(--green); }
+  #s7 .cta-sub {
+    font-size: 20px; color: #64748b; margin-bottom: 44px;
+    animation: fadeUp .8s both; animation-delay: .6s;
+  }
+  .cta-buttons {
+    display: flex; gap: 16px;
+    animation: fadeUp .8s both; animation-delay: .8s;
+  }
+  .btn-primary {
+    padding: 16px 44px; border-radius: 12px;
+    background: var(--green); color: white; border: none;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px; font-weight: 800; letter-spacing: .5px;
+    cursor: none; box-shadow: 0 0 40px rgba(16,185,129,.4);
+    transition: transform .2s, box-shadow .2s;
+  }
+  .btn-secondary {
+    padding: 16px 44px; border-radius: 12px;
+    background: transparent; color: #94a3b8;
+    border: 2px solid rgba(255,255,255,.12);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px; font-weight: 800; letter-spacing: .5px;
+    cursor: none;
+  }
+  .cta-url {
+    margin-top: 36px; font-size: 18px; color: var(--green-light);
+    letter-spacing: 2px; font-weight: 600;
+    animation: fadeUp .8s both; animation-delay: 1s;
+  }
+
+  /* ── COUNTER ANIMATION ── */
+  .count-up { display: inline-block; }
+
+</style>
+</head>
+<body>
+
+<!-- Progress -->
+<div id="progress-bar" style="width:0%"></div>
+<div id="dots"></div>
+
+<!-- ══════ SCENE 1: TITLE ══════ -->
+<div class="scene active" id="s1">
+  <div class="grid-bg"></div>
+  <div class="noise"></div>
+  <div class="ball-orbit"><div class="orbit-dot"></div></div>
+  <div class="ball-orbit"><div class="orbit-dot orbit-dot-y"></div></div>
+  <div class="logo-badge">🎾</div>
+  <h1>PICKLE<span>CONNECT</span></h1>
+  <div class="tagline">Real-Time Pickleball Court Management</div>
+  <div class="url-pill">pickleconnect.live</div>
+</div>
+
+<!-- ══════ SCENE 2: PROBLEM ══════ -->
+<div class="scene" id="s2">
+  <div class="grid-bg"></div>
+  <div class="noise"></div>
+  <div class="problem-left">
+    <div class="eyebrow">The Problem</div>
+    <h2>You show up.<br>Courts are <em>packed.</em><br>Nobody knew.</h2>
+    <div class="pain-point"><span class="pain-icon">😤</span> No way to know how busy courts are before you go</div>
+    <div class="pain-point"><span class="pain-icon">📵</span> No alerts when your favorite courts open up</div>
+    <div class="pain-point"><span class="pain-icon">🤷</span> No idea who's playing or when they're leaving</div>
+  </div>
+  <div class="phone-mockup">
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="phone-header">Fireman's Park</div>
+        <div class="phone-live"><div class="live-dot-sm"></div> Live • 4 courts</div>
+        <div class="phone-stat"><span class="phone-stat-icon">👥</span> 8 players on-site</div>
+        <div class="phone-stat"><span class="phone-stat-icon">🏟</span> 2/4 courts open</div>
+        <div class="phone-stat"><span class="phone-stat-icon">🔴</span> Packed right now</div>
+        <div class="phone-stat"><span class="phone-stat-icon">⏰</span> 3 arriving soon</div>
+        <button class="phone-checkin-btn">✓ CHECK IN NOW</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ SCENE 3: CHECK-IN ══════ -->
+<div class="scene" id="s3">
+  <div class="grid-bg"></div>
+  <div class="noise"></div>
+  <div class="feature-number">01</div>
+  <div class="feature-phone">
+    <div class="phone-frame" style="transform: rotate(-3deg)">
+      <div class="phone-screen">
+        <div class="phone-header">Check In</div>
+        <div class="phone-live"><div class="live-dot-sm"></div> Live • Dardenne Prairie</div>
+        <div style="margin: 16px 0 8px; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #475569;">Your Name</div>
+        <div style="background: rgba(255,255,255,.08); border-radius: 8px; padding: 10px 12px; font-size: 14px; color: #e2e8f0; margin-bottom: 12px;">Ravi K.</div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+          <button style="padding: 12px; background: var(--green); border: none; border-radius: 10px; font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; color: white; cursor: none;">👥 Playing Now</button>
+          <button style="padding: 12px; background: rgba(255,255,255,.08); border: none; border-radius: 10px; font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; color: #94a3b8; cursor: none;">⏰ Coming Soon</button>
+        </div>
+        <div class="phone-stat"><span class="phone-stat-icon">👤</span> +2 guests</div>
+        <div class="phone-stat"><span class="phone-stat-icon">🏸</span> Duration: 2 hrs</div>
+      </div>
+    </div>
+  </div>
+  <div class="feature-content">
+    <div class="feature-eyebrow">Feature 01</div>
+    <div class="feature-title">One-Tap<br><span>Check-In</span></div>
+    <div class="feature-desc">Players check in from their phone in seconds. See exactly who's on court, who's arriving, and when spots open up.</div>
+    <ul class="feature-bullets">
+      <li><div class="bullet-check">✓</div> Playing Now or Coming Soon options</li>
+      <li><div class="bullet-check">✓</div> Add guests & set expected duration</li>
+      <li><div class="bullet-check">✓</div> Auto-checkout when time expires</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ══════ SCENE 4: GROUPME ══════ -->
+<div class="scene" id="s4">
+  <div class="grid-bg"></div>
+  <div class="noise"></div>
+  <div class="feature-content" style="flex:1">
+    <div class="feature-number" style="left:80px; right:auto;">02</div>
+    <div class="feature-eyebrow" style="color: var(--yellow)">Feature 02</div>
+    <div class="feature-title">GroupMe<br><span style="color: var(--yellow)">Alerts</span></div>
+    <div class="feature-desc">Automatic GroupMe notifications keep your whole community in sync — in real time.</div>
+    <ul class="feature-bullets">
+      <li><div class="bullet-check" style="border-color: var(--yellow); background: rgba(251,191,36,.1)">✓</div> Player check-in & checkout announcements</li>
+      <li><div class="bullet-check" style="border-color: var(--yellow); background: rgba(251,191,36,.1)">✓</div> Court status changes (open, closed, wet)</li>
+      <li><div class="bullet-check" style="border-color: var(--yellow); background: rgba(251,191,36,.1)">✓</div> Scheduled live updates with weather</li>
+    </ul>
+  </div>
+  <div class="notif-stack" style="width:380px; flex-shrink:0">
+    <div class="notif-card">
+      <div class="notif-icon-wrap notif-icon-green">🎾</div>
+      <div class="notif-body">
+        <div class="notif-title">Ravi is playing at Fireman's Park</div>
+        <div class="notif-msg">🎾 3 players playing now &nbsp;📅 2 arriving soon<br>🏟 2/4 COURTS IN ROTATION</div>
+      </div>
+      <div class="notif-time">now</div>
+    </div>
+    <div class="notif-card">
+      <div class="notif-icon-wrap notif-icon-yellow">🌤</div>
+      <div class="notif-body">
+        <div class="notif-title">Dardenne Prairie — Live Update</div>
+        <div class="notif-msg">🌤 Next 4 hours: 10AM ☀️ 52°F  11AM 🌤 55°F<br>🏟 3/4 COURTS IN ROTATION</div>
+      </div>
+      <div class="notif-time">8:00 AM</div>
+    </div>
+    <div class="notif-card">
+      <div class="notif-icon-wrap notif-icon-blue">💡</div>
+      <div class="notif-body">
+        <div class="notif-title">Lights are ON at Fireman's Park</div>
+        <div class="notif-msg">Evening play is now available 🌙</div>
+      </div>
+      <div class="notif-time">6:15 PM</div>
+    </div>
+    <div class="notif-card">
+      <div class="notif-icon-wrap notif-icon-red">🚫</div>
+      <div class="notif-body">
+        <div class="notif-title">Courts Closed — Dardenne Prairie</div>
+        <div class="notif-msg">Courts temporarily closed. Check back soon.</div>
+      </div>
+      <div class="notif-time">2:30 PM</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ SCENE 5: DASHBOARD ══════ -->
+<div class="scene" id="s5">
+  <div class="grid-bg"></div>
+  <div class="noise"></div>
+  <div class="dashboard-header">
+    <div class="dashboard-title">LIVE <span>DASHBOARD</span></div>
+    <div class="dashboard-live"><div class="live-dot-sm"></div> LIVE DATA</div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Playing Now</div>
+      <div class="stat-value green">8</div>
+      <div class="stat-sub">+2 guests on-site</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Arriving Soon</div>
+      <div class="stat-value">4</div>
+      <div class="stat-sub">Next: 15 min</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Courts Open</div>
+      <div class="stat-value">3<span style="font-size:28px; color:#475569">/4</span></div>
+      <div class="stat-sub">Rotating</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Crowd Level</div>
+      <div class="stat-value" style="font-size:36px; margin-top:4px">🟡 Busy</div>
+      <div class="stat-sub">12–24 players</div>
+    </div>
+  </div>
+  <div>
+    <div style="font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #475569; margin-bottom: 14px; animation: fadeUp .6s both; animation-delay: .85s;">On Court Now</div>
+    <div class="players-row">
+      <div class="player-chip"><div class="player-avatar">R</div> Ravi K.</div>
+      <div class="player-chip"><div class="player-avatar" style="background: linear-gradient(135deg, #0891b2, #0e7490)">J</div> John D.</div>
+      <div class="player-chip"><div class="player-avatar" style="background: linear-gradient(135deg, #7c3aed, #6d28d9)">S</div> Sarah M.</div>
+      <div class="player-chip"><div class="player-avatar" style="background: linear-gradient(135deg, #dc2626, #b91c1c)">T</div> Tom B.</div>
+      <div class="player-chip"><div class="player-avatar" style="background: linear-gradient(135deg, #d97706, #b45309)">A</div> Amy L.</div>
+      <div class="player-chip"><div class="player-avatar" style="background: linear-gradient(135deg, #059669, #047857)">M</div> Mike R.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ SCENE 6: WEATHER + SCHEDULE ══════ -->
+<div class="scene" id="s6">
+  <div class="grid-bg"></div>
+  <div class="noise"></div>
+  <div style="flex:1; animation: fadeUp .6s both; animation-delay: .1s;">
+    <div class="feature-eyebrow">Feature 03</div>
+    <div class="feature-title" style="font-size:60px">Smart<br><span>Scheduling</span></div>
+    <div class="feature-desc" style="font-size:16px">Set messages to fire at 8am, 12pm, 4pm, 8pm — automatically including live court data and a 4-hour weather forecast.</div>
+    <ul class="feature-bullets">
+      <li><div class="bullet-check">✓</div> Specific times or repeating intervals</li>
+      <li><div class="bullet-check">✓</div> Start & end date range</li>
+      <li><div class="bullet-check">✓</div> Live weather from weather.gov</li>
+    </ul>
+  </div>
+  <div class="weather-card">
+    <div class="weather-card-title">🌤 Next 4 Hours</div>
+    <div class="weather-row">
+      <div class="weather-time">10 AM</div>
+      <div class="weather-icon">☀️</div>
+      <div class="weather-temp">52°F</div>
+      <div class="weather-wind">💨 8mph</div>
+    </div>
+    <div class="weather-row">
+      <div class="weather-time">11 AM</div>
+      <div class="weather-icon">🌤</div>
+      <div class="weather-temp">55°F</div>
+      <div class="weather-wind">💨 9mph</div>
+    </div>
+    <div class="weather-row">
+      <div class="weather-time">12 PM</div>
+      <div class="weather-icon">☀️</div>
+      <div class="weather-temp">58°F</div>
+      <div class="weather-wind">💨 11mph</div>
+    </div>
+    <div class="weather-row">
+      <div class="weather-time">1 PM</div>
+      <div class="weather-icon">🌥</div>
+      <div class="weather-temp">56°F</div>
+      <div class="weather-wind">💨 14mph</div>
+    </div>
+  </div>
+  <div class="schedule-card">
+    <div class="weather-card-title">📅 Today's Schedule</div>
+    <div class="schedule-item">
+      <div class="sched-time">8:00 AM</div>
+      <div class="sched-label">Morning live update</div>
+      <div class="sched-badge" style="background:rgba(16,185,129,.15); color: var(--green)">sent ✓</div>
+    </div>
+    <div class="schedule-item">
+      <div class="sched-time">12:00 PM</div>
+      <div class="sched-label">Midday live update</div>
+      <div class="sched-badge" style="background:rgba(16,185,129,.15); color: var(--green)">sent ✓</div>
+    </div>
+    <div class="schedule-item">
+      <div class="sched-time">4:00 PM</div>
+      <div class="sched-label">⚡ Live update + weather</div>
+      <div class="sched-badge">pending</div>
+    </div>
+    <div class="schedule-item">
+      <div class="sched-time">8:00 PM</div>
+      <div class="sched-label">Evening wrap-up</div>
+      <div class="sched-badge">pending</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ SCENE 7: CTA ══════ -->
+<div class="scene" id="s7">
+  <div class="grid-bg"></div>
+  <div class="noise"></div>
+  <div class="cta-courts">
+    <div class="mini-court active"><div class="mc-icon">🎾</div><div class="mc-count">8</div>Playing</div>
+    <div class="mini-court"><div class="mc-icon">⏰</div><div class="mc-count">4</div>Arriving</div>
+    <div class="mini-court active"><div class="mc-icon">🏟</div><div class="mc-count">3/4</div>Open</div>
+    <div class="mini-court"><div class="mc-icon">🌤</div><div class="mc-count">52°</div>Perfect</div>
+  </div>
+  <div class="cta-title">YOUR COURTS.<br><span>CONNECTED.</span></div>
+  <div class="cta-sub">Free · Real-time · No app download needed</div>
+  <div class="cta-buttons">
+    <button class="btn-primary">TRY IT FREE →</button>
+    <button class="btn-secondary">LEARN MORE</button>
+  </div>
+  <div class="cta-url">pickleconnect.live</div>
+</div>
+
+<script>
+const SCENES = ['s1','s2','s3','s4','s5','s6','s7'];
+const DURATIONS = [4000, 5000, 5500, 6000, 5500, 6000, 5000]; // ms per scene
+let current = 0;
+let timer = null;
+let elapsed = 0;
+let startTime = null;
+let totalDuration = DURATIONS.reduce((a,b)=>a+b,0);
+
+// Build dots
+const dotsEl = document.getElementById('dots');
+SCENES.forEach((_,i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i===0?' active':'');
+    d.addEventListener('click', () => goTo(i));
+    d.style.cursor = 'pointer';
+    dotsEl.appendChild(d);
+});
+
+function goTo(idx) {
+    document.getElementById(SCENES[current]).classList.remove('active');
+    current = idx;
+    document.getElementById(SCENES[current]).classList.add('active');
+    // Restart animations in new scene
+    restartAnimations(document.getElementById(SCENES[current]));
+    updateDots();
+    clearTimeout(timer);
+    scheduleNext();
+}
+
+function restartAnimations(el) {
+    const animated = el.querySelectorAll('[style*="animation"]');
+    animated.forEach(a => {
+        a.style.animation = 'none';
+        a.offsetHeight; // reflow
+        a.style.animation = '';
+    });
+}
+
+function updateDots() {
+    document.querySelectorAll('.dot').forEach((d,i) => {
+        d.classList.toggle('active', i === current);
+    });
+}
+
+function updateProgress() {
+    const totalElapsed = DURATIONS.slice(0, current).reduce((a,b)=>a+b,0) +
+        Math.min(Date.now() - startTime, DURATIONS[current]);
+    const pct = (totalElapsed / totalDuration) * 100;
+    document.getElementById('progress-bar').style.width = pct + '%';
+    if (current < SCENES.length - 1 || (Date.now() - startTime) < DURATIONS[current]) {
+        requestAnimationFrame(updateProgress);
+    }
+}
+
+function scheduleNext() {
+    startTime = Date.now();
+    requestAnimationFrame(updateProgress);
+    timer = setTimeout(() => {
+        if (current < SCENES.length - 1) {
+            goTo(current + 1);
+        } else {
+            // Loop back
+            goTo(0);
+        }
+    }, DURATIONS[current]);
+}
+
+// Keyboard nav
+document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') goTo(Math.min(current+1, SCENES.length-1));
+    if (e.key === 'ArrowLeft') goTo(Math.max(current-1, 0));
+});
+
+// Start
+scheduleNext();
+</script>
+</body>
+</html>
