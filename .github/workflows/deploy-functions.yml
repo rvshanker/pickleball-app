@@ -29,4 +29,4 @@ jobs:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
       - name: Deploy Firebase Functions
-        run: firebase deploy --only functions --project pickleball-app-1bba7 --force
+        run: firebase deploy --only functions,hosting --project pickleball-app-1bba7 --force
