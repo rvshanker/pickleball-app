@@ -1,285 +1,127 @@
-/**
- * PickleConnect — GroupMe Scheduled Message Sender
- * Firebase Cloud Functions v2
- *
- * Runs every 5 minutes. Scans all groupme_bots/{courtId}/scheduled documents
- * whose scheduledFor <= now and status == 'pending', posts to GroupMe,
- * then marks as sent (or advances the schedule for repeating messages).
- *
- * Deploy:
- *   cd functions
- *   npm install
- *   firebase deploy --only functions
- */
+// ── Scheduled GroupMe Message Sender ────────────────────────────────────
+// Add this to your Firebase Cloud Functions index.js
+// Runs every 5 minutes to check for pending scheduled messages
 
-const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
-const { logger } = require("firebase-functions");
-const admin = require("firebase-admin");
-const https = require("https");
+const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { getFirestore } = require('firebase-admin/firestore');
+const fetch = require('node-fetch'); // or use built-in fetch if Node 18+
 
-admin.initializeApp();
-const db = admin.firestore();
-
-// ── Helpers ──────────────────────────────────────────────────────────
-
-/**
- * Post a message to a GroupMe bot.
- * Uses Node's built-in https (no extra deps).
- */
-function postGroupMe(botId, text) {
-  return new Promise((resolve) => {
-    const body = JSON.stringify({ bot_id: botId, text });
-    const options = {
-      hostname: "api.groupme.com",
-      path: "/v3/bots/post",
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Content-Length": Buffer.byteLength(body),
-      },
-    };
-    const req = https.request(options, (res) => {
-      resolve({ ok: res.statusCode === 200 || res.statusCode === 202, status: res.statusCode });
-    });
-    req.on("error", (e) => {
-      logger.error("GroupMe HTTP error:", e.message);
-      resolve({ ok: false, error: e.message });
-    });
-    req.write(body);
-    req.end();
-  });
-}
-
-/**
- * Compute the next run timestamp for a repeating schedule.
- * Returns null if no repeat.
- */
-function nextRun(scheduledFor, repeat) {
-  const d = new Date(scheduledFor);
-  switch (repeat) {
-    case "daily":
-      d.setDate(d.getDate() + 1);
-      return d.getTime();
-    case "weekly":
-      d.setDate(d.getDate() + 7);
-      return d.getTime();
-    case "weekdays": {
-      // Advance to next weekday (Mon–Fri)
-      d.setDate(d.getDate() + 1);
-      while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
-      return d.getTime();
-    }
-    case "weekends": {
-      // Advance to next Sat or Sun
-      d.setDate(d.getDate() + 1);
-      while (d.getDay() !== 0 && d.getDay() !== 6) d.setDate(d.getDate() + 1);
-      return d.getTime();
-    }
-    default:
-      return null;
-  }
-}
-
-/**
- * Write a log entry to groupme_bots/{courtId}/logs
- */
-async function writeLog(courtId, msg, status, type = "scheduled") {
-  try {
-    await db
-      .collection("groupme_bots")
-      .doc(courtId)
-      .collection("logs")
-      .add({ msg, status, type, sentAt: Date.now() });
-  } catch (e) {
-    logger.warn("Log write failed:", e.message);
-  }
-}
-
-// ── Scheduled Function: runs every 5 minutes ─────────────────────────
-
-exports.sendScheduledGroupMeMessages = onSchedule(
-  {
-    schedule: "every 5 minutes",
-    timeZone: "America/Chicago", // adjust to your timezone
-    memory: "256MiB",
-  },
-  async () => {
+exports.sendScheduledGroupMeMessages = onSchedule('every 5 minutes', async () => {
+    const db = getFirestore();
     const now = Date.now();
-    logger.info(`Running scheduled GroupMe sender at ${new Date(now).toISOString()}`);
+    const windowEnd = now + 5 * 60 * 1000; // next 5 min window
 
-    // collectionGroup query — finds ALL pending scheduled messages across ALL courts
-    let snap;
     try {
-      snap = await db
-        .collectionGroup("scheduled")
-        .where("scheduledFor", "<=", now)
-        .where("status", "==", "pending")
-        .get();
+        // Query all pending scheduled messages due now
+        const snap = await db.collectionGroup('scheduled')
+            .where('status', '==', 'pending')
+            .where('scheduledFor', '<=', windowEnd)
+            .orderBy('scheduledFor', 'asc')
+            .get();
+
+        for (const doc of snap.docs) {
+            const s = doc.data();
+            if (!s.courtId) continue;
+
+            // Get bot config
+            const botDoc = await db.collection('groupme_bots').doc(s.courtId).get();
+            if (!botDoc.exists) continue;
+            const { botId, enabled } = botDoc.data();
+            if (!enabled || !botId) continue;
+
+            let msgText;
+
+            if (s.isDynamic) {
+                // ── DYNAMIC: Fetch live court data RIGHT NOW ──────────────
+                const courtDoc = await db.collection('courts').doc(s.courtId).get();
+                const court = courtDoc.exists ? courtDoc.data() : {};
+
+                const checkinsSnap = await db.collection('courts').doc(s.courtId)
+                    .collection('checkins').get();
+                const allCheckins = checkinsSnap.docs.map(d => d.data());
+                const nowMs = Date.now();
+                const playing = allCheckins.filter(c => c.status === 'active');
+                const coming = allCheckins.filter(c =>
+                    c.status === 'later' && c.arrivalTime && c.arrivalTime > nowMs
+                );
+
+                const open = court.openCourts ?? court.numberOfCourts ?? 4;
+                const total = court.numberOfCourts ?? 4;
+                const crowd = { low: '🟢 Light', medium: '🟡 Busy', high: '🔴 Packed' }[court.crowdLevel] || '';
+                const condLabel = court.condition && court.condition !== 'open'
+                    ? `⚠️ Court: ${court.condition.charAt(0).toUpperCase() + court.condition.slice(1)}\n`
+                    : '';
+
+                const lines = [
+                    `🎾 ${s.courtName} — Live Update`,
+                    `📅 ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} · ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`,
+                    ``,
+                    `👥 Playing now: ${playing.length > 0 ? playing.map(c => c.userName).join(', ') : 'No one yet'}`,
+                    `⏰ Coming soon: ${coming.length > 0 ? coming.length + ' player' + (coming.length !== 1 ? 's' : '') : 'None scheduled'}`,
+                    `🏟 Courts: ${open}/${total} open${crowd ? '  ' + crowd : ''}`,
+                    condLabel,
+                    court.flashMsg ? `📣 ${court.flashMsg}` : '',
+                    ``,
+                    `🔗 https://pickleconnect.live`,
+                ].filter(l => l !== undefined && l !== '').join('\n');
+
+                msgText = lines;
+            } else {
+                // ── STATIC: Use stored message ────────────────────────────
+                msgText = s.msg;
+            }
+
+            if (!msgText) continue;
+
+            // Post to GroupMe
+            let postOk = false;
+            try {
+                const r = await fetch('https://api.groupme.com/v3/bots/post', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bot_id: botId, text: msgText }),
+                });
+                postOk = r.ok || r.status === 202;
+            } catch (e) {
+                console.error('GroupMe post failed:', e);
+            }
+
+            // Log the result
+            await db.collection('groupme_bots').doc(s.courtId).collection('logs').add({
+                type: s.isDynamic ? 'scheduled-dynamic' : 'scheduled',
+                msg: msgText,
+                sentAt: Date.now(),
+                status: postOk ? 'sent' : 'failed',
+            });
+
+            // Handle repeat or mark done
+            if (s.repeat && s.repeat !== 'none') {
+                let nextTime = s.scheduledFor;
+                if (s.repeat === 'every2h') {
+                    nextTime += 2 * 60 * 60 * 1000;
+                } else if (s.repeat === 'every4h') {
+                    nextTime += 4 * 60 * 60 * 1000;
+                } else if (s.repeat === 'daily' || s.repeat === 'weekdays' || s.repeat === 'weekends') {
+                    nextTime += 24 * 60 * 60 * 1000;
+                    // Skip weekdays/weekends as needed
+                    if (s.repeat === 'weekdays') {
+                        const day = new Date(nextTime).getDay();
+                        if (day === 0) nextTime += 24 * 60 * 60 * 1000; // skip Sunday
+                        if (day === 6) nextTime += 2 * 24 * 60 * 60 * 1000; // skip Saturday
+                    } else if (s.repeat === 'weekends') {
+                        const day = new Date(nextTime).getDay();
+                        if (day === 1) nextTime += 5 * 24 * 60 * 60 * 1000; // skip Mon→Sat
+                        else if (day > 0 && day < 6) nextTime += (6 - day) * 24 * 60 * 60 * 1000;
+                    }
+                } else if (s.repeat === 'weekly') {
+                    nextTime += 7 * 24 * 60 * 60 * 1000;
+                }
+                await doc.ref.update({ scheduledFor: nextTime, status: 'pending' });
+            } else {
+                await doc.ref.update({ status: postOk ? 'sent' : 'failed' });
+            }
+        }
     } catch (e) {
-      logger.error("CollectionGroup query failed:", e.message);
-      logger.error("If this is a missing index error, run: firebase firestore:indexes");
-      return;
+        console.error('CollectionGroup query failed:', e);
     }
-
-    if (snap.empty) {
-      logger.info("No pending scheduled messages.");
-      return;
-    }
-
-    logger.info(`Found ${snap.size} message(s) to send.`);
-
-    const promises = snap.docs.map(async (doc) => {
-      const data = doc.data();
-      const courtId = data.courtId;
-
-      if (!courtId) {
-        logger.warn(`Scheduled doc ${doc.id} missing courtId, skipping.`);
-        return;
-      }
-
-      // Fetch bot config for this court
-      let botDoc;
-      try {
-        botDoc = await db.collection("groupme_bots").doc(courtId).get();
-      } catch (e) {
-        logger.error(`Failed to fetch bot config for court ${courtId}:`, e.message);
-        return;
-      }
-
-      if (!botDoc.exists) {
-        logger.warn(`No bot config for court ${courtId}, skipping.`);
-        await doc.ref.update({ status: "skipped_no_bot" });
-        return;
-      }
-
-      const botConfig = botDoc.data();
-
-      if (!botConfig.botId || botConfig.enabled === false) {
-        logger.warn(`Bot disabled or no botId for court ${courtId}, skipping.`);
-        await doc.ref.update({ status: "skipped_disabled" });
-        return;
-      }
-
-      // Send the message
-      const result = await postGroupMe(botConfig.botId, data.msg);
-      const sentAt = Date.now();
-
-      logger.info(
-        `Court ${courtId} (${data.courtName}): sent="${result.ok}" status=${result.status}`
-      );
-
-      // Determine next state
-      const hasRepeat = data.repeat && data.repeat !== "none";
-      const next = hasRepeat ? nextRun(data.scheduledFor, data.repeat) : null;
-
-      if (next) {
-        // Repeating — reset to pending with next fire time
-        await doc.ref.update({
-          scheduledFor: next,
-          status: "pending",
-          lastSentAt: sentAt,
-          lastSentOk: result.ok,
-        });
-        logger.info(`Repeating message rescheduled for ${new Date(next).toISOString()}`);
-      } else {
-        // One-time — mark as sent or failed
-        await doc.ref.update({
-          status: result.ok ? "sent" : "failed",
-          sentAt,
-        });
-      }
-
-      // Log it
-      await writeLog(courtId, data.msg, result.ok ? "sent" : "failed", "scheduled");
-    });
-
-    await Promise.allSettled(promises);
-    logger.info("Scheduled GroupMe sender complete.");
-  }
-);
-
-// ── Optional: Firestore trigger for real-time event-based messages ────
-// This listens for new checkins and applies any custom event_rules.
-// Complements the client-side posting in court.html.
-
-exports.onCheckinCreated = onDocumentCreated(
-  "courts/{courtId}/checkins/{docId}",
-  async (event) => {
-    const courtId = event.params.courtId;
-    const checkin = event.data.data();
-
-    if (!checkin) return;
-
-    // Get bot config
-    const botDoc = await db.collection("groupme_bots").doc(courtId).get();
-    if (!botDoc.exists) return;
-
-    const botConfig = botDoc.data();
-    if (!botConfig.botId || botConfig.enabled === false) return;
-
-    // Check for a custom event rule for 'checkin'
-    const rulesSnap = await db
-      .collection("groupme_bots")
-      .doc(courtId)
-      .collection("event_rules")
-      .where("trigger", "==", "checkin")
-      .where("enabled", "==", true)
-      .limit(1)
-      .get();
-
-    let msg;
-    if (!rulesSnap.empty) {
-      const rule = rulesSnap.docs[0].data();
-      if (rule.customMsg) {
-        // Apply placeholders
-        const courtDoc = await db.collection("courts").doc(courtId).get();
-        const courtData = courtDoc.exists ? courtDoc.data() : {};
-        const checkinsSnap = await db
-          .collection("courts")
-          .doc(courtId)
-          .collection("checkins")
-          .where("status", "==", "active")
-          .get();
-        const playerCount = checkinsSnap.size;
-        const openCourts = courtData.openCourts ?? courtData.numberOfCourts ?? 4;
-
-        msg = rule.customMsg
-          .replace("{name}", checkin.userName || "Someone")
-          .replace("{court}", courtData.name || "the court")
-          .replace("{players}", String(playerCount))
-          .replace("{courts}", String(openCourts));
-      }
-    }
-
-    // Fall back to default message if no custom rule
-    if (!msg) {
-      const courtDoc = await db.collection("courts").doc(courtId).get();
-      const courtData = courtDoc.exists ? courtDoc.data() : {};
-      const checkinsSnap = await db
-        .collection("courts")
-        .doc(courtId)
-        .collection("checkins")
-        .where("status", "==", "active")
-        .get();
-      const playerCount = checkinsSnap.size;
-      const openCourts = courtData.openCourts ?? courtData.numberOfCourts ?? 4;
-
-      const ratingMap = {
-        "1.0": "1.0", "1.5": "1.5", "2.0": "2.0", "2.5": "2.5",
-        "3.0": "3.0", "3.5": "3.5", "4.0": "4.0", "4.5": "4.5",
-        "5.0": "5.0", "5plus": "5.0+",
-      };
-      const rating = checkin.rating && ratingMap[checkin.rating] ? ` ${ratingMap[checkin.rating]}` : "";
-      const statusEmoji = checkin.status === "active" ? "🎾" : "⏰";
-      const guests = checkin.guests > 0 ? ` (+${checkin.guests} guests)` : "";
-
-      msg =
-        `${statusEmoji} ${checkin.userName}${rating} checked in at ${courtData.name || "court"}${guests}\n` +
-        `👥 ${playerCount} player${playerCount !== 1 ? "s" : ""} on-site  🏟 ${openCourts} court${openCourts !== 1 ? "s" : ""} rotating`;
-    }
-
-    const result = await postGroupMe(botConfig.botId, msg);
-    await writeLog(courtId, msg, result.ok ? "sent" : "failed", "event_checkin");
-  }
-);
+});
