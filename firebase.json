@@ -14,5 +14,21 @@
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "functions/**"
+    ],
+    "redirects": [
+      {
+        "source": "/dp/**",
+        "destination": "/",
+        "type": 301
+      }
+    ]
   }
 }
