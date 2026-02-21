@@ -83,20 +83,41 @@ async function buildDynamicMessage(s) {
     const coming = allCheckins.filter(c => c.status === 'later' && c.arrivalTime && c.arrivalTime > nowMs);
     const open = court.openCourts ?? court.numberOfCourts ?? 4;
     const total = court.numberOfCourts ?? 4;
-    const crowd = { low: '🟢 Light', medium: '🟡 Busy', high: '🔴 Packed' }[court.crowdLevel] || '';
+    const crowdLabel = { low: '🟢 Light', medium: '🟡 Busy', high: '🔴 Packed' }[court.crowdLevel] || '';
     const condLabel = court.condition && court.condition !== 'open'
         ? `⚠️ Court: ${court.condition.charAt(0).toUpperCase() + court.condition.slice(1)}` : '';
     const lat = s.courtLat ?? court.lat;
     const lng = s.courtLng ?? court.lng;
+
+    // Get timezone from weather.gov so date/time uses court's local timezone
+    let timeZone = 'America/Chicago'; // sensible default
+    if (lat && lng) {
+        try {
+            const ptRes = await fetch(`https://api.weather.gov/points/${lat},${lng}`, {
+                headers: { 'User-Agent': 'PickleConnect/2.0 (pickleconnect.live)' }
+            });
+            if (ptRes.ok) {
+                const ptData = await ptRes.json();
+                timeZone = ptData.properties.timeZone || timeZone;
+            }
+        } catch (e) {}
+    }
+
+    const now = new Date();
+    const localDate = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone });
+    const localTime = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone });
+
     const weatherForecast = s.includeWeather ? await fetchWeatherForecast(lat, lng) : null;
     const weatherLines = buildWeatherLines(weatherForecast);
+
     return [
         `🎾 ${s.courtName} — Live Update`,
-        `📅 ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} · ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`,
+        `📅 ${localDate} · ${localTime}`,
         ``,
         `👥 Playing now: ${playing.length > 0 ? playing.map(c => c.userName).join(', ') : 'No one yet'}`,
         `⏰ Coming soon: ${coming.length > 0 ? coming.length + ' player' + (coming.length !== 1 ? 's' : '') : 'None scheduled'}`,
-        `🏟 Courts: ${open}/${total} open${crowd ? '  ' + crowd : ''}`,
+        `🏟 ${open}/${total} COURTS IN ROTATION`,
+        crowdLabel ? `🎪 CROWD LEVEL - ${crowdLabel}` : '',
         condLabel, weatherLines,
         court.flashMsg ? `📣 ${court.flashMsg}` : '',
         ``,
