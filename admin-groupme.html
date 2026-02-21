@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PickleConnect – GroupMe Admin</title>
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#059669">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <!-- Google tag -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8VE2FTD711"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-8VE2FTD711');</script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Outfit',sans-serif;background:#f1f5f9;min-height:100vh;}
+        .nav{background:#0f172a;padding:13px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;}
+        .fd{font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;}
+        .pg{max-width:900px;margin:0 auto;padding:20px 16px;}
+        .card{background:white;border-radius:14px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.07);margin-bottom:16px;}
+        .btn-g{background:linear-gradient(135deg,#059669,#10b981);color:white;border:none;border-radius:9px;padding:10px 18px;font-family:'Outfit',sans-serif;font-weight:700;cursor:pointer;font-size:14px;}
+        .btn-g:disabled{opacity:.5;cursor:not-allowed;}
+        .btn-outline{background:white;border:2px solid #e2e8f0;border-radius:9px;padding:9px 16px;font-family:'Outfit',sans-serif;font-weight:600;cursor:pointer;font-size:13px;color:#475569;}
+        .field{width:100%;padding:10px 13px;font-size:14px;border:2px solid #e2e8f0;border-radius:10px;font-family:'Outfit',sans-serif;outline:none;transition:border .15s;}
+        .field:focus{border-color:#059669;}
+        .flbl{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;}
+        .badge{padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;}
+        .badge-green{background:#f0fdf4;color:#059669;border:1px solid #a7f3d0;}
+        .badge-red{background:#fef2f2;color:#ef4444;border:1px solid #fca5a5;}
+        .badge-yellow{background:#fffbeb;color:#d97706;border:1px solid #fcd34d;}
+        .badge-blue{background:#eff6ff;color:#3b82f6;border:1px solid #bfdbfe;}
+        .badge-purple{background:#f5f3ff;color:#7c3aed;border:1px solid #c4b5fd;}
+        .tab{padding:9px 16px;border:none;background:none;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:#64748b;transition:all .15s;}
+        .tab.on{color:#059669;border-bottom-color:#059569;}
+        select.field{cursor:pointer;}
+        textarea.field{resize:vertical;}
+        .msg-preview{background:#1e3a2f;border-radius:10px;padding:13px 15px;font-family:'Outfit',sans-serif;font-size:13px;color:#e2e8f0;line-height:1.6;white-space:pre-line;}
+        .court-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border:2px solid #e2e8f0;border-radius:12px;cursor:pointer;transition:all .15s;background:white;}
+        .court-row:hover{border-color:#059669;background:#f0fdf4;}
+        .court-row.on{border-color:#059669;background:#f0fdf4;}
+        .schedule-item{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f8fafc;border-radius:10px;margin-bottom:8px;border-left:4px solid #e2e8f0;}
+        .schedule-item.active{border-left-color:#059669;}
+        .schedule-item.scheduled{border-left-color:#3b82f6;}
+        .schedule-item.event{border-left-color:#7c3aed;}
+        .log-item{padding:10px 14px;border-radius:9px;background:#f8fafc;margin-bottom:6px;font-size:13px;border-left:3px solid #e2e8f0;}
+        .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;}
+        .modal-sheet{background:white;border-radius:20px;padding:28px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.25);}
+        @media(max-width:600px){.pg{padding:12px;} .card{padding:14px;}}
+    </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ── Firebase ──────────────────────────────────────────────────────────
+const FB = {
+    apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
+    authDomain:"pickleball-app-1bba7.firebaseapp.com",
+    projectId:"pickleball-app-1bba7",
+    storageBucket:"pickleball-app-1bba7.firebasestorage.app",
+    messagingSenderId:"645604154338",
+    appId:"1:645604154338:web:b92f87c2cd11d950b737bb"
+};
+let db = null, fbOk = false;
+try {
+    if (!firebase.apps.length) firebase.initializeApp(FB);
+    db = firebase.firestore();
+    fbOk = true;
+} catch(e) { console.error('Firebase:', e); }
+
+// ── Admin PIN (simple gate) ───────────────────────────────────────────
+const ADMIN_PIN = 'pickle2025';
+
+// ── GroupMe helpers ───────────────────────────────────────────────────
+async function postGroupMe(text, botId) {
+    if (!botId) return false;
+    try {
+        const r = await fetch('https://api.groupme.com/v3/bots/post', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bot_id: botId, text })
+        });
+        return r.ok || r.status === 202;
+    } catch(e) { return false; }
+}
+
+function fmtTime(ts) {
+    if (!ts) return '—';
+    return new Date(ts).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+}
+function fmtDay(ts) {
+    const d = new Date(ts);
+    return d.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'});
+}
+function fmtTimeOnly(ts) {
+    return new Date(ts).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+}
+
+// ── Compose Schedule Summary message ─────────────────────────────────
+function buildScheduleSummary(court, checkins, courtData) {
+    const now = Date.now();
+    const upcoming = checkins
+        .filter(c => c.status === 'later' && c.arrivalTime > now)
+        .sort((a,b) => a.arrivalTime - b.arrivalTime)
+        .slice(0, 5);
+    const playing = checkins.filter(c => c.status === 'active');
+    const open = courtData?.openCourts ?? courtData?.numberOfCourts ?? 4;
+    const total = courtData?.numberOfCourts ?? 4;
+    const lines = [
+        `📋 ${court.name} — Daily Summary`,
+        `📅 ${new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'})}`,
+        ``,
+        `👥 Currently playing: ${playing.length > 0 ? playing.map(c=>c.userName).join(', ') : 'No one yet'}`,
+        `🏟 Courts: ${open}/${total} open`,
+    ];
+    if (courtData?.crowdLevel) {
+        const crowd = {low:'🟢 Light',medium:'🟡 Busy',high:'🔴 Packed'}[courtData.crowdLevel]||'';
+        if (crowd) lines.push(`${crowd} crowd`);
+    }
+    if (upcoming.length > 0) {
+        lines.push(``);
+        lines.push(`⏰ Coming soon:`);
+        upcoming.forEach(c => {
+            lines.push(`  • ${c.userName} @ ${fmtTimeOnly(c.arrivalTime)}`);
+        });
+    }
+    if (courtData?.flashMsg) {
+        lines.push(``);
+        lines.push(`📣 ${courtData.flashMsg}`);
+    }
+    lines.push(``);
+    lines.push(`🔗 Check in: pickleconnect — court/${court.id}`);
+    return lines.join('\n');
+}
+
+// ── Auth Gate ─────────────────────────────────────────────────────────
+function AuthGate({onAuth}) {
+    const [pin, setPin] = useState('');
+    const [err, setErr] = useState(false);
+    const submit = () => {
+        if (pin === ADMIN_PIN) { onAuth(); }
+        else { setErr(true); setTimeout(()=>setErr(false), 1500); setPin(''); }
+    };
+    return (
+        <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(135deg,#0f172a,#1e3a2f)',padding:20}}>
+            <div style={{background:'white',borderRadius:20,padding:36,maxWidth:380,width:'100%',textAlign:'center',boxShadow:'0 24px 64px rgba(0,0,0,.4)'}}>
+                <div style={{fontSize:48,marginBottom:8}}>🔐</div>
+                <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:28,fontWeight:800,color:'#0f172a',marginBottom:4}}>SUPER ADMIN</div>
+                <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#64748b',marginBottom:28}}>GroupMe Bot Manager</div>
+                <input
+                    type="password"
+                    value={pin}
+                    onChange={e=>setPin(e.target.value)}
+                    onKeyDown={e=>e.key==='Enter'&&submit()}
+                    placeholder="Enter admin PIN"
+                    style={{width:'100%',padding:'13px 16px',fontSize:16,border:`2px solid ${err?'#ef4444':'#e2e8f0'}`,borderRadius:12,fontFamily:'Outfit,sans-serif',outline:'none',textAlign:'center',marginBottom:14,transition:'border .2s'}}
+                    autoFocus
+                />
+                {err && <div style={{color:'#ef4444',fontSize:13,marginBottom:10,fontWeight:600}}>Incorrect PIN</div>}
+                <button onClick={submit} className="btn-g" style={{width:'100%',padding:14,fontSize:16}}>
+                    Enter →
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// ── Compose Message Modal ─────────────────────────────────────────────
+function ComposeModal({court, botConfig, courtData, checkins, onClose}) {
+    const [type, setType] = useState('onetime');   // onetime | scheduled | event
+    const [msg, setMsg] = useState('');
+    const [schedDate, setSchedDate] = useState('');
+    const [schedTime, setSchedTime] = useState('07:00');
+    const [repeat, setRepeat] = useState('none');   // none | daily | weekly
+    const [eventTrigger, setEventTrigger] = useState('checkin'); // checkin | checkout | status | flash
+    const [sending, setSending] = useState(false);
+    const [result, setResult] = useState(null);
+    const [tab, setTab] = useState('compose');
+
+    const summaryPreview = buildScheduleSummary(court, checkins, courtData);
+
+    const sendNow = async () => {
+        const text = msg.trim();
+        if (!text) { setResult({ok:false,msg:'Message cannot be empty'}); return; }
+        setSending(true);
+        const ok = await postGroupMe(text, botConfig.botId);
+        setResult(ok ? {ok:true,msg:'✅ Sent!'} : {ok:false,msg:'❌ Failed — check bot ID'});
+        if (ok) {
+            await db.collection('groupme_bots').doc(court.id).collection('logs').add({
+                type:'manual', msg:text, sentAt:Date.now(), status:'sent'
+            }).catch(()=>{});
+        }
+        setSending(false);
+    };
+
+    const saveScheduled = async () => {
+        const text = msg.trim();
+        if (!text) { setResult({ok:false,msg:'Message cannot be empty'}); return; }
+        if (!schedDate) { setResult({ok:false,msg:'Select a date'}); return; }
+        const dt = new Date(`${schedDate}T${schedTime}`).getTime();
+        await db.collection('groupme_bots').doc(court.id).collection('scheduled').add({
+            msg: text, scheduledFor: dt, repeat, createdAt: Date.now(), status: 'pending',
+            courtId: court.id, courtName: court.name
+        });
+        setResult({ok:true, msg:`✅ Scheduled for ${fmtTime(dt)}`});
+    };
+
+    const saveEventRule = async () => {
+        const text = msg.trim() || '(use default message)';
+        await db.collection('groupme_bots').doc(court.id).collection('event_rules').add({
+            trigger: eventTrigger, customMsg: text !== '(use default message)' ? text : null,
+            useDefault: text === '(use default message)',
+            enabled: true, createdAt: Date.now(),
+            courtId: court.id, courtName: court.name
+        });
+        setResult({ok:true, msg:'✅ Event rule saved!'});
+    };
+
+    return (
+        <div className="modal-bg" onClick={e=>{if(e.target.className==='modal-bg')onClose();}}>
+            <div className="modal-sheet">
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:22,fontWeight:800,color:'#0f172a'}}>
+                        📨 New Message — {court.name}
+                    </div>
+                    <button onClick={onClose} style={{background:'none',border:'none',fontSize:24,cursor:'pointer',color:'#94a3b8',lineHeight:1}}>×</button>
+                </div>
+
+                {/* Type selector */}
+                <div style={{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'}}>
+                    {[['onetime','⚡ One-Time'],['scheduled','📅 Scheduled'],['event','🔔 Event-Based']].map(([v,l])=>(
+                        <button key={v} onClick={()=>setType(v)} style={{padding:'8px 14px',borderRadius:99,border:'2px solid '+(type===v?'#059669':'#e2e8f0'),background:type===v?'#f0fdf4':'white',color:type===v?'#059669':'#64748b',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:600,cursor:'pointer'}}>
+                            {l}
+                        </button>
+                    ))}
+                </div>
+
+                {type === 'onetime' && (
+                    <div>
+                        <div style={{borderBottom:'1px solid #e2e8f0',marginBottom:14,display:'flex',gap:0}}>
+                            {[['compose','✏️ Compose'],['summary','📋 Court Summary']].map(([v,l])=>(
+                                <button key={v} className={`tab${tab===v?' on':''}`} onClick={()=>{setTab(v);if(v==='summary')setMsg(summaryPreview);}}>{l}</button>
+                            ))}
+                        </div>
+                        <label className="flbl">Message</label>
+                        <textarea className="field" value={msg} onChange={e=>setMsg(e.target.value)} rows={6} placeholder="Type your message…"/>
+                        {msg && <div className="msg-preview" style={{marginTop:10}}>{msg}</div>}
+                        {result && <div style={{padding:'9px 14px',borderRadius:9,background:result.ok?'#f0fdf4':'#fef2f2',border:'1px solid '+(result.ok?'#a7f3d0':'#fca5a5'),color:result.ok?'#065f46':'#b91c1c',fontSize:13,fontWeight:600,margin:'12px 0'}}>{result.msg}</div>}
+                        <button onClick={sendNow} disabled={sending||!msg.trim()} className="btn-g" style={{width:'100%',padding:13,marginTop:8}}>
+                            {sending ? '⏳ Sending…' : '📤 Send Now'}
+                        </button>
+                    </div>
+                )}
+
+                {type === 'scheduled' && (
+                    <div>
+                        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14}}>
+                            <div>
+                                <label className="flbl">Date</label>
+                                <input type="date" className="field" value={schedDate} onChange={e=>setSchedDate(e.target.value)} min={new Date().toISOString().split('T')[0]}/>
+                            </div>
+                            <div>
+                                <label className="flbl">Time</label>
+                                <input type="time" className="field" value={schedTime} onChange={e=>setSchedTime(e.target.value)}/>
+                            </div>
+                        </div>
+                        <div style={{marginBottom:14}}>
+                            <label className="flbl">Repeat</label>
+                            <select className="field" value={repeat} onChange={e=>setRepeat(e.target.value)}>
+                                <option value="none">No repeat (one-time)</option>
+                                <option value="daily">Every day</option>
+                                <option value="weekly">Every week (same day)</option>
+                                <option value="weekdays">Weekdays only</option>
+                                <option value="weekends">Weekends only</option>
+                            </select>
+                        </div>
+                        <div style={{marginBottom:14}}>
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                                <label className="flbl" style={{margin:0}}>Message</label>
+                                <button onClick={()=>setMsg(summaryPreview)} style={{background:'none',border:'none',color:'#059669',fontSize:12,fontWeight:700,cursor:'pointer',padding:0}}>Use Court Summary ↓</button>
+                            </div>
+                            <textarea className="field" value={msg} onChange={e=>setMsg(e.target.value)} rows={5} placeholder="e.g. Good morning picklers! Courts open at 8am today 🎾"/>
+                        </div>
+                        {msg && <div className="msg-preview" style={{marginBottom:12}}>{msg}</div>}
+                        {result && <div style={{padding:'9px 14px',borderRadius:9,background:result.ok?'#f0fdf4':'#fef2f2',border:'1px solid '+(result.ok?'#a7f3d0':'#fca5a5'),color:result.ok?'#065f46':'#b91c1c',fontSize:13,fontWeight:600,marginBottom:12}}>{result.msg}</div>}
+                        <button onClick={saveScheduled} disabled={!msg.trim()||!schedDate} className="btn-g" style={{width:'100%',padding:13}}>
+                            📅 Save Schedule
+                        </button>
+                    </div>
+                )}
+
+                {type === 'event' && (
+                    <div>
+                        <div style={{marginBottom:14}}>
+                            <label className="flbl">Trigger Event</label>
+                            <select className="field" value={eventTrigger} onChange={e=>setEventTrigger(e.target.value)}>
+                                <option value="checkin">🎾 Player checks in</option>
+                                <option value="checkout">👋 Player checks out</option>
+                                <option value="status_closed">🚫 Court status → Closed</option>
+                                <option value="status_open">✅ Court status → Open</option>
+                                <option value="status_wet">💧 Court status → Wet</option>
+                                <option value="flash">📣 Flash announcement posted</option>
+                                <option value="crowd_high">🔴 Crowd level → Packed</option>
+                                <option value="crowd_low">🟢 Crowd level → Light</option>
+                            </select>
+                        </div>
+                        <div style={{marginBottom:14}}>
+                            <label className="flbl">Custom Message (optional — leave blank for default)</label>
+                            <textarea className="field" value={msg} onChange={e=>setMsg(e.target.value)} rows={4} placeholder="Leave blank to use the default auto-generated message…"/>
+                            <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>
+                                Available placeholders: {'{name}'} {'{court}'} {'{players}'} {'{courts}'}
+                            </div>
+                        </div>
+                        {msg && <div className="msg-preview" style={{marginBottom:12}}>{msg}</div>}
+                        {result && <div style={{padding:'9px 14px',borderRadius:9,background:result.ok?'#f0fdf4':'#fef2f2',border:'1px solid '+(result.ok?'#a7f3d0':'#fca5a5'),color:result.ok?'#065f46':'#b91c1c',fontSize:13,fontWeight:600,marginBottom:12}}>{result.msg}</div>}
+                        <button onClick={saveEventRule} className="btn-g" style={{width:'100%',padding:13}}>
+                            🔔 Save Event Rule
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── Court Config Panel ────────────────────────────────────────────────
+function CourtConfigPanel({court}) {
+    const [config, setConfig] = useState(null);
+    const [courtData, setCourtData] = useState(null);
+    const [checkins, setCheckins] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [botId, setBotId] = useState('');
+    const [enabled, setEnabled] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [testing, setTesting] = useState(false);
+    const [testResult, setTestResult] = useState(null);
+    const [scheduled, setScheduled] = useState([]);
+    const [eventRules, setEventRules] = useState([]);
+    const [logs, setLogs] = useState([]);
+    const [section, setSection] = useState('bot'); // bot | scheduled | events | logs
+    const [showCompose, setShowCompose] = useState(false);
+
+    useEffect(() => {
+        if (!db) return;
+        // Load bot config
+        db.collection('groupme_bots').doc(court.id).get().then(doc => {
+            if (doc.exists) {
+                const d = doc.data();
+                setConfig(d);
+                setBotId(d.botId||'');
+                setEnabled(d.enabled !== false);
+            }
+            setLoading(false);
+        });
+        // Load court data
+        db.collection('courts').doc(court.id).get().then(doc => {
+            if (doc.exists) setCourtData({id:doc.id,...doc.data()});
+        });
+        // Load live checkins
+        const unsub = db.collection('courts').doc(court.id).collection('checkins')
+            .onSnapshot(snap => setCheckins(snap.docs.map(d=>({id:d.id,...d.data()}))));
+        // Load scheduled
+        db.collection('groupme_bots').doc(court.id).collection('scheduled')
+            .orderBy('scheduledFor','asc').get().then(snap => setScheduled(snap.docs.map(d=>({id:d.id,...d.data()}))));
+        // Load event rules
+        db.collection('groupme_bots').doc(court.id).collection('event_rules')
+            .get().then(snap => setEventRules(snap.docs.map(d=>({id:d.id,...d.data()}))));
+        // Load logs (last 20)
+        db.collection('groupme_bots').doc(court.id).collection('logs')
+            .orderBy('sentAt','desc').limit(20).get().then(snap => setLogs(snap.docs.map(d=>({id:d.id,...d.data()}))));
+        return () => unsub();
+    }, [court.id]);
+
+    const saveBot = async () => {
+        if (!db) return;
+        setSaving(true);
+        await db.collection('groupme_bots').doc(court.id).set({
+            botId: botId.trim(), enabled, courtId: court.id, courtName: court.name, updatedAt: Date.now()
+        }, {merge:true});
+        setConfig(c => ({...c, botId:botId.trim(), enabled}));
+        setTestResult({ok:true, msg:'✅ Saved!'});
+        setSaving(false);
+        setTimeout(()=>setTestResult(null), 2500);
+    };
+
+    const testBot = async () => {
+        if (!botId.trim()) { setTestResult({ok:false,msg:'Enter Bot ID first'}); return; }
+        setTesting(true); setTestResult(null);
+        const ok = await postGroupMe('🎾 PickleConnect connected! Updates for '+court.name+' will post here.', botId.trim());
+        setTestResult(ok ? {ok:true,msg:'✅ Test sent! Check GroupMe.'} : {ok:false,msg:'❌ Failed — verify Bot ID'});
+        setTesting(false);
+    };
+
+    const deleteScheduled = async (id) => {
+        await db.collection('groupme_bots').doc(court.id).collection('scheduled').doc(id).delete();
+        setScheduled(s => s.filter(x=>x.id!==id));
+    };
+
+    const deleteEventRule = async (id) => {
+        await db.collection('groupme_bots').doc(court.id).collection('event_rules').doc(id).delete();
+        setEventRules(r => r.filter(x=>x.id!==id));
+    };
+
+    const toggleEventRule = async (id, current) => {
+        await db.collection('groupme_bots').doc(court.id).collection('event_rules').doc(id).update({enabled:!current});
+        setEventRules(r => r.map(x=>x.id===id?{...x,enabled:!current}:x));
+    };
+
+    const nowPlaying = checkins.filter(c=>c.status==='active');
+    const comingSoon = checkins.filter(c=>c.status==='later'&&c.arrivalTime>Date.now());
+    const repeatLabels = {none:'No repeat',daily:'Daily',weekly:'Weekly',weekdays:'Weekdays',weekends:'Weekends'};
+    const triggerLabels = {
+        checkin:'🎾 Check In', checkout:'👋 Check Out',
+        status_closed:'🚫 Closed', status_open:'✅ Opened', status_wet:'💧 Wet',
+        flash:'📣 Flash', crowd_high:'🔴 Packed', crowd_low:'🟢 Light'
+    };
+
+    return (
+        <div>
+            {/* Court summary strip */}
+            <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:16,padding:'12px 16px',background:'#f0fdf4',borderRadius:12,border:'1px solid #a7f3d0',alignItems:'center'}}>
+                <span style={{fontSize:13,fontWeight:700,color:'#065f46',flex:1}}>{court.name}</span>
+                <span className={`badge ${enabled&&config?.botId?'badge-green':'badge-red'}`}>
+                    {enabled&&config?.botId ? '● Connected' : '○ Not configured'}
+                </span>
+                {nowPlaying.length>0 && <span className="badge badge-green">👥 {nowPlaying.length} playing</span>}
+                {comingSoon.length>0 && <span className="badge badge-blue">⏰ {comingSoon.length} coming</span>}
+                {courtData?.condition && courtData.condition !== 'open' && (
+                    <span className="badge badge-yellow">{courtData.condition}</span>
+                )}
+            </div>
+
+            {/* Section nav */}
+            <div style={{display:'flex',borderBottom:'1px solid #e2e8f0',marginBottom:16}}>
+                {[['bot','⚙️ Bot Setup'],['scheduled','📅 Scheduled ('+(scheduled.length)+')'],['events','🔔 Events ('+(eventRules.length)+')'],['logs','📜 Logs']].map(([v,l])=>(
+                    <button key={v} className={`tab${section===v?' on':''}`} onClick={()=>setSection(v)}>{l}</button>
+                ))}
+            </div>
+
+            {/* BOT SETUP */}
+            {section==='bot' && (
+                <div>
+                    {loading ? <div style={{color:'#94a3b8',padding:'20px 0',textAlign:'center'}}>Loading…</div> : (
+                    <>
+                        <div style={{background:'#f0fdf4',border:'1px solid #a7f3d0',borderRadius:12,padding:'13px 16px',marginBottom:16,fontFamily:'Outfit,sans-serif',fontSize:13,color:'#065f46',lineHeight:1.7}}>
+                            <strong>Get a Bot ID:</strong> Go to <a href="https://dev.groupme.com/bots" target="_blank" style={{color:'#059669'}}>dev.groupme.com/bots</a> → Create Bot → select your pickleball GroupMe group → copy the Bot ID
+                        </div>
+                        <div style={{marginBottom:14}}>
+                            <label className="flbl">Bot ID</label>
+                            <input value={botId} onChange={e=>{setBotId(e.target.value);setTestResult(null);}} className="field" placeholder="Paste GroupMe Bot ID…" style={{fontFamily:'monospace'}}/>
+                        </div>
+                        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16,padding:'12px 14px',background:'#f8fafc',borderRadius:10}}>
+                            <span style={{fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:600,color:'#374151',flex:1}}>Enable auto-posting for this court</span>
+                            <div onClick={()=>setEnabled(e=>!e)} style={{width:44,height:26,borderRadius:13,background:enabled?'#059669':'#cbd5e1',cursor:'pointer',position:'relative',transition:'background .2s',flexShrink:0}}>
+                                <div style={{position:'absolute',top:3,left:enabled?21:3,width:20,height:20,borderRadius:'50%',background:'white',transition:'left .2s',boxShadow:'0 1px 4px rgba(0,0,0,.3)'}}/>
+                            </div>
+                        </div>
+                        {testResult && (
+                            <div style={{padding:'10px 14px',borderRadius:10,background:testResult.ok?'#f0fdf4':'#fef2f2',border:'1px solid '+(testResult.ok?'#a7f3d0':'#fca5a5'),fontFamily:'Outfit,sans-serif',fontSize:13,color:testResult.ok?'#065f46':'#b91c1c',marginBottom:12,fontWeight:600}}>
+                                {testResult.msg}
+                            </div>
+                        )}
+                        <div style={{display:'flex',gap:10}}>
+                            <button onClick={testBot} disabled={testing||!botId.trim()} className="btn-outline" style={{flex:1,opacity:testing||!botId.trim()?'.5':'1'}}>
+                                {testing ? '⏳ Testing…' : '🧪 Test Bot'}
+                            </button>
+                            <button onClick={saveBot} disabled={saving} className="btn-g" style={{flex:1}}>
+                                {saving ? '⏳ Saving…' : '💾 Save Bot'}
+                            </button>
+                        </div>
+                    </>
+                    )}
+                </div>
+            )}
+
+            {/* SCHEDULED MESSAGES */}
+            {section==='scheduled' && (
+                <div>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#64748b'}}>Messages sent at a specific date/time</div>
+                        <button onClick={()=>setShowCompose(true)} className="btn-g" style={{padding:'8px 14px',fontSize:13}}>+ New</button>
+                    </div>
+                    {scheduled.length === 0 && (
+                        <div style={{textAlign:'center',padding:'32px 0',color:'#94a3b8',fontFamily:'Outfit,sans-serif',fontSize:14}}>No scheduled messages. Click + New to add one.</div>
+                    )}
+                    {scheduled.map(s => (
+                        <div key={s.id} className={`schedule-item scheduled`}>
+                            <div style={{flex:1,minWidth:0}}>
+                                <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:600,color:'#0f172a',marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{s.msg}</div>
+                                <div style={{fontSize:12,color:'#64748b',display:'flex',gap:8,flexWrap:'wrap'}}>
+                                    <span>📅 {fmtTime(s.scheduledFor)}</span>
+                                    {s.repeat && s.repeat!=='none' && <span className="badge badge-blue" style={{fontSize:10}}>↺ {repeatLabels[s.repeat]}</span>}
+                                    <span className={`badge ${s.status==='sent'?'badge-green':'badge-yellow'}`} style={{fontSize:10}}>{s.status||'pending'}</span>
+                                </div>
+                            </div>
+                            <button onClick={()=>deleteScheduled(s.id)} style={{background:'none',border:'none',color:'#ef4444',fontSize:16,cursor:'pointer',padding:'4px 6px',flexShrink:0}}>🗑️</button>
+                        </div>
+                    ))}
+                    <div style={{marginTop:16,padding:'12px 14px',background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:10,fontFamily:'Outfit,sans-serif',fontSize:12,color:'#92400e',lineHeight:1.5}}>
+                        ⚠️ <strong>Note:</strong> Scheduled messages require a server-side cron job or Firebase Cloud Functions to auto-send. Use <strong>Send Now</strong> (One-Time) to post manually, or set up a Cloud Function to process the <code>scheduled</code> collection.
+                    </div>
+                </div>
+            )}
+
+            {/* EVENT RULES */}
+            {section==='events' && (
+                <div>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#64748b'}}>Triggered automatically by court activity</div>
+                        <button onClick={()=>setShowCompose(true)} className="btn-g" style={{padding:'8px 14px',fontSize:13}}>+ New Rule</button>
+                    </div>
+                    {eventRules.length === 0 && (
+                        <div style={{textAlign:'center',padding:'32px 0',color:'#94a3b8',fontFamily:'Outfit,sans-serif',fontSize:14}}>No event rules. Default messages are used automatically when bot is connected.</div>
+                    )}
+                    {eventRules.map(r => (
+                        <div key={r.id} className={`schedule-item event${r.enabled?' active':''}`}>
+                            <div style={{flex:1,minWidth:0}}>
+                                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:2,flexWrap:'wrap'}}>
+                                    <span className="badge badge-purple" style={{fontSize:11}}>{triggerLabels[r.trigger]||r.trigger}</span>
+                                    {!r.enabled && <span className="badge badge-red" style={{fontSize:10}}>Disabled</span>}
+                                </div>
+                                <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,color:'#64748b',marginTop:2}}>
+                                    {r.customMsg ? r.customMsg : <em>Uses default message</em>}
+                                </div>
+                            </div>
+                            <div style={{display:'flex',gap:6,flexShrink:0}}>
+                                <div onClick={()=>toggleEventRule(r.id,r.enabled)} style={{width:36,height:20,borderRadius:10,background:r.enabled?'#059669':'#cbd5e1',cursor:'pointer',position:'relative',transition:'background .2s'}}>
+                                    <div style={{position:'absolute',top:2,left:r.enabled?17:2,width:16,height:16,borderRadius:'50%',background:'white',transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,.3)'}}/>
+                                </div>
+                                <button onClick={()=>deleteEventRule(r.id)} style={{background:'none',border:'none',color:'#ef4444',fontSize:16,cursor:'pointer',padding:'0 4px'}}>🗑️</button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* LOGS */}
+            {section==='logs' && (
+                <div>
+                    {logs.length === 0 && (
+                        <div style={{textAlign:'center',padding:'32px 0',color:'#94a3b8',fontFamily:'Outfit,sans-serif',fontSize:14}}>No messages sent yet.</div>
+                    )}
+                    {logs.map(l => (
+                        <div key={l.id} className="log-item" style={{borderLeftColor:l.status==='sent'?'#10b981':'#ef4444'}}>
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
+                                <div style={{flex:1,fontFamily:'Outfit,sans-serif',fontSize:13,color:'#374151',whiteSpace:'pre-line'}}>{l.msg}</div>
+                                <span className={`badge ${l.status==='sent'?'badge-green':'badge-red'}`} style={{fontSize:10,flexShrink:0}}>{l.status}</span>
+                            </div>
+                            <div style={{fontSize:11,color:'#94a3b8',marginTop:4,display:'flex',gap:8}}>
+                                <span>{fmtTime(l.sentAt)}</span>
+                                {l.type && <span className="badge badge-blue" style={{fontSize:10}}>{l.type}</span>}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {showCompose && (
+                <ComposeModal
+                    court={court}
+                    botConfig={config||{botId:botId.trim()}}
+                    courtData={courtData}
+                    checkins={checkins}
+                    onClose={()=>setShowCompose(false)}
+                />
+            )}
+        </div>
+    );
+}
+
+// ── Main Admin App ────────────────────────────────────────────────────
+function AdminApp() {
+    const [authed, setAuthed] = useState(() => sessionStorage.getItem('adminAuthed')==='1');
+    const [courts, setCourts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedCourt, setSelectedCourt] = useState(null);
+    const [search, setSearch] = useState('');
+    const [botConfigs, setBotConfigs] = useState({});
+
+    useEffect(() => {
+        if (!authed || !db) { setLoading(false); return; }
+        db.collection('courts').orderBy('createdAt','desc').get().then(snap => {
+            const list = snap.docs.map(d=>({id:d.id,...d.data()}));
+            setCourts(list);
+            setLoading(false);
+            // Load all bot configs
+            db.collection('groupme_bots').get().then(bSnap => {
+                const cfg = {};
+                bSnap.docs.forEach(d => cfg[d.id]=d.data());
+                setBotConfigs(cfg);
+            });
+        });
+    }, [authed]);
+
+    const handleAuth = () => {
+        sessionStorage.setItem('adminAuthed','1');
+        setAuthed(true);
+    };
+
+    if (!authed) return <AuthGate onAuth={handleAuth}/>;
+
+    const filteredCourts = courts.filter(c => !search || c.name?.toLowerCase().includes(search.toLowerCase()) || c.address?.toLowerCase().includes(search.toLowerCase()));
+    const connectedCount = Object.values(botConfigs).filter(c=>c.botId&&c.enabled).length;
+
+    return (
+        <div style={{minHeight:'100vh',background:'#f1f5f9'}}>
+            <div className="nav">
+                <div className="fd" style={{fontSize:22,fontWeight:800,color:'white',flex:1}}>
+                    <span style={{color:'white'}}>PICKLE</span><span style={{color:'#34d399'}}>CONNECT</span>
+                    <span style={{fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:500,color:'#6ee7b7',marginLeft:8}}>GroupMe Admin</span>
+                </div>
+                <a href="index.html" style={{color:'#6ee7b7',textDecoration:'none',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:600}}>← Courts</a>
+            </div>
+
+            <div className="pg">
+                {/* Summary bar */}
+                <div style={{display:'flex',gap:12,flexWrap:'wrap',marginBottom:20}}>
+                    <div className="card" style={{flex:1,minWidth:140,padding:'14px 18px',background:'linear-gradient(135deg,#0f172a,#1e3a2f)',border:'none'}}>
+                        <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:28,fontWeight:800,color:'white'}}>{courts.length}</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,color:'#6ee7b7',fontWeight:600}}>Total Courts</div>
+                    </div>
+                    <div className="card" style={{flex:1,minWidth:140,padding:'14px 18px',background:'linear-gradient(135deg,#059669,#10b981)',border:'none'}}>
+                        <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:28,fontWeight:800,color:'white'}}>{connectedCount}</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,color:'#d1fae5',fontWeight:600}}>Bots Connected</div>
+                    </div>
+                    <div className="card" style={{flex:1,minWidth:140,padding:'14px 18px',background:'linear-gradient(135deg,#7c3aed,#a855f7)',border:'none'}}>
+                        <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:28,fontWeight:800,color:'white'}}>{courts.length - connectedCount}</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,color:'#e9d5ff',fontWeight:600}}>Not Configured</div>
+                    </div>
+                </div>
+
+                {selectedCourt ? (
+                    <div>
+                        <button onClick={()=>setSelectedCourt(null)} style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',color:'#059669',fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:700,cursor:'pointer',padding:0,marginBottom:16}}>
+                            ← All Courts
+                        </button>
+                        <div className="card">
+                            <CourtConfigPanel court={selectedCourt}/>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="card">
+                        <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:14}}>SELECT A COURT</div>
+                        <input className="field" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search courts…" style={{marginBottom:14}}/>
+                        {loading ? (
+                            <div style={{textAlign:'center',padding:'32px 0',color:'#94a3b8'}}>Loading courts…</div>
+                        ) : (
+                            filteredCourts.map(c => {
+                                const cfg = botConfigs[c.id];
+                                const connected = cfg?.botId && cfg?.enabled;
+                                return (
+                                    <div key={c.id} className={`court-row${selectedCourt?.id===c.id?' on':''}`} onClick={()=>setSelectedCourt(c)} style={{marginBottom:8}}>
+                                        <div style={{width:40,height:40,borderRadius:10,background:connected?'linear-gradient(135deg,#059669,#10b981)':'linear-gradient(135deg,#64748b,#94a3b8)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>
+                                            🏟️
+                                        </div>
+                                        <div style={{flex:1,minWidth:0}}>
+                                            <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:700,color:'#0f172a'}}>{c.name}</div>
+                                            <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,color:'#64748b',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c.address}</div>
+                                        </div>
+                                        <span className={`badge ${connected?'badge-green':'badge-red'}`}>
+                                            {connected ? '● Bot On' : '○ Setup'}
+                                        </span>
+                                        <span style={{color:'#cbd5e1',fontSize:18}}>›</span>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+ReactDOM.render(<AdminApp/>, document.getElementById('root'));
+</script>
+</body>
+</html>
