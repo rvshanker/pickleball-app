@@ -598,24 +598,24 @@ function applyPlaceholders(template, {name='', court='', players='', courts=''})
 // Fire a GroupMe event for a given trigger type, using event_rules from Firestore if available
 async function fireGroupMeEvent(courtId, trigger, defaultMsg, placeholders) {
     if (!fbOk || !db || !courtId) return;
-    // Get bot config
+
+    // Get bot config from Firestore only — no localStorage fallback
+    // (localStorage would bleed Court A's bot into Court B)
     const botDoc = await db.collection('groupme_bots').doc(courtId).get().catch(()=>null);
     const botCfg = botDoc?.exists ? botDoc.data() : null;
-    // Fallback: check localStorage
-    const botId = (botCfg?.enabled && botCfg?.botId) ? botCfg.botId : localStorage.getItem(GROUPME_BOT_KEY);
-    if (!botId) return;
+    if (!botCfg?.enabled || !botCfg?.botId) return; // this court has no bot configured
 
-    // Check event_rules
+    const botId = botCfg.botId;
+
+    // Check if an event rule exists for this specific trigger on this court
     const rulesSnap = await db.collection('groupme_bots').doc(courtId).collection('event_rules')
         .where('trigger','==',trigger).where('enabled','==',true).get().catch(()=>null);
 
-    let msg;
-    if (rulesSnap && !rulesSnap.empty) {
-        const rule = rulesSnap.docs[0].data();
-        msg = rule.customMsg ? applyPlaceholders(rule.customMsg, placeholders||{}) : defaultMsg;
-    } else {
-        msg = defaultMsg;
-    }
+    // Only fire if an explicit event rule exists for this trigger
+    if (!rulesSnap || rulesSnap.empty) return;
+
+    const rule = rulesSnap.docs[0].data();
+    const msg = rule.customMsg ? applyPlaceholders(rule.customMsg, placeholders||{}) : defaultMsg;
     if (msg) await postGroupMe(msg, botId);
 }
 
