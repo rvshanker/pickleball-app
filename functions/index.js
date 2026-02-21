@@ -1,18 +1,18 @@
-// ── Scheduled GroupMe Message Sender ────────────────────────────────────
-// Add this to your Firebase Cloud Functions index.js
-// Runs every 5 minutes to check for pending scheduled messages
-
-const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
-const fetch = require('node-fetch'); // or use built-in fetch if Node 18+
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 
+// ── Must be called once at top level before any Firebase service ──────
+initializeApp();
+const db = getFirestore();
+
+// ── Scheduled GroupMe Message Sender ─────────────────────────────────
+// Runs every 5 minutes to check for pending scheduled messages
 exports.sendScheduledGroupMeMessages = onSchedule('every 5 minutes', async () => {
-    const db = getFirestore();
     const now = Date.now();
-    const windowEnd = now + 5 * 60 * 1000; // next 5 min window
+    const windowEnd = now + 5 * 60 * 1000;
 
     try {
-        // Query all pending scheduled messages due now
         const snap = await db.collectionGroup('scheduled')
             .where('status', '==', 'pending')
             .where('scheduledFor', '<=', windowEnd)
@@ -49,7 +49,7 @@ exports.sendScheduledGroupMeMessages = onSchedule('every 5 minutes', async () =>
                 const total = court.numberOfCourts ?? 4;
                 const crowd = { low: '🟢 Light', medium: '🟡 Busy', high: '🔴 Packed' }[court.crowdLevel] || '';
                 const condLabel = court.condition && court.condition !== 'open'
-                    ? `⚠️ Court: ${court.condition.charAt(0).toUpperCase() + court.condition.slice(1)}\n`
+                    ? `⚠️ Court: ${court.condition.charAt(0).toUpperCase() + court.condition.slice(1)}`
                     : '';
 
                 const lines = [
@@ -101,18 +101,18 @@ exports.sendScheduledGroupMeMessages = onSchedule('every 5 minutes', async () =>
                     nextTime += 2 * 60 * 60 * 1000;
                 } else if (s.repeat === 'every4h') {
                     nextTime += 4 * 60 * 60 * 1000;
-                } else if (s.repeat === 'daily' || s.repeat === 'weekdays' || s.repeat === 'weekends') {
+                } else if (s.repeat === 'daily') {
                     nextTime += 24 * 60 * 60 * 1000;
-                    // Skip weekdays/weekends as needed
-                    if (s.repeat === 'weekdays') {
-                        const day = new Date(nextTime).getDay();
-                        if (day === 0) nextTime += 24 * 60 * 60 * 1000; // skip Sunday
-                        if (day === 6) nextTime += 2 * 24 * 60 * 60 * 1000; // skip Saturday
-                    } else if (s.repeat === 'weekends') {
-                        const day = new Date(nextTime).getDay();
-                        if (day === 1) nextTime += 5 * 24 * 60 * 60 * 1000; // skip Mon→Sat
-                        else if (day > 0 && day < 6) nextTime += (6 - day) * 24 * 60 * 60 * 1000;
-                    }
+                } else if (s.repeat === 'weekdays') {
+                    nextTime += 24 * 60 * 60 * 1000;
+                    const day = new Date(nextTime).getDay();
+                    if (day === 0) nextTime += 24 * 60 * 60 * 1000;       // skip Sunday → Monday
+                    if (day === 6) nextTime += 2 * 24 * 60 * 60 * 1000;   // skip Saturday → Monday
+                } else if (s.repeat === 'weekends') {
+                    nextTime += 24 * 60 * 60 * 1000;
+                    const day = new Date(nextTime).getDay();
+                    if (day === 1) nextTime += 5 * 24 * 60 * 60 * 1000;           // Mon → Sat
+                    else if (day > 1 && day < 6) nextTime += (6 - day) * 24 * 60 * 60 * 1000; // Tue–Fri → Sat
                 } else if (s.repeat === 'weekly') {
                     nextTime += 7 * 24 * 60 * 60 * 1000;
                 }
@@ -122,6 +122,6 @@ exports.sendScheduledGroupMeMessages = onSchedule('every 5 minutes', async () =>
             }
         }
     } catch (e) {
-        console.error('CollectionGroup query failed:', e);
+        console.error('Scheduled sender error:', e);
     }
 });
