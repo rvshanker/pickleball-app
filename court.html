@@ -1015,7 +1015,7 @@ function CourtPage() {
                     <div>
                         <div className="fd" style={{fontSize:24,fontWeight:800,color:'white',letterSpacing:.3,lineHeight:1.1}}>{courtData.name}</div>
                         <div style={{fontSize:12,color:'#6ee7b7',marginTop:4,display:'flex',alignItems:'center',gap:6,overflow:'hidden'}}>
-                            <span className="live-dot" style={{flexShrink:0}}/> <span style={{whiteSpace:'nowrap'}}>Live ·</span> <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>📍 {courtData.address}</span>
+                            <span className="live-dot" style={{flexShrink:0}}/> <span style={{whiteSpace:'nowrap'}}>Live ·</span> <a href={`https://maps.google.com/?q=${encodeURIComponent(courtData.address||courtData.name)}`} target="_blank" rel="noopener noreferrer" style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:'#6ee7b7',textDecoration:'none'}}>📍 {courtData.address}</a>
                         </div>
                         {courtData.amenities?.length>0 && (
                             <div style={{display:'flex',gap:5,flexWrap:'wrap',marginTop:8}}>
