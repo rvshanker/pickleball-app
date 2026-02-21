@@ -5,7 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PickleConnect – Find a Court</title>
     <meta name="description" content="Find pickleball courts near you. Check in, see who's playing, and track court availability in real time.">
+    <meta name="keywords" content="pickleball courts near me, find pickleball courts, pickleball check in, pickleball players, outdoor pickleball, indoor pickleball, pickleball court finder, pickleball app, pickleball community, court availability">
+    <meta name="author" content="PickleConnect">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://rvhanker.github.io/index.html">
+    <meta property="og:title" content="PickleConnect – Find Pickleball Courts Near You">
+    <meta property="og:description" content="Find nearby pickleball courts, check in to let others know you're playing, and see live player counts in real time.">
+    <meta property="og:image" content="https://rvhanker.github.io/og-image.png">
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://rvhanker.github.io/index.html">
+    <meta property="twitter:title" content="PickleConnect – Find Pickleball Courts Near You">
+    <meta property="twitter:description" content="Find nearby pickleball courts, check in to let others know you're playing, and see live player counts in real time.">
+    <meta property="twitter:image" content="https://rvhanker.github.io/og-image.png">
+    <link rel="canonical" href="https://rvhanker.github.io/index.html">
     <meta name="theme-color" content="#059669">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8VE2FTD711"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-8VE2FTD711');
+    </script>
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "PickleConnect",
+      "description": "Find pickleball courts near you, check in, and see who's playing in real time.",
+      "url": "https://rvhanker.github.io/",
+      "applicationCategory": "SportsApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {"@type":"Offer","price":"0","priceCurrency":"USD"},
+      "keywords": "pickleball, courts, find courts, check in, players"
+    }
+    </script>
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="PickleConnect">
@@ -283,8 +323,16 @@ function AddCourtModal({onClose, onAdded}) {
         let finalLat = lat, finalLng = lng;
         if (!finalLat || !finalLng) {
             const geo = await geocodeAddress(address);
-            if (geo) { finalLat = geo.lat; finalLng = geo.lng; }
-            else { finalLat = 0; finalLng = 0; }
+            if (geo) {
+                finalLat = geo.lat;
+                finalLng = geo.lng;
+            } else {
+                // Warn user — don't silently store 0,0 which breaks distance sorting
+                setSaving(false);
+                alert('⚠️ Could not find coordinates for this address. Distances may show incorrectly.\n\nTip: Use the 📍 button to capture your GPS location, or enter a more specific address (include city and state).');
+                finalLat = 0;
+                finalLng = 0;
+            }
         }
         const court = {
             name: name.trim(),
@@ -439,7 +487,10 @@ function CourtCard({court, userLat, userLng, isHero}) {
         <div className="court-item" onClick={goToCourt}>
             <div className="court-icon">🏟️</div>
             <div style={{flex:1,minWidth:0}}>
-                <div style={{fontWeight:700,fontSize:15,color:'#0f172a',marginBottom:3}}>{court.name}</div>
+                <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:3}}>
+                    <div style={{fontWeight:700,fontSize:15,color:'#0f172a',flex:1,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{court.name}</div>
+                    {dist !== null && <span className="dist-badge" style={{flexShrink:0}}>{fmtDist(dist)}</span>}
+                </div>
                 <div style={{fontSize:13,color:'#64748b',marginBottom:5,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'100%'}}>{court.address}</div>
                 <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
                     <span className={`player-pill ${pillClass}`}>
@@ -451,8 +502,7 @@ function CourtCard({court, userLat, userLng, isHero}) {
                     )}
                 </div>
             </div>
-            <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:6,flexShrink:0}}>
-                {dist !== null && <span className="dist-badge">{fmtDist(dist)}</span>}
+            <div style={{display:'flex',alignItems:'center',flexShrink:0,paddingLeft:4}}>
                 <span style={{color:'#cbd5e1',fontSize:18}}>›</span>
             </div>
         </div>
@@ -522,9 +572,11 @@ function App() {
     );
 
     // Courts to show in list (exclude the last-visited one from list if hero is shown)
-    const listCourts = lastCourt
+    const [showAll, setShowAll] = React.useState(false);
+    const baseList = lastCourt
         ? filtered.filter(c => c.id !== lastCourt.id)
         : filtered;
+    const listCourts = search ? baseList : (showAll ? baseList : baseList.slice(0, 10));
 
     const handleAdded = (court) => {
         setShowAdd(false);
@@ -593,6 +645,11 @@ function App() {
                         {listCourts.map(court => (
                             <CourtCard key={court.id} court={court} userLat={userLat} userLng={userLng}/>
                         ))}
+                        {!search && !showAll && baseList.length > 10 && (
+                            <button onClick={()=>setShowAll(true)} style={{width:'100%',padding:'12px',background:'white',border:'2px solid #e2e8f0',borderRadius:12,fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:600,color:'#059669',cursor:'pointer',marginTop:4}}>
+                                Show all {baseList.length} courts ↓
+                            </button>
+                        )}
                         {listCourts.length === 0 && lastCourt && (
                             <div className="empty-state">
                                 <div style={{fontSize:14}}>No other courts found nearby.</div>
