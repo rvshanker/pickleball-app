@@ -177,13 +177,21 @@ function ComposeModal({court, botConfig, courtData, checkins, onClose}) {
     const [type, setType] = useState('onetime');   // onetime | scheduled | event
     const [msg, setMsg] = useState('');
     const [isDynamic, setIsDynamic] = useState(false);
+    const [includeWeather, setIncludeWeather] = useState(false);
     const [schedDate, setSchedDate] = useState(() => new Date().toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState('');
+    const [schedMode, setSchedMode] = useState('single'); // single | times | repeat
+    const [schedTimes, setSchedTimes] = useState(['08:00','12:00','16:00','20:00']);
     const [schedTime, setSchedTime] = useState('07:00');
     const [repeat, setRepeat] = useState('none');   // none | daily | every2h | every4h | weekly
     const [eventTrigger, setEventTrigger] = useState('checkin'); // checkin | checkout | status | flash
     const [sending, setSending] = useState(false);
     const [result, setResult] = useState(null);
     const [tab, setTab] = useState('compose');
+
+    const addTime = () => setSchedTimes(t => [...t, '08:00']);
+    const removeTime = idx => setSchedTimes(t => t.filter((_,i)=>i!==idx));
+    const updateTime = (idx, val) => setSchedTimes(t => t.map((x,i)=>i===idx?val:x));
 
     const summaryPreview = buildScheduleSummary(court, checkins, courtData);
 
@@ -203,15 +211,38 @@ function ComposeModal({court, botConfig, courtData, checkins, onClose}) {
 
     const saveScheduled = async () => {
         if (!isDynamic && !msg.trim()) { setResult({ok:false,msg:'Message cannot be empty'}); return; }
-        if (!schedDate) { setResult({ok:false,msg:'Select a date'}); return; }
-        const dt = new Date(`${schedDate}T${schedTime}`).getTime();
-        await db.collection('groupme_bots').doc(court.id).collection('scheduled').add({
+        if (!schedDate) { setResult({ok:false,msg:'Select a start date'}); return; }
+        const batch = [];
+        if (schedMode === 'times') {
+            // Create one entry per time slot
+            const uniqueTimes = [...new Set(schedTimes.filter(Boolean))].sort();
+            if (!uniqueTimes.length) { setResult({ok:false,msg:'Add at least one time'}); return; }
+            for (const t of uniqueTimes) {
+                const dt = new Date(`${schedDate}T${t}`).getTime();
+                batch.push({ scheduledFor: dt, schedTime: t });
+            }
+        } else {
+            const dt = new Date(`${schedDate}T${schedTime}`).getTime();
+            batch.push({ scheduledFor: dt, schedTime });
+        }
+        const endDt = endDate ? new Date(`${endDate}T23:59`).getTime() : null;
+        const baseDoc = {
             msg: isDynamic ? null : msg.trim(),
             isDynamic,
-            scheduledFor: dt, repeat, createdAt: Date.now(), status: 'pending',
-            courtId: court.id, courtName: court.name
-        });
-        setResult({ok:true, msg:`✅ Scheduled for ${fmtTime(dt)}`});
+            includeWeather,
+            repeat: schedMode === 'times' ? 'daily-times' : repeat,
+            endDate: endDt,
+            allTimes: schedMode === 'times' ? [...new Set(schedTimes.filter(Boolean))].sort() : null,
+            createdAt: Date.now(), status: 'pending',
+            courtId: court.id, courtName: court.name,
+            courtLat: courtData?.lat || null,
+            courtLng: courtData?.lng || null,
+        };
+        await Promise.all(batch.map(b =>
+            db.collection('groupme_bots').doc(court.id).collection('scheduled').add({...baseDoc, scheduledFor: b.scheduledFor})
+        ));
+        const label = schedMode === 'times' ? `${batch.length} time slot${batch.length!==1?'s':''} starting ${schedDate}` : fmtTime(batch[0].scheduledFor);
+        setResult({ok:true, msg:`✅ Scheduled — ${label}`});
     };
 
     const saveEventRule = async () => {
@@ -263,33 +294,70 @@ function ComposeModal({court, botConfig, courtData, checkins, onClose}) {
 
                 {type === 'scheduled' && (
                     <div>
+                        {/* ── Date range ── */}
                         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14}}>
                             <div>
-                                <label className="flbl">Date</label>
+                                <label className="flbl">Start Date</label>
                                 <input type="date" className="field" value={schedDate} onChange={e=>setSchedDate(e.target.value)}/>
                             </div>
                             <div>
-                                <label className="flbl">Time</label>
-                                <input type="time" className="field" value={schedTime} onChange={e=>setSchedTime(e.target.value)}/>
+                                <label className="flbl">End Date <span style={{fontWeight:500,textTransform:'none',letterSpacing:0,color:'#94a3b8'}}>(optional)</span></label>
+                                <input type="date" className="field" value={endDate} onChange={e=>setEndDate(e.target.value)} min={schedDate}/>
                             </div>
                         </div>
+
+                        {/* ── Schedule mode ── */}
                         <div style={{marginBottom:14}}>
-                            <label className="flbl">Repeat</label>
-                            <select className="field" value={repeat} onChange={e=>setRepeat(e.target.value)}>
-                                <option value="none">No repeat (one-time)</option>
-                                <option value="daily">Every day</option>
-                                <option value="every2h">Every 2 hours (daily)</option>
-                                <option value="every4h">Every 4 hours (daily)</option>
-                                <option value="weekly">Every week (same day)</option>
-                                <option value="weekdays">Weekdays only</option>
-                                <option value="weekends">Weekends only</option>
-                            </select>
-                            {(repeat==='every2h'||repeat==='every4h') && (
-                                <div style={{marginTop:6,padding:'8px 12px',background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:8,fontSize:12,color:'#1d4ed8',fontWeight:600}}>
-                                    ℹ️ Starting at {schedTime}, posts every {repeat==='every2h'?'2':'4'} hours throughout the day. Requires a Cloud Function or cron to process.
+                            <label className="flbl">Schedule Type</label>
+                            <div style={{display:'flex',gap:8,marginBottom:10}}>
+                                {[['single','🕐 Single time'],['times','🕓 Specific times'],['repeat','🔁 Repeat interval']].map(([v,l])=>(
+                                    <button key={v} onClick={()=>setSchedMode(v)} style={{flex:1,padding:'8px 6px',borderRadius:8,border:'2px solid '+(schedMode===v?'#059669':'#e2e8f0'),background:schedMode===v?'#f0fdf4':'white',color:schedMode===v?'#059669':'#64748b',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer'}}>
+                                        {l}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {schedMode === 'single' && (
+                                <div>
+                                    <label className="flbl">Time</label>
+                                    <input type="time" className="field" value={schedTime} onChange={e=>setSchedTime(e.target.value)}/>
+                                </div>
+                            )}
+
+                            {schedMode === 'times' && (
+                                <div>
+                                    <label className="flbl">Times to send each day</label>
+                                    <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                                        {schedTimes.map((t,i)=>(
+                                            <div key={i} style={{display:'flex',gap:8,alignItems:'center'}}>
+                                                <input type="time" className="field" value={t} onChange={e=>updateTime(i,e.target.value)} style={{flex:1}}/>
+                                                {schedTimes.length>1&&<button onClick={()=>removeTime(i)} style={{background:'none',border:'none',color:'#ef4444',fontSize:18,cursor:'pointer',padding:'0 4px'}}>×</button>}
+                                            </div>
+                                        ))}
+                                        <button onClick={addTime} style={{background:'none',border:'2px dashed #e2e8f0',borderRadius:8,padding:'7px',color:'#059669',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:700,cursor:'pointer'}}>+ Add time</button>
+                                    </div>
+                                    <div style={{marginTop:6,fontSize:11,color:'#94a3b8'}}>Will run at these times every day from start → end date</div>
+                                </div>
+                            )}
+
+                            {schedMode === 'repeat' && (
+                                <div>
+                                    <label className="flbl">Start Time</label>
+                                    <input type="time" className="field" value={schedTime} onChange={e=>setSchedTime(e.target.value)} style={{marginBottom:10}}/>
+                                    <label className="flbl">Repeat</label>
+                                    <select className="field" value={repeat} onChange={e=>setRepeat(e.target.value)}>
+                                        <option value="daily">Every day</option>
+                                        <option value="every2h">Every 2 hours</option>
+                                        <option value="every4h">Every 4 hours</option>
+                                        <option value="weekly">Every week</option>
+                                        <option value="weekdays">Weekdays only</option>
+                                        <option value="weekends">Weekends only</option>
+                                    </select>
                                 </div>
                             )}
                         </div>
+
+                        {/* ── Message ── */}
                         <div style={{marginBottom:14}}>
                             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6,flexWrap:'wrap',gap:6}}>
                                 <label className="flbl" style={{margin:0}}>Message</label>
@@ -301,24 +369,37 @@ function ComposeModal({court, botConfig, courtData, checkins, onClose}) {
                             </div>
                             {isDynamic ? (
                                 <div style={{background:'linear-gradient(135deg,#eff6ff,#dbeafe)',border:'2px solid #3b82f6',borderRadius:10,padding:'14px 16px'}}>
-                                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:15,fontWeight:800,color:'#1d4ed8',marginBottom:6}}>⚡ DYNAMIC MESSAGE</div>
-                                    <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#1e40af',lineHeight:1.6,marginBottom:10}}>
-                                        When this message fires, your Cloud Function will fetch <strong>live court data at that moment</strong> — current players, courts open, crowd level, and conditions — so the message is always fresh.
-                                    </div>
-                                    <div style={{background:'#1e3a2f',borderRadius:8,padding:'10px 12px',fontFamily:'monospace',fontSize:12,color:'#6ee7b7',lineHeight:1.7}}>
-                                        🎾 {court.name} — Live Update{'\n'}
-                                        📅 [date & time at send]{'\n'}
-                                        👥 Playing now: [live players]{'\n'}
-                                        ⏰ Coming soon: [live count]{'\n'}
-                                        🏟 Courts: [live open/total]{'\n'}
+                                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:15,fontWeight:800,color:'#1d4ed8',marginBottom:8}}>⚡ DYNAMIC MESSAGE</div>
+                                    <div style={{background:'#1e3a2f',borderRadius:8,padding:'10px 12px',fontFamily:'monospace',fontSize:12,color:'#6ee7b7',lineHeight:1.8,marginBottom:10}}>
+                                        🎾 {court.name} — Live Update{'
+'}
+                                        📅 [date & time at send]{'
+'}
+                                        👥 Playing now: [live players]{'
+'}
+                                        ⏰ Coming soon: [live count]{'
+'}
+                                        🏟 Courts: [live open/total]{'
+'}
+                                        {includeWeather && '🌤 Weather: [temp, wind, conditions for next 4h]
+'}
                                         🔗 pickleconnect.live
                                     </div>
-                                    <button onClick={()=>setIsDynamic(false)} style={{marginTop:10,background:'none',border:'1px solid #bfdbfe',borderRadius:6,color:'#3b82f6',fontSize:12,fontWeight:600,cursor:'pointer',padding:'4px 10px',fontFamily:'Outfit,sans-serif'}}>Switch to custom message</button>
+                                    <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:'rgba(59,130,246,.08)',borderRadius:8,marginBottom:8}}>
+                                        <div onClick={()=>setIncludeWeather(w=>!w)} style={{width:36,height:20,borderRadius:10,background:includeWeather?'#059669':'#cbd5e1',cursor:'pointer',position:'relative',transition:'background .2s',flexShrink:0}}>
+                                            <div style={{position:'absolute',top:2,left:includeWeather?17:2,width:16,height:16,borderRadius:'50%',background:'white',transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,.3)'}}/>
+                                        </div>
+                                        <div>
+                                            <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:600,color:'#1e40af'}}>🌤 Include 4-hour weather forecast</div>
+                                            <div style={{fontFamily:'Outfit,sans-serif',fontSize:11,color:'#3b82f6'}}>Fetches live weather from weather.gov at send time</div>
+                                        </div>
+                                    </div>
+                                    <button onClick={()=>setIsDynamic(false)} style={{background:'none',border:'1px solid #bfdbfe',borderRadius:6,color:'#3b82f6',fontSize:12,fontWeight:600,cursor:'pointer',padding:'4px 10px',fontFamily:'Outfit,sans-serif'}}>Switch to custom message</button>
                                 </div>
                             ) : (
                                 <>
-                                    <textarea className="field" value={msg} onChange={e=>setMsg(e.target.value)} rows={5} placeholder="e.g. Good morning picklers! Courts open at 8am 🎾&#10;&#10;Tip: click ⚡ Live Data for a message that updates automatically at send time"/>
-                                    <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>💡 Use <strong>⚡ Live Data</strong> to send a message built from real-time court info <em>at the time it fires</em> — not now</div>
+                                    <textarea className="field" value={msg} onChange={e=>setMsg(e.target.value)} rows={5} placeholder="e.g. Good morning picklers! Courts open at 8am 🎾"/>
+                                    <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>💡 Use <strong>⚡ Live Data</strong> for a message built from real-time court info at send time</div>
                                 </>
                             )}
                         </div>

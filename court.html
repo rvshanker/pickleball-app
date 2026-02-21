@@ -534,16 +534,22 @@ async function postGroupMe(text, botId) {
     }
 }
 
-function buildCheckInMsg(name, status, guests, courtName, nowTotal, openCourts) {
-    const statusLabel = status === 'active' ? '🎾 Playing Now' : '⏰ Coming Soon';
-    const totalPlayers = nowTotal;
-    return `${statusLabel} – ${name}${guests > 0 ? ` (+${guests} guests)` : ''} checked in at ${courtName}
-👥 ${totalPlayers} player${totalPlayers !== 1 ? 's' : ''} on-site  🏟 ${openCourts} court${openCourts !== 1 ? 's' : ''} rotating`;
+function buildCheckInMsg(name, status, guests, courtName, nowPlaying, nowLater, openCourts) {
+    const nameStr = name + (guests > 0 ? ` (+${guests} guest${guests !== 1 ? 's' : ''})` : '');
+    const action = status === 'active' ? 'is playing at' : 'is heading to';
+    return [
+        `${nameStr} ${action} ${courtName}`,
+        `🎾 ${nowPlaying} player${nowPlaying !== 1 ? 's' : ''} playing now`,
+        `📅 ${nowLater} arriving soon  🏟 ${openCourts} court${openCourts !== 1 ? 's' : ''} rotating`,
+    ].join('\n');
 }
 
-function buildCheckOutMsg(name, courtName, nowTotal, openCourts) {
-    return `👋 ${name} checked out from ${courtName}
-👥 ${nowTotal} player${nowTotal !== 1 ? 's' : ''} remaining  🏟 ${openCourts} court${openCourts !== 1 ? 's' : ''} rotating`;
+function buildCheckOutMsg(name, courtName, nowPlaying, nowLater, openCourts) {
+    return [
+        `👋 ${name} left ${courtName}`,
+        `🎾 ${nowPlaying} player${nowPlaying !== 1 ? 's' : ''} playing now`,
+        `📅 ${nowLater} arriving soon  🏟 ${openCourts} court${openCourts !== 1 ? 's' : ''} rotating`,
+    ].join('\n');
 }
 
 function buildStatusMsg(courtName, field, value) {
@@ -894,11 +900,12 @@ function CourtPage() {
             localStorage.setItem('pickleCourtRating', userRating);
             setShowForm(false); setArrivalTime(''); setShowLaterTime(false); setGuestCount(0); setFunnyMsg(''); setDurationFunny(''); setGuestFunny(''); setComment('');
             // GroupMe notification
-            const newTotalCount = nowTotal + 1 + guestCount;
+            const newPlayingCount = ciStatus === 'active' ? nowTotal + 1 + guestCount : nowTotal;
+            const newLaterCount = ciStatus === 'later' ? laterTotal + 1 + guestCount : laterTotal;
             const openC = courtData?.openCourts !== undefined ? courtData.openCourts : (courtData?.numberOfCourts||4);
             const cName = courtData?.name||'the court';
-            const defaultMsg = buildCheckInMsg(userName, ciStatus, guestCount, cName, newTotalCount, openC);
-            fireGroupMeEvent(courtId, 'checkin', defaultMsg, {name:userName, court:cName, players:String(newTotalCount), courts:String(openC)});
+            const defaultMsg = buildCheckInMsg(userName, ciStatus, guestCount, cName, newPlayingCount, newLaterCount, openC);
+            fireGroupMeEvent(courtId, 'checkin', defaultMsg, {name:userName, court:cName, players:String(newPlayingCount), courts:String(openC)});
         } catch(e) { alert('Check-in failed: '+e.message); }
     };
 
@@ -907,11 +914,11 @@ function CourtPage() {
         const name = myCheckIn?.userName || userName;
         const openC = courtData?.openCourts !== undefined ? courtData.openCourts : (courtData?.numberOfCourts||4);
         const cName = courtData?.name||'the court';
-        const remaining = Math.max(0, nowTotal - 1 - (myCheckIn?.guests||0));
+        const remainingPlaying = Math.max(0, nowTotal - 1 - (myCheckIn?.guests||0));
         await deleteMyCheckIns();
         if (name) {
-            const defaultMsg = buildCheckOutMsg(name, cName, remaining, openC);
-            fireGroupMeEvent(courtId, 'checkout', defaultMsg, {name, court:cName, players:String(remaining), courts:String(openC)});
+            const defaultMsg = buildCheckOutMsg(name, cName, remainingPlaying, laterTotal, openC);
+            fireGroupMeEvent(courtId, 'checkout', defaultMsg, {name, court:cName, players:String(remainingPlaying), courts:String(openC)});
         }
     };
 
