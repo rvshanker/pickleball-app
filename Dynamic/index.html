@@ -513,8 +513,15 @@ function CourtCard({court, userLat, userLng, isHero}) {
 function App() {
     const [courts, setCourts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [userLat, setUserLat] = useState(null);
-    const [userLng, setUserLng] = useState(null);
+    const [userLat, setUserLat] = useState(() => {
+        const v = localStorage.getItem('pickleUserLat');
+        return v ? parseFloat(v) : null;
+    });
+    const [userLng, setUserLng] = useState(() => {
+        const v = localStorage.getItem('pickleUserLng');
+        return v ? parseFloat(v) : null;
+    });
+    const [locDenied, setLocDenied] = useState(false);
     const [search, setSearch] = useState('');
     const [showAdd, setShowAdd] = useState(false);
     const [showFB, setShowFB] = useState(false);
@@ -535,15 +542,48 @@ function App() {
         }
     }, []);
 
-    // Get user location
+    // Get user location — with localStorage cache + denial detection
     useEffect(() => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => {
-                setUserLat(pos.coords.latitude);
-                setUserLng(pos.coords.longitude);
-            }, () => {});
-        }
+        if (!navigator.geolocation) { setLocDenied(true); return; }
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                setUserLat(lat);
+                setUserLng(lng);
+                setLocDenied(false);
+                localStorage.setItem('pickleUserLat', lat);
+                localStorage.setItem('pickleUserLng', lng);
+            },
+            err => {
+                // Denied or unavailable — check if we have a cached location
+                const cachedLat = localStorage.getItem('pickleUserLat');
+                const cachedLng = localStorage.getItem('pickleUserLng');
+                if (!cachedLat || !cachedLng) {
+                    setLocDenied(true);
+                }
+                // If cached values exist, they're already loaded in state init above
+            },
+            { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
+        );
     }, []);
+    
+    const requestLocation = () => {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                setUserLat(lat);
+                setUserLng(lng);
+                setLocDenied(false);
+                localStorage.setItem('pickleUserLat', lat);
+                localStorage.setItem('pickleUserLng', lng);
+            },
+            () => {},
+            { enableHighAccuracy: true, timeout: 12000 }
+        );
+    };
 
     // Load all courts
     useEffect(() => {
@@ -611,6 +651,19 @@ function App() {
                         + Add Court
                     </button>
                 </div>
+
+                {/* Location prompt — shown only if denied with no cached location */}
+                {locDenied && !userLat && (
+                    <div style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:12,padding:'11px 14px',marginBottom:12,display:'flex',alignItems:'center',gap:10}}>
+                        <span style={{fontSize:18,flexShrink:0}}>📍</span>
+                        <div style={{flex:1,fontFamily:'Outfit,sans-serif',fontSize:13,color:'#92400e',lineHeight:1.4}}>
+                            <strong>Enable location</strong> to see distances and sort courts by proximity.
+                        </div>
+                        <button onClick={requestLocation} style={{background:'#f59e0b',color:'white',border:'none',borderRadius:8,padding:'7px 12px',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',flexShrink:0,whiteSpace:'nowrap'}}>
+                            Enable →
+                        </button>
+                    </div>
+                )}
 
                 {/* Search */}
                 <div className="search-wrap">

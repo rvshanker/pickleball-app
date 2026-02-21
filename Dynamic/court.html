@@ -539,6 +539,7 @@ function CourtPage() {
     const [forecast,    setForecast]    = useState([]);
     const [wxUpdated,   setWxUpdated]   = useState(null);
     const [flashMsg,    setFlashMsg]    = useState('');
+    const [flashDismissed, setFlashDismissed] = useState(false);
     const [flashInput,  setFlashInput]  = useState('');
     const [showEdit,    setShowEdit]    = useState(false);
     const [showFB,      setShowFB]      = useState(false);
@@ -578,7 +579,11 @@ function CourtPage() {
                 localStorage.setItem('lastCourtId', doc.id);
                 localStorage.setItem('lastCourtName', data.name);
                 if (data.flashMsg && data.flashMsgTime && (Date.now()-data.flashMsgTime) < 4*3600000) {
-                    setFlashMsg(data.flashMsg);
+                    setFlashMsg(prev => {
+                        // If the message changed, reset dismissed so new message shows
+                        if (prev !== data.flashMsg) setFlashDismissed(false);
+                        return data.flashMsg;
+                    });
                 } else { setFlashMsg(''); }
             } else {
                 setCourtData(null);
@@ -817,11 +822,11 @@ function CourtPage() {
                 )}
 
                 {/* Flash banner */}
-                {flashMsg&&(
+                {flashMsg&&!flashDismissed&&(
                     <div className="flash-banner" style={{borderRadius:10,marginBottom:10}}>
                         <span style={{fontSize:18}}>📣</span>
                         <div className="flash-banner-text">{flashMsg}</div>
-                        <button className="flash-banner-close" onClick={clearFlashMsg}>×</button>
+                        <button className="flash-banner-close" onClick={()=>setFlashDismissed(true)} title="Dismiss (only for you)">×</button>
                     </div>
                 )}
 
@@ -1029,7 +1034,7 @@ function CourtPage() {
                                 <div style={{display:'flex',gap:8}}>
                                     <input className="field" value={flashInput} onChange={e=>setFlashInput(e.target.value)} placeholder={flashMsg?'Update message…':'e.g. Court 3 is closed today'} style={{flex:1,fontSize:14}} onKeyDown={e=>{if(e.key==='Enter'&&flashInput.trim())saveFlashMsg();}}/>
                                     <button className="btn-g" onClick={saveFlashMsg} disabled={!flashInput.trim()} style={{padding:'10px 16px',fontSize:13,flexShrink:0}}>{flashMsg?'Update':'Post'}</button>
-                                    {flashMsg&&<button onClick={clearFlashMsg} style={{padding:'10px 12px',borderRadius:9,border:'2px solid #e2e8f0',background:'white',color:'#94a3b8',fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'Outfit,sans-serif',flexShrink:0}}>Clear</button>}
+                                    {flashMsg&&<button onClick={clearFlashMsg} style={{padding:'10px 12px',borderRadius:9,border:'2px solid #e2e8f0',background:'white',color:'#94a3b8',fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'Outfit,sans-serif',flexShrink:0}} title="Remove announcement for everyone">🗑️ Remove</button>}
                                 </div>
                             </div>
 
