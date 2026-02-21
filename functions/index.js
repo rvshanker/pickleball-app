@@ -5,6 +5,19 @@ const { onSchedule } = require('firebase-functions/v2/scheduler');
 initializeApp();
 const db = getFirestore();
 
+// Extract local time string directly from ISO timestamp (e.g. "2026-02-21T10:00:00-06:00")
+// so the Cloud Function's UTC timezone doesn't affect display
+function localTimeFromISO(isoStr) {
+    // isoStr looks like "2026-02-21T10:00:00-06:00"
+    const timePart = isoStr.substring(11, 16); // "10:00"
+    const [hStr, mStr] = timePart.split(':');
+    let h = parseInt(hStr), m = parseInt(mStr);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    if (h > 12) h -= 12;
+    if (h === 0) h = 12;
+    return m === 0 ? `${h} ${ampm}` : `${h}:${mStr} ${ampm}`;
+}
+
 async function fetchWeatherForecast(lat, lng) {
     if (!lat || !lng) return null;
     try {
@@ -13,31 +26,31 @@ async function fetchWeatherForecast(lat, lng) {
         });
         if (!pointRes.ok) throw new Error('points failed');
         const pointData = await pointRes.json();
+        const timeZone = pointData.properties.timeZone; // e.g. "America/Chicago"
         const fxRes = await fetch(pointData.properties.forecastHourly, {
             headers: { 'User-Agent': 'PickleConnect/2.0 (pickleconnect.live)' }
         });
         if (!fxRes.ok) throw new Error('forecast failed');
         const fxData = await fxRes.json();
         return fxData.properties.periods.slice(0, 4).map(p => ({
-            time: new Date(p.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+            // Use the timezone from the API response to format correctly
+            time: new Date(p.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone }),
             temp: p.temperature,
             wind: parseInt(p.windSpeed),
-            desc: p.shortForecast,
         }));
     } catch (e) {
         try {
-            const r = await fetch(
-                `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1`
-            );
-            const d = await r.json();
-            const now = new Date();
+            // open-meteo returns times in local time already (no tz conversion needed)
+            const tzRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1&timezone=auto`);
+            const d = await tzRes.json();
+            const nowLocal = new Date().toISOString(); // approximate
             return d.hourly.time
-                .map((t, i) => ({ dt: new Date(t), temp: Math.round(d.hourly.temperature_2m[i]), wind: Math.round(d.hourly.wind_speed_10m[i]) }))
-                .filter(h => h.dt >= now)
+                .map((t, i) => ({ t, temp: Math.round(d.hourly.temperature_2m[i]), wind: Math.round(d.hourly.wind_speed_10m[i]) }))
+                .filter(h => h.t >= nowLocal.slice(0, 16))
                 .slice(0, 4)
                 .map(h => ({
-                    time: h.dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-                    temp: h.temp, wind: h.wind, desc: null,
+                    time: localTimeFromISO(h.t + ':00'), // open-meteo gives "2026-02-21T10:00"
+                    temp: h.temp, wind: h.wind,
                 }));
         } catch (e2) { return null; }
     }
@@ -55,7 +68,7 @@ function weatherEmoji(temp, wind) {
 function buildWeatherLines(forecast) {
     if (!forecast || !forecast.length) return '';
     const lines = forecast.map(h =>
-        `  ${h.time}: ${weatherEmoji(h.temp, h.wind)} ${h.temp}°F  💨 ${h.wind}mph${h.desc ? '  ' + h.desc : ''}`
+        `  ${h.time}: ${weatherEmoji(h.temp, h.wind)} ${h.temp}°F  💨 ${h.wind}mph`
     );
     return '🌤 Next 4 hours:\n' + lines.join('\n');
 }
