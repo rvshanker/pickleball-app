@@ -785,8 +785,15 @@ function CourtPage() {
         const unsub = db.collection('courts').doc(courtId).collection('checkins')
             .onSnapshot(snap => {
                 const now = Date.now(), cutoff = now - 24*3600000;
+                // Delete any checked-out or stale docs we encounter
+                snap.docs.forEach(d => {
+                    const c = d.data();
+                    if (c.status === 'checked-out') {
+                        d.ref.delete().catch(()=>{});
+                    }
+                });
                 const list = snap.docs.map(d=>({id:d.id,...d.data()}))
-                    .filter(c => c.timestamp > cutoff)
+                    .filter(c => c.status !== 'checked-out' && c.timestamp > cutoff)
                     .sort((a,b) => (a.arrivalTime||a.timestamp)-(b.arrivalTime||b.timestamp));
                 checkInsRef.current = list;
                 setCheckIns(list);
@@ -800,8 +807,13 @@ function CourtPage() {
         const tick = async () => {
             const now = Date.now(), list = checkInsRef.current;
             for (const c of list) {
+                // Delete expired active check-ins instead of marking checked-out
                 if (c.status==='active' && c.duration && now > c.timestamp + c.duration*60000) {
-                    await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).update({status:'checked-out'}).catch(()=>{});
+                    await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).delete().catch(()=>{});
+                }
+                // Also clean up any stale checked-out docs older than 10 minutes
+                if (c.status==='checked-out' && c.timestamp && now > c.timestamp + 10*60000) {
+                    await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).delete().catch(()=>{});
                 }
                 if (c.status==='later' && c.arrivalTime && now >= c.arrivalTime) {
                     await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).update({status:'active',timestamp:now}).catch(()=>{});
