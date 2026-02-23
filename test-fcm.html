@@ -66,6 +66,19 @@
         <div id="compatInfo" style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">Detecting…</div>
     </div>
 
+    <!-- Desktop OS notification settings reminder -->
+    <div class="card yellow" id="desktopOsCard" style="display:none;">
+        <div class="fd" style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:10px;">
+            🖥️ DESKTOP — ALSO CHECK OS SETTINGS
+        </div>
+        <div style="font-size:13px;color:#78350f;line-height:1.8;">
+            Browser permission alone isn't enough on desktop — the OS must also allow it:<br>
+            <strong>Windows:</strong> Settings → System → Notifications → turn on for your browser<br>
+            <strong>Mac:</strong> System Settings → Notifications → find Chrome/Firefox/Safari → Allow<br>
+            <strong>Also check:</strong> Do Not Disturb / Focus mode is OFF
+        </div>
+    </div>
+
     <!-- Step 1: Service Worker -->
     <div class="card" id="swCard">
         <div class="fd" style="font-size:16px;font-weight:800;color:white;margin-bottom:12px;">
@@ -262,7 +275,7 @@ const FB = {
 // VAPID key — generate this in Firebase Console → Project Settings
 // → Cloud Messaging → Web Push certificates → Generate key pair
 // Then paste the Key Pair value here:
-const VAPID_KEY = "BO8kuV9zmoNdPv7zDrUgYNz82A3Nk3cE6wSDO5-4PXi4FJZ0HEy1NLri2N0BsF_mzV5pKtgYHXbKq8_cIA2a3oY";
+const VAPID_KEY = "YOUR_VAPID_KEY_HERE";
 
 let app, db, messaging, currentToken;
 
@@ -340,6 +353,11 @@ function detectPlatform() {
     document.getElementById('compatInfo').innerHTML = html;
     card.className = 'card ' + overall;
     log(`Platform: ${isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop'} | SW:${supportsServiceWorker} Push:${supportsPush} Standalone:${isStandalone}`, 'info');
+
+    // Show OS-level reminder card on desktop
+    if (!isIOS && !isAndroid) {
+        document.getElementById('desktopOsCard').style.display = 'block';
+    }
 
     return { supportsServiceWorker, supportsPush, isIOS, isStandalone };
 }
@@ -472,18 +490,13 @@ function testForeground() {
     const body  = document.getElementById('notifBody').value  || 'Court update';
     const type  = document.getElementById('notifType').value;
 
-    // Show notification via Notification API (foreground test)
-    if (Notification.permission === 'granted') {
-        new Notification(title, {
-            body,
-            icon: '/icon-192.png',
-            badge: '/icon-96.png',
-            tag: 'test-' + type,
-        });
-        log(`✅ Foreground notification shown: "${title}"`, 'ok');
-    } else {
+    if (Notification.permission !== 'granted') {
         log('❌ Permission not granted — run Step 2 first', 'err');
+        return;
     }
+    // Use SW showNotification (bypasses Chrome foreground suppression)
+    showViaSW(title, body, 'test-' + type);
+    log(`✅ Notification sent: "${title}"`, 'ok');
 }
 
 // ── Step 5: Queue server-side test ───────────────────────────────────
@@ -522,20 +535,40 @@ async function queueServerTest(mode) {
 }
 
 // ── Handle foreground messages (tab is open) ─────────────────────────
+// Chrome desktop suppresses new Notification() when the tab is focused.
+// Fix: route through Service Worker showNotification() which is never suppressed.
+function showViaSW(title, body, tag) {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(title, {
+            body,
+            icon:     '/icon-192.png',
+            badge:    '/icon-96.png',
+            tag:      tag || 'pickleconnect',
+            renotify: true,
+        });
+        log('🔔 Notification shown via Service Worker', 'ok');
+    }).catch(e => {
+        log('⚠️  SW showNotification failed: ' + e.message, 'err');
+        // Fallback to direct Notification API
+        if (Notification.permission === 'granted') {
+            new Notification(title, { body });
+        }
+    });
+}
+
 if (messaging) {
     messaging.onMessage(payload => {
-        log('📲 Foreground message received!', 'ok');
+        log('📲 Foreground FCM message received!', 'ok');
         log(`  Title: ${payload.notification?.title || '—'}`, 'ok');
         log(`  Body:  ${payload.notification?.body  || '—'}`, 'ok');
         log(`  Data:  ${JSON.stringify(payload.data || {})}`, 'info');
 
-        // When app is in foreground, FCM does NOT auto-show a notification
-        // You must show it yourself:
         const title = payload.notification?.title || '🎾 PickleConnect';
         const body  = payload.notification?.body  || 'Court update';
-        if (Notification.permission === 'granted') {
-            new Notification(title, { body, icon: '/icon-192.png', tag: 'foreground-msg' });
-        }
+        const tag   = payload.data?.courtId || 'foreground-msg';
+
+        showViaSW(title, body, tag);
     });
 }
 
