@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PickleConnect – Push Notification Test</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Outfit',sans-serif;background:#0f172a;min-height:100vh;padding:20px;color:white;}
+        .fd{font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;}
+        .wrap{max-width:600px;margin:0 auto;}
+        .card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:22px;margin-bottom:16px;}
+        .card.green{border-color:#10b981;background:rgba(16,185,129,.08);}
+        .card.red{border-color:#ef4444;background:rgba(239,68,68,.08);}
+        .card.yellow{border-color:#f59e0b;background:rgba(245,158,11,.08);}
+        .card.blue{border-color:#3b82f6;background:rgba(59,130,246,.08);}
+        .btn{padding:12px 20px;border-radius:10px;font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;cursor:pointer;border:none;transition:all .2s;}
+        .btn-g{background:linear-gradient(135deg,#059669,#10b981);color:white;}
+        .btn-b{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:white;}
+        .btn-r{background:linear-gradient(135deg,#ef4444,#f87171);color:white;}
+        .btn-y{background:linear-gradient(135deg,#f59e0b,#fcd34d);color:#0f172a;}
+        .btn:disabled{opacity:.4;cursor:not-allowed;}
+        .btn-outline{background:none;border:2px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);}
+        .code{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:12px;word-break:break-all;color:#6ee7b7;line-height:1.5;}
+        .step{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;}
+        .step-num{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;margin-top:1px;}
+        .badge{padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;display:inline-block;}
+        .badge-g{background:#065f46;color:#6ee7b7;border:1px solid #10b981;}
+        .badge-r{background:#7f1d1d;color:#fca5a5;border:1px solid #ef4444;}
+        .badge-y{background:#78350f;color:#fcd34d;border:1px solid #f59e0b;}
+        .badge-b{background:#1e3a8a;color:#93c5fd;border:1px solid #3b82f6;}
+        .badge-p{background:#4c1d95;color:#c4b5fd;border:1px solid #7c3aed;}
+        .log-box{max-height:200px;overflow-y:auto;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px;font-family:monospace;font-size:11px;line-height:1.8;color:#94a3b8;}
+        .log-ok{color:#6ee7b7;}
+        .log-err{color:#fca5a5;}
+        .log-info{color:#93c5fd;}
+        .divider{border:none;border-top:1px solid rgba(255,255,255,.08);margin:20px 0;}
+        select,input[type=text]{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:9px;padding:10px 14px;font-family:'Outfit',sans-serif;font-size:14px;color:white;width:100%;outline:none;}
+        select option{background:#1e293b;color:white;}
+        label{font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;}
+        @media(max-width:480px){body{padding:12px;}}
+    </style>
+</head>
+<body>
+<div class="wrap">
+
+    <!-- Header -->
+    <div style="text-align:center;margin-bottom:24px;padding-top:8px;">
+        <div class="fd" style="font-size:32px;font-weight:800;margin-bottom:4px;">
+            <span style="color:white">PICKLE</span><span style="color:#34d399">CONNECT</span>
+        </div>
+        <div style="font-size:14px;color:rgba(255,255,255,.5);">🔔 Push Notification Test Lab</div>
+    </div>
+
+    <!-- Platform compatibility card -->
+    <div class="card" id="compatCard">
+        <div class="fd" style="font-size:18px;font-weight:800;margin-bottom:14px;color:white;">
+            📱 YOUR DEVICE / BROWSER
+        </div>
+        <div id="compatInfo" style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">Detecting…</div>
+    </div>
+
+    <!-- Step 1: Service Worker -->
+    <div class="card" id="swCard">
+        <div class="fd" style="font-size:16px;font-weight:800;color:white;margin-bottom:12px;">
+            STEP 1 — Service Worker
+        </div>
+        <div style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:14px;line-height:1.6;">
+            <strong style="color:white">firebase-messaging-sw.js</strong> must be deployed to the root of your site.
+            This handles background notifications when the app isn't open.
+        </div>
+        <div id="swStatus" style="margin-bottom:12px;font-size:13px;color:#f59e0b;">Checking…</div>
+        <button class="btn btn-b" id="swBtn" onclick="registerSW()">Register Service Worker</button>
+    </div>
+
+    <!-- Step 2: Permission -->
+    <div class="card" id="permCard">
+        <div class="fd" style="font-size:16px;font-weight:800;color:white;margin-bottom:12px;">
+            STEP 2 — Notification Permission
+        </div>
+        <div style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:14px;line-height:1.6;">
+            Browser must grant permission before any push can arrive. Current status:
+            <span id="permBadge" class="badge badge-y" style="margin-left:6px;">checking…</span>
+        </div>
+        <button class="btn btn-g" id="permBtn" onclick="requestPerm()">🔔 Request Permission</button>
+    </div>
+
+    <!-- Step 3: Get FCM Token -->
+    <div class="card" id="tokenCard">
+        <div class="fd" style="font-size:16px;font-weight:800;color:white;margin-bottom:12px;">
+            STEP 3 — FCM Token
+        </div>
+        <div style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:14px;line-height:1.6;">
+            The FCM token is this device's unique push address. It gets saved to Firestore under
+            <code style="color:#6ee7b7">fcm-tokens/{deviceId}</code> so the server can target it.
+        </div>
+        <button class="btn btn-b" id="tokenBtn" onclick="getToken()" disabled>Get &amp; Save Token</button>
+        <div id="tokenDisplay" style="margin-top:12px;display:none;">
+            <label>FCM Token (saved to Firestore)</label>
+            <div class="code" id="tokenVal"></div>
+        </div>
+    </div>
+
+    <!-- Step 4: Send test notification -->
+    <div class="card" id="testCard">
+        <div class="fd" style="font-size:16px;font-weight:800;color:white;margin-bottom:12px;">
+            STEP 4 — Send Test Notification
+        </div>
+        <div style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:14px;line-height:1.6;">
+            Test foreground (tab open) and background (tab hidden/closed) delivery.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+            <div>
+                <label>Title</label>
+                <input type="text" id="notifTitle" value="🎾 Court Update – Westhoff Pickleball" placeholder="Notification title"/>
+            </div>
+            <div>
+                <label>Body</label>
+                <input type="text" id="notifBody" value="Jim 4.0 checked in · 6 players on-site · 3 courts rotating" placeholder="Notification body"/>
+            </div>
+            <div>
+                <label>Type</label>
+                <select id="notifType">
+                    <option value="checkin">🎾 Check-in</option>
+                    <option value="checkout">👋 Check-out</option>
+                    <option value="status">🚫 Status Change</option>
+                    <option value="flash">📣 Flash Announcement</option>
+                    <option value="scheduled">📅 Scheduled Message</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Foreground test (in-app) -->
+        <button class="btn btn-g" id="fgBtn" onclick="testForeground()" disabled style="width:100%;margin-bottom:10px;">
+            📲 Test Foreground (tab open)
+        </button>
+
+        <!-- Background test requires server — instructions -->
+        <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:14px;font-size:12px;color:rgba(255,255,255,.55);line-height:1.7;">
+            <strong style="color:white;">To test background (tab hidden/closed):</strong><br>
+            1. Copy your FCM token above<br>
+            2. Minimize this tab or open a new tab<br>
+            3. Use the Firebase Console → Messaging → Send test message<br>
+            &nbsp;&nbsp;&nbsp;→ Paste the FCM token → Send<br>
+            <span style="color:#fcd34d">OR use the Cloud Function send button below ↓</span>
+        </div>
+    </div>
+
+    <!-- Step 5: Cloud Function test send (server-side) -->
+    <div class="card" id="serverCard">
+        <div class="fd" style="font-size:16px;font-weight:800;color:white;margin-bottom:12px;">
+            STEP 5 — Server-Side Send (Cloud Function)
+        </div>
+        <div style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:14px;line-height:1.6;">
+            This writes a test entry to <code style="color:#6ee7b7">notification-queue</code> in Firestore.
+            The Cloud Function picks it up and sends via FCM Admin SDK.
+            Minimize this tab first, then click to test background delivery.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <button class="btn btn-y" onclick="queueServerTest('foreground')" id="serverFgBtn" disabled>
+                📲 Queue + Stay
+            </button>
+            <button class="btn btn-r" onclick="queueServerTest('background')" id="serverBgBtn" disabled>
+                💤 Queue + Hide Tab
+            </button>
+        </div>
+        <div id="queueResult" style="margin-top:12px;font-size:13px;display:none;"></div>
+    </div>
+
+    <!-- Live log -->
+    <div class="card">
+        <div class="fd" style="font-size:16px;font-weight:800;color:white;margin-bottom:12px;">
+            📋 LIVE LOG
+        </div>
+        <div class="log-box" id="logBox">Waiting for events…</div>
+        <button class="btn btn-outline" onclick="clearLog()" style="margin-top:10px;font-size:12px;padding:8px 14px;">Clear</button>
+    </div>
+
+    <!-- Compatibility guide -->
+    <div class="card blue">
+        <div class="fd" style="font-size:16px;font-weight:800;color:white;margin-bottom:14px;">
+            🗺 COMPATIBILITY GUIDE
+        </div>
+
+        <div style="font-size:13px;line-height:1.8;color:rgba(255,255,255,.7);">
+            <div style="margin-bottom:14px;">
+                <strong style="color:white;">✅ Desktop (Chrome, Edge, Firefox)</strong><br>
+                Full support. Notifications arrive even when browser is in background.
+                Works out of the box with this setup.
+            </div>
+
+            <div style="margin-bottom:14px;">
+                <strong style="color:white;">✅ Android (Chrome)</strong><br>
+                Full support. Add to home screen (PWA) for app-like experience with
+                notification badges.
+            </div>
+
+            <div style="margin-bottom:14px;">
+                <strong style="color:#fcd34d;">⚠️ iPhone / iPad Safari (iOS 16.4+)</strong><br>
+                Supported <strong style="color:white;">only if the site is added to Home Screen</strong>
+                (PWA mode). Steps:<br>
+                &nbsp;1. Open in Safari → Share → <strong>Add to Home Screen</strong><br>
+                &nbsp;2. Open the app from Home Screen (not Safari)<br>
+                &nbsp;3. Grant notification permission when prompted<br>
+                <span style="color:#fca5a5;">Does NOT work in regular Safari tab or any other iOS browser.</span>
+            </div>
+
+            <div style="margin-bottom:14px;">
+                <strong style="color:#fca5a5;">❌ iPhone – Chrome / Firefox / other browsers</strong><br>
+                Apple restricts web push to Safari PWA only on iOS. Chrome/Firefox on iPhone
+                cannot receive web push regardless of settings.
+            </div>
+
+            <div>
+                <strong style="color:white;">💡 Recommendation for PickleConnect</strong><br>
+                Prompt players to add the site to their home screen. iOS 16.4+ is on ~90%
+                of active iPhones as of 2025. Show the "Add to Home Screen" prompt at
+                first visit for the best mobile experience.
+            </div>
+        </div>
+    </div>
+
+    <!-- iOS install guide -->
+    <div class="card yellow">
+        <div class="fd" style="font-size:16px;font-weight:800;color:#0f172a;margin-bottom:12px;">
+            🍎 iOS INSTALL PROMPT (add this to index.html)
+        </div>
+        <div style="font-size:12px;color:#78350f;margin-bottom:10px;">Copy this snippet into your index.html to guide iPhone users:</div>
+        <div class="code" style="color:#a16207;white-space:pre;overflow-x:auto;">{/* Show only on iOS Safari, not already in standalone */}
+{/iPhone|iPad/.test(navigator.userAgent)
+ && !window.navigator.standalone
+ && (
+  &lt;div style={{background:'#fffbeb',border:'1px solid #fcd34d',
+    borderRadius:12,padding:'12px 14px',marginBottom:12,
+    fontFamily:'Outfit,sans-serif',fontSize:13,color:'#92400e'}}&gt;
+    &lt;strong&gt;📲 Get push notifications!&lt;/strong&gt;&lt;br/&gt;
+    Tap &lt;strong&gt;Share ↑&lt;/strong&gt; → &lt;strong&gt;Add to Home Screen&lt;/strong&gt;
+    to receive court alerts on your iPhone.
+  &lt;/div&gt;
+)}</div>
+    </div>
+
+</div>
+
+<script>
+// ── Firebase init ─────────────────────────────────────────────────────
+const FB = {
+    apiKey:            "AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
+    authDomain:        "pickleball-app-1bba7.firebaseapp.com",
+    projectId:         "pickleball-app-1bba7",
+    storageBucket:     "pickleball-app-1bba7.firebasestorage.app",
+    messagingSenderId: "645604154338",
+    appId:             "1:645604154338:web:b92f87c2cd11d950b737bb"
+};
+
+// VAPID key — generate this in Firebase Console → Project Settings
+// → Cloud Messaging → Web Push certificates → Generate key pair
+// Then paste the Key Pair value here:
+const VAPID_KEY = "BO8kuV9zmoNdPv7zDrUgYNz82A3Nk3cE6wSDO5-4PXi4FJZ0HEy1NLri2N0BsF_mzV5pKtgYHXbKq8_cIA2a3oY";
+
+let app, db, messaging, currentToken;
+
+try {
+    app       = firebase.initializeApp(FB);
+    db        = firebase.firestore();
+    messaging = firebase.messaging();
+} catch(e) {
+    log('❌ Firebase init failed: ' + e.message, 'err');
+}
+
+// Device ID (reuse from localStorage if exists)
+const deviceId = localStorage.getItem('pickleDeviceId') || (() => {
+    const id = 'dev_' + Math.random().toString(36).slice(2,10);
+    localStorage.setItem('pickleDeviceId', id);
+    return id;
+})();
+
+// ── Logging ───────────────────────────────────────────────────────────
+function log(msg, type = 'info') {
+    const box  = document.getElementById('logBox');
+    const cls  = type === 'ok' ? 'log-ok' : type === 'err' ? 'log-err' : 'log-info';
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    box.innerHTML += `<div class="${cls}">[${time}] ${msg}</div>`;
+    box.scrollTop = box.scrollHeight;
+}
+function clearLog() {
+    document.getElementById('logBox').innerHTML = '';
+}
+
+// ── Detect platform ───────────────────────────────────────────────────
+function detectPlatform() {
+    const ua = navigator.userAgent;
+    const isIOS = /iPhone|iPad|iPod/.test(ua);
+    const isAndroid = /Android/.test(ua);
+    const isSafari = /Safari/.test(ua) && !/Chrome/.test(ua);
+    const isChrome = /Chrome/.test(ua) && !/Edge/.test(ua);
+    const isStandalone = window.navigator.standalone === true
+                      || window.matchMedia('(display-mode: standalone)').matches;
+    const supportsNotifications = 'Notification' in window;
+    const supportsServiceWorker = 'serviceWorker' in navigator;
+    const supportsPush = 'PushManager' in window;
+
+    const card = document.getElementById('compatCard');
+    let html = '';
+    let overall = 'green';
+
+    if (isIOS) {
+        html += `<div style="margin-bottom:8px;"><span class="badge badge-y">iOS ${ua.match(/OS (\d+_\d+)/)?.[1]?.replace('_','.')  || ''}</span> ${isSafari ? 'Safari' : 'Non-Safari browser'}</div>`;
+        if (!isSafari) {
+            html += `<div class="badge badge-r" style="margin-bottom:10px;">❌ Push NOT supported — Chrome/Firefox on iOS cannot receive web push</div>`;
+            overall = 'red';
+        } else if (!isStandalone) {
+            html += `<div class="badge badge-y" style="margin-bottom:10px;">⚠️ Must add to Home Screen for push notifications (iOS 16.4+)</div>`;
+            overall = 'yellow';
+        } else {
+            html += `<div class="badge badge-g" style="margin-bottom:10px;">✅ Running as PWA — push supported</div>`;
+        }
+    } else if (isAndroid) {
+        html += `<div style="margin-bottom:8px;"><span class="badge badge-g">Android</span> ${isChrome ? 'Chrome' : 'Browser'}</div>`;
+        html += `<div class="badge badge-g" style="margin-bottom:10px;">✅ Full web push support</div>`;
+    } else {
+        html += `<div style="margin-bottom:8px;"><span class="badge badge-b">Desktop</span> ${isChrome ? 'Chrome' : isSafari ? 'Safari' : 'Browser'}</div>`;
+        html += `<div class="badge badge-g" style="margin-bottom:10px;">✅ Full web push support</div>`;
+    }
+
+    html += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">`;
+    html += `<span class="badge ${supportsNotifications?'badge-g':'badge-r'}">${supportsNotifications?'✓':'✗'} Notification API</span>`;
+    html += `<span class="badge ${supportsServiceWorker?'badge-g':'badge-r'}">${supportsServiceWorker?'✓':'✗'} Service Worker</span>`;
+    html += `<span class="badge ${supportsPush?'badge-g':'badge-r'}">${supportsPush?'✓':'✗'} Push API</span>`;
+    html += `<span class="badge ${isStandalone?'badge-g':'badge-y'}">${isStandalone?'✓ PWA':'○ Browser tab'}</span>`;
+    html += `<span class="badge badge-p">Device: ${deviceId}</span>`;
+    html += `</div>`;
+
+    document.getElementById('compatInfo').innerHTML = html;
+    card.className = 'card ' + overall;
+    log(`Platform: ${isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop'} | SW:${supportsServiceWorker} Push:${supportsPush} Standalone:${isStandalone}`, 'info');
+
+    return { supportsServiceWorker, supportsPush, isIOS, isStandalone };
+}
+
+// ── Step 1: Service Worker ────────────────────────────────────────────
+async function registerSW() {
+    const el = document.getElementById('swStatus');
+    if (!('serviceWorker' in navigator)) {
+        el.innerHTML = '<span class="badge badge-r">❌ Service Workers not supported</span>';
+        log('❌ Service Workers not supported in this browser', 'err');
+        return;
+    }
+    try {
+        const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        el.innerHTML = '<span class="badge badge-g">✅ Service Worker registered</span> — scope: ' + reg.scope;
+        document.getElementById('swCard').className = 'card green';
+        document.getElementById('tokenBtn').disabled = false;
+        log('✅ Service Worker registered at scope: ' + reg.scope, 'ok');
+    } catch(e) {
+        el.innerHTML = '<span class="badge badge-r">❌ ' + e.message + '</span>';
+        log('❌ SW registration failed: ' + e.message, 'err');
+        log('ℹ️  Make sure firebase-messaging-sw.js is at the ROOT of your site (not in a subfolder)', 'info');
+    }
+}
+
+// Check existing SW on load
+async function checkExistingSW() {
+    if (!('serviceWorker' in navigator)) return;
+    const reg = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js').catch(()=>null);
+    const el = document.getElementById('swStatus');
+    if (reg) {
+        el.innerHTML = '<span class="badge badge-g">✅ Already registered</span>';
+        document.getElementById('swCard').className = 'card green';
+        document.getElementById('tokenBtn').disabled = false;
+        log('✅ Existing service worker found', 'ok');
+    } else {
+        el.innerHTML = '<span class="badge badge-y">⚠️ Not yet registered — click button below</span>';
+        log('ℹ️ No service worker registered yet', 'info');
+    }
+}
+
+// ── Step 2: Permission ────────────────────────────────────────────────
+function updatePermBadge() {
+    const badge = document.getElementById('permBadge');
+    const perm  = Notification.permission;
+    const map   = {
+        default: ['badge-y', '? Not asked'],
+        granted: ['badge-g', '✅ Granted'],
+        denied:  ['badge-r', '❌ Denied'],
+    };
+    const [cls, label] = map[perm] || ['badge-y', perm];
+    badge.className = 'badge ' + cls;
+    badge.textContent = label;
+    if (perm === 'granted') {
+        document.getElementById('permCard').className = 'card green';
+        document.getElementById('fgBtn').disabled = false;
+        document.getElementById('serverFgBtn').disabled = false;
+        document.getElementById('serverBgBtn').disabled = false;
+    } else if (perm === 'denied') {
+        document.getElementById('permCard').className = 'card red';
+    }
+}
+
+async function requestPerm() {
+    if (!('Notification' in window)) {
+        log('❌ Notification API not available', 'err');
+        return;
+    }
+    log('Requesting notification permission…', 'info');
+    const result = await Notification.requestPermission();
+    log(`Permission result: ${result}`, result === 'granted' ? 'ok' : 'err');
+    updatePermBadge();
+    if (result === 'granted') {
+        log('✅ Permission granted — you can now get FCM token', 'ok');
+    } else if (result === 'denied') {
+        log('❌ Permission denied. On Chrome: click the lock icon in address bar → Notifications → Allow', 'err');
+        log('ℹ️  On iOS: go to Settings → Safari → Notifications', 'err');
+    }
+}
+
+// ── Step 3: FCM Token ────────────────────────────────────────────────
+async function getToken() {
+    if (!messaging) { log('❌ Firebase Messaging not initialized', 'err'); return; }
+    if (VAPID_KEY === 'YOUR_VAPID_KEY_HERE') {
+        log('⚠️  VAPID key not set! Get it from Firebase Console → Project Settings → Cloud Messaging → Web push certificates', 'err');
+        return;
+    }
+    try {
+        log('Requesting FCM token…', 'info');
+        const token = await messaging.getToken({ vapidKey: VAPID_KEY });
+        if (token) {
+            currentToken = token;
+            document.getElementById('tokenVal').textContent = token;
+            document.getElementById('tokenDisplay').style.display = 'block';
+            document.getElementById('tokenCard').className = 'card green';
+            log('✅ FCM token obtained', 'ok');
+
+            // Save token to Firestore
+            if (db) {
+                await db.collection('fcm-tokens').doc(deviceId).set({
+                    token,
+                    deviceId,
+                    platform: /iPhone|iPad/.test(navigator.userAgent) ? 'ios' : /Android/.test(navigator.userAgent) ? 'android' : 'desktop',
+                    browser: navigator.userAgent.includes('Chrome') ? 'chrome' : navigator.userAgent.includes('Firefox') ? 'firefox' : 'safari',
+                    standalone: !!(window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches),
+                    updatedAt: Date.now()
+                });
+                log('✅ Token saved to Firestore: fcm-tokens/' + deviceId, 'ok');
+                document.getElementById('fgBtn').disabled = false;
+                document.getElementById('serverFgBtn').disabled = false;
+                document.getElementById('serverBgBtn').disabled = false;
+            }
+        } else {
+            log('❌ Empty token — check VAPID key and permission', 'err');
+        }
+    } catch(e) {
+        log('❌ getToken failed: ' + e.message, 'err');
+        if (e.message.includes('messaging/failed-service-worker-registration')) {
+            log('ℹ️  firebase-messaging-sw.js is not found at the site root. Check file is deployed.', 'info');
+        }
+        if (e.message.includes('messaging/permission-blocked')) {
+            log('ℹ️  Notifications are blocked. Clear the block in browser settings.', 'info');
+        }
+    }
+}
+
+// ── Step 4: Foreground test ───────────────────────────────────────────
+function testForeground() {
+    const title = document.getElementById('notifTitle').value || '🎾 PickleConnect';
+    const body  = document.getElementById('notifBody').value  || 'Court update';
+    const type  = document.getElementById('notifType').value;
+
+    // Show notification via Notification API (foreground test)
+    if (Notification.permission === 'granted') {
+        new Notification(title, {
+            body,
+            icon: '/icon-192.png',
+            badge: '/icon-96.png',
+            tag: 'test-' + type,
+        });
+        log(`✅ Foreground notification shown: "${title}"`, 'ok');
+    } else {
+        log('❌ Permission not granted — run Step 2 first', 'err');
+    }
+}
+
+// ── Step 5: Queue server-side test ───────────────────────────────────
+async function queueServerTest(mode) {
+    if (!db) { log('❌ Firestore not available', 'err'); return; }
+    if (!currentToken) { log('❌ No FCM token — run Step 3 first', 'err'); return; }
+
+    const title = document.getElementById('notifTitle').value || '🎾 PickleConnect Test';
+    const body  = document.getElementById('notifBody').value  || 'Server-side push test';
+    const type  = document.getElementById('notifType').value;
+
+    try {
+        const ref = await db.collection('notification-queue').add({
+            token: currentToken,
+            title,
+            body,
+            type,
+            deviceId,
+            createdAt: Date.now(),
+            status: 'pending'
+        });
+        log(`✅ Queued in Firestore: notification-queue/${ref.id}`, 'ok');
+        log(`ℹ️  Cloud Function will pick this up and send via FCM Admin SDK`, 'info');
+
+        const el = document.getElementById('queueResult');
+        el.style.display = 'block';
+        el.innerHTML = `<span class="badge badge-g">✅ Queued</span> Doc ID: <code style="color:#6ee7b7;font-size:11px">${ref.id}</code>`;
+
+        if (mode === 'background') {
+            log('ℹ️  Hiding tab in 3 seconds — watch for push notification…', 'info');
+            setTimeout(() => { document.hidden || document.body.style.setProperty('visibility','hidden'); }, 3000);
+        }
+    } catch(e) {
+        log('❌ Queue failed: ' + e.message, 'err');
+    }
+}
+
+// ── Handle foreground messages (tab is open) ─────────────────────────
+if (messaging) {
+    messaging.onMessage(payload => {
+        log('📲 Foreground message received!', 'ok');
+        log(`  Title: ${payload.notification?.title || '—'}`, 'ok');
+        log(`  Body:  ${payload.notification?.body  || '—'}`, 'ok');
+        log(`  Data:  ${JSON.stringify(payload.data || {})}`, 'info');
+
+        // When app is in foreground, FCM does NOT auto-show a notification
+        // You must show it yourself:
+        const title = payload.notification?.title || '🎾 PickleConnect';
+        const body  = payload.notification?.body  || 'Court update';
+        if (Notification.permission === 'granted') {
+            new Notification(title, { body, icon: '/icon-192.png', tag: 'foreground-msg' });
+        }
+    });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+    const { supportsServiceWorker } = detectPlatform();
+    updatePermBadge();
+    checkExistingSW();
+
+    if (!supportsServiceWorker) {
+        document.getElementById('swStatus').innerHTML = '<span class="badge badge-r">❌ Not supported on this browser</span>';
+    }
+    log('Page loaded. Device ID: ' + deviceId, 'info');
+    if (VAPID_KEY === 'YOUR_VAPID_KEY_HERE') {
+        log('⚠️  VAPID_KEY is not set — edit this page and paste your key from Firebase Console', 'err');
+    }
+});
+</script>
+</body>
+</html>
