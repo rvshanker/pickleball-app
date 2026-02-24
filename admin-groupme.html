@@ -212,11 +212,11 @@ function ComposeModal({court, botConfig, courtData, checkins, onClose}) {
     const saveScheduled = async () => {
         if (!isDynamic && !msg.trim()) { setResult({ok:false,msg:'Message cannot be empty'}); return; }
         if (!schedDate) { setResult({ok:false,msg:'Select a start date'}); return; }
+        setSending(true);
         const batch = [];
         if (schedMode === 'times') {
-            // Create one entry per time slot
             const uniqueTimes = [...new Set(schedTimes.filter(Boolean))].sort();
-            if (!uniqueTimes.length) { setResult({ok:false,msg:'Add at least one time'}); return; }
+            if (!uniqueTimes.length) { setResult({ok:false,msg:'Add at least one time'}); setSending(false); return; }
             for (const t of uniqueTimes) {
                 const dt = new Date(`${schedDate}T${t}`).getTime();
                 batch.push({ scheduledFor: dt, schedTime: t });
@@ -238,22 +238,49 @@ function ComposeModal({court, botConfig, courtData, checkins, onClose}) {
             courtLat: courtData?.lat || null,
             courtLng: courtData?.lng || null,
         };
-        await Promise.all(batch.map(b =>
-            db.collection('groupme_bots').doc(court.id).collection('scheduled').add({...baseDoc, scheduledFor: b.scheduledFor})
-        ));
+        try {
+            // Try subcollection first, fall back to top-level collection
+            await Promise.all(batch.map(b =>
+                db.collection('groupme_bots').doc(court.id).collection('scheduled').add({...baseDoc, scheduledFor: b.scheduledFor})
+            ));
+        } catch(subErr) {
+            // Fallback: write to top-level scheduled_messages collection
+            try {
+                await Promise.all(batch.map(b =>
+                    db.collection('scheduled_messages').add({...baseDoc, botId: botConfig?.botId || '', scheduledFor: b.scheduledFor})
+                ));
+            } catch(e) {
+                setResult({ok:false, msg:`❌ Save failed — ${e.code === 'permission-denied' ? 'insufficient permissions. Check Firestore rules.' : e.message}`});
+                setSending(false);
+                return;
+            }
+        }
         const label = schedMode === 'times' ? `${batch.length} time slot${batch.length!==1?'s':''} starting ${schedDate}` : fmtTime(batch[0].scheduledFor);
         setResult({ok:true, msg:`✅ Scheduled — ${label}`});
+        setSending(false);
+        setTimeout(() => onClose(), 1500);
     };
 
     const saveEventRule = async () => {
         const text = msg.trim() || '(use default message)';
-        await db.collection('groupme_bots').doc(court.id).collection('event_rules').add({
+        const doc = {
             trigger: eventTrigger, customMsg: text !== '(use default message)' ? text : null,
             useDefault: text === '(use default message)',
             enabled: true, createdAt: Date.now(),
             courtId: court.id, courtName: court.name
-        });
+        };
+        try {
+            await db.collection('groupme_bots').doc(court.id).collection('event_rules').add(doc);
+        } catch(subErr) {
+            try {
+                await db.collection('event_rules').add({...doc, botId: botConfig?.botId || ''});
+            } catch(e) {
+                setResult({ok:false, msg:`❌ Save failed — ${e.code === 'permission-denied' ? 'insufficient permissions. Check Firestore rules.' : e.message}`});
+                return;
+            }
+        }
         setResult({ok:true, msg:'✅ Event rule saved!'});
+        setTimeout(() => onClose(), 1500);
     };
 
     return (
@@ -399,8 +426,8 @@ function ComposeModal({court, botConfig, courtData, checkins, onClose}) {
                         </div>
                         {!isDynamic && msg && <div className="msg-preview" style={{marginBottom:12}}>{msg}</div>}
                         {result && <div style={{padding:'9px 14px',borderRadius:9,background:result.ok?'#f0fdf4':'#fef2f2',border:'1px solid '+(result.ok?'#a7f3d0':'#fca5a5'),color:result.ok?'#065f46':'#b91c1c',fontSize:13,fontWeight:600,marginBottom:12}}>{result.msg}</div>}
-                        <button onClick={saveScheduled} disabled={(!isDynamic && !msg.trim())||!schedDate} className="btn-g" style={{width:'100%',padding:13}}>
-                            📅 Save Schedule
+                        <button onClick={saveScheduled} disabled={(!isDynamic && !msg.trim())||!schedDate||sending} className="btn-g" style={{width:'100%',padding:13}}>
+                            {sending ? '⏳ Saving…' : '📅 Save Schedule'}
                         </button>
                     </div>
                 )}
