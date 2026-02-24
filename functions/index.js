@@ -75,16 +75,24 @@ async function writeLog(courtId, msg, status, type = "scheduled") {
 }
 
 /**
- * Builds a live dynamic message by fetching current court data from Firestore.
- * Mirrors the buildScheduleSummary logic from the admin HTML.
+ * Builds a live dynamic message matching the original app format exactly:
+ *
+ * 🎾 Court Name — Live Update
+ * 📅 Sunday, February 22 · 10:24 AM
+ * 👥 Playing now: Alice, Bob
+ * ⏰ Coming soon: None scheduled   (or list of upcoming)
+ * 🏟 0/4 COURTS IN ROTATION
+ * 🎪 CROWD LEVEL - 🟢 Light
+ * 🌤 Next 4 hours:
+ *   10:00 AM: 🥶 24°F  💨 18mph
+ *   ...
+ * 🔗 https://pickleconnect.live
  */
 async function buildDynamicMessage(courtId, courtName, includeWeather) {
   try {
-    // Fetch court data
     const courtDoc = await db.collection("courts").doc(courtId).get();
     const courtData = courtDoc.exists ? courtDoc.data() : {};
 
-    // Fetch active check-ins
     const checkinsSnap = await db
       .collection("courts")
       .doc(courtId)
@@ -95,63 +103,74 @@ async function buildDynamicMessage(courtId, courtName, includeWeather) {
     const allCheckins = checkinsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     const playing = allCheckins.filter(c => c.status === "active");
     const upcoming = allCheckins
-      .filter(c => c.status === "later" && c.arrivalTime > now)
+      .filter(c => c.status === "later" && c.arrivalTime && c.arrivalTime > now)
       .sort((a, b) => a.arrivalTime - b.arrivalTime)
-      .slice(0, 5);
+      .slice(0, 4);
 
-    const open = courtData.openCourts ?? courtData.numberOfCourts ?? 4;
-    const total = courtData.numberOfCourts ?? 4;
+    const open  = courtData.openCourts      ?? courtData.numberOfCourts ?? 4;
+    const total = courtData.numberOfCourts  ?? 4;
 
     const fmtTimeOnly = (ts) =>
-      new Date(ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+      new Date(ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" });
+
+    // ── Date line: "Sunday, February 22 · 10:24 AM"
+    const nowDate = new Date();
+    const datePart = nowDate.toLocaleDateString("en-US", {
+      weekday: "long", month: "long", day: "numeric", timeZone: "America/Chicago"
+    });
+    const timePart = nowDate.toLocaleTimeString("en-US", {
+      hour: "numeric", minute: "2-digit", timeZone: "America/Chicago"
+    });
 
     const lines = [
       `🎾 ${courtName || courtData.name || "Court"} — Live Update`,
-      `📅 ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`,
+      `📅 ${datePart} · ${timePart}`,
       ``,
       `👥 Playing now: ${playing.length > 0 ? playing.map(c => c.userName).join(", ") : "No one yet"}`,
-      `🏟 Courts: ${open}/${total} open`,
     ];
 
-    if (courtData.crowdLevel) {
-      const crowd = { low: "🟢 Light", medium: "🟡 Busy", high: "🔴 Packed" }[courtData.crowdLevel] || "";
-      if (crowd) lines.push(crowd);
+    // ── Coming soon — always shown
+    if (upcoming.length > 0) {
+      lines.push(`⏰ Coming soon: ${upcoming.map(c => `${c.userName} @ ${fmtTimeOnly(c.arrivalTime)}`).join(", ")}`);
+    } else {
+      lines.push(`⏰ Coming soon: None scheduled`);
     }
 
+    // ── Courts in rotation
+    lines.push(`🏟 ${open}/${total} COURTS IN ROTATION`);
+
+    // ── Crowd level
+    if (courtData.crowdLevel) {
+      const crowdMap = { low: "🟢 Light", medium: "🟡 Busy", high: "🔴 Packed" };
+      const crowd = crowdMap[courtData.crowdLevel];
+      if (crowd) lines.push(`🎪 CROWD LEVEL - ${crowd}`);
+    }
+
+    // ── Court status (if not normal)
     if (courtData.status && courtData.status !== "open") {
       const statusMap = { closed: "🚫 Closed", wet: "💧 Wet/Damp", maintenance: "🔧 Maintenance" };
-      const statusLabel = statusMap[courtData.status] || courtData.status;
-      lines.push(`⚠️ Status: ${statusLabel}`);
+      lines.push(`⚠️ Status: ${statusMap[courtData.status] || courtData.status}`);
     }
 
-    if (upcoming.length > 0) {
-      lines.push(``);
-      lines.push(`⏰ Coming soon:`);
-      upcoming.forEach(c => {
-        lines.push(`  • ${c.userName} @ ${fmtTimeOnly(c.arrivalTime)}`);
-      });
-    }
-
+    // ── Flash message
     if (courtData.flashMsg) {
-      lines.push(``);
       lines.push(`📣 ${courtData.flashMsg}`);
     }
 
-    // Optional weather (fetched from weather.gov using court lat/lng stored on the scheduled doc)
+    // ── Weather: hourly breakdown
     if (includeWeather && courtData.lat && courtData.lng) {
       try {
-        const weatherText = await fetchWeatherSummary(courtData.lat, courtData.lng);
-        if (weatherText) {
-          lines.push(``);
-          lines.push(`🌤 Weather: ${weatherText}`);
+        const hours = await fetchHourlyWeather(courtData.lat, courtData.lng);
+        if (hours && hours.length > 0) {
+          lines.push(`🌤 Next 4 hours:`);
+          hours.forEach(h => lines.push(`  ${h}`));
         }
       } catch (e) {
         logger.warn("Weather fetch failed:", e.message);
       }
     }
 
-    lines.push(``);
-    lines.push(`🔗 pickleconnect.live`);
+    lines.push(`🔗 https://pickleconnect.live`);
 
     return lines.join("\n");
   } catch (e) {
@@ -161,50 +180,39 @@ async function buildDynamicMessage(courtId, courtName, includeWeather) {
 }
 
 /**
- * Fetches a short weather summary from weather.gov for a lat/lng.
+ * Returns an array of 4 formatted hourly weather strings, e.g.:
+ *   [ "10:00 AM: 🥶 24°F  💨 18mph", "11:00 AM: 🥶 25°F  💨 20mph", ... ]
  */
-function fetchWeatherSummary(lat, lng) {
-  return new Promise((resolve) => {
-    // Step 1: get the grid endpoint
-    const pointsReq = https.get(
-      `https://api.weather.gov/points/${lat},${lng}`,
-      { headers: { "User-Agent": "PickleConnect/1.0 (contact@pickleconnect.live)" } },
-      (res) => {
-        let data = "";
-        res.on("data", chunk => { data += chunk; });
-        res.on("end", () => {
-          try {
-            const json = JSON.parse(data);
-            const forecastUrl = json.properties?.forecastHourly;
-            if (!forecastUrl) return resolve(null);
-
-            // Step 2: get hourly forecast
-            https.get(
-              forecastUrl,
-              { headers: { "User-Agent": "PickleConnect/1.0 (contact@pickleconnect.live)" } },
-              (res2) => {
-                let data2 = "";
-                res2.on("data", chunk => { data2 += chunk; });
-                res2.on("end", () => {
-                  try {
-                    const json2 = JSON.parse(data2);
-                    const periods = json2.properties?.periods?.slice(0, 4) || [];
-                    if (!periods.length) return resolve(null);
-                    const temp = periods[0].temperature;
-                    const unit = periods[0].temperatureUnit;
-                    const wind = periods[0].windSpeed;
-                    const short = periods[0].shortForecast;
-                    resolve(`${temp}°${unit}, ${wind} wind — ${short}`);
-                  } catch { resolve(null); }
-                });
-              }
-            ).on("error", () => resolve(null));
-          } catch { resolve(null); }
-        });
-      }
-    );
-    pointsReq.on("error", () => resolve(null));
+function fetchHourlyWeather(lat, lng) {
+  const get = (url) => new Promise((resolve) => {
+    https.get(url, { headers: { "User-Agent": "PickleConnect/1.0 (contact@pickleconnect.live)" } }, (res) => {
+      let data = "";
+      res.on("data", c => { data += c; });
+      res.on("end", () => { try { resolve(JSON.parse(data)); } catch { resolve(null); } });
+    }).on("error", () => resolve(null));
   });
+
+  return get(`https://api.weather.gov/points/${lat},${lng}`).then(json => {
+    const forecastUrl = json?.properties?.forecastHourly;
+    if (!forecastUrl) return null;
+    return get(forecastUrl).then(json2 => {
+      const periods = json2?.properties?.periods?.slice(0, 4) || [];
+      if (!periods.length) return null;
+
+      return periods.map(p => {
+        const time = new Date(p.startTime).toLocaleTimeString("en-US", {
+          hour: "numeric", minute: "2-digit", timeZone: "America/Chicago"
+        });
+        const temp = p.temperature;
+        const unit = p.temperatureUnit || "F";
+        // Temperature emoji
+        const tempEmoji = temp <= 32 ? "🥶" : temp <= 50 ? "🧣" : temp <= 70 ? "😊" : temp <= 85 ? "☀️" : "🥵";
+        // Wind — strip trailing "mph" for consistent format then re-add
+        const windSpeed = p.windSpeed ? p.windSpeed.replace(/[^0-9]/g, "") : "0";
+        return `${time}: ${tempEmoji} ${temp}°${unit}  💨 ${windSpeed}mph`;
+      });
+    });
+  }).catch(() => null);
 }
 
 // ── Scheduled Function: runs every 5 minutes ─────────────────────────
