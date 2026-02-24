@@ -1,15 +1,6 @@
 /**
  * PickleConnect — GroupMe Scheduled Message Sender
  * Firebase Cloud Functions v2
- *
- * Runs every 5 minutes. Scans all groupme_bots/{courtId}/scheduled documents
- * whose scheduledFor <= now and status == 'pending', posts to GroupMe,
- * then marks as sent (or advances the schedule for repeating messages).
- *
- * Deploy:
- *   cd functions
- *   npm install
- *   firebase deploy --only functions
  */
 
 const { onSchedule } = require("firebase-functions/v2/scheduler");
@@ -23,10 +14,6 @@ const db = admin.firestore();
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-/**
- * Post a message to a GroupMe bot.
- * Uses Node's built-in https (no extra deps).
- */
 function postGroupMe(botId, text) {
   return new Promise((resolve) => {
     const body = JSON.stringify({ bot_id: botId, text });
@@ -51,10 +38,6 @@ function postGroupMe(botId, text) {
   });
 }
 
-/**
- * Compute the next run timestamp for a repeating schedule.
- * Returns null if no repeat.
- */
 function nextRun(scheduledFor, repeat) {
   const d = new Date(scheduledFor);
   switch (repeat) {
@@ -65,13 +48,11 @@ function nextRun(scheduledFor, repeat) {
       d.setDate(d.getDate() + 7);
       return d.getTime();
     case "weekdays": {
-      // Advance to next weekday (Mon–Fri)
       d.setDate(d.getDate() + 1);
       while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
       return d.getTime();
     }
     case "weekends": {
-      // Advance to next Sat or Sun
       d.setDate(d.getDate() + 1);
       while (d.getDay() !== 0 && d.getDay() !== 6) d.setDate(d.getDate() + 1);
       return d.getTime();
@@ -81,9 +62,6 @@ function nextRun(scheduledFor, repeat) {
   }
 }
 
-/**
- * Write a log entry to groupme_bots/{courtId}/logs
- */
 async function writeLog(courtId, msg, status, type = "scheduled") {
   try {
     await db
@@ -96,19 +74,151 @@ async function writeLog(courtId, msg, status, type = "scheduled") {
   }
 }
 
+/**
+ * Builds a live dynamic message by fetching current court data from Firestore.
+ * Mirrors the buildScheduleSummary logic from the admin HTML.
+ */
+async function buildDynamicMessage(courtId, courtName, includeWeather) {
+  try {
+    // Fetch court data
+    const courtDoc = await db.collection("courts").doc(courtId).get();
+    const courtData = courtDoc.exists ? courtDoc.data() : {};
+
+    // Fetch active check-ins
+    const checkinsSnap = await db
+      .collection("courts")
+      .doc(courtId)
+      .collection("checkins")
+      .get();
+
+    const now = Date.now();
+    const allCheckins = checkinsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const playing = allCheckins.filter(c => c.status === "active");
+    const upcoming = allCheckins
+      .filter(c => c.status === "later" && c.arrivalTime > now)
+      .sort((a, b) => a.arrivalTime - b.arrivalTime)
+      .slice(0, 5);
+
+    const open = courtData.openCourts ?? courtData.numberOfCourts ?? 4;
+    const total = courtData.numberOfCourts ?? 4;
+
+    const fmtTimeOnly = (ts) =>
+      new Date(ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+    const lines = [
+      `🎾 ${courtName || courtData.name || "Court"} — Live Update`,
+      `📅 ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`,
+      ``,
+      `👥 Playing now: ${playing.length > 0 ? playing.map(c => c.userName).join(", ") : "No one yet"}`,
+      `🏟 Courts: ${open}/${total} open`,
+    ];
+
+    if (courtData.crowdLevel) {
+      const crowd = { low: "🟢 Light", medium: "🟡 Busy", high: "🔴 Packed" }[courtData.crowdLevel] || "";
+      if (crowd) lines.push(crowd);
+    }
+
+    if (courtData.status && courtData.status !== "open") {
+      const statusMap = { closed: "🚫 Closed", wet: "💧 Wet/Damp", maintenance: "🔧 Maintenance" };
+      const statusLabel = statusMap[courtData.status] || courtData.status;
+      lines.push(`⚠️ Status: ${statusLabel}`);
+    }
+
+    if (upcoming.length > 0) {
+      lines.push(``);
+      lines.push(`⏰ Coming soon:`);
+      upcoming.forEach(c => {
+        lines.push(`  • ${c.userName} @ ${fmtTimeOnly(c.arrivalTime)}`);
+      });
+    }
+
+    if (courtData.flashMsg) {
+      lines.push(``);
+      lines.push(`📣 ${courtData.flashMsg}`);
+    }
+
+    // Optional weather (fetched from weather.gov using court lat/lng stored on the scheduled doc)
+    if (includeWeather && courtData.lat && courtData.lng) {
+      try {
+        const weatherText = await fetchWeatherSummary(courtData.lat, courtData.lng);
+        if (weatherText) {
+          lines.push(``);
+          lines.push(`🌤 Weather: ${weatherText}`);
+        }
+      } catch (e) {
+        logger.warn("Weather fetch failed:", e.message);
+      }
+    }
+
+    lines.push(``);
+    lines.push(`🔗 pickleconnect.live`);
+
+    return lines.join("\n");
+  } catch (e) {
+    logger.error("buildDynamicMessage failed:", e.message);
+    return null;
+  }
+}
+
+/**
+ * Fetches a short weather summary from weather.gov for a lat/lng.
+ */
+function fetchWeatherSummary(lat, lng) {
+  return new Promise((resolve) => {
+    // Step 1: get the grid endpoint
+    const pointsReq = https.get(
+      `https://api.weather.gov/points/${lat},${lng}`,
+      { headers: { "User-Agent": "PickleConnect/1.0 (contact@pickleconnect.live)" } },
+      (res) => {
+        let data = "";
+        res.on("data", chunk => { data += chunk; });
+        res.on("end", () => {
+          try {
+            const json = JSON.parse(data);
+            const forecastUrl = json.properties?.forecastHourly;
+            if (!forecastUrl) return resolve(null);
+
+            // Step 2: get hourly forecast
+            https.get(
+              forecastUrl,
+              { headers: { "User-Agent": "PickleConnect/1.0 (contact@pickleconnect.live)" } },
+              (res2) => {
+                let data2 = "";
+                res2.on("data", chunk => { data2 += chunk; });
+                res2.on("end", () => {
+                  try {
+                    const json2 = JSON.parse(data2);
+                    const periods = json2.properties?.periods?.slice(0, 4) || [];
+                    if (!periods.length) return resolve(null);
+                    const temp = periods[0].temperature;
+                    const unit = periods[0].temperatureUnit;
+                    const wind = periods[0].windSpeed;
+                    const short = periods[0].shortForecast;
+                    resolve(`${temp}°${unit}, ${wind} wind — ${short}`);
+                  } catch { resolve(null); }
+                });
+              }
+            ).on("error", () => resolve(null));
+          } catch { resolve(null); }
+        });
+      }
+    );
+    pointsReq.on("error", () => resolve(null));
+  });
+}
+
 // ── Scheduled Function: runs every 5 minutes ─────────────────────────
 
 exports.sendScheduledGroupMeMessages = onSchedule(
   {
     schedule: "every 5 minutes",
-    timeZone: "America/Chicago", // adjust to your timezone
+    timeZone: "America/Chicago",
     memory: "256MiB",
   },
   async () => {
     const now = Date.now();
     logger.info(`Running scheduled GroupMe sender at ${new Date(now).toISOString()}`);
 
-    // collectionGroup query — finds ALL pending scheduled messages across ALL courts
     let snap;
     try {
       snap = await db
@@ -118,7 +228,6 @@ exports.sendScheduledGroupMeMessages = onSchedule(
         .get();
     } catch (e) {
       logger.error("CollectionGroup query failed:", e.message);
-      logger.error("If this is a missing index error, run: firebase firestore:indexes");
       return;
     }
 
@@ -138,7 +247,7 @@ exports.sendScheduledGroupMeMessages = onSchedule(
         return;
       }
 
-      // Fetch bot config for this court
+      // Fetch bot config
       let botDoc;
       try {
         botDoc = await db.collection("groupme_bots").doc(courtId).get();
@@ -154,27 +263,51 @@ exports.sendScheduledGroupMeMessages = onSchedule(
       }
 
       const botConfig = botDoc.data();
-
       if (!botConfig.botId || botConfig.enabled === false) {
         logger.warn(`Bot disabled or no botId for court ${courtId}, skipping.`);
         await doc.ref.update({ status: "skipped_disabled" });
         return;
       }
 
-      // Send the message
-      const result = await postGroupMe(botConfig.botId, data.msg);
+      // ── BUILD MESSAGE TEXT ────────────────────────────────────────
+      let text;
+      if (data.isDynamic) {
+        // Build live message from current Firestore data
+        text = await buildDynamicMessage(courtId, data.courtName, data.includeWeather);
+        if (!text) {
+          logger.error(`Dynamic message build failed for court ${courtId}, skipping.`);
+          await doc.ref.update({ status: "failed", error: "dynamic_build_failed", sentAt: Date.now() });
+          await writeLog(courtId, "(dynamic build failed)", "failed", "scheduled");
+          return;
+        }
+      } else {
+        text = data.msg;
+      }
+
+      // Guard: never send empty/null text to GroupMe (causes 400)
+      if (!text || !text.trim()) {
+        logger.error(`Empty message text for doc ${doc.id}, skipping to avoid GroupMe 400.`);
+        await doc.ref.update({ status: "failed", error: "empty_message", sentAt: Date.now() });
+        await writeLog(courtId, "(empty message skipped)", "failed", "scheduled");
+        return;
+      }
+
+      // ── SEND ──────────────────────────────────────────────────────
+      const result = await postGroupMe(botConfig.botId, text);
       const sentAt = Date.now();
 
       logger.info(
         `Court ${courtId} (${data.courtName}): sent="${result.ok}" status=${result.status}`
       );
 
-      // Determine next state
+      // Advance repeat or mark done
       const hasRepeat = data.repeat && data.repeat !== "none";
       const next = hasRepeat ? nextRun(data.scheduledFor, data.repeat) : null;
 
-      if (next) {
-        // Repeating — reset to pending with next fire time
+      // Check end date
+      const pastEnd = data.endDate && next && next > data.endDate;
+
+      if (next && !pastEnd) {
         await doc.ref.update({
           scheduledFor: next,
           status: "pending",
@@ -183,15 +316,14 @@ exports.sendScheduledGroupMeMessages = onSchedule(
         });
         logger.info(`Repeating message rescheduled for ${new Date(next).toISOString()}`);
       } else {
-        // One-time — mark as sent or failed
         await doc.ref.update({
           status: result.ok ? "sent" : "failed",
           sentAt,
         });
+        if (pastEnd) logger.info(`Repeat schedule ended (past endDate).`);
       }
 
-      // Log it
-      await writeLog(courtId, data.msg, result.ok ? "sent" : "failed", "scheduled");
+      await writeLog(courtId, text, result.ok ? "sent" : "failed", "scheduled");
     });
 
     await Promise.allSettled(promises);
@@ -199,26 +331,20 @@ exports.sendScheduledGroupMeMessages = onSchedule(
   }
 );
 
-// ── Optional: Firestore trigger for real-time event-based messages ────
-// This listens for new checkins and applies any custom event_rules.
-// Complements the client-side posting in court.html.
+// ── Firestore trigger: real-time check-in event messages ─────────────
 
 exports.onCheckinCreated = onDocumentCreated(
   "courts/{courtId}/checkins/{docId}",
   async (event) => {
     const courtId = event.params.courtId;
     const checkin = event.data.data();
-
     if (!checkin) return;
 
-    // Get bot config
     const botDoc = await db.collection("groupme_bots").doc(courtId).get();
     if (!botDoc.exists) return;
-
     const botConfig = botDoc.data();
     if (!botConfig.botId || botConfig.enabled === false) return;
 
-    // Check for a custom event rule for 'checkin'
     const rulesSnap = await db
       .collection("groupme_bots")
       .doc(courtId)
@@ -232,50 +358,35 @@ exports.onCheckinCreated = onDocumentCreated(
     if (!rulesSnap.empty) {
       const rule = rulesSnap.docs[0].data();
       if (rule.customMsg) {
-        // Apply placeholders
         const courtDoc = await db.collection("courts").doc(courtId).get();
         const courtData = courtDoc.exists ? courtDoc.data() : {};
         const checkinsSnap = await db
-          .collection("courts")
-          .doc(courtId)
-          .collection("checkins")
-          .where("status", "==", "active")
-          .get();
-        const playerCount = checkinsSnap.size;
-        const openCourts = courtData.openCourts ?? courtData.numberOfCourts ?? 4;
-
+          .collection("courts").doc(courtId).collection("checkins")
+          .where("status", "==", "active").get();
         msg = rule.customMsg
           .replace("{name}", checkin.userName || "Someone")
           .replace("{court}", courtData.name || "the court")
-          .replace("{players}", String(playerCount))
-          .replace("{courts}", String(openCourts));
+          .replace("{players}", String(checkinsSnap.size))
+          .replace("{courts}", String(courtData.openCourts ?? courtData.numberOfCourts ?? 4));
       }
     }
 
-    // Fall back to default message if no custom rule
     if (!msg) {
       const courtDoc = await db.collection("courts").doc(courtId).get();
       const courtData = courtDoc.exists ? courtDoc.data() : {};
       const checkinsSnap = await db
-        .collection("courts")
-        .doc(courtId)
-        .collection("checkins")
-        .where("status", "==", "active")
-        .get();
+        .collection("courts").doc(courtId).collection("checkins")
+        .where("status", "==", "active").get();
       const playerCount = checkinsSnap.size;
       const openCourts = courtData.openCourts ?? courtData.numberOfCourts ?? 4;
-
       const ratingMap = {
-        "1.0": "1.0", "1.5": "1.5", "2.0": "2.0", "2.5": "2.5",
-        "3.0": "3.0", "3.5": "3.5", "4.0": "4.0", "4.5": "4.5",
-        "5.0": "5.0", "5plus": "5.0+",
+        "1.0":"1.0","1.5":"1.5","2.0":"2.0","2.5":"2.5","3.0":"3.0",
+        "3.5":"3.5","4.0":"4.0","4.5":"4.5","5.0":"5.0","5plus":"5.0+",
       };
       const rating = checkin.rating && ratingMap[checkin.rating] ? ` ${ratingMap[checkin.rating]}` : "";
-      const statusEmoji = checkin.status === "active" ? "🎾" : "⏰";
       const guests = checkin.guests > 0 ? ` (+${checkin.guests} guests)` : "";
-
       msg =
-        `${statusEmoji} ${checkin.userName}${rating} checked in at ${courtData.name || "court"}${guests}\n` +
+        `🎾 ${checkin.userName}${rating} checked in at ${courtData.name || "court"}${guests}\n` +
         `👥 ${playerCount} player${playerCount !== 1 ? "s" : ""} on-site  🏟 ${openCourts} court${openCourts !== 1 ? "s" : ""} rotating`;
     }
 
@@ -284,9 +395,7 @@ exports.onCheckinCreated = onDocumentCreated(
   }
 );
 
-// ── FCM: Process notification-queue (server-side push sender) ─────────
-// Triggered whenever a doc is created in notification-queue.
-// Requires Firebase Admin SDK (already initialized above).
+// ── FCM: Process notification-queue ──────────────────────────────────
 const { onDocumentCreated: onQueueCreated } = require("firebase-functions/v2/firestore");
 
 exports.sendPushNotification = onQueueCreated(
@@ -321,7 +430,6 @@ exports.sendPushNotification = onQueueCreated(
           ],
         },
         fcmOptions: {
-          // Deep-link to court page when notification is tapped
           link: data.courtId ? `/court.html?id=${data.courtId}` : "/index.html",
         },
       },
@@ -334,11 +442,10 @@ exports.sendPushNotification = onQueueCreated(
     } catch (e) {
       logger.error("FCM send failed:", e.message);
       await event.data.ref.update({ status: "failed", error: e.message, sentAt: Date.now() });
-
-      // If token is invalid/expired, remove it from Firestore
-      if (e.code === "messaging/registration-token-not-registered" ||
-          e.code === "messaging/invalid-registration-token") {
-        logger.info("Removing stale token for device:", data.deviceId);
+      if (
+        e.code === "messaging/registration-token-not-registered" ||
+        e.code === "messaging/invalid-registration-token"
+      ) {
         if (data.deviceId) {
           await db.collection("fcm-tokens").doc(data.deviceId).delete().catch(() => {});
         }
