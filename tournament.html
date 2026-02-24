@@ -1023,8 +1023,9 @@ function TournamentSetup({onGenerate}){
 }
 
 // ── Schedule View ─────────────────────────────────────────────────────
-function ScheduleView({schedule,scores,onScoreChange,canEdit,tournamentName,players,isGuest,onExportPDF,finalized,mode}){
+function ScheduleView({schedule,scores,onScoreChange,canEdit,tournamentName,players,isGuest,onExportPDF,finalized,mode,onRenamePlayers}){
     const[showLB,setShowLB]=useState(false);
+    const[showEditPlayers,setShowEditPlayers]=useState(false);
     const lb=calcLB(players,schedule,scores);
 
     // For fixed mode, detect pairs from schedule and merge into pair rows
@@ -1045,10 +1046,19 @@ function ScheduleView({schedule,scores,onScoreChange,canEdit,tournamentName,play
     const displayLB=pairLB||lb;
     return(
         <div>
+            {showEditPlayers&&onRenamePlayers&&(
+                <EditPlayersModal players={players} onClose={()=>setShowEditPlayers(false)}
+                    onSave={newPlayers=>onRenamePlayers(newPlayers)}/>
+            )}
             <div style={{display:'flex',flexWrap:'wrap',gap:10,marginBottom:18,alignItems:'center'}}>
                 <button onClick={()=>setShowLB(!showLB)} style={{background:showLB?'#0f172a':'white',color:showLB?'white':'#0f172a',border:`2px solid ${showLB?'#0f172a':'#0f172a'}`,borderRadius:9,padding:'11px 18px',fontFamily:'Outfit,sans-serif',fontSize:15,fontWeight:600,cursor:'pointer',transition:'all .15s',flex:'1 1 auto',minWidth:160}}>
                     {showLB?'✕ Hide Leaderboard':'🏆 Show Leaderboard'}
                 </button>
+                {canEdit&&!finalized&&onRenamePlayers&&(
+                    <button onClick={()=>setShowEditPlayers(true)} style={{background:'white',color:'#7c3aed',border:'2px solid #7c3aed',borderRadius:9,padding:'11px 18px',fontFamily:'Outfit,sans-serif',fontSize:15,fontWeight:600,cursor:'pointer',transition:'all .15s',flex:'1 1 auto',minWidth:160,whiteSpace:'nowrap'}}>
+                        ✏️ Edit Players
+                    </button>
+                )}
                 <button className="btn-out btn-sm" onClick={onExportPDF} style={{padding:'11px 18px',fontSize:14,flex:'1 1 auto',minWidth:160,whiteSpace:'nowrap'}}>
                     📄 {isGuest?'Export PDF (Blank)':'Export PDF'}
                 </button>
@@ -1198,6 +1208,52 @@ function FeedbackModal({onClose,user}){
                     <button className="btn-g" onClick={submit} disabled={busy} style={{width:'100%',padding:'14px'}}>
                         {busy?'Sending…':'📤 Send Feedback'}
                     </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Edit Players Modal ────────────────────────────────────────────────
+function EditPlayersModal({players,onClose,onSave}){
+    const[edited,setEdited]=useState([...players]);
+    const[err,setErr]=useState('');
+
+    const update=(i,v)=>setEdited(p=>{const n=[...p];n[i]=v;return n;});
+
+    const save=()=>{
+        const trimmed=edited.map(p=>p.trim());
+        // check no blanks
+        if(trimmed.some(p=>!p)){setErr('All player names must be filled in.');return;}
+        // check no duplicates
+        const unique=new Set(trimmed);
+        if(unique.size!==trimmed.length){setErr('Player names must be unique.');return;}
+        onSave(trimmed);
+        onClose();
+    };
+
+    return(
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:16}}>
+            <div style={{background:'white',borderRadius:16,padding:28,maxWidth:480,width:'100%',boxShadow:'0 20px 60px rgba(0,0,0,.25)',maxHeight:'85vh',display:'flex',flexDirection:'column'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                    <div className="fd" style={{fontSize:24,fontWeight:800,color:'#0f172a'}}>✏️ EDIT PLAYERS</div>
+                    <button onClick={onClose} style={{background:'none',border:'none',fontSize:26,cursor:'pointer',color:'#94a3b8',lineHeight:1}}>×</button>
+                </div>
+                <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#64748b',marginBottom:18}}>Rename players — changes will update across the entire schedule.</div>
+                <div style={{overflowY:'auto',flex:1,display:'flex',flexDirection:'column',gap:9,paddingRight:4}}>
+                    {edited.map((name,i)=>(
+                        <div key={i} style={{display:'flex',alignItems:'center',gap:10}}>
+                            <span style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:13,fontWeight:700,color:'#059669',minWidth:26,textAlign:'right'}}>{String(i+1).padStart(2,'0')}</span>
+                            <input className="inp" value={name} onChange={e=>update(i,e.target.value)}
+                                placeholder={`Player ${i+1}`}
+                                style={{fontSize:15,fontWeight:500}}/>
+                        </div>
+                    ))}
+                </div>
+                {err&&<div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'10px 14px',fontSize:14,color:'#dc2626',marginTop:12}}>{err}</div>}
+                <div style={{display:'flex',gap:10,marginTop:18}}>
+                    <button onClick={onClose} style={{flex:1,padding:'12px',background:'#f1f5f9',border:'none',borderRadius:10,fontFamily:'Outfit,sans-serif',fontSize:15,fontWeight:600,color:'#374151',cursor:'pointer'}}>Cancel</button>
+                    <button onClick={save} className="btn-g" style={{flex:2,padding:'12px',fontSize:15}}>Save Changes</button>
                 </div>
             </div>
         </div>
@@ -1367,6 +1423,25 @@ function LoginView({onBack,onSuccess}){
     );
 }
 
+// ── Rename helper ─────────────────────────────────────────────────────
+function applyPlayerRenames(setup, newPlayers) {
+    const oldPlayers = setup.players;
+    const renameMap = {};
+    oldPlayers.forEach((old, i) => { if (old !== newPlayers[i]) renameMap[old] = newPlayers[i]; });
+    if (Object.keys(renameMap).length === 0) return { ...setup, players: newPlayers };
+    const rename = name => renameMap[name] !== undefined ? renameMap[name] : name;
+    const newSchedule = setup.schedule.map(round => {
+        const newRound = round.map(match => ({
+            ...match,
+            team1: match.team1.map(rename),
+            team2: match.team2.map(rename),
+        }));
+        if (round.byePlayers) newRound.byePlayers = round.byePlayers.map(rename);
+        return newRound;
+    });
+    return { ...setup, players: newPlayers, schedule: newSchedule };
+}
+
 // ── Simple (Guest) View ───────────────────────────────────────────────
 function SimpleView({onBack,onLogin,onFeedback}){
     const[tab,setTab]=useState('create');
@@ -1464,7 +1539,8 @@ function SimpleView({onBack,onLogin,onFeedback}){
                                 </div>
                                 <button className="btn-out btn-sm" onClick={()=>{setSetup(null);setScores({});}}>New</button>
                             </div>
-                            <ScheduleView schedule={setup.schedule} scores={scores} onScoreChange={updScore} canEdit={true} tournamentName={setup.name} players={setup.players} isGuest={true} onExportPDF={()=>doPrint(setup.name,setup.schedule,scores,setup.players,false)} finalized={false} mode={setup.mode}/>
+                            <ScheduleView schedule={setup.schedule} scores={scores} onScoreChange={updScore} canEdit={true} tournamentName={setup.name} players={setup.players} isGuest={true} onExportPDF={()=>doPrint(setup.name,setup.schedule,scores,setup.players,false)} finalized={false} mode={setup.mode}
+                                onRenamePlayers={newPlayers=>setSetup(prev=>applyPlayerRenames(prev,newPlayers))}/>
                         </>
                     )
                 )}
@@ -1830,7 +1906,8 @@ function FullApp({user,onLogout,onBack,onFeedback}){
                     schedule={setup.schedule} scores={scores}
                     onScoreChange={(id,team,val)=>{setScores(p=>({...p,[id]:{...(p[id]||{}),[team]:val}}));}}
                     canEdit={isOwner||(isPublic&&publicMode==='edit')} tournamentName={setup.name} players={setup.players}
-                    isGuest={false} onExportPDF={()=>doPrint(setup.name,setup.schedule,scores,setup.players,true)} finalized={finalized} mode={setup.mode}/>
+                    isGuest={false} onExportPDF={()=>doPrint(setup.name,setup.schedule,scores,setup.players,true)} finalized={finalized} mode={setup.mode}
+                    onRenamePlayers={isOwner?newPlayers=>{setSetup(prev=>applyPlayerRenames(prev,newPlayers));}:null}/>
             </div>
         </div>
     );
