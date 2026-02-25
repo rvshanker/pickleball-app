@@ -88,7 +88,7 @@ async function writeLog(courtId, msg, status, type = "scheduled") {
  *   ...
  * 🔗 https://pickleconnect.live
  */
-async function buildDynamicMessage(courtId, courtName, includeWeather) {
+async function buildDynamicMessage(courtId, courtName, includeWeather, passedLat, passedLng) {
   try {
     const courtDoc = await db.collection("courts").doc(courtId).get();
     const courtData = courtDoc.exists ? courtDoc.data() : {};
@@ -113,7 +113,6 @@ async function buildDynamicMessage(courtId, courtName, includeWeather) {
     const fmtTimeOnly = (ts) =>
       new Date(ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" });
 
-    // ── Date line: "Sunday, February 22 · 10:24 AM"
     const nowDate = new Date();
     const datePart = nowDate.toLocaleDateString("en-US", {
       weekday: "long", month: "long", day: "numeric", timeZone: "America/Chicago"
@@ -129,45 +128,50 @@ async function buildDynamicMessage(courtId, courtName, includeWeather) {
       `👥 Playing now: ${playing.length > 0 ? playing.map(c => c.userName).join(", ") : "No one yet"}`,
     ];
 
-    // ── Coming soon — always shown
     if (upcoming.length > 0) {
       lines.push(`⏰ Coming soon: ${upcoming.map(c => `${c.userName} @ ${fmtTimeOnly(c.arrivalTime)}`).join(", ")}`);
     } else {
       lines.push(`⏰ Coming soon: None scheduled`);
     }
 
-    // ── Courts in rotation
     lines.push(`🏟 ${open}/${total} COURTS IN ROTATION`);
 
-    // ── Crowd level
     if (courtData.crowdLevel) {
       const crowdMap = { low: "🟢 Light", medium: "🟡 Busy", high: "🔴 Packed" };
       const crowd = crowdMap[courtData.crowdLevel];
       if (crowd) lines.push(`🎪 CROWD LEVEL - ${crowd}`);
     }
 
-    // ── Court status (if not normal)
     if (courtData.status && courtData.status !== "open") {
       const statusMap = { closed: "🚫 Closed", wet: "💧 Wet/Damp", maintenance: "🔧 Maintenance" };
       lines.push(`⚠️ Status: ${statusMap[courtData.status] || courtData.status}`);
     }
 
-    // ── Flash message
     if (courtData.flashMsg) {
       lines.push(`📣 ${courtData.flashMsg}`);
     }
 
-    // ── Weather: hourly breakdown
-    if (includeWeather && courtData.lat && courtData.lng) {
+    // Use coords from the scheduled doc first (saved at schedule-creation time),
+    // then fall back to whatever the court doc stores (lat/lng or latitude/longitude)
+    const lat = passedLat ?? courtData.lat ?? courtData.latitude ?? null;
+    const lng = passedLng ?? courtData.lng ?? courtData.longitude ?? null;
+
+    logger.info(`Weather check — includeWeather=${includeWeather} lat=${lat} lng=${lng}`);
+
+    if (includeWeather && lat && lng) {
       try {
-        const hours = await fetchHourlyWeather(courtData.lat, courtData.lng);
+        const hours = await fetchHourlyWeather(lat, lng);
         if (hours && hours.length > 0) {
           lines.push(`🌤 Next 4 hours:`);
           hours.forEach(h => lines.push(`  ${h}`));
+        } else {
+          logger.warn(`Weather fetch returned no hours for lat=${lat} lng=${lng}`);
         }
       } catch (e) {
         logger.warn("Weather fetch failed:", e.message);
       }
+    } else if (includeWeather) {
+      logger.warn(`includeWeather=true but no lat/lng available for court ${courtId}`);
     }
 
     lines.push(`🔗 https://pickleconnect.live`);
@@ -281,7 +285,7 @@ exports.sendScheduledGroupMeMessages = onSchedule(
       let text;
       if (data.isDynamic) {
         // Build live message from current Firestore data
-        text = await buildDynamicMessage(courtId, data.courtName, data.includeWeather);
+        text = await buildDynamicMessage(courtId, data.courtName, data.includeWeather, data.courtLat, data.courtLng);
         if (!text) {
           logger.error(`Dynamic message build failed for court ${courtId}, skipping.`);
           await doc.ref.update({ status: "failed", error: "dynamic_build_failed", sentAt: Date.now() });
