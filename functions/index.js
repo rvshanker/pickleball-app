@@ -189,34 +189,70 @@ async function buildDynamicMessage(courtId, courtName, includeWeather, passedLat
  */
 function fetchHourlyWeather(lat, lng) {
   const get = (url) => new Promise((resolve) => {
-    https.get(url, { headers: { "User-Agent": "PickleConnect/1.0 (contact@pickleconnect.live)" } }, (res) => {
-      let data = "";
-      res.on("data", c => { data += c; });
-      res.on("end", () => { try { resolve(JSON.parse(data)); } catch { resolve(null); } });
-    }).on("error", () => resolve(null));
+    const req = https.get(
+      url,
+      { headers: { "User-Agent": "PickleConnect/1.0 (contact@pickleconnect.live)", "Accept": "application/geo+json" } },
+      (res) => {
+        logger.info(`weather.gov response: ${res.statusCode} for ${url.substring(0, 80)}`);
+        let data = "";
+        res.on("data", c => { data += c; });
+        res.on("end", () => {
+          if (res.statusCode !== 200) {
+            logger.warn(`weather.gov non-200: ${res.statusCode} — body: ${data.substring(0, 200)}`);
+            resolve(null);
+            return;
+          }
+          try {
+            resolve(JSON.parse(data));
+          } catch (e) {
+            logger.warn(`weather.gov JSON parse failed: ${e.message}`);
+            resolve(null);
+          }
+        });
+      }
+    );
+    req.on("error", (e) => {
+      logger.warn(`weather.gov request error: ${e.message}`);
+      resolve(null);
+    });
+    req.setTimeout(8000, () => {
+      logger.warn(`weather.gov request timed out for ${url.substring(0, 80)}`);
+      req.destroy();
+      resolve(null);
+    });
   });
 
   return get(`https://api.weather.gov/points/${lat},${lng}`).then(json => {
+    if (!json) { logger.warn("weather.gov /points returned null"); return null; }
     const forecastUrl = json?.properties?.forecastHourly;
-    if (!forecastUrl) return null;
+    if (!forecastUrl) {
+      logger.warn(`weather.gov /points missing forecastHourly — keys: ${Object.keys(json?.properties || {}).join(", ")}`);
+      return null;
+    }
+    logger.info(`weather.gov forecastHourly URL: ${forecastUrl}`);
     return get(forecastUrl).then(json2 => {
+      if (!json2) { logger.warn("weather.gov hourly forecast returned null"); return null; }
       const periods = json2?.properties?.periods?.slice(0, 4) || [];
-      if (!periods.length) return null;
-
+      if (!periods.length) {
+        logger.warn("weather.gov hourly forecast returned 0 periods");
+        return null;
+      }
+      logger.info(`weather.gov got ${periods.length} periods OK`);
       return periods.map(p => {
         const time = new Date(p.startTime).toLocaleTimeString("en-US", {
           hour: "numeric", minute: "2-digit", timeZone: "America/Chicago"
         });
         const temp = p.temperature;
         const unit = p.temperatureUnit || "F";
-        // Temperature emoji
         const tempEmoji = temp <= 32 ? "🥶" : temp <= 50 ? "🧣" : temp <= 70 ? "😊" : temp <= 85 ? "☀️" : "🥵";
-        // Wind — strip trailing "mph" for consistent format then re-add
-        const windSpeed = p.windSpeed ? p.windSpeed.replace(/[^0-9]/g, "") : "0";
+        const windSpeed = p.windSpeed ? p.windSpeed.replace(/[^0-9].*/g, "") : "0";
         return `${time}: ${tempEmoji} ${temp}°${unit}  💨 ${windSpeed}mph`;
       });
     });
-  }).catch(() => null);
+  }).catch((e) => {
+    logger.warn(`fetchHourlyWeather uncaught error: ${e.message}`);
+    return null;
+  });
 }
 
 // ── Scheduled Function: runs every 5 minutes ─────────────────────────
