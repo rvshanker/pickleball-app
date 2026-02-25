@@ -134,12 +134,12 @@ async function buildDynamicMessage(courtId, courtName, includeWeather, passedLat
       lines.push(`⏰ Coming soon: None scheduled`);
     }
 
-    lines.push(`🏟 ${open}/${total} COURTS IN ROTATION`);
+    lines.push(`🏟 ${open}/${total} Courts in rotation`);
 
     if (courtData.crowdLevel) {
       const crowdMap = { low: "🟢 Light", medium: "🟡 Busy", high: "🔴 Packed" };
       const crowd = crowdMap[courtData.crowdLevel];
-      if (crowd) lines.push(`🎪 CROWD LEVEL - ${crowd}`);
+      if (crowd) lines.push(`🎪 Crowd Level - ${crowd}`);
     }
 
     if (courtData.status && courtData.status !== "open") {
@@ -174,7 +174,7 @@ async function buildDynamicMessage(courtId, courtName, includeWeather, passedLat
       logger.warn(`includeWeather=true but no lat/lng available for court ${courtId}`);
     }
 
-    lines.push(`🔗 https://pickleconnect.live`);
+    lines.push(`🔗 pickleconnect.live`);
 
     return lines.join("\n");
   } catch (e) {
