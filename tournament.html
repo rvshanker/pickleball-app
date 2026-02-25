@@ -1659,9 +1659,21 @@ function FullApp({user,onLogout,onBack,onFeedback}){
         if(!id||!s)return;
         if(saving.current)return;
         saving.current=true;
-        // Always read uid directly from auth.currentUser — React state (user) can be stale
-        // on first save if the 150ms setTimeout fires before state propagates
-        const uid=auth?.currentUser?.uid||user?.uid||null;
+
+        // Wait for Firebase Auth to confirm current user before writing
+        // (Firestore rejects writes if the auth token isn't loaded yet)
+        let uid = auth?.currentUser?.uid || user?.uid || null;
+        if (!uid && auth) {
+            // Auth might not have resolved yet — wait up to 3s
+            uid = await new Promise(resolve => {
+                const unsub = auth.onAuthStateChanged(u => {
+                    unsub();
+                    resolve(u?.uid || null);
+                });
+                setTimeout(() => resolve(null), 3000);
+            });
+        }
+        console.log('[doSave] uid=', uid, 'auth.currentUser=', auth?.currentUser?.uid);
         if(!uid){
             setSaveStatus('✗ Not signed in');
             saving.current=false;
@@ -1670,6 +1682,7 @@ function FullApp({user,onLogout,onBack,onFeedback}){
         const flat=[];
         (s.schedule||[]).forEach((round,ri)=>round.forEach((m)=>{flat.push({roundIndex:ri,id:m.id,court:m.court,team1:Array.isArray(m.team1)?m.team1.join(', '):m.team1,team2:Array.isArray(m.team2)?m.team2.join(', '):m.team2});}));
         const data={id,name:s.name,players:s.players,courts:s.courts,numRounds:s.rounds,matchFormat:s.format,mode:s.mode,scheduleFlat:flat,scores:sc,scoresFinalized:fin,isPublic:pub,publicMode:pm,participants:[uid,...(s.players||[]).map(p=>`player-${p}`)],createdBy:cb||uid,createdAt:Date.now()};
+        console.log('[doSave] writing createdBy=', data.createdBy, 'uid=', uid, 'match=', data.createdBy===uid);
         try{setSaveStatus('Saving…');await storage.save(data);setSaveStatus('✓ Saved');setTimeout(()=>setSaveStatus(''),2500);}catch(e){setSaveStatus('✗ Save failed');}
         saving.current=false;
     };
