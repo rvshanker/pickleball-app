@@ -1214,24 +1214,37 @@ function FeedbackModal({onClose,user}){
     );
 }
 
+// ── Rename helper ─────────────────────────────────────────────────────
+function applyPlayerRenames(setup, newPlayers) {
+    const oldPlayers = setup.players;
+    const renameMap = {};
+    oldPlayers.forEach((old, i) => { if (old !== newPlayers[i]) renameMap[old] = newPlayers[i]; });
+    if (Object.keys(renameMap).length === 0) return { ...setup, players: newPlayers };
+    const rename = name => renameMap[name] !== undefined ? renameMap[name] : name;
+    const newSchedule = setup.schedule.map(round => {
+        const newRound = round.map(match => ({
+            ...match,
+            team1: match.team1.map(rename),
+            team2: match.team2.map(rename),
+        }));
+        if (round.byePlayers) newRound.byePlayers = round.byePlayers.map(rename);
+        return newRound;
+    });
+    return { ...setup, players: newPlayers, schedule: newSchedule };
+}
+
 // ── Edit Players Modal ────────────────────────────────────────────────
 function EditPlayersModal({players,onClose,onSave}){
     const[edited,setEdited]=useState([...players]);
     const[err,setErr]=useState('');
-
     const update=(i,v)=>setEdited(p=>{const n=[...p];n[i]=v;return n;});
-
     const save=()=>{
         const trimmed=edited.map(p=>p.trim());
-        // check no blanks
         if(trimmed.some(p=>!p)){setErr('All player names must be filled in.');return;}
-        // check no duplicates
         const unique=new Set(trimmed);
         if(unique.size!==trimmed.length){setErr('Player names must be unique.');return;}
-        onSave(trimmed);
-        onClose();
+        onSave(trimmed);onClose();
     };
-
     return(
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:16}}>
             <div style={{background:'white',borderRadius:16,padding:28,maxWidth:480,width:'100%',boxShadow:'0 20px 60px rgba(0,0,0,.25)',maxHeight:'85vh',display:'flex',flexDirection:'column'}}>
@@ -1239,14 +1252,12 @@ function EditPlayersModal({players,onClose,onSave}){
                     <div className="fd" style={{fontSize:24,fontWeight:800,color:'#0f172a'}}>✏️ EDIT PLAYERS</div>
                     <button onClick={onClose} style={{background:'none',border:'none',fontSize:26,cursor:'pointer',color:'#94a3b8',lineHeight:1}}>×</button>
                 </div>
-                <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#64748b',marginBottom:18}}>Rename players — changes will update across the entire schedule.</div>
+                <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#64748b',marginBottom:18}}>Rename players — changes update across the entire schedule.</div>
                 <div style={{overflowY:'auto',flex:1,display:'flex',flexDirection:'column',gap:9,paddingRight:4}}>
                     {edited.map((name,i)=>(
                         <div key={i} style={{display:'flex',alignItems:'center',gap:10}}>
                             <span style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:13,fontWeight:700,color:'#059669',minWidth:26,textAlign:'right'}}>{String(i+1).padStart(2,'0')}</span>
-                            <input className="inp" value={name} onChange={e=>update(i,e.target.value)}
-                                placeholder={`Player ${i+1}`}
-                                style={{fontSize:15,fontWeight:500}}/>
+                            <input className="inp" value={name} onChange={e=>update(i,e.target.value)} placeholder={`Player ${i+1}`} style={{fontSize:15,fontWeight:500}}/>
                         </div>
                     ))}
                 </div>
@@ -1421,25 +1432,6 @@ function LoginView({onBack,onSuccess}){
             </div>
         </div>
     );
-}
-
-// ── Rename helper ─────────────────────────────────────────────────────
-function applyPlayerRenames(setup, newPlayers) {
-    const oldPlayers = setup.players;
-    const renameMap = {};
-    oldPlayers.forEach((old, i) => { if (old !== newPlayers[i]) renameMap[old] = newPlayers[i]; });
-    if (Object.keys(renameMap).length === 0) return { ...setup, players: newPlayers };
-    const rename = name => renameMap[name] !== undefined ? renameMap[name] : name;
-    const newSchedule = setup.schedule.map(round => {
-        const newRound = round.map(match => ({
-            ...match,
-            team1: match.team1.map(rename),
-            team2: match.team2.map(rename),
-        }));
-        if (round.byePlayers) newRound.byePlayers = round.byePlayers.map(rename);
-        return newRound;
-    });
-    return { ...setup, players: newPlayers, schedule: newSchedule };
 }
 
 // ── Simple (Guest) View ───────────────────────────────────────────────
@@ -1667,7 +1659,14 @@ function FullApp({user,onLogout,onBack,onFeedback}){
         if(!id||!s)return;
         if(saving.current)return;
         saving.current=true;
-        const uid=user?.uid||'guest';
+        // Always read uid directly from auth.currentUser — React state (user) can be stale
+        // on first save if the 150ms setTimeout fires before state propagates
+        const uid=auth?.currentUser?.uid||user?.uid||null;
+        if(!uid){
+            setSaveStatus('✗ Not signed in');
+            saving.current=false;
+            return;
+        }
         const flat=[];
         (s.schedule||[]).forEach((round,ri)=>round.forEach((m)=>{flat.push({roundIndex:ri,id:m.id,court:m.court,team1:Array.isArray(m.team1)?m.team1.join(', '):m.team1,team2:Array.isArray(m.team2)?m.team2.join(', '):m.team2});}));
         const data={id,name:s.name,players:s.players,courts:s.courts,numRounds:s.rounds,matchFormat:s.format,mode:s.mode,scheduleFlat:flat,scores:sc,scoresFinalized:fin,isPublic:pub,publicMode:pm,participants:[uid,...(s.players||[]).map(p=>`player-${p}`)],createdBy:cb||uid,createdAt:Date.now()};
@@ -1677,11 +1676,11 @@ function FullApp({user,onLogout,onBack,onFeedback}){
 
     const handleGenerate=d=>{
         const newTid=`tournament-${Date.now()}`;
-        const uid=user?.uid||'guest';
+        const uid=auth?.currentUser?.uid||user?.uid||null;
+        if(!uid){alert('Please sign in to save tournaments.');return;}
         setSetup(d);setScores({});setTid(newTid);setCreatedBy(uid);setIsPublic(false);setPublicMode('read');setFinalized(false);
         didInit.current=false;
         setView('tournament');
-        // Save immediately with explicit values (avoids stale closure issue)
         setTimeout(()=>{
             didInit.current=true;
             doSave({tid:newTid,setup:d,scores:{},isPublic:false,publicMode:'read',finalized:false,createdBy:uid});
