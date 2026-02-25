@@ -156,7 +156,7 @@ async function buildDynamicMessage(courtId, courtName, includeWeather, passedLat
     const lat = passedLat ?? courtData.lat ?? courtData.latitude ?? null;
     const lng = passedLng ?? courtData.lng ?? courtData.longitude ?? null;
 
-    logger.info(`Weather check — includeWeather=${includeWeather} lat=${lat} lng=${lng}`);
+    logger.info(`Weather check — includeWeather=${includeWeather} lat=${parseFloat(lat).toFixed(4)} lng=${parseFloat(lng).toFixed(4)}`);
 
     if (includeWeather && lat && lng) {
       try {
@@ -222,7 +222,7 @@ function fetchHourlyWeather(lat, lng) {
     });
   });
 
-  return get(`https://api.weather.gov/points/${lat},${lng}`).then(json => {
+  return get(`https://api.weather.gov/points/${parseFloat(lat).toFixed(4)},${parseFloat(lng).toFixed(4)}`).then(json => {
     if (!json) { logger.warn("weather.gov /points returned null"); return null; }
     const forecastUrl = json?.properties?.forecastHourly;
     if (!forecastUrl) {
