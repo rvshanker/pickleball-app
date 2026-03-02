@@ -7,6 +7,14 @@
         { "fieldPath": "status",       "order": "ASCENDING"  },
         { "fieldPath": "scheduledFor", "order": "ASCENDING"  }
       ]
+    },
+    {
+      "collectionGroup": "findPlayers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status",    "order": "ASCENDING"  },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
