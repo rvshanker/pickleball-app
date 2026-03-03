@@ -23,29 +23,23 @@
         *{margin:0;padding:0;box-sizing:border-box;}
         body{font-family:'Outfit',sans-serif;background:#f0fdf4;font-size:16px;-webkit-text-size-adjust:100%;}
         .fd{font-family:'Barlow Condensed',sans-serif;}
-
-        /* Gradient bg */
         .hero-bg{background:linear-gradient(135deg,#064e3b 0%,#059669 50%,#34d399 100%);min-height:100vh;}
 
         /* Nav */
         .nav{padding:14px 18px;display:flex;align-items:center;gap:12px;}
         .nav-logo{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:white;letter-spacing:1px;}
-
-        /* Content area */
         .content{padding:0 16px 100px;max-width:740px;margin:0 auto;}
+        .page-title{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:white;margin-bottom:16px;}
 
-        /* Page title */
-        .page-title{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:white;margin-bottom:16px;padding:0 4px;}
-
-        /* Search bar */
-        .search-bar{display:flex;gap:10px;margin-bottom:20px;align-items:center;}
+        /* Search */
+        .search-bar{display:flex;gap:10px;margin-bottom:12px;align-items:center;}
         .search-input{flex:1;padding:12px 16px 12px 40px;border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;outline:none;background:white;box-shadow:0 2px 8px rgba(0,0,0,.1);}
         .search-input::placeholder{color:#94a3b8;}
-        .filter-btn{width:44px;height:44px;border-radius:12px;border:none;background:rgba(255,255,255,.15);color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+        .filter-btn{height:44px;border-radius:12px;border:none;background:rgba(255,255,255,.15);color:white;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;padding:0 14px;backdrop-filter:blur(4px);font-family:'Outfit',sans-serif;}
         .filter-btn:hover{background:rgba(255,255,255,.25);}
         .filter-btn.active{background:white;color:#059669;}
 
-        /* Player card — DUPR-inspired */
+        /* Player card — DUPR style */
         .pc{background:white;border-radius:14px;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:all .2s;cursor:pointer;border-left:4px solid transparent;}
         .pc:hover{box-shadow:0 4px 16px rgba(0,0,0,.1);border-left-color:#10b981;}
         .pc.expanded{border-left-color:#059669;}
@@ -54,38 +48,44 @@
         .pc-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
         .pc-avatar-letter{font-size:20px;font-weight:700;color:#059669;}
         .pc-info{flex:1;min-width:0;}
-        .pc-name{font-weight:700;font-size:15px;color:#0f172a;display:flex;align-items:center;gap:6px;}
-        .pc-id{font-weight:500;font-size:12px;color:#94a3b8;}
+        .pc-name{font-weight:700;font-size:15px;color:#0f172a;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+        .pc-id{font-weight:500;font-size:11px;color:#94a3b8;}
         .pc-loc{font-size:12px;color:#64748b;margin-top:2px;}
-        .pc-meta{font-size:12px;color:#94a3b8;margin-top:1px;}
+        .pc-meta{font-size:11px;color:#94a3b8;margin-top:1px;}
         .pc-ratings{display:flex;gap:8px;flex-shrink:0;}
-        .pc-rating{width:50px;text-align:center;}
-        .pc-rating-val{font-size:14px;font-weight:800;color:#064e3b;background:#ecfdf5;border-radius:8px;padding:6px 4px;border:1px solid #d1fae5;}
+        .pc-rating{min-width:60px;text-align:center;flex-shrink:0;}
+        .pc-rating-val{font-size:13px;font-weight:800;color:#064e3b;background:#ecfdf5;border-radius:8px;padding:6px 8px;border:1px solid #d1fae5;white-space:nowrap;}
         .pc-rating-label{font-size:9px;color:#94a3b8;margin-top:3px;font-weight:600;text-transform:uppercase;}
+        .pc-purpose{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-top:3px;white-space:nowrap;}
+        .purpose-play{background:#ecfdf5;color:#059669;}.purpose-partner{background:#eff6ff;color:#2563eb;}.purpose-drill{background:#faf5ff;color:#7c3aed;}.purpose-league{background:#fffbeb;color:#d97706;}
 
         /* Expanded section */
         .pc-expand{padding:0 16px 14px;border-top:1px solid #f1f5f9;animation:fadeIn .2s ease;}
+        .ex-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+        .ex-row{margin-bottom:10px;}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
-        /* Availability badge */
+        /* Pills & tags */
         .avail-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:16px;font-size:11px;font-weight:700;}
-        .avail-now{background:#ecfdf5;color:#059669;}
-        .avail-later{background:#fffbeb;color:#d97706;}
-        .avail-flex{background:#eff6ff;color:#2563eb;}
-
-        /* Tags */
+        .avail-now{background:#ecfdf5;color:#059669;}.avail-later{background:#fffbeb;color:#d97706;}.avail-flex{background:#eff6ff;color:#2563eb;}
         .tag{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:14px;font-size:11px;font-weight:600;}
-        .t-green{background:#ecfdf5;color:#059669;}.t-purple{background:#f5f3ff;color:#7c3aed;}.t-slate{background:#f1f5f9;color:#475569;}
+        .t-green{background:#ecfdf5;color:#059669;}.t-purple{background:#f5f3ff;color:#7c3aed;}.t-slate{background:#f1f5f9;color:#475569;}.t-blue{background:#eff6ff;color:#2563eb;}.t-amber{background:#fffbeb;color:#d97706;}
 
         /* Buttons */
         .btn-g{background:linear-gradient(135deg,#059669,#10b981);color:white;border-radius:10px;padding:10px 20px;font-weight:700;font-size:14px;border:none;cursor:pointer;font-family:'Outfit',sans-serif;box-shadow:0 2px 8px rgba(5,150,105,.25);}
         .btn-g:hover{opacity:.9;}
         .btn-out{background:transparent;color:#059669;border:2px solid #059669;border-radius:10px;padding:8px 16px;font-weight:600;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;}
         .btn-out:hover{background:#059669;color:white;}
-        .btn-w{background:white;color:#064e3b;border:none;border-radius:12px;padding:14px 28px;font-weight:700;font-size:16px;cursor:pointer;font-family:'Outfit',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.15);display:flex;align-items:center;gap:10px;transition:all .2s;}
-        .btn-w:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(0,0,0,.2);}
-        .btn-invite{background:rgba(255,255,255,.15);color:white;border:2px solid rgba(255,255,255,.3);border-radius:12px;padding:10px 20px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Outfit',sans-serif;backdrop-filter:blur(4px);display:flex;align-items:center;gap:6px;}
-        .btn-invite:hover{background:rgba(255,255,255,.25);}
+        .post-btn{background:white;color:#064e3b;border:none;border-radius:12px;padding:10px 20px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Outfit',sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.15);display:flex;align-items:center;gap:8px;transition:all .15s;}
+        .post-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.2);}
+
+        /* Filter panel */
+        .filter-panel{background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border-radius:12px;padding:14px;margin-bottom:14px;}
+        .fp-row{margin-bottom:10px;}
+        .fp-label{font-size:10px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+        .fp-pills{display:flex;gap:5px;flex-wrap:wrap;}
+        .fp-pill{padding:5px 12px;border-radius:8px;border:1.5px solid rgba(255,255,255,.2);background:transparent;font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.8);}
+        .fp-pill:hover{border-color:rgba(255,255,255,.4);}.fp-pill.s{background:#ecfdf5;color:#059669;border-color:#059669;}
 
         /* Modal */
         .mo{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:200;backdrop-filter:blur(4px);}
@@ -110,11 +110,10 @@
         .cb.me{background:linear-gradient(135deg,#059669,#10b981);color:white;border-bottom-right-radius:4px;}
         .ct{font-size:10px;opacity:.6;margin-top:2px;}
 
-        /* Auth screen */
+        /* Auth */
         .auth-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;padding:20px;text-align:center;}
-        .google-btn{background:white;color:#333;border:none;border-radius:12px;padding:14px 28px;font-weight:700;font-size:16px;cursor:pointer;font-family:'Outfit',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.15);display:flex;align-items:center;gap:12px;transition:all .2s;}
+        .google-btn{background:white;color:#333;border:none;border-radius:12px;padding:14px 28px;font-weight:700;font-size:16px;cursor:pointer;font-family:'Outfit',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.15);display:flex;align-items:center;gap:12px;}
         .google-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(0,0,0,.2);}
-        .google-icon{width:20px;height:20px;}
 
         /* Inbox */
         .ix{display:flex;align-items:center;gap:12px;padding:12px 14px;background:white;border-radius:12px;margin-bottom:8px;cursor:pointer;border:2px solid transparent;transition:all .15s;}
@@ -123,13 +122,9 @@
         .av-sm img{width:100%;height:100%;object-fit:cover;}
         .badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;background:#ef4444;color:white;border-radius:8px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;}
         .sb{display:flex;align-items:center;gap:5px;padding:6px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;color:#059669;font-weight:600;}
-
-        /* Profile indicator */
         .user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);border-radius:20px;padding:4px 12px 4px 4px;cursor:pointer;border:none;backdrop-filter:blur(4px);}
         .user-pill img{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,.3);}
         .user-pill span{font-size:12px;font-weight:600;color:white;}
-
-        /* FAB */
         .fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:16px;background:white;color:#059669;border:none;font-size:28px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;z-index:50;font-weight:300;}
 
         @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
@@ -138,6 +133,17 @@
 </head>
 <body>
 <div id="root"></div>
+<!--
+  ENCRYPTION NOTE: For future end-to-end encryption of chat messages,
+  implement the Signal Protocol (or libsodium box/secretbox):
+  1. Each user generates an X25519 keypair on sign-up, stores public key in their profile
+  2. On first message, derive a shared secret via ECDH (sender private + receiver public)
+  3. Encrypt message text client-side with XChaCha20-Poly1305 before writing to Firestore
+  4. Store ciphertext + nonce in chatMessages.text field; decrypt client-side on read
+  5. Firestore only ever stores encrypted blobs — server/admin cannot read messages
+  Libraries: tweetnacl-js or libsodium.js (both work in browser)
+  This is fully compatible with the current architecture — just wrap the text field.
+-->
 <script type="text/babel">
 const{useState,useEffect,useRef,useMemo}=React;
 
@@ -150,41 +156,44 @@ try{if(!firebase.apps.length)firebase.initializeApp(FB);db=firebase.firestore();
 function haversine(a,b,c,d){const R=3958.8,dL=(c-a)*Math.PI/180,dN=(d-b)*Math.PI/180,x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dN/2)**2;return R*2*Math.asin(Math.sqrt(x));}
 function timeAgo(t){if(!t)return '';const d=Date.now()-t,m=Math.floor(d/60000);if(m<1)return 'just now';if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
 function fmtTime(ds,ts){if(!ds)return '';const d=new Date(ds+(ts?'T'+ts:''));const now=new Date();const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());const target=new Date(d.getFullYear(),d.getMonth(),d.getDate());const diff=Math.round((target-today)/86400000);let l=diff===0?'Today':diff===1?'Tomorrow':d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});if(ts){const[h,m]=ts.split(':').map(Number);l+=` ${h%12||12}:${m.toString().padStart(2,'0')}${h>=12?'PM':'AM'}`;}return l;}
-function cid(a,b){return[a,b].sort().join('__');}
+function convoId(a,b){return[a,b].sort().join('__');}
 
 const SKILLS=['2.0-2.5','2.5-3.0','3.0-3.5','3.5-4.0','4.0-4.5','4.5-5.0','5.0+'];
 const SKILL_L={'2.0-2.5':'Beginner','2.5-3.0':'Novice','3.0-3.5':'Intermediate','3.5-4.0':'Advanced','4.0-4.5':'Competitive','4.5-5.0':'Expert','5.0+':'Pro'};
 const PTYPES=['Casual','Competitive','Tournament','Drilling','League'];
 const PT_E={'Casual':'🎾','Competitive':'🔥','Tournament':'🏆','Drilling':'🎯','League':'🏅'};
 const AVAIL=['Now','Today','This Week','Flexible'];
+const PURPOSES=[
+    {id:'play',label:'Looking to Play',emoji:'🏓',desc:'I want to hit the courts'},
+    {id:'partner',label:'Need a Partner',emoji:'🤝',desc:'Looking for doubles/tournament partner'},
+    {id:'drill',label:'Drilling Session',emoji:'🎯',desc:'Practice drills together'},
+    {id:'group',label:'Group/Open Play',emoji:'👥',desc:'Join or organize open play'},
+];
+const PURPOSE_CLASS={'play':'purpose-play','partner':'purpose-partner','drill':'purpose-drill','group':'purpose-league'};
 
 // ── Auth Screen ───────────────────────────────────────────────────────
 function AuthScreen(){
-    const[loading,setLoading]=useState(false);
+    const[loading,setLoading]=useState(false);const[error,setError]=useState(null);
+    const isFile=window.location.protocol==='file:';
     const signIn=async()=>{
-        setLoading(true);
-        try{
-            const provider=new firebase.auth.GoogleAuthProvider();
-            await auth.signInWithPopup(provider);
-        }catch(e){
-            if(e.code!=='auth/popup-closed-by-user')alert('Sign in failed: '+e.message);
-        }
-        setLoading(false);
-    };
+        if(isFile){setError('Open this page from a web server (http:// or https://), not as a local file. Deploy to Firebase Hosting or run a local server.');return;}
+        setLoading(true);setError(null);
+        const provider=new firebase.auth.GoogleAuthProvider();
+        try{await auth.signInWithPopup(provider);}catch(e){
+            if(e.code==='auth/popup-closed-by-user'){setLoading(false);return;}
+            if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){try{await auth.signInWithRedirect(provider);return;}catch(e2){setError(e2.message);}}
+            else setError(e.message);
+        }setLoading(false);};
     return(
         <div className="hero-bg">
-            <div className="nav">
-                <a href="index.html" style={{display:'flex',alignItems:'center',textDecoration:'none'}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg></a>
-                <div className="nav-logo">🏓 PICKLECONNECT</div>
-            </div>
+            <div className="nav"><a href="index.html" style={{display:'flex',alignItems:'center',textDecoration:'none'}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg></a><div className="nav-logo">🏓 PICKLECONNECT</div></div>
             <div className="auth-screen">
                 <div style={{fontSize:64,marginBottom:16}}>🏓</div>
                 <div className="fd" style={{fontSize:36,fontWeight:800,color:'white',marginBottom:8}}>FIND PLAYERS</div>
-                <div style={{fontSize:16,color:'rgba(255,255,255,.7)',marginBottom:32,maxWidth:360,lineHeight:1.5}}>
-                    Sign in to find players near you, post your availability, and message other players privately.
-                </div>
+                <div style={{fontSize:16,color:'rgba(255,255,255,.7)',marginBottom:32,maxWidth:360,lineHeight:1.5}}>Sign in to find players near you, post your availability, and message other players privately.</div>
+                {error&&<div style={{background:'rgba(239,68,68,.15)',border:'1px solid rgba(239,68,68,.3)',borderRadius:12,padding:'12px 16px',marginBottom:20,maxWidth:400,fontSize:13,color:'#fecaca',lineHeight:1.5}}>⚠️ {error}</div>}
                 <button className="google-btn" onClick={signIn} disabled={loading}>
-                    <svg className="google-icon" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                     {loading?'Signing in…':'Sign in with Google'}
                 </button>
                 <div style={{fontSize:12,color:'rgba(255,255,255,.4)',marginTop:24}}>Free · No password needed · Takes 5 seconds</div>
@@ -216,26 +225,27 @@ function ProfileSetup({user,profile,onSave,onClose}){
                 <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{profile?'✏️ EDIT PROFILE':'👋 SET UP PROFILE'}</div>
                 {onClose&&<button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:30,height:30,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>}
             </div>
-            {!profile&&<div style={{fontSize:13,color:'#64748b',marginBottom:16,lineHeight:1.5}}>Set up your profile once — it'll be used everywhere in PickleConnect.</div>}
+            {!profile&&<div style={{fontSize:13,color:'#64748b',marginBottom:16,lineHeight:1.5}}>Set up your profile once — it'll show on all your posts and messages.</div>}
             <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16,padding:12,background:'#f8fafc',borderRadius:12}}>
                 {user.photoURL?<img src={user.photoURL} style={{width:40,height:40,borderRadius:'50%'}} referrerPolicy="no-referrer"/>:<div className="av-sm" style={{width:40,height:40,fontSize:16}}>{(name||'?')[0].toUpperCase()}</div>}
                 <div><div style={{fontSize:13,fontWeight:600,color:'#0f172a'}}>{user.email}</div><div style={{fontSize:11,color:'#94a3b8'}}>Signed in with Google</div></div>
             </div>
             <div className="fg"><div className="fl">Display Name *</div><input className="fi" value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" maxLength={40}/></div>
-            <div className="fg"><div className="fl">Skill Level *</div><div className="og">{SKILLS.map(s=><button key={s} className={`ob ${skill===s?'s':''}`} onClick={()=>setSkill(s)}>{s}<span style={{fontSize:9,opacity:.6,marginLeft:2}}>{SKILL_L[s]}</span></button>)}</div></div>
+            <div className="fg"><div className="fl">Skill Level *</div><div className="og">{SKILLS.map(s=><button key={s} className={`ob ${skill===s?'s':''}`} onClick={()=>setSkill(s)} style={{fontSize:11}}>{s} <span style={{fontSize:9,opacity:.6}}>{SKILL_L[s]}</span></button>)}</div></div>
             <div className="fg"><div className="fl">City / Area</div><input className="fi" value={city} onChange={e=>setCity(e.target.value)} placeholder="e.g. Dardenne Prairie, MO" maxLength={80}/></div>
             <div style={{display:'flex',gap:10}}>
                 <div className="fg" style={{flex:1}}><div className="fl">Age Range</div><select className="fi" value={age} onChange={e=>setAge(e.target.value)}><option value="">—</option>{['18-25','26-35','36-45','46-55','56-65','65+'].map(a=><option key={a}>{a}</option>)}</select></div>
                 <div className="fg" style={{flex:1}}><div className="fl">Gender</div><select className="fi" value={gender} onChange={e=>setGender(e.target.value)}><option value="">—</option>{['Male','Female','Non-binary'].map(g=><option key={g}>{g}</option>)}</select></div>
             </div>
-            <div className="fg"><div className="fl">DUPR ID (optional)</div><div style={{fontSize:11,color:'#64748b',marginBottom:4}}>Link your verified rating. <a href="https://mydupr.com" target="_blank" style={{color:'#059669'}}>Find your ID →</a></div><input className="fi" value={duprId} onChange={e=>setDupr(e.target.value)} placeholder="e.g. JJM7KM" maxLength={20}/></div>
+            <div className="fg"><div className="fl">DUPR ID (optional)</div><div style={{fontSize:11,color:'#64748b',marginBottom:4}}>Link your DUPR rating. <a href="https://mydupr.com" target="_blank" style={{color:'#059669'}}>Find your ID →</a></div><input className="fi" value={duprId} onChange={e=>setDupr(e.target.value)} placeholder="e.g. JJM7KM" maxLength={20}/></div>
             <button className="btn-g" onClick={save} disabled={saving} style={{width:'100%',padding:'13px',fontSize:15,opacity:saving?.6:1}}>{saving?'Saving…':'✅ Save Profile'}</button>
         </div>
     </div>);
 }
 
-// ── Post Availability ─────────────────────────────────────────────────
-function PostAvail({profile,onClose,onPosted,editData,uLat,uLng}){
+// ── Post Availability (supports multiple posts) ───────────────────────
+function PostForm({profile,onClose,onPosted,editData,uLat,uLng}){
+    const[purpose,setPurpose]=useState(editData?.purpose||'play');
     const[playTypes,setPT]=useState(editData?.playTypes||[]);
     const[availability,setAv]=useState(editData?.availability||'Flexible');
     const[availDate,setAD]=useState(editData?.availDate||'');
@@ -247,28 +257,45 @@ function PostAvail({profile,onClose,onPosted,editData,uLat,uLng}){
     const save=async()=>{
         if(playTypes.length===0){alert('Select at least one play type.');return;}
         setSaving(true);
-        const data={uid:profile.uid,name:profile.name,skill:profile.skill,city:profile.city||null,age:profile.age||null,gender:profile.gender||null,duprId:profile.duprId||null,photoURL:profile.photoURL||null,playTypes,availability,availDate:availDate||null,availTime:availTime||null,courtName:courtName.trim()||null,message:message.trim()||null,lat:uLat||null,lng:uLng||null,timestamp:Date.now(),status:'active'};
-        try{if(editData?.id){await db.collection('findPlayers').doc(editData.id).update(data);data.id=editData.id;}else{const ref=await db.collection('findPlayers').add(data);data.id=ref.id;}onPosted();}catch(e){alert('Failed: '+e.message);}
+        const data={uid:profile.uid,name:profile.name,skill:profile.skill,city:profile.city||null,age:profile.age||null,gender:profile.gender||null,duprId:profile.duprId||null,photoURL:profile.photoURL||null,purpose,playTypes,availability,availDate:availDate||null,availTime:availTime||null,courtName:courtName.trim()||null,message:message.trim()||null,lat:uLat||null,lng:uLng||null,timestamp:Date.now(),status:'active'};
+        try{if(editData?.id){await db.collection('findPlayers').doc(editData.id).update(data);}else{await db.collection('findPlayers').add(data);}onPosted();}catch(e){alert('Failed: '+e.message);}
         setSaving(false);
     };
     const today=new Date().toISOString().split('T')[0];
+    const pu=PURPOSES.find(p=>p.id===purpose);
     return(<div className="mo" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
         <div className="ms"><div className="mh"/>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-                <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{editData?'✏️ EDIT':'⚡ POST AVAILABILITY'}</div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{editData?'✏️ EDIT POST':'📢 POST AVAILABILITY'}</div>
                 <button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:30,height:30,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
             </div>
+            <div style={{fontSize:13,color:'#64748b',marginBottom:14,lineHeight:1.4}}>Let other players know you're available. You can create multiple posts for different needs.</div>
+
+            {/* Profile summary */}
             <div style={{display:'flex',alignItems:'center',gap:10,padding:10,background:'#f8fafc',borderRadius:10,marginBottom:14}}>
                 {profile.photoURL?<img src={profile.photoURL} style={{width:32,height:32,borderRadius:'50%'}} referrerPolicy="no-referrer"/>:<div className="av-sm" style={{width:32,height:32,fontSize:13}}>{profile.name[0]}</div>}
-                <div><div style={{fontSize:13,fontWeight:700}}>{profile.name}</div><div style={{fontSize:11,color:'#64748b'}}>{profile.skill} · {profile.city||'No city'}</div></div>
+                <div><div style={{fontSize:13,fontWeight:700}}>{profile.name}</div><div style={{fontSize:11,color:'#64748b'}}>{profile.skill} · {profile.city||'No city set'}</div></div>
             </div>
-            <div className="fg"><div className="fl">Looking to Play *</div><div className="og">{PTYPES.map(t=><button key={t} className={`ob ${playTypes.includes(t)?'s':''}`} onClick={()=>togglePT(t)}>{PT_E[t]} {t}</button>)}</div></div>
-            <div className="fg"><div className="fl">When</div><div className="og" style={{marginBottom:6}}>{AVAIL.map(a=><button key={a} className={`ob ${availability===a?'s':''}`} onClick={()=>setAv(a)}>{a==='Now'?'⚡':a==='Today'?'📅':a==='This Week'?'🗓️':'🤷'} {a}</button>)}</div>
+
+            {/* Purpose — what are you looking for? */}
+            <div className="fg">
+                <div className="fl">What are you looking for? *</div>
+                <div className="og">{PURPOSES.map(p=><button key={p.id} className={`ob ${purpose===p.id?'s':''}`} onClick={()=>setPurpose(p.id)} style={{fontSize:12}}>{p.emoji} {p.label}</button>)}</div>
+                {pu&&<div style={{fontSize:11,color:'#64748b',marginTop:4,fontStyle:'italic'}}>{pu.desc}</div>}
+            </div>
+
+            {/* Play type */}
+            <div className="fg"><div className="fl">Play Type *</div><div className="og">{PTYPES.map(t=><button key={t} className={`ob ${playTypes.includes(t)?'s':''}`} onClick={()=>togglePT(t)} style={{fontSize:12}}>{PT_E[t]} {t}</button>)}</div></div>
+
+            {/* When */}
+            <div className="fg"><div className="fl">When</div><div className="og" style={{marginBottom:6}}>{AVAIL.map(a=><button key={a} className={`ob ${availability===a?'s':''}`} onClick={()=>setAv(a)} style={{fontSize:12}}>{a==='Now'?'⚡':a==='Today'?'📅':a==='This Week'?'🗓️':'🤷'} {a}</button>)}</div>
                 {(availability==='This Week'||availability==='Today')&&<div style={{display:'flex',gap:8,marginTop:6}}><input type="date" className="fi" value={availDate} onChange={e=>setAD(e.target.value)} min={today} style={{flex:1,fontSize:13}}/><input type="time" className="fi" value={availTime} onChange={e=>setAT(e.target.value)} style={{flex:1,fontSize:13}}/></div>}
             </div>
-            <div className="fg"><div className="fl">Court (optional)</div><input className="fi" value={courtName} onChange={e=>setCourt(e.target.value)} placeholder="e.g. Heritage Park Courts" maxLength={100}/></div>
-            <div className="fg"><div className="fl">Message</div><textarea className="fi" value={message} onChange={e=>setMsg(e.target.value)} placeholder="Looking for doubles partner!" maxLength={200} rows={2}/></div>
-            <button className="btn-g" onClick={save} disabled={saving} style={{width:'100%',padding:'12px',fontSize:15,opacity:saving?.6:1}}>{saving?'Saving…':'🏓 Post'}</button>
+
+            {/* Court + message */}
+            <div className="fg"><div className="fl">Court / Location (optional)</div><input className="fi" value={courtName} onChange={e=>setCourt(e.target.value)} placeholder="e.g. Heritage Park Courts" maxLength={100}/></div>
+            <div className="fg"><div className="fl">Message to Other Players</div><textarea className="fi" value={message} onChange={e=>setMsg(e.target.value)} placeholder={purpose==='partner'?'Looking for 3.5+ doubles partner for Saturday tournament…':purpose==='drill'?'Want to work on 3rd shot drops and dinking…':purpose==='group'?'Organizing open play this Saturday 9AM…':'Available all afternoon, looking for competitive games!'} maxLength={300} rows={3}/></div>
+            <button className="btn-g" onClick={save} disabled={saving} style={{width:'100%',padding:'12px',fontSize:15,opacity:saving?.6:1}}>{saving?'Saving…':'📢 Post'}</button>
         </div>
     </div>);
 }
@@ -276,7 +303,7 @@ function PostAvail({profile,onClose,onPosted,editData,uLat,uLng}){
 // ── Chat Modal ────────────────────────────────────────────────────────
 function ChatModal({player,myUid,myName,onClose}){
     const[msgs,setMsgs]=useState([]);const[inp,setInp]=useState('');const[sending,setSending]=useState(false);const[err,setErr]=useState(null);
-    const endRef=useRef(null);const c=cid(myUid,player.uid);
+    const endRef=useRef(null);const c=convoId(myUid,player.uid);
     useEffect(()=>{if(!fbOk){setErr('No database.');return;}const u=db.collection('chatMessages').where('convoId','==',c).orderBy('timestamp','asc').onSnapshot(s=>{setMsgs(s.docs.map(d=>({id:d.id,...d.data()})));setTimeout(()=>endRef.current?.scrollIntoView({behavior:'smooth'}),100);},e=>{setErr(e.message);});return()=>u();},[c]);
     useEffect(()=>{if(!fbOk||msgs.length===0)return;db.collection('conversations').doc(c).update({[`readBy_${myUid}`]:Date.now()}).catch(()=>{});},[c,msgs.length]);
     const send=async()=>{if(!inp.trim()||sending)return;setSending(true);const now=Date.now(),txt=inp.trim();
@@ -287,7 +314,7 @@ function ChatModal({player,myUid,myName,onClose}){
         <div className="ms" style={{display:'flex',flexDirection:'column',height:'80vh',padding:0}}>
             <div style={{padding:'12px 16px',borderBottom:'1px solid #e2e8f0',display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
                 <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg></button>
-                {player.photoURL?<img src={player.photoURL} style={{width:32,height:32,borderRadius:'50%'}} referrerPolicy="no-referrer"/>:<div className="av-sm" style={{width:32,height:32,fontSize:13}}>{player.name[0].toUpperCase()}</div>}
+                {player.photoURL?<img src={player.photoURL} style={{width:32,height:32,borderRadius:'50%'}} referrerPolicy="no-referrer"/>:<div className="av-sm" style={{width:32,height:32,fontSize:13}}>{(player.name||'?')[0].toUpperCase()}</div>}
                 <div style={{flex:1}}><div style={{fontWeight:700,fontSize:14}}>{player.name}</div><div style={{fontSize:11,color:'#64748b'}}>{player.skill}</div></div>
                 <div className="sb" style={{padding:'3px 7px',fontSize:10}}>🔒 Private</div>
             </div>
@@ -335,62 +362,81 @@ function Inbox({onClose,onOpen,myUid,players}){
     </div>);
 }
 
-// ── Player Card (DUPR-style, expandable) ──────────────────────────────
+// ── Player Card (DUPR-style, expandable, labeled sections) ────────────
 function PlayerCard({p,myUid,uLat,uLng,onChat,onEdit,onRemove,expanded,onToggle}){
     const mine=p.uid===myUid;
     const dist=(uLat&&p.lat)?haversine(uLat,uLng,p.lat,p.lng):null;
     const avClass=p.availability==='Now'?'avail-now':p.availability==='Flexible'?'avail-flex':'avail-later';
+    const pu=PURPOSES.find(x=>x.id===p.purpose);
     return(
-        <div className={`pc ${expanded?'expanded':''} ${mine?'mine':''}`} onClick={onToggle} style={mine?{borderLeftColor:'#059669'}:{}}>
+        <div className={`pc ${expanded?'expanded':''}`} onClick={onToggle} style={mine?{borderLeftColor:'#059669'}:{}}>
             <div className="pc-main">
                 <div className="pc-avatar">
                     {p.photoURL?<img src={p.photoURL} referrerPolicy="no-referrer"/>:<div className="pc-avatar-letter">{(p.name||'?')[0].toUpperCase()}</div>}
                 </div>
                 <div className="pc-info">
                     <div className="pc-name">
-                        {p.name} {p.duprId&&<span className="pc-id">{p.duprId}</span>}
+                        {p.name}
+                        {p.duprId&&<span className="pc-id">{p.duprId}</span>}
                         {mine&&<span style={{fontSize:9,fontWeight:700,background:'#059669',color:'white',padding:'2px 6px',borderRadius:4}}>YOU</span>}
                     </div>
-                    <div className="pc-loc">{p.city||'No location'}{dist!==null&&<span> · {dist<1?dist.toFixed(1):Math.round(dist)} mi</span>}</div>
-                    <div className="pc-meta">{p.age&&<span>{p.age}</span>}{p.age&&p.gender&&<span> · </span>}{p.gender&&<span>{p.gender}</span>}</div>
+                    <div className="pc-loc">{p.city||'No location'}{dist!==null&&` · ${dist<1?dist.toFixed(1):Math.round(dist)} mi`}</div>
+                    <div className="pc-meta">{p.age&&p.age}{p.age&&p.gender&&' · '}{p.gender&&p.gender}</div>
+                    {/* Purpose tag on collapsed card */}
+                    {pu&&<div className={`pc-purpose ${PURPOSE_CLASS[p.purpose]||'purpose-play'}`}>{pu.emoji} {pu.label}</div>}
                 </div>
                 <div className="pc-ratings">
                     <div className="pc-rating">
                         <div className="pc-rating-val">{p.skill||'NR'}</div>
-                        <div className="pc-rating-label">Rating</div>
+                        <div className="pc-rating-label">Skill</div>
                     </div>
                 </div>
             </div>
 
             {expanded&&(
                 <div className="pc-expand" onClick={e=>e.stopPropagation()}>
-                    <div style={{paddingTop:12,display:'flex',flexDirection:'column',gap:10}}>
-                        {/* Availability */}
-                        <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-                            <span className={`avail-pill ${avClass}`}>{p.availability==='Now'?'⚡ Available Now':p.availability==='Today'?'📅 Today':p.availability==='This Week'?'🗓️ This Week':'🤷 Flexible'}</span>
-                            {p.availDate&&<span style={{fontSize:12,color:'#64748b'}}>🕐 {fmtTime(p.availDate,p.availTime)}</span>}
+                    <div style={{paddingTop:12,display:'flex',flexDirection:'column',gap:12}}>
+                        {/* What they're looking for */}
+                        <div className="ex-row">
+                            <div className="ex-label">What They're Looking For</div>
+                            <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                                {pu&&<span className={`tag ${p.purpose==='play'?'t-green':p.purpose==='partner'?'t-blue':p.purpose==='drill'?'t-purple':'t-amber'}`}>{pu.emoji} {pu.label}</span>}
+                                {p.playTypes?.map(t=><span key={t} className="tag t-purple">{PT_E[t]} {t}</span>)}
+                            </div>
                         </div>
 
-                        {/* Play types */}
-                        <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
-                            {p.playTypes?.map(t=><span key={t} className="tag t-purple">{PT_E[t]} {t}</span>)}
+                        {/* When they're available */}
+                        <div className="ex-row">
+                            <div className="ex-label">When Available</div>
+                            <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                                <span className={`avail-pill ${avClass}`}>{p.availability==='Now'?'⚡ Right Now':p.availability==='Today'?'📅 Today':p.availability==='This Week'?'🗓️ This Week':'🤷 Flexible'}</span>
+                                {p.availDate&&<span style={{fontSize:12,color:'#64748b'}}>🕐 {fmtTime(p.availDate,p.availTime)}</span>}
+                            </div>
                         </div>
 
-                        {/* Court */}
-                        {p.courtName&&<div style={{fontSize:13,color:'#64748b'}}>🏟️ {p.courtName}</div>}
+                        {/* Where */}
+                        {p.courtName&&<div className="ex-row">
+                            <div className="ex-label">Preferred Court</div>
+                            <div style={{fontSize:13,color:'#334155'}}>🏟️ {p.courtName}</div>
+                        </div>}
 
-                        {/* Message */}
-                        {p.message&&<div style={{fontSize:13,color:'#334155',background:'#f8fafc',borderRadius:8,padding:'8px 10px',lineHeight:1.4}}>"{p.message}"</div>}
+                        {/* Player's message */}
+                        {p.message&&<div className="ex-row">
+                            <div className="ex-label">Message</div>
+                            <div style={{fontSize:13,color:'#334155',background:'#f8fafc',borderRadius:8,padding:'8px 12px',lineHeight:1.5,borderLeft:'3px solid #10b981'}}>"{p.message}"</div>
+                        </div>}
 
-                        {/* DUPR link */}
-                        {p.duprId&&<a href={`https://mydupr.com/player/${p.duprId}`} target="_blank" style={{fontSize:12,color:'#059669',fontWeight:600,textDecoration:'none'}}>View DUPR Profile →</a>}
+                        {/* DUPR */}
+                        {p.duprId&&<a href={`https://mydupr.com/player/${p.duprId}`} target="_blank" style={{fontSize:12,color:'#059669',fontWeight:600,textDecoration:'none',display:'inline-flex',alignItems:'center',gap:4}}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            View DUPR Profile
+                        </a>}
 
                         {/* Actions */}
-                        <div style={{display:'flex',gap:8,flexWrap:'wrap',paddingTop:4}}>
-                            {!mine&&<button className="btn-g" onClick={()=>onChat(p)} style={{padding:'8px 16px',fontSize:13}}>💬 Message</button>}
-                            {!mine&&p.email&&<a href={`mailto:${p.email}`} className="btn-out" style={{padding:'6px 12px',fontSize:11,textDecoration:'none'}}>✉️ Email</a>}
-                            {mine&&<button className="btn-out" onClick={()=>onEdit(p)} style={{padding:'6px 12px',fontSize:11}}>✏️ Edit</button>}
-                            {mine&&<button onClick={()=>onRemove(p.id)} style={{padding:'6px 12px',fontSize:11,border:'1px solid #fca5a5',background:'#fef2f2',color:'#dc2626',borderRadius:8,fontWeight:600,fontFamily:'Outfit',cursor:'pointer'}}>Remove</button>}
+                        <div style={{display:'flex',gap:8,flexWrap:'wrap',paddingTop:6,borderTop:'1px solid #f1f5f9'}}>
+                            {!mine&&<button className="btn-g" onClick={()=>onChat(p)} style={{padding:'8px 18px',fontSize:13}}>💬 Send Message</button>}
+                            {mine&&<button className="btn-out" onClick={()=>onEdit(p)} style={{padding:'6px 14px',fontSize:12}}>✏️ Edit</button>}
+                            {mine&&<button onClick={()=>onRemove(p.id)} style={{padding:'6px 14px',fontSize:12,border:'1px solid #fca5a5',background:'#fef2f2',color:'#dc2626',borderRadius:10,fontWeight:600,fontFamily:'Outfit',cursor:'pointer'}}>🗑️ Remove</button>}
                         </div>
                         <div style={{fontSize:10,color:'#94a3b8'}}>Posted {timeAgo(p.timestamp)}</div>
                     </div>
@@ -400,11 +446,11 @@ function PlayerCard({p,myUid,uLat,uLng,onChat,onEdit,onRemove,expanded,onToggle}
     );
 }
 
-function Skel(){return(<div style={{background:'white',borderRadius:14,padding:14,marginBottom:10}}><div style={{display:'flex',gap:14,alignItems:'center'}}><div className="skeleton" style={{width:46,height:46,borderRadius:'50%'}}/><div style={{flex:1}}><div className="skeleton" style={{height:16,width:'50%',marginBottom:6}}/><div className="skeleton" style={{height:12,width:'70%'}}/></div><div className="skeleton" style={{width:50,height:36,borderRadius:8}}/></div></div>);}
+function Skel(){return(<div style={{background:'white',borderRadius:14,padding:14,marginBottom:10}}><div style={{display:'flex',gap:14,alignItems:'center'}}><div className="skeleton" style={{width:46,height:46,borderRadius:'50%'}}/><div style={{flex:1}}><div className="skeleton" style={{height:16,width:'50%',marginBottom:6}}/><div className="skeleton" style={{height:12,width:'70%'}}/></div><div className="skeleton" style={{width:60,height:36,borderRadius:8}}/></div></div>);}
 
 // ── Main App ──────────────────────────────────────────────────────────
 function App(){
-    const[user,setUser]=useState(undefined); // undefined=loading, null=not signed in
+    const[user,setUser]=useState(undefined);
     const[profile,setProfile]=useState(null);
     const[players,setPlayers]=useState([]);const[loading,setLoading]=useState(true);
     const[uLat,setULat]=useState(null);const[uLng,setULng]=useState(null);
@@ -414,22 +460,18 @@ function App(){
     const[unread,setUnread]=useState(0);
     const[search,setSearch]=useState('');const[tab,setTab]=useState('all');
     const[expanded,setExpanded]=useState(null);
-    const[showF,setShowF]=useState(false);const[fSkill,setFS]=useState('');
+    // Filters
+    const[showF,setShowF]=useState(false);
+    const[fSkill,setFS]=useState('');const[fType,setFT]=useState('');const[fGender,setFG]=useState('');const[fPurpose,setFP]=useState('');
 
-    // Auth listener
-    useEffect(()=>{if(!auth)return;const u=auth.onAuthStateChanged(u=>{setUser(u||null);});return()=>u();},[]);
-
-    // Load profile
+    useEffect(()=>{if(!auth)return;const u=auth.onAuthStateChanged(u=>{setUser(u||null);});auth.getRedirectResult().catch(()=>{});return()=>u();},[]);
     useEffect(()=>{if(!user||!fbOk)return;const u=db.collection('profiles').doc(user.uid).onSnapshot(d=>{if(d.exists)setProfile({uid:user.uid,...d.data()});else setProfile(null);},()=>setProfile(null));return()=>u();},[user]);
-
-    // Location
     useEffect(()=>{if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(p=>{setULat(p.coords.latitude);setULng(p.coords.longitude);},()=>{},{enableHighAccuracy:false,timeout:8000,maximumAge:300000});},[]);
-
-    // Players
     useEffect(()=>{if(!fbOk){setLoading(false);return;}const c=Date.now()-7*24*60*60*1000;const u=db.collection('findPlayers').where('status','==','active').where('timestamp','>',c).orderBy('timestamp','desc').onSnapshot(s=>{setPlayers(s.docs.map(d=>({id:d.id,...d.data()})));setLoading(false);},()=>setLoading(false));return()=>u();},[]);
-
-    // Unread
     useEffect(()=>{if(!fbOk||!user)return;const u=db.collection('conversations').where('participants','array-contains',user.uid).onSnapshot(s=>{let c=0;s.docs.forEach(d=>{const x=d.data();if(x.lastMessageBy!==user.uid&&x.lastTimestamp>(x[`readBy_${user.uid}`]||0))c++;});setUnread(c);},()=>{});return()=>u();},[user]);
+
+    const fCount=[fSkill,fType,fGender,fPurpose].filter(Boolean).length;
+    const clearFilters=()=>{setFS('');setFT('');setFG('');setFP('');};
 
     const filtered=useMemo(()=>{
         let l=[...players];
@@ -437,19 +479,17 @@ function App(){
         else if(tab==='now')l=l.filter(p=>p.availability==='Now'||p.availability==='Today');
         if(search.trim()){const q=search.toLowerCase();l=l.filter(p=>[p.name,p.courtName,p.city,p.message,p.skill].some(v=>(v||'').toLowerCase().includes(q)));}
         if(fSkill)l=l.filter(p=>p.skill===fSkill);
+        if(fType)l=l.filter(p=>p.playTypes?.includes(fType));
+        if(fGender)l=l.filter(p=>p.gender===fGender);
+        if(fPurpose)l=l.filter(p=>p.purpose===fPurpose);
         l.sort((a,b)=>{if(user&&a.uid===user.uid&&b.uid!==user.uid)return -1;if(user&&b.uid===user.uid&&a.uid!==user.uid)return 1;if(tab==='nearby'&&uLat&&a.lat&&b.lat)return haversine(uLat,uLng,a.lat,a.lng)-haversine(uLat,uLng,b.lat,b.lng);return b.timestamp-a.timestamp;});
         return l;
-    },[players,tab,search,fSkill,uLat,uLng,user]);
+    },[players,tab,search,fSkill,fType,fGender,fPurpose,uLat,uLng,user]);
 
     const signOut=async()=>{if(confirm('Sign out?'))await auth.signOut();};
 
-    // Auth loading
     if(user===undefined)return(<div className="hero-bg"><div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',color:'white',fontSize:18}}>Loading…</div></div>);
-
-    // Not signed in
     if(!user)return <AuthScreen/>;
-
-    // No profile yet
     if(profile===null)return(<div className="hero-bg" style={{background:'#f1f5f9'}}><div className="nav" style={{background:'#0f172a'}}><a href="index.html" style={{display:'flex',alignItems:'center',textDecoration:'none'}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg></a><div className="nav-logo" style={{color:'white'}}>🏓 PICKLECONNECT</div></div><ProfileSetup user={user} profile={null} onSave={p=>setProfile({uid:user.uid,...p})}/></div>);
 
     const myPosts=players.filter(p=>p.uid===user.uid);
@@ -471,36 +511,56 @@ function App(){
             </div>
 
             <div className="content">
-                {/* Title */}
+                {/* Title + Post button */}
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
                     <div className="page-title">Find Players</div>
-                    <button className="btn-invite" onClick={()=>{setEditP(null);setShowPost(true);}}>
-                        ⚡ {myPosts.length>0?'Update':'Post'}
+                    <button className="post-btn" onClick={()=>{setEditP(null);setShowPost(true);}}>
+                        📢 Post Availability
                     </button>
                 </div>
 
-                {/* Search */}
+                {/* My active posts count */}
+                {myPosts.length>0&&<div style={{background:'rgba(255,255,255,.12)',backdropFilter:'blur(4px)',borderRadius:10,padding:'10px 14px',marginBottom:12,display:'flex',alignItems:'center',gap:8}}>
+                    <span style={{fontSize:11,color:'rgba(255,255,255,.7)'}}>You have <strong style={{color:'white'}}>{myPosts.length}</strong> active post{myPosts.length!==1?'s':''}. Tap to expand & edit.</span>
+                    <button onClick={()=>{setEditP(null);setShowPost(true);}} style={{marginLeft:'auto',background:'rgba(255,255,255,.2)',border:'none',borderRadius:8,padding:'5px 12px',fontSize:11,fontWeight:700,color:'white',cursor:'pointer',fontFamily:'Outfit'}}>+ New</button>
+                </div>}
+
+                {/* Search + Filter */}
                 <div className="search-bar">
                     <div style={{position:'relative',flex:1}}>
                         <svg style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)'}} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-                        <input className="search-input" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search"/>
+                        <input className="search-input" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by name, court, city…"/>
                     </div>
-                    <button className={`filter-btn ${showF?'active':''}`} onClick={()=>setShowF(!showF)}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+                    <button className={`filter-btn ${showF||fCount>0?'active':''}`} onClick={()=>setShowF(!showF)}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+                        Filter{fCount>0&&` (${fCount})`}
                     </button>
                 </div>
 
-                {/* Filter bar */}
-                {showF&&<div style={{background:'rgba(255,255,255,.1)',backdropFilter:'blur(8px)',borderRadius:12,padding:12,marginBottom:14}} className="fade-in">
-                    <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-                        <button className={`ob ${!fSkill?'s':''}`} onClick={()=>setFS('')} style={{color:!fSkill?'#059669':'white',borderColor:!fSkill?'#059669':'rgba(255,255,255,.3)',background:!fSkill?'#ecfdf5':'transparent'}}>All</button>
-                        {SKILLS.map(s=><button key={s} className={`ob ${fSkill===s?'s':''}`} onClick={()=>setFS(s)} style={{color:fSkill===s?'#059669':'white',borderColor:fSkill===s?'#059669':'rgba(255,255,255,.3)',background:fSkill===s?'#ecfdf5':'transparent',fontSize:11}}>{s}</button>)}
-                    </div>
+                {/* Filter panel — restored with all filters */}
+                {showF&&<div className="filter-panel fade-in">
+                    <div className="fp-row"><div className="fp-label">Skill Level</div><div className="fp-pills">
+                        <button className={`fp-pill ${!fSkill?'s':''}`} onClick={()=>setFS('')}>All</button>
+                        {SKILLS.map(s=><button key={s} className={`fp-pill ${fSkill===s?'s':''}`} onClick={()=>setFS(fSkill===s?'':s)}>{s}</button>)}
+                    </div></div>
+                    <div className="fp-row"><div className="fp-label">Play Type</div><div className="fp-pills">
+                        <button className={`fp-pill ${!fType?'s':''}`} onClick={()=>setFT('')}>All</button>
+                        {PTYPES.map(t=><button key={t} className={`fp-pill ${fType===t?'s':''}`} onClick={()=>setFT(fType===t?'':t)}>{PT_E[t]} {t}</button>)}
+                    </div></div>
+                    <div className="fp-row"><div className="fp-label">Looking For</div><div className="fp-pills">
+                        <button className={`fp-pill ${!fPurpose?'s':''}`} onClick={()=>setFP('')}>All</button>
+                        {PURPOSES.map(p=><button key={p.id} className={`fp-pill ${fPurpose===p.id?'s':''}`} onClick={()=>setFP(fPurpose===p.id?'':p.id)}>{p.emoji} {p.label}</button>)}
+                    </div></div>
+                    <div className="fp-row" style={{marginBottom:0}}><div className="fp-label">Gender</div><div className="fp-pills">
+                        <button className={`fp-pill ${!fGender?'s':''}`} onClick={()=>setFG('')}>All</button>
+                        {['Male','Female','Non-binary'].map(g=><button key={g} className={`fp-pill ${fGender===g?'s':''}`} onClick={()=>setFG(fGender===g?'':g)}>{g}</button>)}
+                    </div></div>
+                    {fCount>0&&<div style={{marginTop:10,textAlign:'right'}}><button onClick={clearFilters} style={{background:'none',border:'none',color:'#fca5a5',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'Outfit'}}>✕ Clear all filters</button></div>}
                 </div>}
 
                 {/* Tabs */}
                 <div style={{display:'flex',gap:0,marginBottom:14,background:'rgba(255,255,255,.1)',borderRadius:10,padding:3}}>
-                    {[['all','🏓 All'],['now','⚡ Now'],['nearby','📍 Nearby']].map(([k,l])=>(
+                    {[['all','🏓 All'],['now','⚡ Available Now'],['nearby','📍 Nearby']].map(([k,l])=>(
                         <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:'8px',border:'none',borderRadius:8,fontFamily:'Outfit',fontSize:12,fontWeight:600,cursor:'pointer',background:tab===k?'white':'transparent',color:tab===k?'#059669':'rgba(255,255,255,.7)',boxShadow:tab===k?'0 1px 4px rgba(0,0,0,.1)':'none'}}>{l}</button>
                     ))}
                 </div>
@@ -510,13 +570,19 @@ function App(){
 
                 {/* Player list */}
                 {loading?<>{[1,2,3].map(i=><Skel key={i}/>)}</>
-                :filtered.length===0?<div style={{textAlign:'center',padding:'40px 16px'}}><div style={{fontSize:40,marginBottom:8}}>🏓</div><div style={{fontSize:16,fontWeight:700,color:'white',marginBottom:4}}>No players found</div><div style={{fontSize:13,color:'rgba(255,255,255,.6)',marginBottom:16}}>{search||fSkill?'Try different filters':'Be the first to post!'}</div>{!search&&!fSkill&&<button className="btn-g" onClick={()=>{setEditP(null);setShowPost(true);}}>⚡ Post Availability</button>}</div>
-                :filtered.map(p=><PlayerCard key={p.id} p={p} myUid={user.uid} uLat={uLat} uLng={uLng} onChat={setChatP} onEdit={p=>{setEditP(p);setShowPost(true);}} onRemove={async id=>{if(confirm('Remove post?'))try{await db.collection('findPlayers').doc(id).update({status:'removed'});}catch(e){alert(e.message);}}} expanded={expanded===p.id} onToggle={()=>setExpanded(expanded===p.id?null:p.id)}/>)}
+                :filtered.length===0?<div style={{textAlign:'center',padding:'40px 16px'}}><div style={{fontSize:40,marginBottom:8}}>🏓</div><div style={{fontSize:16,fontWeight:700,color:'white',marginBottom:4}}>No players found</div><div style={{fontSize:13,color:'rgba(255,255,255,.6)',marginBottom:16}}>{search||fCount?'Try different filters':'Be the first to post!'}</div>{(search||fCount>0)?<button onClick={()=>{setSearch('');clearFilters();}} style={{background:'rgba(255,255,255,.15)',border:'none',borderRadius:10,padding:'8px 20px',color:'white',fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'Outfit'}}>Clear Filters</button>:<button className="btn-g" onClick={()=>{setEditP(null);setShowPost(true);}}>📢 Post Availability</button>}</div>
+                :filtered.map(p=><PlayerCard key={p.id} p={p} myUid={user.uid} uLat={uLat} uLng={uLng} onChat={setChatP} onEdit={p=>{setEditP(p);setShowPost(true);}} onRemove={async id=>{if(confirm('Remove this post?'))try{await db.collection('findPlayers').doc(id).update({status:'removed'});}catch(e){alert(e.message);}}} expanded={expanded===p.id} onToggle={()=>setExpanded(expanded===p.id?null:p.id)}/>)}
 
-                {/* Quick links */}
-                <div style={{display:'flex',gap:8,marginTop:12}}>
-                    <a href="index.html" style={{flex:1,display:'flex',alignItems:'center',gap:8,background:'rgba(255,255,255,.1)',borderRadius:12,padding:'12px 14px',textDecoration:'none',backdropFilter:'blur(4px)'}}><span style={{fontSize:18}}>🏟️</span><div><div className="fd" style={{fontSize:13,fontWeight:800,color:'white'}}>COURTS</div><div style={{fontSize:10,color:'rgba(255,255,255,.5)'}}>Find courts</div></div></a>
-                    <a href="tournament.html" style={{flex:1,display:'flex',alignItems:'center',gap:8,background:'rgba(255,255,255,.1)',borderRadius:12,padding:'12px 14px',textDecoration:'none',backdropFilter:'blur(4px)'}}><span style={{fontSize:18}}>🏆</span><div><div className="fd" style={{fontSize:13,fontWeight:800,color:'white'}}>TOURNAMENTS</div><div style={{fontSize:10,color:'rgba(255,255,255,.5)'}}>Brackets</div></div></a>
+                {/* Quick links — DISTINCT COLORS */}
+                <div style={{display:'flex',gap:8,marginTop:16}}>
+                    <a href="index.html" style={{flex:1,display:'flex',alignItems:'center',gap:10,background:'linear-gradient(135deg,#1e40af,#3b82f6)',borderRadius:12,padding:'14px 16px',textDecoration:'none',boxShadow:'0 4px 12px rgba(30,64,175,.3)'}}>
+                        <span style={{fontSize:22}}>🏟️</span>
+                        <div><div className="fd" style={{fontSize:14,fontWeight:800,color:'white'}}>COURTS</div><div style={{fontSize:10,color:'rgba(255,255,255,.7)'}}>Find courts near you</div></div>
+                    </a>
+                    <a href="tournament.html" style={{flex:1,display:'flex',alignItems:'center',gap:10,background:'linear-gradient(135deg,#7c3aed,#a78bfa)',borderRadius:12,padding:'14px 16px',textDecoration:'none',boxShadow:'0 4px 12px rgba(124,58,237,.3)'}}>
+                        <span style={{fontSize:22}}>🏆</span>
+                        <div><div className="fd" style={{fontSize:14,fontWeight:800,color:'white'}}>TOURNAMENTS</div><div style={{fontSize:10,color:'rgba(255,255,255,.7)'}}>Brackets & scoring</div></div>
+                    </a>
                 </div>
 
                 {/* Sign out */}
@@ -526,10 +592,10 @@ function App(){
             </div>
 
             {/* FAB */}
-            <button className="fab" onClick={()=>{setEditP(null);setShowPost(true);}}>+</button>
+            <button className="fab" onClick={()=>{setEditP(null);setShowPost(true);}} title="Post Availability">+</button>
 
             {/* Modals */}
-            {showPost&&<PostAvail profile={profile} onClose={()=>{setShowPost(false);setEditP(null);}} onPosted={()=>{setShowPost(false);setEditP(null);}} editData={editP} uLat={uLat} uLng={uLng}/>}
+            {showPost&&<PostForm profile={profile} onClose={()=>{setShowPost(false);setEditP(null);}} onPosted={()=>{setShowPost(false);setEditP(null);}} editData={editP} uLat={uLat} uLng={uLng}/>}
             {chatP&&<ChatModal player={chatP} myUid={user.uid} myName={profile.name} onClose={()=>setChatP(null)}/>}
             {showInbox&&<Inbox onClose={()=>setShowInbox(false)} onOpen={setChatP} myUid={user.uid} players={players}/>}
             {showProfile&&<ProfileSetup user={user} profile={profile} onSave={p=>{setProfile({uid:user.uid,...p});setShowProfile(false);}} onClose={()=>setShowProfile(false)}/>}
