@@ -4,504 +4,535 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PickleConnect – Find a Player</title>
-    <meta name="description" content="Find pickleball players available near you. Filter by skill, age, gender, and play type. Connect instantly and get more games.">
-    <meta name="keywords" content="find pickleball players, pickleball partner, pickleball matchmaking, pickleball near me, pickleball skill level, pickleball tournament partner">
-    <meta name="author" content="PickleConnect">
-    <meta name="robots" content="index, follow">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="PickleConnect – Find a Player">
-    <meta property="og:description" content="Find available pickleball players nearby. Filter by skill, age, and play type. Connect instantly.">
+    <meta name="description" content="Find pickleball players near you. Sign in, set your profile, and connect instantly.">
     <meta name="theme-color" content="#059669">
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-8VE2FTD711"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-8VE2FTD711');
-    </script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-8VE2FTD711');</script>
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="PickleConnect">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23059669'/><circle cx='50' cy='50' r='28' fill='white' opacity='0.15'/><ellipse cx='50' cy='50' rx='20' ry='20' fill='none' stroke='white' stroke-width='3'/><line x1='30' y1='50' x2='70' y2='50' stroke='white' stroke-width='3'/><line x1='50' y1='30' x2='50' y2='70' stroke='white' stroke-width='3'/><circle cx='50' cy='50' r='6' fill='white'/></svg>" type="image/svg+xml">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23059669'/><circle cx='50' cy='50' r='6' fill='white'/></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;}
-        html{scroll-behavior:smooth;}
-        body{font-family:'Outfit',sans-serif;background:#f1f5f9;font-size:16px;-webkit-text-size-adjust:100%;}
+        body{font-family:'Outfit',sans-serif;background:#f0fdf4;font-size:16px;-webkit-text-size-adjust:100%;}
         .fd{font-family:'Barlow Condensed',sans-serif;}
-        .nav{background:#0f172a;padding:13px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;}
-        .pg{padding:16px;max-width:740px;width:100%;margin:0 auto;padding-bottom:100px;}
-        .card{background:white;border-radius:14px;padding:18px 20px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:13px;}
-        .btn-g{background:linear-gradient(135deg,#059669,#10b981);color:white;border-radius:10px;padding:12px 22px;font-weight:700;font-size:15px;border:none;cursor:pointer;transition:all .2s;font-family:'Outfit',sans-serif;box-shadow:0 4px 12px rgba(5,150,105,.25);}
-        .btn-g:hover{background:linear-gradient(135deg,#047857,#059669);transform:translateY(-1px);}
-        .btn-g:active{transform:translateY(0);}
-        .btn-out{background:transparent;color:#059669;border:2px solid #059669;border-radius:10px;padding:10px 20px;font-weight:600;font-size:14px;cursor:pointer;transition:all .15s;font-family:'Outfit',sans-serif;}
+
+        /* Gradient bg */
+        .hero-bg{background:linear-gradient(135deg,#064e3b 0%,#059669 50%,#34d399 100%);min-height:100vh;}
+
+        /* Nav */
+        .nav{padding:14px 18px;display:flex;align-items:center;gap:12px;}
+        .nav-logo{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:white;letter-spacing:1px;}
+
+        /* Content area */
+        .content{padding:0 16px 100px;max-width:740px;margin:0 auto;}
+
+        /* Page title */
+        .page-title{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:white;margin-bottom:16px;padding:0 4px;}
+
+        /* Search bar */
+        .search-bar{display:flex;gap:10px;margin-bottom:20px;align-items:center;}
+        .search-input{flex:1;padding:12px 16px 12px 40px;border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;outline:none;background:white;box-shadow:0 2px 8px rgba(0,0,0,.1);}
+        .search-input::placeholder{color:#94a3b8;}
+        .filter-btn{width:44px;height:44px;border-radius:12px;border:none;background:rgba(255,255,255,.15);color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+        .filter-btn:hover{background:rgba(255,255,255,.25);}
+        .filter-btn.active{background:white;color:#059669;}
+
+        /* Player card — DUPR-inspired */
+        .pc{background:white;border-radius:14px;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:all .2s;cursor:pointer;border-left:4px solid transparent;}
+        .pc:hover{box-shadow:0 4px 16px rgba(0,0,0,.1);border-left-color:#10b981;}
+        .pc.expanded{border-left-color:#059669;}
+        .pc-main{padding:14px 16px;display:flex;align-items:center;gap:14px;}
+        .pc-avatar{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#d1fae5,#a7f3d0);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;border:2px solid #e2e8f0;}
+        .pc-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+        .pc-avatar-letter{font-size:20px;font-weight:700;color:#059669;}
+        .pc-info{flex:1;min-width:0;}
+        .pc-name{font-weight:700;font-size:15px;color:#0f172a;display:flex;align-items:center;gap:6px;}
+        .pc-id{font-weight:500;font-size:12px;color:#94a3b8;}
+        .pc-loc{font-size:12px;color:#64748b;margin-top:2px;}
+        .pc-meta{font-size:12px;color:#94a3b8;margin-top:1px;}
+        .pc-ratings{display:flex;gap:8px;flex-shrink:0;}
+        .pc-rating{width:50px;text-align:center;}
+        .pc-rating-val{font-size:14px;font-weight:800;color:#064e3b;background:#ecfdf5;border-radius:8px;padding:6px 4px;border:1px solid #d1fae5;}
+        .pc-rating-label{font-size:9px;color:#94a3b8;margin-top:3px;font-weight:600;text-transform:uppercase;}
+
+        /* Expanded section */
+        .pc-expand{padding:0 16px 14px;border-top:1px solid #f1f5f9;animation:fadeIn .2s ease;}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+        /* Availability badge */
+        .avail-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:16px;font-size:11px;font-weight:700;}
+        .avail-now{background:#ecfdf5;color:#059669;}
+        .avail-later{background:#fffbeb;color:#d97706;}
+        .avail-flex{background:#eff6ff;color:#2563eb;}
+
+        /* Tags */
+        .tag{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:14px;font-size:11px;font-weight:600;}
+        .t-green{background:#ecfdf5;color:#059669;}.t-purple{background:#f5f3ff;color:#7c3aed;}.t-slate{background:#f1f5f9;color:#475569;}
+
+        /* Buttons */
+        .btn-g{background:linear-gradient(135deg,#059669,#10b981);color:white;border-radius:10px;padding:10px 20px;font-weight:700;font-size:14px;border:none;cursor:pointer;font-family:'Outfit',sans-serif;box-shadow:0 2px 8px rgba(5,150,105,.25);}
+        .btn-g:hover{opacity:.9;}
+        .btn-out{background:transparent;color:#059669;border:2px solid #059669;border-radius:10px;padding:8px 16px;font-weight:600;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;}
         .btn-out:hover{background:#059669;color:white;}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-        .spin{display:inline-block;animation:spin 1.2s linear infinite;}
-        .fade-in{animation:fadeIn .3s ease;}
-        @keyframes slideUp{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:translateY(0)}}
-        .player-card{background:white;border-radius:14px;padding:16px 18px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:12px;border:2px solid transparent;transition:all .2s;animation:fadeIn .3s ease;}
-        .player-card:hover{border-color:#10b981;box-shadow:0 8px 24px rgba(0,0,0,.1);}
-        .player-card.mine{border-color:#059669;background:linear-gradient(135deg,#f0fdf4,#ffffff);}
-        .tag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap;}
-        .tag-green{background:#ecfdf5;color:#059669;}.tag-blue{background:#eff6ff;color:#2563eb;}.tag-purple{background:#f5f3ff;color:#7c3aed;}.tag-amber{background:#fffbeb;color:#d97706;}.tag-pink{background:#fdf2f8;color:#db2777;}.tag-slate{background:#f1f5f9;color:#475569;}
-        .form-group{margin-bottom:16px;}
-        .form-label{display:block;font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
-        .form-input{width:100%;padding:11px 14px;border:2px solid #e2e8f0;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;transition:border-color .15s;outline:none;background:white;}
-        .form-input:focus{border-color:#059669;}
-        .form-select{width:100%;padding:11px 14px;border:2px solid #e2e8f0;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;background:white;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%23475569'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
-        .form-select:focus{border-color:#059669;}
-        textarea.form-input{resize:vertical;min-height:60px;}
-        .opt-grid{display:flex;gap:8px;flex-wrap:wrap;}
-        .opt-btn{padding:8px 16px;border-radius:10px;border:2px solid #e2e8f0;background:white;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;color:#475569;}
-        .opt-btn:hover{border-color:#10b981;}
-        .opt-btn.sel{border-color:#059669;background:#ecfdf5;color:#059669;}
-        .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.6);display:flex;align-items:flex-end;justify-content:center;z-index:200;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
-        .modal-sheet{background:white;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:740px;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease;}
-        .modal-handle{width:40px;height:4px;background:#cbd5e1;border-radius:2px;margin:0 auto 18px;}
-        .chat-bubble{max-width:80%;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.5;margin-bottom:8px;word-wrap:break-word;}
-        .chat-bubble.them{background:#f1f5f9;color:#1e293b;border-bottom-left-radius:4px;align-self:flex-start;}
-        .chat-bubble.me{background:linear-gradient(135deg,#059669,#10b981);color:white;border-bottom-right-radius:4px;align-self:flex-end;}
-        .chat-time{font-size:10px;opacity:.6;margin-top:2px;}
-        .status-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;}
-        .status-dot.online{background:#10b981;animation:pulse 2s infinite;}
-        .status-dot.away{background:#f59e0b;}
-        .search-wrap{position:relative;margin-bottom:14px;}
-        .search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;}
-        .search-inp{width:100%;padding:12px 14px 12px 40px;border:2px solid #e2e8f0;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;outline:none;transition:border-color .15s;background:white;}
-        .search-inp:focus{border-color:#059669;}
-        .tab-bar{display:flex;gap:0;margin-bottom:16px;background:#f1f5f9;border-radius:12px;padding:3px;}
-        .tab-btn{flex:1;padding:10px 8px;border:none;background:transparent;border-radius:10px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;color:#64748b;transition:all .2s;position:relative;}
-        .tab-btn.active{background:white;color:#059669;box-shadow:0 1px 4px rgba(0,0,0,.08);}
-        .fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#059669,#10b981);color:white;border:none;font-size:28px;cursor:pointer;box-shadow:0 8px 24px rgba(5,150,105,.4);display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:50;}
-        .fab:hover{transform:translateY(-2px) scale(1.05);}
-        .fab:active{transform:translateY(0) scale(.98);}
-        .empty-state{text-align:center;padding:48px 20px;color:#94a3b8;}
-        .avail-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;font-size:12px;font-weight:700;}
-        .avail-now{background:#ecfdf5;color:#059669;}.avail-later{background:#fffbeb;color:#d97706;}.avail-flex{background:#eff6ff;color:#2563eb;}
+        .btn-w{background:white;color:#064e3b;border:none;border-radius:12px;padding:14px 28px;font-weight:700;font-size:16px;cursor:pointer;font-family:'Outfit',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.15);display:flex;align-items:center;gap:10px;transition:all .2s;}
+        .btn-w:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(0,0,0,.2);}
+        .btn-invite{background:rgba(255,255,255,.15);color:white;border:2px solid rgba(255,255,255,.3);border-radius:12px;padding:10px 20px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Outfit',sans-serif;backdrop-filter:blur(4px);display:flex;align-items:center;gap:6px;}
+        .btn-invite:hover{background:rgba(255,255,255,.25);}
+
+        /* Modal */
+        .mo{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:200;backdrop-filter:blur(4px);}
+        .ms{background:white;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:740px;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease;}
+        @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+        .mh{width:40px;height:4px;background:#cbd5e1;border-radius:2px;margin:0 auto 16px;}
+
+        /* Form */
+        .fg{margin-bottom:14px;}
+        .fl{display:block;font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+        .fi{width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;outline:none;background:white;}
+        .fi:focus{border-color:#059669;}
+        select.fi{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%23475569'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;cursor:pointer;}
+        textarea.fi{resize:vertical;min-height:50px;}
+        .og{display:flex;gap:6px;flex-wrap:wrap;}
+        .ob{padding:7px 14px;border-radius:8px;border:2px solid #e2e8f0;background:white;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:#475569;}
+        .ob:hover{border-color:#10b981;}.ob.s{border-color:#059669;background:#ecfdf5;color:#059669;}
+
+        /* Chat */
+        .cb{max-width:80%;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.5;margin-bottom:6px;word-wrap:break-word;}
+        .cb.them{background:#f1f5f9;color:#1e293b;border-bottom-left-radius:4px;}
+        .cb.me{background:linear-gradient(135deg,#059669,#10b981);color:white;border-bottom-right-radius:4px;}
+        .ct{font-size:10px;opacity:.6;margin-top:2px;}
+
+        /* Auth screen */
+        .auth-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;padding:20px;text-align:center;}
+        .google-btn{background:white;color:#333;border:none;border-radius:12px;padding:14px 28px;font-weight:700;font-size:16px;cursor:pointer;font-family:'Outfit',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.15);display:flex;align-items:center;gap:12px;transition:all .2s;}
+        .google-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(0,0,0,.2);}
+        .google-icon{width:20px;height:20px;}
+
+        /* Inbox */
+        .ix{display:flex;align-items:center;gap:12px;padding:12px 14px;background:white;border-radius:12px;margin-bottom:8px;cursor:pointer;border:2px solid transparent;transition:all .15s;}
+        .ix:hover{border-color:#10b981;}.ix.ur{background:#f0fdf4;border-color:#a7f3d0;}
+        .av-sm{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#d1fae5,#a7f3d0);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#059669;flex-shrink:0;overflow:hidden;}
+        .av-sm img{width:100%;height:100%;object-fit:cover;}
+        .badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;background:#ef4444;color:white;border-radius:8px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;}
+        .sb{display:flex;align-items:center;gap:5px;padding:6px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;color:#059669;font-weight:600;}
+
+        /* Profile indicator */
+        .user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);border-radius:20px;padding:4px 12px 4px 4px;cursor:pointer;border:none;backdrop-filter:blur(4px);}
+        .user-pill img{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,.3);}
+        .user-pill span{font-size:12px;font-weight:600;color:white;}
+
+        /* FAB */
+        .fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:16px;background:white;color:#059669;border:none;font-size:28px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;z-index:50;font-weight:300;}
+
         @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
         .skeleton{background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:400px 100%;animation:shimmer 1.5s infinite;border-radius:8px;}
-        .info-banner{background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:flex-start;gap:10px;}
-        .inbox-item{display:flex;align-items:center;gap:12px;padding:14px 16px;background:white;border-radius:12px;margin-bottom:8px;cursor:pointer;border:2px solid transparent;transition:all .15s;box-shadow:0 1px 4px rgba(0,0,0,.04);}
-        .inbox-item:hover{border-color:#10b981;box-shadow:0 4px 12px rgba(0,0,0,.08);}
-        .inbox-item.unread{background:#f0fdf4;border-color:#a7f3d0;}
-        .inbox-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#059669,#10b981);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:16px;flex-shrink:0;}
-        .badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;background:#ef4444;color:white;border-radius:8px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid #0f172a;}
-        .secure-banner{display:flex;align-items:center;gap:6px;padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;margin-bottom:12px;font-size:12px;color:#059669;font-weight:600;}
     </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useEffect, useRef, useMemo } = React;
+const{useState,useEffect,useRef,useMemo}=React;
 
 // ── Firebase ──────────────────────────────────────────────────────────
 const FB={apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",authDomain:"pickleball-app-1bba7.firebaseapp.com",projectId:"pickleball-app-1bba7",storageBucket:"pickleball-app-1bba7.firebasestorage.app",messagingSenderId:"645604154338",appId:"1:645604154338:web:b92f87c2cd11d950b737bb"};
-let db=null,fbOk=false;
-try{if(!firebase.apps.length)firebase.initializeApp(FB);db=firebase.firestore();fbOk=true;}catch(e){console.error('Firebase:',e);}
+let db=null,auth=null,fbOk=false;
+try{if(!firebase.apps.length)firebase.initializeApp(FB);db=firebase.firestore();auth=firebase.auth();fbOk=true;}catch(e){console.error('FB:',e);}
 
 // ── Helpers ───────────────────────────────────────────────────────────
-function haversine(lat1,lon1,lat2,lon2){const R=3958.8,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180,a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.asin(Math.sqrt(a));}
-function timeAgo(ts){if(!ts)return '';const d=Date.now()-ts,m=Math.floor(d/60000);if(m<1)return 'just now';if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
-function formatAvailTime(ds,ts){if(!ds)return 'Anytime';const d=new Date(ds+(ts?'T'+ts:''));const now=new Date();const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());const target=new Date(d.getFullYear(),d.getMonth(),d.getDate());const diff=Math.round((target-today)/86400000);let l=diff===0?'Today':diff===1?'Tomorrow':d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});if(ts){const[h,m]=ts.split(':').map(Number);l+=` at ${h%12||12}:${m.toString().padStart(2,'0')} ${h>=12?'PM':'AM'}`;}return l;}
-function getDeviceId(){let id=localStorage.getItem('pickleDeviceId');if(!id){id='dev_'+Math.random().toString(36).slice(2,11);localStorage.setItem('pickleDeviceId',id);}return id;}
-function getConvoId(a,b){return [a,b].sort().join('__');}
+function haversine(a,b,c,d){const R=3958.8,dL=(c-a)*Math.PI/180,dN=(d-b)*Math.PI/180,x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dN/2)**2;return R*2*Math.asin(Math.sqrt(x));}
+function timeAgo(t){if(!t)return '';const d=Date.now()-t,m=Math.floor(d/60000);if(m<1)return 'just now';if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
+function fmtTime(ds,ts){if(!ds)return '';const d=new Date(ds+(ts?'T'+ts:''));const now=new Date();const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());const target=new Date(d.getFullYear(),d.getMonth(),d.getDate());const diff=Math.round((target-today)/86400000);let l=diff===0?'Today':diff===1?'Tomorrow':d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});if(ts){const[h,m]=ts.split(':').map(Number);l+=` ${h%12||12}:${m.toString().padStart(2,'0')}${h>=12?'PM':'AM'}`;}return l;}
+function cid(a,b){return[a,b].sort().join('__');}
 
-const DEVICE_ID=getDeviceId();
-const SKILL_LEVELS=['1.0-2.0','2.5-3.0','3.0-3.5','3.5-4.0','4.0-4.5','4.5-5.0','5.0+'];
-const SKILL_LABELS={'1.0-2.0':'Beginner','2.5-3.0':'Novice','3.0-3.5':'Intermediate','3.5-4.0':'Advanced','4.0-4.5':'Competitive','4.5-5.0':'Expert','5.0+':'Pro'};
-const AGE_RANGES=['18-25','26-35','36-45','46-55','56-65','65+'];
-const GENDERS=['Male','Female','Non-binary'];
-const PLAY_TYPES=['Casual','Competitive','Tournament','Drilling','League'];
-const AVAILABILITY=['Now','Today','This Week','Flexible'];
-const SKILL_COLORS={'1.0-2.0':'tag-slate','2.5-3.0':'tag-green','3.0-3.5':'tag-blue','3.5-4.0':'tag-purple','4.0-4.5':'tag-amber','4.5-5.0':'tag-pink','5.0+':'tag-pink'};
-const PLAY_TYPE_EMOJI={'Casual':'🎾','Competitive':'🔥','Tournament':'🏆','Drilling':'🎯','League':'🏅'};
+const SKILLS=['2.0-2.5','2.5-3.0','3.0-3.5','3.5-4.0','4.0-4.5','4.5-5.0','5.0+'];
+const SKILL_L={'2.0-2.5':'Beginner','2.5-3.0':'Novice','3.0-3.5':'Intermediate','3.5-4.0':'Advanced','4.0-4.5':'Competitive','4.5-5.0':'Expert','5.0+':'Pro'};
+const PTYPES=['Casual','Competitive','Tournament','Drilling','League'];
+const PT_E={'Casual':'🎾','Competitive':'🔥','Tournament':'🏆','Drilling':'🎯','League':'🏅'};
+const AVAIL=['Now','Today','This Week','Flexible'];
 
-// ── Name Prompt ───────────────────────────────────────────────────────
-function NamePrompt({onDone,onCancel}){
-    const[name,setName]=useState(localStorage.getItem('pickleFindName')||'');
-    const submit=()=>{if(!name.trim()){alert('Please enter your name.');return;}localStorage.setItem('pickleFindName',name.trim());onDone(name.trim());};
+// ── Auth Screen ───────────────────────────────────────────────────────
+function AuthScreen(){
+    const[loading,setLoading]=useState(false);
+    const signIn=async()=>{
+        setLoading(true);
+        try{
+            const provider=new firebase.auth.GoogleAuthProvider();
+            await auth.signInWithPopup(provider);
+        }catch(e){
+            if(e.code!=='auth/popup-closed-by-user')alert('Sign in failed: '+e.message);
+        }
+        setLoading(false);
+    };
     return(
-        <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onCancel();}}>
-            <div className="modal-sheet" style={{maxHeight:'auto'}}>
-                <div className="modal-handle"/>
-                <div style={{textAlign:'center',marginBottom:20}}>
-                    <div style={{fontSize:48,marginBottom:10}}>💬</div>
-                    <div className="fd" style={{fontSize:22,fontWeight:800,color:'#0f172a',marginBottom:6}}>BEFORE YOU CHAT</div>
-                    <div style={{fontSize:14,color:'#64748b'}}>Enter your name so the other player knows who they're talking to.</div>
+        <div className="hero-bg">
+            <div className="nav">
+                <a href="index.html" style={{display:'flex',alignItems:'center',textDecoration:'none'}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg></a>
+                <div className="nav-logo">🏓 PICKLECONNECT</div>
+            </div>
+            <div className="auth-screen">
+                <div style={{fontSize:64,marginBottom:16}}>🏓</div>
+                <div className="fd" style={{fontSize:36,fontWeight:800,color:'white',marginBottom:8}}>FIND PLAYERS</div>
+                <div style={{fontSize:16,color:'rgba(255,255,255,.7)',marginBottom:32,maxWidth:360,lineHeight:1.5}}>
+                    Sign in to find players near you, post your availability, and message other players privately.
                 </div>
-                <div className="form-group">
-                    <div className="form-label">Your Name</div>
-                    <input className="form-input" value={name} onChange={e=>setName(e.target.value)} placeholder="Display name" maxLength={40} autoFocus onKeyDown={e=>{if(e.key==='Enter')submit();}}/>
-                </div>
-                <div style={{display:'flex',gap:10}}>
-                    <button className="btn-out" onClick={onCancel} style={{flex:1}}>Cancel</button>
-                    <button className="btn-g" onClick={submit} style={{flex:1}}>Start Chatting</button>
-                </div>
+                <button className="google-btn" onClick={signIn} disabled={loading}>
+                    <svg className="google-icon" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                    {loading?'Signing in…':'Sign in with Google'}
+                </button>
+                <div style={{fontSize:12,color:'rgba(255,255,255,.4)',marginTop:24}}>Free · No password needed · Takes 5 seconds</div>
             </div>
         </div>
     );
 }
 
-// ── Post Form ─────────────────────────────────────────────────────────
-function PostPlayerModal({onClose,onPosted,editData,userLat,userLng,locStatus}){
-    const[name,setName]=useState(editData?.name||localStorage.getItem('pickleFindName')||'');
-    const[skill,setSkill]=useState(editData?.skill||localStorage.getItem('pickleFindSkill')||'');
-    const[age,setAge]=useState(editData?.age||localStorage.getItem('pickleFindAge')||'');
-    const[gender,setGender]=useState(editData?.gender||localStorage.getItem('pickleFindGender')||'');
-    const[playTypes,setPlayTypes]=useState(editData?.playTypes||[]);
-    const[availability,setAvailability]=useState(editData?.availability||'Flexible');
-    const[availDate,setAvailDate]=useState(editData?.availDate||'');
-    const[availTime,setAvailTime]=useState(editData?.availTime||'');
-    const[courtName,setCourtName]=useState(editData?.courtName||'');
-    const[city,setCity]=useState(editData?.city||localStorage.getItem('pickleFindCity')||'');
-    const[message,setMessage]=useState(editData?.message||'');
-    const[showPhone,setShowPhone]=useState(!!editData?.phone);
-    const[phone,setPhone]=useState(editData?.phone||'');
-    const[showEmail,setShowEmail]=useState(!!editData?.email);
-    const[email,setEmail]=useState(editData?.email||'');
+// ── Profile Setup ─────────────────────────────────────────────────────
+function ProfileSetup({user,profile,onSave,onClose}){
+    const[name,setName]=useState(profile?.name||user?.displayName||'');
+    const[skill,setSkill]=useState(profile?.skill||'');
+    const[city,setCity]=useState(profile?.city||'');
+    const[age,setAge]=useState(profile?.age||'');
+    const[gender,setGender]=useState(profile?.gender||'');
+    const[duprId,setDupr]=useState(profile?.duprId||'');
     const[saving,setSaving]=useState(false);
-    const togglePT=t=>setPlayTypes(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t]);
-    const handleSubmit=async()=>{
-        if(!name.trim()){alert('Please enter your name.');return;}
-        if(!skill){alert('Please select your skill level.');return;}
-        if(playTypes.length===0){alert('Please select at least one play type.');return;}
-        if(!userLat&&!city.trim()){alert('Location isn\'t available. Please enter your city/area.');return;}
+    const save=async()=>{
+        if(!name.trim()){alert('Enter your name.');return;}
+        if(!skill){alert('Select your skill level.');return;}
         setSaving(true);
-        const data={name:name.trim(),skill,age:age||null,gender:gender||null,playTypes,availability,availDate:availDate||null,availTime:availTime||null,courtName:courtName.trim()||null,city:city.trim()||null,message:message.trim()||null,phone:showPhone&&phone.trim()?phone.trim():null,email:showEmail&&email.trim()?email.trim():null,lat:userLat||null,lng:userLng||null,deviceId:DEVICE_ID,timestamp:Date.now(),status:'active'};
-        localStorage.setItem('pickleFindName',name.trim());localStorage.setItem('pickleFindSkill',skill);
-        if(age)localStorage.setItem('pickleFindAge',age);if(gender)localStorage.setItem('pickleFindGender',gender);if(city.trim())localStorage.setItem('pickleFindCity',city.trim());
-        try{if(editData?.id){await db.collection('findPlayers').doc(editData.id).update(data);data.id=editData.id;}else{const ref=await db.collection('findPlayers').add(data);data.id=ref.id;}onPosted(data);}catch(e){alert('Failed: '+e.message);}
+        const data={name:name.trim(),skill,city:city.trim()||null,age:age||null,gender:gender||null,duprId:duprId.trim()||null,photoURL:user.photoURL||null,email:user.email||null,uid:user.uid,updatedAt:Date.now()};
+        try{await db.collection('profiles').doc(user.uid).set(data,{merge:true});onSave(data);}catch(e){alert('Failed: '+e.message);}
         setSaving(false);
     };
-    const todayStr=new Date().toISOString().split('T')[0];
-    return(
-        <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-            <div className="modal-sheet">
-                <div className="modal-handle"/>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
-                    <div className="fd" style={{fontSize:22,fontWeight:800,color:'#0f172a'}}>{editData?'✏️ EDIT YOUR POST':'🏓 POST AVAILABILITY'}</div>
-                    <button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:32,height:32,fontSize:16,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
-                </div>
-                <div className="form-group"><div className="form-label">Your Name *</div><input className="form-input" value={name} onChange={e=>setName(e.target.value)} placeholder="Display name" maxLength={40}/></div>
-                <div className="form-group"><div className="form-label">Skill Level (DUPR/Rating) *</div><div className="opt-grid">{SKILL_LEVELS.map(s=><button key={s} className={`opt-btn ${skill===s?'sel':''}`} onClick={()=>setSkill(s)}>{s} <span style={{fontSize:10,opacity:.7}}>{SKILL_LABELS[s]}</span></button>)}</div></div>
-                <div style={{display:'flex',gap:12}}>
-                    <div className="form-group" style={{flex:1}}><div className="form-label">Age Range</div><select className="form-select" value={age} onChange={e=>setAge(e.target.value)}><option value="">Prefer not to say</option>{AGE_RANGES.map(a=><option key={a} value={a}>{a}</option>)}</select></div>
-                    <div className="form-group" style={{flex:1}}><div className="form-label">Gender</div><select className="form-select" value={gender} onChange={e=>setGender(e.target.value)}><option value="">Prefer not to say</option>{GENDERS.map(g=><option key={g} value={g}>{g}</option>)}</select></div>
-                </div>
-                <div className="form-group"><div className="form-label">Looking to Play *</div><div className="opt-grid">{PLAY_TYPES.map(t=><button key={t} className={`opt-btn ${playTypes.includes(t)?'sel':''}`} onClick={()=>togglePT(t)}>{PLAY_TYPE_EMOJI[t]} {t}</button>)}</div></div>
-                <div className="form-group"><div className="form-label">When Are You Available?</div><div className="opt-grid" style={{marginBottom:10}}>{AVAILABILITY.map(a=><button key={a} className={`opt-btn ${availability===a?'sel':''}`} onClick={()=>setAvailability(a)}>{a==='Now'?'⚡':a==='Today'?'📅':a==='This Week'?'🗓️':'🤷'} {a}</button>)}</div>{(availability==='This Week'||availability==='Today')&&<div style={{display:'flex',gap:10,marginTop:8}}><input type="date" className="form-input" value={availDate} onChange={e=>setAvailDate(e.target.value)} min={todayStr} style={{flex:1}}/><input type="time" className="form-input" value={availTime} onChange={e=>setAvailTime(e.target.value)} style={{flex:1}}/></div>}</div>
-                <div className="form-group"><div className="form-label">Your Area / City {!userLat?'*':''}</div>{userLat?<div style={{fontSize:12,color:'#059669',marginBottom:6,display:'flex',alignItems:'center',gap:4}}><div className="status-dot online" style={{width:6,height:6}}/> GPS detected — city optional</div>:<div style={{fontSize:12,color:'#d97706',marginBottom:6}}>📍 No GPS — enter your city so nearby players can find you</div>}<input className="form-input" value={city} onChange={e=>setCity(e.target.value)} placeholder="e.g. Dardenne Prairie, MO" maxLength={80}/></div>
-                <div className="form-group"><div className="form-label">Preferred Court (optional)</div><input className="form-input" value={courtName} onChange={e=>setCourtName(e.target.value)} placeholder="e.g. Dardenne Prairie Community Park" maxLength={100}/></div>
-                <div className="form-group"><div className="form-label">Message to Others</div><textarea className="form-input" value={message} onChange={e=>setMessage(e.target.value)} placeholder="Looking for doubles partner, any level welcome!" maxLength={280} rows={2}/></div>
-                <div className="form-group"><div className="form-label">Contact Options</div><div style={{fontSize:12,color:'#64748b',marginBottom:10}}>🔒 Private in-app chat is always available. Optionally share:</div><div style={{display:'flex',gap:8,marginBottom:8}}><button className={`opt-btn ${showPhone?'sel':''}`} onClick={()=>setShowPhone(!showPhone)}>📱 Add Phone</button><button className={`opt-btn ${showEmail?'sel':''}`} onClick={()=>setShowEmail(!showEmail)}>✉️ Add Email</button></div>{showPhone&&<input className="form-input" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="Your phone number" type="tel" style={{marginBottom:8}}/>}{showEmail&&<input className="form-input" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Your email address" type="email"/>}</div>
-                <button className="btn-g" onClick={handleSubmit} disabled={saving} style={{width:'100%',padding:'14px',fontSize:16,opacity:saving?.6:1}}>{saving?'⏳ Saving...':editData?'✅ Update Post':'🏓 Post & Find Players'}</button>
+    return(<div className="mo" onClick={e=>{if(e.target===e.currentTarget&&onClose)onClose();}}>
+        <div className="ms"><div className="mh"/>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+                <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{profile?'✏️ EDIT PROFILE':'👋 SET UP PROFILE'}</div>
+                {onClose&&<button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:30,height:30,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>}
             </div>
+            {!profile&&<div style={{fontSize:13,color:'#64748b',marginBottom:16,lineHeight:1.5}}>Set up your profile once — it'll be used everywhere in PickleConnect.</div>}
+            <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16,padding:12,background:'#f8fafc',borderRadius:12}}>
+                {user.photoURL?<img src={user.photoURL} style={{width:40,height:40,borderRadius:'50%'}} referrerPolicy="no-referrer"/>:<div className="av-sm" style={{width:40,height:40,fontSize:16}}>{(name||'?')[0].toUpperCase()}</div>}
+                <div><div style={{fontSize:13,fontWeight:600,color:'#0f172a'}}>{user.email}</div><div style={{fontSize:11,color:'#94a3b8'}}>Signed in with Google</div></div>
+            </div>
+            <div className="fg"><div className="fl">Display Name *</div><input className="fi" value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" maxLength={40}/></div>
+            <div className="fg"><div className="fl">Skill Level *</div><div className="og">{SKILLS.map(s=><button key={s} className={`ob ${skill===s?'s':''}`} onClick={()=>setSkill(s)}>{s}<span style={{fontSize:9,opacity:.6,marginLeft:2}}>{SKILL_L[s]}</span></button>)}</div></div>
+            <div className="fg"><div className="fl">City / Area</div><input className="fi" value={city} onChange={e=>setCity(e.target.value)} placeholder="e.g. Dardenne Prairie, MO" maxLength={80}/></div>
+            <div style={{display:'flex',gap:10}}>
+                <div className="fg" style={{flex:1}}><div className="fl">Age Range</div><select className="fi" value={age} onChange={e=>setAge(e.target.value)}><option value="">—</option>{['18-25','26-35','36-45','46-55','56-65','65+'].map(a=><option key={a}>{a}</option>)}</select></div>
+                <div className="fg" style={{flex:1}}><div className="fl">Gender</div><select className="fi" value={gender} onChange={e=>setGender(e.target.value)}><option value="">—</option>{['Male','Female','Non-binary'].map(g=><option key={g}>{g}</option>)}</select></div>
+            </div>
+            <div className="fg"><div className="fl">DUPR ID (optional)</div><div style={{fontSize:11,color:'#64748b',marginBottom:4}}>Link your verified rating. <a href="https://mydupr.com" target="_blank" style={{color:'#059669'}}>Find your ID →</a></div><input className="fi" value={duprId} onChange={e=>setDupr(e.target.value)} placeholder="e.g. JJM7KM" maxLength={20}/></div>
+            <button className="btn-g" onClick={save} disabled={saving} style={{width:'100%',padding:'13px',fontSize:15,opacity:saving?.6:1}}>{saving?'Saving…':'✅ Save Profile'}</button>
         </div>
-    );
+    </div>);
 }
 
-// ── Private 1-on-1 Chat ───────────────────────────────────────────────
-function ChatModal({player,onClose}){
-    const[messages,setMessages]=useState([]);
-    const[input,setInput]=useState('');
-    const[sending,setSending]=useState(false);
-    const[loadError,setLoadError]=useState(null);
-    const senderName=localStorage.getItem('pickleFindName')||'Anonymous';
-    const chatEndRef=useRef(null);
-    const convoId=getConvoId(DEVICE_ID,player.deviceId);
-    const otherName=player.name||'Player';
-
-    // Listen to private messages
-    useEffect(()=>{
-        if(!fbOk){setLoadError('Database not available.');return;}
-        setLoadError(null);
-        const unsub=db.collection('conversations').doc(convoId).collection('messages')
-            .orderBy('timestamp','asc')
-            .onSnapshot(snap=>{
-                setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));
-                setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:'smooth'}),100);
-            },err=>{console.error('Chat error:',err);setLoadError('Could not load messages: '+err.message);});
-        return()=>unsub();
-    },[convoId]);
-
-    // Mark read
-    useEffect(()=>{
-        if(!fbOk||messages.length===0)return;
-        db.collection('conversations').doc(convoId).update({[`readBy_${DEVICE_ID}`]:Date.now()}).catch(()=>{});
-    },[convoId,messages.length]);
-
-    const sendMsg=async()=>{
-        if(!input.trim()||sending)return;
-        setSending(true);
-        const now=Date.now(),txt=input.trim();
-        try{
-            const ref=db.collection('conversations').doc(convoId);
-            const doc=await ref.get();
-            const convoUpdate={lastMessage:txt,lastMessageBy:DEVICE_ID,lastTimestamp:now,[`participantNames.${DEVICE_ID}`]:senderName,[`readBy_${DEVICE_ID}`]:now};
-            if(!doc.exists){
-                await ref.set({participants:[DEVICE_ID,player.deviceId].sort(),participantNames:{[DEVICE_ID]:senderName,[player.deviceId]:otherName},createdAt:now,...convoUpdate});
-            }else{
-                await ref.update(convoUpdate);
-            }
-            await ref.collection('messages').add({text:txt,senderDeviceId:DEVICE_ID,senderName:senderName,timestamp:now});
-            setInput('');
-        }catch(e){console.error('Send error:',e);alert('Failed to send: '+e.message);}
-        setSending(false);
+// ── Post Availability ─────────────────────────────────────────────────
+function PostAvail({profile,onClose,onPosted,editData,uLat,uLng}){
+    const[playTypes,setPT]=useState(editData?.playTypes||[]);
+    const[availability,setAv]=useState(editData?.availability||'Flexible');
+    const[availDate,setAD]=useState(editData?.availDate||'');
+    const[availTime,setAT]=useState(editData?.availTime||'');
+    const[courtName,setCourt]=useState(editData?.courtName||'');
+    const[message,setMsg]=useState(editData?.message||'');
+    const[saving,setSaving]=useState(false);
+    const togglePT=t=>setPT(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t]);
+    const save=async()=>{
+        if(playTypes.length===0){alert('Select at least one play type.');return;}
+        setSaving(true);
+        const data={uid:profile.uid,name:profile.name,skill:profile.skill,city:profile.city||null,age:profile.age||null,gender:profile.gender||null,duprId:profile.duprId||null,photoURL:profile.photoURL||null,playTypes,availability,availDate:availDate||null,availTime:availTime||null,courtName:courtName.trim()||null,message:message.trim()||null,lat:uLat||null,lng:uLng||null,timestamp:Date.now(),status:'active'};
+        try{if(editData?.id){await db.collection('findPlayers').doc(editData.id).update(data);data.id=editData.id;}else{const ref=await db.collection('findPlayers').add(data);data.id=ref.id;}onPosted();}catch(e){alert('Failed: '+e.message);}
+        setSaving(false);
     };
+    const today=new Date().toISOString().split('T')[0];
+    return(<div className="mo" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+        <div className="ms"><div className="mh"/>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{editData?'✏️ EDIT':'⚡ POST AVAILABILITY'}</div>
+                <button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:30,height:30,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:10,padding:10,background:'#f8fafc',borderRadius:10,marginBottom:14}}>
+                {profile.photoURL?<img src={profile.photoURL} style={{width:32,height:32,borderRadius:'50%'}} referrerPolicy="no-referrer"/>:<div className="av-sm" style={{width:32,height:32,fontSize:13}}>{profile.name[0]}</div>}
+                <div><div style={{fontSize:13,fontWeight:700}}>{profile.name}</div><div style={{fontSize:11,color:'#64748b'}}>{profile.skill} · {profile.city||'No city'}</div></div>
+            </div>
+            <div className="fg"><div className="fl">Looking to Play *</div><div className="og">{PTYPES.map(t=><button key={t} className={`ob ${playTypes.includes(t)?'s':''}`} onClick={()=>togglePT(t)}>{PT_E[t]} {t}</button>)}</div></div>
+            <div className="fg"><div className="fl">When</div><div className="og" style={{marginBottom:6}}>{AVAIL.map(a=><button key={a} className={`ob ${availability===a?'s':''}`} onClick={()=>setAv(a)}>{a==='Now'?'⚡':a==='Today'?'📅':a==='This Week'?'🗓️':'🤷'} {a}</button>)}</div>
+                {(availability==='This Week'||availability==='Today')&&<div style={{display:'flex',gap:8,marginTop:6}}><input type="date" className="fi" value={availDate} onChange={e=>setAD(e.target.value)} min={today} style={{flex:1,fontSize:13}}/><input type="time" className="fi" value={availTime} onChange={e=>setAT(e.target.value)} style={{flex:1,fontSize:13}}/></div>}
+            </div>
+            <div className="fg"><div className="fl">Court (optional)</div><input className="fi" value={courtName} onChange={e=>setCourt(e.target.value)} placeholder="e.g. Heritage Park Courts" maxLength={100}/></div>
+            <div className="fg"><div className="fl">Message</div><textarea className="fi" value={message} onChange={e=>setMsg(e.target.value)} placeholder="Looking for doubles partner!" maxLength={200} rows={2}/></div>
+            <button className="btn-g" onClick={save} disabled={saving} style={{width:'100%',padding:'12px',fontSize:15,opacity:saving?.6:1}}>{saving?'Saving…':'🏓 Post'}</button>
+        </div>
+    </div>);
+}
 
-    return(
-        <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-            <div className="modal-sheet" style={{display:'flex',flexDirection:'column',height:'80vh',padding:0}}>
-                {/* Header */}
-                <div style={{padding:'14px 20px',borderBottom:'1px solid #e2e8f0',display:'flex',alignItems:'center',gap:12,flexShrink:0}}>
-                    <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',padding:4,display:'flex'}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-                    <div className="inbox-avatar" style={{width:36,height:36,fontSize:14}}>{otherName[0].toUpperCase()}</div>
-                    <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontWeight:700,fontSize:15,color:'#0f172a'}}>{otherName}</div>
-                        <div style={{fontSize:11,color:'#64748b'}}>{player.skill}{player.playTypes?.length?' · '+player.playTypes.join(', '):''}</div>
-                    </div>
-                    <div style={{display:'flex',alignItems:'center',gap:4}}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                        <span style={{fontSize:10,color:'#059669',fontWeight:700}}>Private</span>
-                    </div>
-                </div>
-                {/* Secure notice */}
-                <div style={{padding:'8px 20px 0'}}><div className="secure-banner"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Only you and {otherName} can see these messages</div></div>
-                {loadError&&<div style={{padding:'10px 20px',background:'#fef2f2',fontSize:13,color:'#dc2626'}}>⚠️ {loadError}</div>}
-                {/* Messages */}
-                <div style={{flex:1,overflowY:'auto',padding:'12px 20px',display:'flex',flexDirection:'column',gap:4}}>
-                    {messages.length===0&&!loadError&&(
-                        <div style={{textAlign:'center',padding:'40px 20px',color:'#94a3b8'}}>
-                            <div style={{fontSize:36,marginBottom:8}}>💬</div>
-                            <div style={{fontSize:14,fontWeight:600}}>Start a conversation with {otherName}!</div>
-                            <div style={{fontSize:13,marginTop:6}}>Say hi or suggest a time to play.</div>
-                        </div>
-                    )}
-                    {messages.map(m=>(
-                        <div key={m.id} style={{display:'flex',flexDirection:'column',alignItems:m.senderDeviceId===DEVICE_ID?'flex-end':'flex-start'}}>
-                            <div className={`chat-bubble ${m.senderDeviceId===DEVICE_ID?'me':'them'}`}>
-                                {m.text}
-                                <div className="chat-time">{timeAgo(m.timestamp)}</div>
-                            </div>
-                        </div>
-                    ))}
-                    <div ref={chatEndRef}/>
-                </div>
-                {/* Input */}
-                <div style={{padding:'12px 20px',borderTop:'1px solid #e2e8f0',display:'flex',gap:10,alignItems:'flex-end',flexShrink:0,background:'white'}}>
-                    <textarea value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}} placeholder="Type a message..." rows={1} style={{flex:1,padding:'10px 14px',border:'2px solid #e2e8f0',borderRadius:12,fontFamily:'Outfit,sans-serif',fontSize:14,resize:'none',outline:'none',maxHeight:80,overflow:'auto'}}/>
-                    <button className="btn-g" onClick={sendMsg} disabled={sending||!input.trim()} style={{padding:'10px 18px',fontSize:14,flexShrink:0,opacity:(sending||!input.trim())?.5:1}}>Send</button>
-                </div>
+// ── Chat Modal ────────────────────────────────────────────────────────
+function ChatModal({player,myUid,myName,onClose}){
+    const[msgs,setMsgs]=useState([]);const[inp,setInp]=useState('');const[sending,setSending]=useState(false);const[err,setErr]=useState(null);
+    const endRef=useRef(null);const c=cid(myUid,player.uid);
+    useEffect(()=>{if(!fbOk){setErr('No database.');return;}const u=db.collection('chatMessages').where('convoId','==',c).orderBy('timestamp','asc').onSnapshot(s=>{setMsgs(s.docs.map(d=>({id:d.id,...d.data()})));setTimeout(()=>endRef.current?.scrollIntoView({behavior:'smooth'}),100);},e=>{setErr(e.message);});return()=>u();},[c]);
+    useEffect(()=>{if(!fbOk||msgs.length===0)return;db.collection('conversations').doc(c).update({[`readBy_${myUid}`]:Date.now()}).catch(()=>{});},[c,msgs.length]);
+    const send=async()=>{if(!inp.trim()||sending)return;setSending(true);const now=Date.now(),txt=inp.trim();
+        try{const ref=db.collection('conversations').doc(c);const doc=await ref.get();const upd={lastMessage:txt,lastMessageBy:myUid,lastTimestamp:now,[`participantNames.${myUid}`]:myName,[`readBy_${myUid}`]:now};
+        if(!doc.exists)await ref.set({participants:[myUid,player.uid].sort(),participantNames:{[myUid]:myName,[player.uid]:player.name},createdAt:now,...upd});else await ref.update(upd);
+        await db.collection('chatMessages').add({convoId:c,text:txt,senderUid:myUid,senderName:myName,timestamp:now});setInp('');}catch(e){alert('Failed: '+e.message);}setSending(false);};
+    return(<div className="mo" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+        <div className="ms" style={{display:'flex',flexDirection:'column',height:'80vh',padding:0}}>
+            <div style={{padding:'12px 16px',borderBottom:'1px solid #e2e8f0',display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
+                <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg></button>
+                {player.photoURL?<img src={player.photoURL} style={{width:32,height:32,borderRadius:'50%'}} referrerPolicy="no-referrer"/>:<div className="av-sm" style={{width:32,height:32,fontSize:13}}>{player.name[0].toUpperCase()}</div>}
+                <div style={{flex:1}}><div style={{fontWeight:700,fontSize:14}}>{player.name}</div><div style={{fontSize:11,color:'#64748b'}}>{player.skill}</div></div>
+                <div className="sb" style={{padding:'3px 7px',fontSize:10}}>🔒 Private</div>
+            </div>
+            {err&&<div style={{padding:'8px 16px',background:'#fef2f2',fontSize:12,color:'#dc2626'}}>⚠️ {err}</div>}
+            <div style={{flex:1,overflowY:'auto',padding:'12px 16px',display:'flex',flexDirection:'column',gap:3}}>
+                {msgs.length===0&&!err&&<div style={{textAlign:'center',padding:'30px',color:'#94a3b8'}}><div style={{fontSize:28,marginBottom:6}}>💬</div><div style={{fontSize:13}}>Say hi to {player.name}!</div></div>}
+                {msgs.map(m=><div key={m.id} style={{display:'flex',flexDirection:'column',alignItems:m.senderUid===myUid?'flex-end':'flex-start'}}><div className={`cb ${m.senderUid===myUid?'me':'them'}`}>{m.text}<div className="ct">{timeAgo(m.timestamp)}</div></div></div>)}
+                <div ref={endRef}/>
+            </div>
+            <div style={{padding:'10px 16px',borderTop:'1px solid #e2e8f0',display:'flex',gap:8,alignItems:'flex-end',flexShrink:0,background:'white'}}>
+                <textarea value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}} placeholder="Message…" rows={1} style={{flex:1,padding:'9px 12px',border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',fontSize:14,resize:'none',outline:'none',maxHeight:70}}/>
+                <button className="btn-g" onClick={send} disabled={sending||!inp.trim()} style={{padding:'9px 16px',fontSize:13,opacity:(sending||!inp.trim())?.5:1}}>Send</button>
             </div>
         </div>
-    );
+    </div>);
 }
 
 // ── Inbox ─────────────────────────────────────────────────────────────
-function InboxModal({onClose,onOpenChat,players}){
-    const[convos,setConvos]=useState([]);
-    const[loading,setLoading]=useState(true);
-    useEffect(()=>{
-        if(!fbOk){setLoading(false);return;}
-        const unsub=db.collection('conversations').where('participants','array-contains',DEVICE_ID).orderBy('lastTimestamp','desc')
-            .onSnapshot(snap=>{setConvos(snap.docs.map(d=>({id:d.id,...d.data()})));setLoading(false);},err=>{console.warn('Inbox:',err);setLoading(false);});
-        return()=>unsub();
-    },[]);
-    const getOther=(c)=>{const otherId=c.participants.find(p=>p!==DEVICE_ID);const name=c.participantNames?.[otherId]||'Player';const readTs=c[`readBy_${DEVICE_ID}`]||0;const unread=c.lastMessageBy!==DEVICE_ID&&c.lastTimestamp>readTs;return{otherId,name,unread};};
-    const open=(c)=>{const{otherId,name}=getOther(c);const mp=players.find(p=>p.deviceId===otherId);onOpenChat(mp||{deviceId:otherId,name,skill:'',playTypes:[]});onClose();};
-    return(
-        <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-            <div className="modal-sheet" style={{minHeight:'50vh'}}>
-                <div className="modal-handle"/>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-                    <div className="fd" style={{fontSize:22,fontWeight:800,color:'#0f172a'}}>💬 MESSAGES</div>
-                    <button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:32,height:32,fontSize:16,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
-                </div>
-                <div className="secure-banner" style={{marginBottom:16}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>All conversations are private 1-on-1</div>
-                {loading?<div style={{textAlign:'center',padding:40,color:'#94a3b8'}}><span className="spin" style={{fontSize:24}}>⚡</span><div style={{marginTop:8,fontSize:14}}>Loading…</div></div>
-                :convos.length===0?<div style={{textAlign:'center',padding:'40px 20px',color:'#94a3b8'}}><div style={{fontSize:48,marginBottom:12}}>💬</div><div style={{fontSize:16,fontWeight:700,color:'#374151',marginBottom:6}}>No messages yet</div><div style={{fontSize:14}}>Tap "Message" on any player's card to start.</div></div>
-                :convos.map(c=>{const{name,unread}=getOther(c);return(
-                    <div key={c.id} className={`inbox-item ${unread?'unread':''}`} onClick={()=>open(c)}>
-                        <div className="inbox-avatar">{name[0].toUpperCase()}</div>
-                        <div style={{flex:1,minWidth:0}}>
-                            <div style={{display:'flex',alignItems:'center',gap:8}}><span style={{fontWeight:unread?800:600,fontSize:15,color:'#0f172a'}}>{name}</span>{unread&&<div style={{width:8,height:8,borderRadius:'50%',background:'#059669',flexShrink:0}}/>}</div>
-                            <div style={{fontSize:13,color:unread?'#334155':'#94a3b8',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',fontWeight:unread?600:400,marginTop:2}}>{c.lastMessageBy===DEVICE_ID?'You: ':''}{c.lastMessage}</div>
-                        </div>
-                        <div style={{fontSize:11,color:'#94a3b8',flexShrink:0}}>{timeAgo(c.lastTimestamp)}</div>
-                    </div>
-                );})}
+function Inbox({onClose,onOpen,myUid,players}){
+    const[cs,setCs]=useState([]);const[ld,setLd]=useState(true);
+    useEffect(()=>{if(!fbOk){setLd(false);return;}const u=db.collection('conversations').where('participants','array-contains',myUid).orderBy('lastTimestamp','desc').onSnapshot(s=>{setCs(s.docs.map(d=>({id:d.id,...d.data()})));setLd(false);},()=>setLd(false));return()=>u();},[]);
+    const info=c=>{const ouid=c.participants.find(p=>p!==myUid);const nm=c.participantNames?.[ouid]||'Player';const rt=c[`readBy_${myUid}`]||0;return{ouid,nm,ur:c.lastMessageBy!==myUid&&c.lastTimestamp>rt};};
+    const go=c=>{const{ouid,nm}=info(c);const mp=players.find(p=>p.uid===ouid);onOpen(mp||{uid:ouid,name:nm,skill:'',photoURL:null});onClose();};
+    return(<div className="mo" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+        <div className="ms" style={{minHeight:'40vh'}}>
+            <div className="mh"/>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>💬 MESSAGES</div>
+                <button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:30,height:30,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
             </div>
+            <div className="sb" style={{marginBottom:14}}>🔒 All conversations are private 1-on-1</div>
+            {ld?<div style={{textAlign:'center',padding:30,color:'#94a3b8'}}>Loading…</div>
+            :cs.length===0?<div style={{textAlign:'center',padding:'30px',color:'#94a3b8'}}><div style={{fontSize:36,marginBottom:8}}>💬</div><div style={{fontWeight:700,color:'#374151'}}>No messages yet</div></div>
+            :cs.map(c=>{const{nm,ur}=info(c);return(
+                <div key={c.id} className={`ix ${ur?'ur':''}`} onClick={()=>go(c)}>
+                    <div className="av-sm">{nm[0].toUpperCase()}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                        <div style={{display:'flex',alignItems:'center',gap:6}}><span style={{fontWeight:ur?800:600,fontSize:14,color:'#0f172a'}}>{nm}</span>{ur&&<div style={{width:7,height:7,borderRadius:'50%',background:'#059669'}}/>}</div>
+                        <div style={{fontSize:12,color:ur?'#334155':'#94a3b8',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',fontWeight:ur?600:400}}>{c.lastMessageBy===myUid?'You: ':''}{c.lastMessage}</div>
+                    </div>
+                    <div style={{fontSize:10,color:'#94a3b8'}}>{timeAgo(c.lastTimestamp)}</div>
+                </div>
+            );})}
+        </div>
+    </div>);
+}
+
+// ── Player Card (DUPR-style, expandable) ──────────────────────────────
+function PlayerCard({p,myUid,uLat,uLng,onChat,onEdit,onRemove,expanded,onToggle}){
+    const mine=p.uid===myUid;
+    const dist=(uLat&&p.lat)?haversine(uLat,uLng,p.lat,p.lng):null;
+    const avClass=p.availability==='Now'?'avail-now':p.availability==='Flexible'?'avail-flex':'avail-later';
+    return(
+        <div className={`pc ${expanded?'expanded':''} ${mine?'mine':''}`} onClick={onToggle} style={mine?{borderLeftColor:'#059669'}:{}}>
+            <div className="pc-main">
+                <div className="pc-avatar">
+                    {p.photoURL?<img src={p.photoURL} referrerPolicy="no-referrer"/>:<div className="pc-avatar-letter">{(p.name||'?')[0].toUpperCase()}</div>}
+                </div>
+                <div className="pc-info">
+                    <div className="pc-name">
+                        {p.name} {p.duprId&&<span className="pc-id">{p.duprId}</span>}
+                        {mine&&<span style={{fontSize:9,fontWeight:700,background:'#059669',color:'white',padding:'2px 6px',borderRadius:4}}>YOU</span>}
+                    </div>
+                    <div className="pc-loc">{p.city||'No location'}{dist!==null&&<span> · {dist<1?dist.toFixed(1):Math.round(dist)} mi</span>}</div>
+                    <div className="pc-meta">{p.age&&<span>{p.age}</span>}{p.age&&p.gender&&<span> · </span>}{p.gender&&<span>{p.gender}</span>}</div>
+                </div>
+                <div className="pc-ratings">
+                    <div className="pc-rating">
+                        <div className="pc-rating-val">{p.skill||'NR'}</div>
+                        <div className="pc-rating-label">Rating</div>
+                    </div>
+                </div>
+            </div>
+
+            {expanded&&(
+                <div className="pc-expand" onClick={e=>e.stopPropagation()}>
+                    <div style={{paddingTop:12,display:'flex',flexDirection:'column',gap:10}}>
+                        {/* Availability */}
+                        <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                            <span className={`avail-pill ${avClass}`}>{p.availability==='Now'?'⚡ Available Now':p.availability==='Today'?'📅 Today':p.availability==='This Week'?'🗓️ This Week':'🤷 Flexible'}</span>
+                            {p.availDate&&<span style={{fontSize:12,color:'#64748b'}}>🕐 {fmtTime(p.availDate,p.availTime)}</span>}
+                        </div>
+
+                        {/* Play types */}
+                        <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+                            {p.playTypes?.map(t=><span key={t} className="tag t-purple">{PT_E[t]} {t}</span>)}
+                        </div>
+
+                        {/* Court */}
+                        {p.courtName&&<div style={{fontSize:13,color:'#64748b'}}>🏟️ {p.courtName}</div>}
+
+                        {/* Message */}
+                        {p.message&&<div style={{fontSize:13,color:'#334155',background:'#f8fafc',borderRadius:8,padding:'8px 10px',lineHeight:1.4}}>"{p.message}"</div>}
+
+                        {/* DUPR link */}
+                        {p.duprId&&<a href={`https://mydupr.com/player/${p.duprId}`} target="_blank" style={{fontSize:12,color:'#059669',fontWeight:600,textDecoration:'none'}}>View DUPR Profile →</a>}
+
+                        {/* Actions */}
+                        <div style={{display:'flex',gap:8,flexWrap:'wrap',paddingTop:4}}>
+                            {!mine&&<button className="btn-g" onClick={()=>onChat(p)} style={{padding:'8px 16px',fontSize:13}}>💬 Message</button>}
+                            {!mine&&p.email&&<a href={`mailto:${p.email}`} className="btn-out" style={{padding:'6px 12px',fontSize:11,textDecoration:'none'}}>✉️ Email</a>}
+                            {mine&&<button className="btn-out" onClick={()=>onEdit(p)} style={{padding:'6px 12px',fontSize:11}}>✏️ Edit</button>}
+                            {mine&&<button onClick={()=>onRemove(p.id)} style={{padding:'6px 12px',fontSize:11,border:'1px solid #fca5a5',background:'#fef2f2',color:'#dc2626',borderRadius:8,fontWeight:600,fontFamily:'Outfit',cursor:'pointer'}}>Remove</button>}
+                        </div>
+                        <div style={{fontSize:10,color:'#94a3b8'}}>Posted {timeAgo(p.timestamp)}</div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
 
-// ── Player Card ───────────────────────────────────────────────────────
-function PlayerCard({player,userLat,userLng,onChat,onEdit,onRemove}){
-    const isMine=player.deviceId===DEVICE_ID;
-    const dist=(userLat&&player.lat)?haversine(userLat,userLng,player.lat,player.lng):null;
-    const availLabel=player.availability==='Now'?'avail-now':player.availability==='Flexible'?'avail-flex':'avail-later';
-    const availIcon=player.availability==='Now'?'⚡':player.availability==='Today'?'📅':player.availability==='This Week'?'🗓️':'🤷';
-    return(
-        <div className={`player-card ${isMine?'mine':''}`}><div style={{display:'flex',alignItems:'flex-start',gap:14}}>
-            <div style={{width:48,height:48,borderRadius:'50%',background:'linear-gradient(135deg,#059669,#10b981)',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:700,fontSize:20,flexShrink:0,position:'relative'}}>
-                {(player.name||'?')[0].toUpperCase()}
-                <div className={`status-dot ${player.availability==='Now'?'online':'away'}`} style={{position:'absolute',bottom:-1,right:-1,border:'2px solid white'}}/>
-            </div>
-            <div style={{flex:1,minWidth:0}}>
-                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap'}}>
-                    <span style={{fontWeight:700,fontSize:16,color:'#0f172a'}}>{player.name}</span>
-                    {isMine&&<span style={{fontSize:10,fontWeight:700,background:'#059669',color:'white',padding:'2px 7px',borderRadius:6}}>YOU</span>}
-                    <span className={`avail-badge ${availLabel}`}>{availIcon} {player.availability}</span>
-                </div>
-                <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:8}}>
-                    <span className={`tag ${SKILL_COLORS[player.skill]||'tag-green'}`}>🏓 {player.skill}</span>
-                    {player.age&&<span className="tag tag-slate">📊 {player.age}</span>}
-                    {player.gender&&<span className="tag tag-slate">{player.gender}</span>}
-                    {dist!==null&&<span className="tag tag-blue">📍 {dist<1?dist.toFixed(1):Math.round(dist)} mi</span>}
-                    {!dist&&player.city&&<span className="tag tag-blue">📍 {player.city}</span>}
-                </div>
-                <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:8}}>{player.playTypes?.map(t=><span key={t} className="tag tag-purple">{PLAY_TYPE_EMOJI[t]} {t}</span>)}</div>
-                {player.courtName&&<div style={{fontSize:13,color:'#64748b',marginBottom:4}}>🏟️ {player.courtName}</div>}
-                {player.availDate&&<div style={{fontSize:13,color:'#64748b',marginBottom:4}}>🕐 {formatAvailTime(player.availDate,player.availTime)}</div>}
-                {player.message&&<div style={{fontSize:14,color:'#334155',lineHeight:1.5,background:'#f8fafc',borderRadius:8,padding:'8px 12px',marginBottom:8}}>"{player.message}"</div>}
-                <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:4}}>
-                    {!isMine&&<button className="btn-g" onClick={()=>onChat(player)} style={{padding:'8px 16px',fontSize:13}}>💬 Message</button>}
-                    {!isMine&&player.phone&&<a href={`tel:${player.phone}`} className="btn-out" style={{padding:'8px 14px',fontSize:12,textDecoration:'none',display:'inline-flex',alignItems:'center'}}>📱 Call/Text</a>}
-                    {!isMine&&player.email&&<a href={`mailto:${player.email}?subject=PickleConnect - Let's Play!`} className="btn-out" style={{padding:'8px 14px',fontSize:12,textDecoration:'none',display:'inline-flex',alignItems:'center'}}>✉️ Email</a>}
-                    {isMine&&<><button className="btn-out" onClick={()=>onEdit(player)} style={{padding:'8px 14px',fontSize:12}}>✏️ Edit</button><button onClick={()=>onRemove(player.id)} style={{padding:'8px 14px',fontSize:12,border:'2px solid #fecaca',background:'#fef2f2',color:'#dc2626',borderRadius:10,fontWeight:600,fontFamily:'Outfit,sans-serif',cursor:'pointer'}}>🗑️ Remove</button></>}
-                </div>
-                <div style={{fontSize:11,color:'#94a3b8',marginTop:8}}>Posted {timeAgo(player.timestamp)}</div>
-            </div>
-        </div></div>
-    );
-}
-function SkeletonCard(){return(<div className="card" style={{padding:18}}><div style={{display:'flex',gap:14}}><div className="skeleton" style={{width:48,height:48,borderRadius:'50%',flexShrink:0}}/><div style={{flex:1}}><div className="skeleton" style={{height:18,width:'60%',marginBottom:10}}/><div className="skeleton" style={{height:14,width:'80%',marginBottom:8}}/><div className="skeleton" style={{height:14,width:'40%'}}/></div></div></div>);}
+function Skel(){return(<div style={{background:'white',borderRadius:14,padding:14,marginBottom:10}}><div style={{display:'flex',gap:14,alignItems:'center'}}><div className="skeleton" style={{width:46,height:46,borderRadius:'50%'}}/><div style={{flex:1}}><div className="skeleton" style={{height:16,width:'50%',marginBottom:6}}/><div className="skeleton" style={{height:12,width:'70%'}}/></div><div className="skeleton" style={{width:50,height:36,borderRadius:8}}/></div></div>);}
 
 // ── Main App ──────────────────────────────────────────────────────────
 function App(){
+    const[user,setUser]=useState(undefined); // undefined=loading, null=not signed in
+    const[profile,setProfile]=useState(null);
     const[players,setPlayers]=useState([]);const[loading,setLoading]=useState(true);
-    const[userLat,setUserLat]=useState(null);const[userLng,setUserLng]=useState(null);const[locStatus,setLocStatus]=useState('loading');
-    const[showPost,setShowPost]=useState(false);const[editPlayer,setEditPlayer]=useState(null);
-    const[chatPlayer,setChatPlayer]=useState(null);const[namePromptFor,setNamePromptFor]=useState(null);
-    const[showInbox,setShowInbox]=useState(false);const[unreadCount,setUnreadCount]=useState(0);
+    const[uLat,setULat]=useState(null);const[uLng,setULng]=useState(null);
+    const[showPost,setShowPost]=useState(false);const[editP,setEditP]=useState(null);
+    const[chatP,setChatP]=useState(null);const[showInbox,setShowInbox]=useState(false);
+    const[showProfile,setShowProfile]=useState(false);
+    const[unread,setUnread]=useState(0);
     const[search,setSearch]=useState('');const[tab,setTab]=useState('all');
-    const[filterSkill,setFilterSkill]=useState('');const[filterPlayType,setFilterPlayType]=useState('');
-    const[filterGender,setFilterGender]=useState('');const[filterAvail,setFilterAvail]=useState('');
-    const[showFilters,setShowFilters]=useState(false);
-    const activeFilterCount=[filterSkill,filterPlayType,filterGender,filterAvail].filter(Boolean).length;
+    const[expanded,setExpanded]=useState(null);
+    const[showF,setShowF]=useState(false);const[fSkill,setFS]=useState('');
+
+    // Auth listener
+    useEffect(()=>{if(!auth)return;const u=auth.onAuthStateChanged(u=>{setUser(u||null);});return()=>u();},[]);
+
+    // Load profile
+    useEffect(()=>{if(!user||!fbOk)return;const u=db.collection('profiles').doc(user.uid).onSnapshot(d=>{if(d.exists)setProfile({uid:user.uid,...d.data()});else setProfile(null);},()=>setProfile(null));return()=>u();},[user]);
 
     // Location
-    useEffect(()=>{
-        if(!navigator.geolocation){setLocStatus('unavailable');return;}
-        navigator.geolocation.getCurrentPosition(pos=>{setUserLat(pos.coords.latitude);setUserLng(pos.coords.longitude);setLocStatus('granted');},err=>{setLocStatus(err.code===1?'denied':'unavailable');},{enableHighAccuracy:false,timeout:8000,maximumAge:300000});
-        if(navigator.permissions){navigator.permissions.query({name:'geolocation'}).then(r=>{if(r.state==='denied')setLocStatus('denied');r.addEventListener('change',()=>{if(r.state==='granted')window.location.reload();});}).catch(()=>{});}
-    },[]);
+    useEffect(()=>{if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(p=>{setULat(p.coords.latitude);setULng(p.coords.longitude);},()=>{},{enableHighAccuracy:false,timeout:8000,maximumAge:300000});},[]);
 
     // Players
-    useEffect(()=>{
-        if(!fbOk){setLoading(false);return;}
-        const cutoff=Date.now()-7*24*60*60*1000;
-        const unsub=db.collection('findPlayers').where('status','==','active').where('timestamp','>',cutoff).orderBy('timestamp','desc')
-            .onSnapshot(snap=>{setPlayers(snap.docs.map(d=>({id:d.id,...d.data()})));setLoading(false);},err=>{console.warn('Players:',err);setLoading(false);});
-        return()=>unsub();
-    },[]);
+    useEffect(()=>{if(!fbOk){setLoading(false);return;}const c=Date.now()-7*24*60*60*1000;const u=db.collection('findPlayers').where('status','==','active').where('timestamp','>',c).orderBy('timestamp','desc').onSnapshot(s=>{setPlayers(s.docs.map(d=>({id:d.id,...d.data()})));setLoading(false);},()=>setLoading(false));return()=>u();},[]);
 
-    // Unread count
-    useEffect(()=>{
-        if(!fbOk)return;
-        const unsub=db.collection('conversations').where('participants','array-contains',DEVICE_ID)
-            .onSnapshot(snap=>{let c=0;snap.docs.forEach(d=>{const data=d.data();const rt=data[`readBy_${DEVICE_ID}`]||0;if(data.lastMessageBy!==DEVICE_ID&&data.lastTimestamp>rt)c++;});setUnreadCount(c);},()=>{});
-        return()=>unsub();
-    },[]);
+    // Unread
+    useEffect(()=>{if(!fbOk||!user)return;const u=db.collection('conversations').where('participants','array-contains',user.uid).onSnapshot(s=>{let c=0;s.docs.forEach(d=>{const x=d.data();if(x.lastMessageBy!==user.uid&&x.lastTimestamp>(x[`readBy_${user.uid}`]||0))c++;});setUnread(c);},()=>{});return()=>u();},[user]);
 
-    const filteredPlayers=useMemo(()=>{
-        let list=[...players];
-        if(tab==='nearby'){if(userLat){list=list.filter(p=>p.lat&&haversine(userLat,userLng,p.lat,p.lng)<=25);}else{const mc=(localStorage.getItem('pickleFindCity')||'').toLowerCase().trim();if(mc)list=list.filter(p=>{const pc=(p.city||'').toLowerCase(),pt=(p.courtName||'').toLowerCase();return pc.includes(mc)||mc.includes(pc)||pt.includes(mc);});}}
-        else if(tab==='now')list=list.filter(p=>p.availability==='Now'||p.availability==='Today');
-        if(search.trim()){const q=search.toLowerCase();list=list.filter(p=>(p.name||'').toLowerCase().includes(q)||(p.courtName||'').toLowerCase().includes(q)||(p.city||'').toLowerCase().includes(q)||(p.message||'').toLowerCase().includes(q)||(p.skill||'').toLowerCase().includes(q));}
-        if(filterSkill)list=list.filter(p=>p.skill===filterSkill);if(filterPlayType)list=list.filter(p=>p.playTypes?.includes(filterPlayType));if(filterGender)list=list.filter(p=>p.gender===filterGender);if(filterAvail)list=list.filter(p=>p.availability===filterAvail);
-        list.sort((a,b)=>{if(a.deviceId===DEVICE_ID&&b.deviceId!==DEVICE_ID)return -1;if(b.deviceId===DEVICE_ID&&a.deviceId!==DEVICE_ID)return 1;if(tab==='nearby'&&userLat&&a.lat&&b.lat)return haversine(userLat,userLng,a.lat,a.lng)-haversine(userLat,userLng,b.lat,b.lng);return b.timestamp-a.timestamp;});
-        return list;
-    },[players,tab,search,filterSkill,filterPlayType,filterGender,filterAvail,userLat,userLng]);
+    const filtered=useMemo(()=>{
+        let l=[...players];
+        if(tab==='nearby'&&uLat)l=l.filter(p=>p.lat&&haversine(uLat,uLng,p.lat,p.lng)<=25);
+        else if(tab==='now')l=l.filter(p=>p.availability==='Now'||p.availability==='Today');
+        if(search.trim()){const q=search.toLowerCase();l=l.filter(p=>[p.name,p.courtName,p.city,p.message,p.skill].some(v=>(v||'').toLowerCase().includes(q)));}
+        if(fSkill)l=l.filter(p=>p.skill===fSkill);
+        l.sort((a,b)=>{if(user&&a.uid===user.uid&&b.uid!==user.uid)return -1;if(user&&b.uid===user.uid&&a.uid!==user.uid)return 1;if(tab==='nearby'&&uLat&&a.lat&&b.lat)return haversine(uLat,uLng,a.lat,a.lng)-haversine(uLat,uLng,b.lat,b.lng);return b.timestamp-a.timestamp;});
+        return l;
+    },[players,tab,search,fSkill,uLat,uLng,user]);
 
-    const handleChatRequest=(player)=>{const n=localStorage.getItem('pickleFindName');if(!n||!n.trim())setNamePromptFor(player);else setChatPlayer(player);};
-    const handleNameSet=()=>{setNamePromptFor(null);if(namePromptFor)setChatPlayer(namePromptFor);};
-    const handlePosted=()=>{setShowPost(false);setEditPlayer(null);};
-    const handleEdit=(p)=>{setEditPlayer(p);setShowPost(true);};
-    const handleRemove=async(id)=>{if(!confirm('Remove your post?'))return;try{await db.collection('findPlayers').doc(id).update({status:'removed'});}catch(e){alert('Failed: '+e.message);}};
-    const clearFilters=()=>{setFilterSkill('');setFilterPlayType('');setFilterGender('');setFilterAvail('');};
-    const myPosts=players.filter(p=>p.deviceId===DEVICE_ID);
-    const nearbyNoLoc=tab==='nearby'&&!userLat&&!(localStorage.getItem('pickleFindCity')||'').trim();
+    const signOut=async()=>{if(confirm('Sign out?'))await auth.signOut();};
+
+    // Auth loading
+    if(user===undefined)return(<div className="hero-bg"><div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',color:'white',fontSize:18}}>Loading…</div></div>);
+
+    // Not signed in
+    if(!user)return <AuthScreen/>;
+
+    // No profile yet
+    if(profile===null)return(<div className="hero-bg" style={{background:'#f1f5f9'}}><div className="nav" style={{background:'#0f172a'}}><a href="index.html" style={{display:'flex',alignItems:'center',textDecoration:'none'}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg></a><div className="nav-logo" style={{color:'white'}}>🏓 PICKLECONNECT</div></div><ProfileSetup user={user} profile={null} onSave={p=>setProfile({uid:user.uid,...p})}/></div>);
+
+    const myPosts=players.filter(p=>p.uid===user.uid);
 
     return(
-        <div style={{minHeight:'100vh',background:'#f1f5f9',display:'flex',flexDirection:'column'}}>
+        <div className="hero-bg">
+            {/* Nav */}
             <div className="nav">
-                <a href="index.html" style={{display:'flex',alignItems:'center',textDecoration:'none',marginRight:4}}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg></a>
-                <div className="fd" style={{fontSize:24,fontWeight:800,flex:1}}><span style={{color:'white'}}>FIND</span><span style={{color:'#34d399'}}> PLAYER</span></div>
+                <a href="index.html" style={{display:'flex',alignItems:'center',textDecoration:'none'}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg></a>
+                <div className="nav-logo" style={{flex:1}}>🏓 PICKLECONNECT</div>
                 <button onClick={()=>setShowInbox(true)} style={{background:'none',border:'none',cursor:'pointer',position:'relative',padding:4}}>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                    {unreadCount>0&&<div className="badge">{unreadCount}</div>}
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                    {unread>0&&<div className="badge">{unread}</div>}
                 </button>
-                <div style={{width:8,height:8,borderRadius:'50%',background:'#10b981',animation:'pulse 2s infinite',flexShrink:0}}/>
-                <span style={{fontSize:12,color:'#6ee7b7',fontWeight:600}}>{players.length}</span>
+                <button className="user-pill" onClick={()=>setShowProfile(true)}>
+                    {user.photoURL?<img src={user.photoURL} referrerPolicy="no-referrer"/>:<div style={{width:28,height:28,borderRadius:'50%',background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:'white'}}>{profile.name[0]}</div>}
+                    <span>{profile.name.split(' ')[0]}</span>
+                </button>
             </div>
-            <div className="pg">
-                <div style={{background:'linear-gradient(135deg,#0f172a 0%,#1e3a2f 55%,#052e16 100%)',borderRadius:16,padding:'20px',marginBottom:16,position:'relative',overflow:'hidden'}}>
-                    <div style={{position:'absolute',top:-30,right:-30,width:120,height:120,background:'rgba(5,150,105,.15)',borderRadius:'50%'}}/>
-                    <div style={{position:'relative',zIndex:1}}>
-                        <div className="fd" style={{fontSize:22,fontWeight:800,color:'white',marginBottom:6}}>🏓 READY TO PLAY?</div>
-                        <div style={{fontSize:14,color:'#94a3b8',lineHeight:1.5,marginBottom:14}}>Post your availability and connect with players near you. All messages are private 1-on-1.</div>
-                        <button className="btn-g" onClick={()=>{setEditPlayer(null);setShowPost(true);}} style={{padding:'12px 24px',fontSize:15,boxShadow:'0 4px 20px rgba(5,150,105,.4)'}}>{myPosts.length>0?'✏️ Update Availability':'⚡ Post Availability'}</button>
+
+            <div className="content">
+                {/* Title */}
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+                    <div className="page-title">Find Players</div>
+                    <button className="btn-invite" onClick={()=>{setEditP(null);setShowPost(true);}}>
+                        ⚡ {myPosts.length>0?'Update':'Post'}
+                    </button>
+                </div>
+
+                {/* Search */}
+                <div className="search-bar">
+                    <div style={{position:'relative',flex:1}}>
+                        <svg style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)'}} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                        <input className="search-input" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search"/>
                     </div>
+                    <button className={`filter-btn ${showF?'active':''}`} onClick={()=>setShowF(!showF)}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+                    </button>
                 </div>
-                <div className="tab-bar">
-                    <button className={`tab-btn ${tab==='all'?'active':''}`} onClick={()=>setTab('all')}>🏓 All</button>
-                    <button className={`tab-btn ${tab==='now'?'active':''}`} onClick={()=>setTab('now')}>⚡ Now</button>
-                    <button className={`tab-btn ${tab==='nearby'?'active':''}`} onClick={()=>setTab('nearby')}>📍 Nearby</button>
+
+                {/* Filter bar */}
+                {showF&&<div style={{background:'rgba(255,255,255,.1)',backdropFilter:'blur(8px)',borderRadius:12,padding:12,marginBottom:14}} className="fade-in">
+                    <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                        <button className={`ob ${!fSkill?'s':''}`} onClick={()=>setFS('')} style={{color:!fSkill?'#059669':'white',borderColor:!fSkill?'#059669':'rgba(255,255,255,.3)',background:!fSkill?'#ecfdf5':'transparent'}}>All</button>
+                        {SKILLS.map(s=><button key={s} className={`ob ${fSkill===s?'s':''}`} onClick={()=>setFS(s)} style={{color:fSkill===s?'#059669':'white',borderColor:fSkill===s?'#059669':'rgba(255,255,255,.3)',background:fSkill===s?'#ecfdf5':'transparent',fontSize:11}}>{s}</button>)}
+                    </div>
+                </div>}
+
+                {/* Tabs */}
+                <div style={{display:'flex',gap:0,marginBottom:14,background:'rgba(255,255,255,.1)',borderRadius:10,padding:3}}>
+                    {[['all','🏓 All'],['now','⚡ Now'],['nearby','📍 Nearby']].map(([k,l])=>(
+                        <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:'8px',border:'none',borderRadius:8,fontFamily:'Outfit',fontSize:12,fontWeight:600,cursor:'pointer',background:tab===k?'white':'transparent',color:tab===k?'#059669':'rgba(255,255,255,.7)',boxShadow:tab===k?'0 1px 4px rgba(0,0,0,.1)':'none'}}>{l}</button>
+                    ))}
                 </div>
-                {tab==='nearby'&&locStatus==='denied'&&!userLat&&<div className="info-banner"><span style={{fontSize:20,flexShrink:0}}>📍</span><div style={{flex:1,fontSize:13,color:'#92400e',lineHeight:1.5}}><strong>Location blocked.</strong> Enable location in browser settings, or post with your city.</div><button onClick={()=>window.location.reload()} style={{background:'#f59e0b',color:'white',border:'none',borderRadius:8,padding:'7px 12px',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',flexShrink:0}}>Reload ↺</button></div>}
-                {nearbyNoLoc&&locStatus!=='denied'&&<div className="info-banner"><span style={{fontSize:20,flexShrink:0}}>📍</span><div style={{flex:1,fontSize:13,color:'#92400e',lineHeight:1.5}}><strong>No location set.</strong> Post with a city/area to match nearby, or enable GPS.</div><button className="btn-g" onClick={()=>{setEditPlayer(null);setShowPost(true);}} style={{padding:'7px 14px',fontSize:12,flexShrink:0}}>Post →</button></div>}
-                {tab==='nearby'&&userLat&&<div style={{fontSize:12,color:'#059669',marginBottom:10,display:'flex',alignItems:'center',gap:5}}><div className="status-dot online" style={{width:6,height:6}}/> Within 25 miles</div>}
-                {tab==='nearby'&&!userLat&&(localStorage.getItem('pickleFindCity')||'').trim()&&<div style={{fontSize:12,color:'#d97706',marginBottom:10}}>📍 Matching by area: "{localStorage.getItem('pickleFindCity')}"</div>}
 
-                <div className="search-wrap"><span className="search-icon">🔍</span><input className="search-inp" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by name, court, city, or skill…"/></div>
-                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14}}>
-                    <button onClick={()=>setShowFilters(!showFilters)} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',borderRadius:20,border:activeFilterCount>0?'2px solid #059669':'2px solid #e2e8f0',background:activeFilterCount>0?'#ecfdf5':'white',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:600,cursor:'pointer',color:activeFilterCount>0?'#059669':'#475569'}}>🎛️ Filters {activeFilterCount>0&&<span style={{background:'#059669',color:'white',borderRadius:'50%',width:18,height:18,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700}}>{activeFilterCount}</span>}</button>
-                    {activeFilterCount>0&&<button onClick={clearFilters} style={{fontSize:12,color:'#ef4444',background:'none',border:'none',fontFamily:'Outfit,sans-serif',fontWeight:600,cursor:'pointer'}}>Clear all</button>}
-                    <div style={{flex:1}}/><span style={{fontSize:13,color:'#64748b',fontWeight:500}}>{filteredPlayers.length} player{filteredPlayers.length!==1?'s':''}</span>
+                {/* Count */}
+                <div style={{fontSize:12,color:'rgba(255,255,255,.5)',marginBottom:10,paddingLeft:4}}>{filtered.length} player{filtered.length!==1?'s':''} found</div>
+
+                {/* Player list */}
+                {loading?<>{[1,2,3].map(i=><Skel key={i}/>)}</>
+                :filtered.length===0?<div style={{textAlign:'center',padding:'40px 16px'}}><div style={{fontSize:40,marginBottom:8}}>🏓</div><div style={{fontSize:16,fontWeight:700,color:'white',marginBottom:4}}>No players found</div><div style={{fontSize:13,color:'rgba(255,255,255,.6)',marginBottom:16}}>{search||fSkill?'Try different filters':'Be the first to post!'}</div>{!search&&!fSkill&&<button className="btn-g" onClick={()=>{setEditP(null);setShowPost(true);}}>⚡ Post Availability</button>}</div>
+                :filtered.map(p=><PlayerCard key={p.id} p={p} myUid={user.uid} uLat={uLat} uLng={uLng} onChat={setChatP} onEdit={p=>{setEditP(p);setShowPost(true);}} onRemove={async id=>{if(confirm('Remove post?'))try{await db.collection('findPlayers').doc(id).update({status:'removed'});}catch(e){alert(e.message);}}} expanded={expanded===p.id} onToggle={()=>setExpanded(expanded===p.id?null:p.id)}/>)}
+
+                {/* Quick links */}
+                <div style={{display:'flex',gap:8,marginTop:12}}>
+                    <a href="index.html" style={{flex:1,display:'flex',alignItems:'center',gap:8,background:'rgba(255,255,255,.1)',borderRadius:12,padding:'12px 14px',textDecoration:'none',backdropFilter:'blur(4px)'}}><span style={{fontSize:18}}>🏟️</span><div><div className="fd" style={{fontSize:13,fontWeight:800,color:'white'}}>COURTS</div><div style={{fontSize:10,color:'rgba(255,255,255,.5)'}}>Find courts</div></div></a>
+                    <a href="tournament.html" style={{flex:1,display:'flex',alignItems:'center',gap:8,background:'rgba(255,255,255,.1)',borderRadius:12,padding:'12px 14px',textDecoration:'none',backdropFilter:'blur(4px)'}}><span style={{fontSize:18}}>🏆</span><div><div className="fd" style={{fontSize:13,fontWeight:800,color:'white'}}>TOURNAMENTS</div><div style={{fontSize:10,color:'rgba(255,255,255,.5)'}}>Brackets</div></div></a>
                 </div>
-                {showFilters&&<div className="card fade-in" style={{marginBottom:14}}><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-                    <div><div className="form-label">Skill Level</div><select className="form-select" value={filterSkill} onChange={e=>setFilterSkill(e.target.value)} style={{fontSize:13}}><option value="">Any</option>{SKILL_LEVELS.map(s=><option key={s} value={s}>{s} ({SKILL_LABELS[s]})</option>)}</select></div>
-                    <div><div className="form-label">Play Type</div><select className="form-select" value={filterPlayType} onChange={e=>setFilterPlayType(e.target.value)} style={{fontSize:13}}><option value="">Any</option>{PLAY_TYPES.map(t=><option key={t} value={t}>{t}</option>)}</select></div>
-                    <div><div className="form-label">Gender</div><select className="form-select" value={filterGender} onChange={e=>setFilterGender(e.target.value)} style={{fontSize:13}}><option value="">Any</option>{GENDERS.map(g=><option key={g} value={g}>{g}</option>)}</select></div>
-                    <div><div className="form-label">Availability</div><select className="form-select" value={filterAvail} onChange={e=>setFilterAvail(e.target.value)} style={{fontSize:13}}><option value="">Any</option>{AVAILABILITY.map(a=><option key={a} value={a}>{a}</option>)}</select></div>
-                </div></div>}
 
-                {loading?<>{[1,2,3].map(i=><SkeletonCard key={i}/>)}</>
-                :filteredPlayers.length===0?<div className="empty-state"><div style={{fontSize:48,marginBottom:12}}>🏓</div><div style={{fontSize:18,fontWeight:700,color:'#374151',marginBottom:6}}>{search||activeFilterCount>0?'No players match':tab==='now'?'No one available now':tab==='nearby'?'No nearby players':'No players yet'}</div><div style={{fontSize:14,marginBottom:20,color:'#64748b'}}>{search||activeFilterCount>0?'Try adjusting filters':'Be the first to post!'}</div>{!search&&activeFilterCount===0&&<button className="btn-g" onClick={()=>{setEditPlayer(null);setShowPost(true);}}>⚡ Post Availability</button>}{(search||activeFilterCount>0)&&<button className="btn-out" onClick={()=>{setSearch('');clearFilters();}}>Clear Filters</button>}</div>
-                :filteredPlayers.map(p=><PlayerCard key={p.id} player={p} userLat={userLat} userLng={userLng} onChat={handleChatRequest} onEdit={handleEdit} onRemove={handleRemove}/>)}
-
-                <div style={{display:'flex',gap:10,marginTop:8}}>
-                    <a href="index.html" style={{flex:1,display:'flex',alignItems:'center',gap:10,background:'white',borderRadius:14,padding:'14px 16px',textDecoration:'none',boxShadow:'0 2px 10px rgba(0,0,0,.06)'}}><span style={{fontSize:22}}>🏟️</span><div><div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:15,fontWeight:800,color:'#0f172a'}}>FIND COURTS</div><div style={{fontSize:11,color:'#64748b'}}>See who's playing</div></div></a>
-                    <a href="tournament.html" style={{flex:1,display:'flex',alignItems:'center',gap:10,background:'linear-gradient(135deg,#4c1d95,#7c3aed)',borderRadius:14,padding:'14px 16px',textDecoration:'none'}}><span style={{fontSize:22}}>🏆</span><div><div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:15,fontWeight:800,color:'white'}}>TOURNAMENTS</div><div style={{fontSize:11,color:'#e9d5ff'}}>Brackets & scoring</div></div></a>
+                {/* Sign out */}
+                <div style={{textAlign:'center',marginTop:20}}>
+                    <button onClick={signOut} style={{background:'none',border:'none',color:'rgba(255,255,255,.4)',fontSize:12,cursor:'pointer',fontFamily:'Outfit'}}>Sign Out</button>
                 </div>
             </div>
-            <div style={{marginTop:'auto'}}><div style={{textAlign:'center',padding:'16px 16px 24px',fontSize:12,color:'#94a3b8',borderTop:'1px solid #e2e8f0',background:'white'}}>© 2025 PickleConnect</div></div>
-            <button className="fab" onClick={()=>{setEditPlayer(null);setShowPost(true);}} title="Post Availability">+</button>
-            {showPost&&<PostPlayerModal onClose={()=>{setShowPost(false);setEditPlayer(null);}} onPosted={handlePosted} editData={editPlayer} userLat={userLat} userLng={userLng} locStatus={locStatus}/>}
-            {namePromptFor&&<NamePrompt onDone={handleNameSet} onCancel={()=>setNamePromptFor(null)}/>}
-            {chatPlayer&&<ChatModal player={chatPlayer} onClose={()=>setChatPlayer(null)}/>}
-            {showInbox&&<InboxModal onClose={()=>setShowInbox(false)} onOpenChat={handleChatRequest} players={players}/>}
+
+            {/* FAB */}
+            <button className="fab" onClick={()=>{setEditP(null);setShowPost(true);}}>+</button>
+
+            {/* Modals */}
+            {showPost&&<PostAvail profile={profile} onClose={()=>{setShowPost(false);setEditP(null);}} onPosted={()=>{setShowPost(false);setEditP(null);}} editData={editP} uLat={uLat} uLng={uLng}/>}
+            {chatP&&<ChatModal player={chatP} myUid={user.uid} myName={profile.name} onClose={()=>setChatP(null)}/>}
+            {showInbox&&<Inbox onClose={()=>setShowInbox(false)} onOpen={setChatP} myUid={user.uid} players={players}/>}
+            {showProfile&&<ProfileSetup user={user} profile={profile} onSave={p=>{setProfile({uid:user.uid,...p});setShowProfile(false);}} onClose={()=>setShowProfile(false)}/>}
         </div>
     );
 }
