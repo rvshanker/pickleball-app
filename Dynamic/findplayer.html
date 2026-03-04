@@ -133,7 +133,7 @@
 <script type="text/babel">
 const{useState,useEffect,useRef,useMemo}=React;
 
-const FB={apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",authDomain:"pickleconnect.live",projectId:"pickleball-app-1bba7",storageBucket:"pickleball-app-1bba7.firebasestorage.app",messagingSenderId:"645604154338",appId:"1:645604154338:web:b92f87c2cd11d950b737bb"};
+const FB={apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",authDomain:"pickleball-app-1bba7.firebaseapp.com",projectId:"pickleball-app-1bba7",storageBucket:"pickleball-app-1bba7.firebasestorage.app",messagingSenderId:"645604154338",appId:"1:645604154338:web:b92f87c2cd11d950b737bb"};
 let db=null,auth=null,fbOk=false;
 try{if(!firebase.apps.length)firebase.initializeApp(FB);db=firebase.firestore();auth=firebase.auth();fbOk=true;}catch(e){console.error('FB:',e);}
 
@@ -163,9 +163,8 @@ function AuthScreen(){
         if(isFile){setErr('Open this page from a web server (http/https), not as a local file.');return;}
         setLd(true);setErr(null);
         const prov=new firebase.auth.GoogleAuthProvider();
-        try{await auth.signInWithPopup(prov);}
-        catch(e){if(e.code!=='auth/popup-closed-by-user')setErr(e.message);}
-        setLd(false);
+        try{await auth.signInWithRedirect(prov);}
+        catch(e){setErr(e.message);setLd(false);}
     };
 
     const emailAuth=async()=>{
@@ -229,7 +228,7 @@ function AuthScreen(){
             {/* Google */}
             <button className="google-btn" onClick={googleAuth} disabled={ld} style={{width:'100%',maxWidth:340,justifyContent:'center'}}>
                 <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-                Continue with Google
+                {ld?'Redirecting to Google…':'Continue with Google'}
             </button>
             <div style={{fontSize:11,color:'rgba(255,255,255,.35)',marginTop:16}}>Free · Takes 30 seconds</div>
         </div>
@@ -456,7 +455,13 @@ function App(){
     const[search,setSearch]=useState('');const[tab,setTab]=useState('all');const[expanded,setExpanded]=useState(null);
     const[showF,setShowF]=useState(false);const[fSkill,setFS]=useState('');const[fType,setFT]=useState('');const[fGender,setFG]=useState('');const[fPurpose,setFP]=useState('');
 
-    useEffect(()=>{if(!auth)return;const u=auth.onAuthStateChanged(u=>{setUser(u||null);if(!u)setProfile(null);});return()=>u();},[]);
+    useEffect(()=>{
+        if(!auth)return;
+        // Handle Google redirect return
+        auth.getRedirectResult().catch(()=>{});
+        const u=auth.onAuthStateChanged(u=>{setUser(u||null);if(!u)setProfile(null);});
+        return()=>u();
+    },[]);
     useEffect(()=>{if(user===undefined||user===null)return;setProfile(undefined);if(!fbOk)return;const u=db.collection('profiles').doc(user.uid).onSnapshot(d=>{if(d.exists)setProfile({uid:user.uid,...d.data()});else setProfile(null);},()=>setProfile(null));return()=>u();},[user]);
     useEffect(()=>{if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(p=>{setULat(p.coords.latitude);setULng(p.coords.longitude);},()=>{},{enableHighAccuracy:false,timeout:8000,maximumAge:300000});},[]);
     useEffect(()=>{if(!fbOk){setLoading(false);return;}const c=Date.now()-7*24*60*60*1000;const u=db.collection('findPlayers').where('status','==','active').where('timestamp','>',c).orderBy('timestamp','desc').onSnapshot(s=>{setPosts(s.docs.map(d=>({id:d.id,...d.data()})));setLoading(false);},()=>setLoading(false));return()=>u();},[]);
