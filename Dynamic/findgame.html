@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PickleConnect – Find a Game</title>
+    <meta name="description" content="Join or organize pickleball doubles games near you. Fill 4 spots and play.">
+    <meta name="theme-color" content="#059669">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8VE2FTD711"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-8VE2FTD711');</script>
+    <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23059669'/><circle cx='50' cy='50' r='6' fill='white'/></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Outfit',sans-serif;background:#f0fdf4;font-size:16px;-webkit-text-size-adjust:100%;}
+        .fd{font-family:'Barlow Condensed',sans-serif;}
+        .hero-bg{background:linear-gradient(135deg,#064e3b 0%,#059669 50%,#34d399 100%);min-height:100vh;}
+        .nav{padding:14px 18px;display:flex;align-items:center;gap:12px;}
+        .nav-logo{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:white;letter-spacing:1px;}
+        .content{padding:0 16px 100px;max-width:740px;margin:0 auto;}
+        .page-title{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:white;}
+
+        /* Buttons */
+        .btn-g{background:linear-gradient(135deg,#059669,#10b981);color:white;border-radius:10px;padding:10px 20px;font-weight:700;font-size:14px;border:none;cursor:pointer;font-family:'Outfit',sans-serif;box-shadow:0 2px 8px rgba(5,150,105,.25);}
+        .btn-g:hover{opacity:.9;}
+        .post-btn{background:white;color:#064e3b;border:none;border-radius:12px;padding:10px 20px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Outfit',sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.15);display:flex;align-items:center;gap:8px;}
+        .post-btn:hover{box-shadow:0 6px 20px rgba(0,0,0,.2);}
+
+        /* Modal */
+        .mo{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:200;backdrop-filter:blur(4px);}
+        .ms{background:white;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:740px;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease;}
+        @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+        @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
+        .mh{width:40px;height:4px;background:#cbd5e1;border-radius:2px;margin:0 auto 16px;}
+
+        /* Form */
+        .fg{margin-bottom:14px;}.fl{display:block;font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+        .fi{width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;outline:none;background:white;color:#0f172a;}.fi:focus{border-color:#059669;}
+        select.fi{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%23475569'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;cursor:pointer;}
+        .ob{padding:7px 14px;border-radius:8px;border:2px solid #e2e8f0;background:white;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:#475569;}
+        .ob:hover{border-color:#10b981;}.ob.s{border-color:#059669;background:#ecfdf5;color:#059669;}
+
+        /* Auth */
+        .auth-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;padding:20px;text-align:center;}
+        .google-btn{background:white;color:#333;border:none;border-radius:12px;padding:14px 28px;font-weight:700;font-size:16px;cursor:pointer;font-family:'Outfit',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.15);display:flex;align-items:center;gap:12px;}
+        .google-btn:hover{box-shadow:0 6px 24px rgba(0,0,0,.2);}
+        .facebook-btn{background:#1877F2;color:white;border:none;border-radius:12px;padding:14px 28px;font-weight:700;font-size:16px;cursor:pointer;font-family:'Outfit',sans-serif;box-shadow:0 4px 16px rgba(24,119,242,.35);display:flex;align-items:center;gap:12px;}
+        .facebook-btn:hover{background:#166FE5;box-shadow:0 6px 24px rgba(24,119,242,.5);}
+
+        /* User pill */
+        .user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.18);border-radius:20px;padding:4px 12px 4px 4px;cursor:pointer;border:1.5px solid rgba(255,255,255,.25);backdrop-filter:blur(4px);position:relative;}
+        .user-pill img{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,.4);}
+        .user-pill span{font-size:12px;font-weight:600;color:white;}
+        .user-pill:hover{background:rgba(255,255,255,.28);}
+        .upd{position:absolute;top:calc(100% + 6px);right:0;background:white;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);min-width:160px;overflow:hidden;z-index:300;animation:fadeIn .15s ease;}
+        .upd-item{display:flex;align-items:center;gap:8px;padding:11px 14px;font-size:13px;font-weight:600;color:#334155;cursor:pointer;font-family:'Outfit',sans-serif;border:none;background:none;width:100%;text-align:left;}
+        .upd-item:hover{background:#f8fafc;}
+        .upd-item.danger{color:#dc2626;}.upd-item.danger:hover{background:#fef2f2;}
+        .badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;background:#ef4444;color:white;border-radius:8px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;}
+        .fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:16px;background:white;color:#059669;border:none;font-size:28px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;z-index:50;}
+        .skeleton{background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:400px 100%;animation:shimmer 1.5s infinite;border-radius:8px;}
+
+        /* Tab bar */
+        .tab-bar{display:flex;gap:0;margin-bottom:14px;background:rgba(255,255,255,.1);border-radius:10px;padding:3px;}
+        .tab-btn{flex:1;padding:8px;border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
+        .tab-btn.active{background:white;color:#059669;box-shadow:0 1px 4px rgba(0,0,0,.1);}
+        .tab-btn.inactive{background:transparent;color:rgba(255,255,255,.7);}
+
+        /* Game card */
+        .gc{background:white;border-radius:16px;margin-bottom:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.07);transition:all .2s;border-left:4px solid transparent;}
+        .gc:hover{box-shadow:0 4px 20px rgba(0,0,0,.12);}
+        .gc.full{border-left-color:#f59e0b;}
+        .gc.open{border-left-color:#10b981;}
+        .gc.recurring{border-left-color:#8b5cf6;}
+        .gc-head{padding:14px 16px 10px;display:flex;align-items:flex-start;gap:12px;}
+        .gc-date-block{min-width:52px;height:52px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
+        .gc-date-block.today{background:linear-gradient(135deg,#059669,#10b981);}
+        .gc-date-block.soon{background:linear-gradient(135deg,#f59e0b,#fbbf24);}
+        .gc-date-block.future{background:#f1f5f9;}
+        .gc-day{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+        .gc-date-block.today .gc-day,.gc-date-block.soon .gc-day{color:rgba(255,255,255,.8);}
+        .gc-date-block.future .gc-day{color:#94a3b8;}
+        .gc-num{font-size:22px;font-weight:800;line-height:1;}
+        .gc-date-block.today .gc-num,.gc-date-block.soon .gc-num{color:white;}
+        .gc-date-block.future .gc-num{color:#475569;}
+        .gc-info{flex:1;min-width:0;}
+        .gc-title{font-weight:700;font-size:15px;color:#0f172a;margin-bottom:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+        .gc-sub{font-size:12px;color:#64748b;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+        .gc-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;white-space:nowrap;}
+        .full-badge{background:#fef3c7;color:#d97706;}
+        .open-badge{background:#ecfdf5;color:#059669;}
+        .rec-badge{background:#f5f3ff;color:#7c3aed;}
+
+        /* Roster slots */
+        .roster{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px 14px;}
+        .slot{border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;transition:all .2s;min-height:56px;}
+        .slot.filled{background:#f0fdf4;border:1.5px solid #bbf7d0;}
+        .slot.empty{background:#f8fafc;border:2px dashed #cbd5e1;cursor:pointer;}
+        .slot.empty:hover{border-color:#10b981;background:#f0fdf4;}
+        .slot.mine{background:#ecfdf5;border:2px solid #059669;}
+        .slot-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;overflow:hidden;border:2px solid rgba(255,255,255,.6);}
+        .slot-av img{width:100%;height:100%;object-fit:cover;}
+        .slot-name{font-size:13px;font-weight:600;color:#0f172a;}
+        .slot-skill{font-size:10px;color:#64748b;margin-top:1px;}
+        .slot-empty-icon{width:36px;height:36px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+        .slot-empty-text{font-size:12px;font-weight:600;color:#94a3b8;}
+
+        /* Full banner */
+        .full-banner{margin:0 16px 14px;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;}
+        .full-banner-text{font-size:13px;font-weight:700;color:#92400e;}
+        .full-banner-sub{font-size:11px;color:#b45309;margin-top:2px;}
+
+        /* Waitlist */
+        .waitlist{padding:0 16px 12px;}
+        .waitlist-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9;}
+        .waitlist-item:last-child{border-bottom:none;}
+
+        /* Action row */
+        .gc-actions{padding:0 16px 14px;display:flex;gap:8px;align-items:center;}
+        .join-btn{flex:1;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,#059669,#10b981);color:white;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(5,150,105,.3);transition:all .2s;}
+        .join-btn:hover{box-shadow:0 4px 14px rgba(5,150,105,.4);}
+        .join-btn:disabled{opacity:.5;cursor:default;}
+        .leave-btn{padding:11px 16px;border-radius:10px;border:2px solid #fca5a5;background:transparent;color:#dc2626;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;}
+        .leave-btn:hover{background:#fef2f2;}
+        .waitlist-btn{flex:1;padding:11px;border-radius:10px;border:2px solid #f59e0b;background:transparent;color:#d97706;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
+        .waitlist-btn:hover{background:#fffbeb;}
+        .chat-btn{padding:11px 14px;border-radius:10px;border:none;background:#f1f5f9;color:#475569;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+        .chat-btn:hover{background:#e2e8f0;}
+        .organizer-row{display:flex;align-items:center;gap:6px;padding:0 16px 10px;font-size:11px;color:#94a3b8;}
+        .cancel-btn{margin-left:auto;padding:4px 10px;border-radius:8px;border:1.5px solid #fca5a5;background:none;color:#dc2626;font-size:11px;font-weight:700;cursor:pointer;font-family:'Outfit';}
+
+        /* Filter strip */
+        .filter-strip{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none;}
+        .filter-strip::-webkit-scrollbar{display:none;}
+        .fs-pill{padding:6px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.25);background:transparent;font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.8);white-space:nowrap;}
+        .fs-pill.s{background:white;color:#059669;border-color:white;}
+
+        /* Empty state */
+        .empty-state{text-align:center;padding:48px 20px;}
+
+        /* Recurring indicator */
+        .rec-dot{width:8px;height:8px;border-radius:50%;background:#8b5cf6;display:inline-block;margin-right:4px;}
+
+        /* Game form specific */
+        .time-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+        .rec-options{display:flex;gap:6px;flex-wrap:wrap;}
+        .skill-note{font-size:11px;color:#64748b;margin-top:4px;}
+
+        /* Toast */
+        .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#0f172a;color:white;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:500;animation:fadeIn .2s ease;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.3);}
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useRef,useMemo,useCallback}=React;
+
+const FB={apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",authDomain:"pickleball-app-1bba7.firebaseapp.com",projectId:"pickleball-app-1bba7",storageBucket:"pickleball-app-1bba7.firebasestorage.app",messagingSenderId:"645604154338",appId:"1:645604154338:web:b92f87c2cd11d950b737bb"};
+let db=null,auth=null,fbOk=false;
+try{if(!firebase.apps.length)firebase.initializeApp(FB);db=firebase.firestore();auth=firebase.auth();fbOk=true;}catch(e){console.error('FB:',e);}
+
+const SKILLS=['Any','2.0-2.5','2.5-3.0','3.0-3.5','3.5-4.0','4.0-4.5','4.5-5.0','5.0+'];
+const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAY_SHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function timeAgo(t){if(!t)return '';const d=Date.now()-t,m=Math.floor(d/60000);if(m<1)return 'just now';if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
+function fmtTime(ts){if(!ts)return '';const[h,m]=ts.split(':').map(Number);return `${h%12||12}:${m.toString().padStart(2,'0')}${h>=12?'pm':'am'}`;}
+function fmtDate(ds){if(!ds)return '';const d=new Date(ds+'T12:00:00');const now=new Date();const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());const target=new Date(d.getFullYear(),d.getMonth(),d.getDate());const diff=Math.round((target-today)/86400000);if(diff===0)return 'Today';if(diff===1)return 'Tomorrow';if(diff<7)return DAYS[d.getDay()];return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});}
+function getDateParts(ds){if(!ds)return {dayStr:'?',numStr:'?',rel:'future'};const d=new Date(ds+'T12:00:00');const now=new Date();const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());const diff=Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-today)/86400000);return{dayStr:DAY_SHORT[d.getDay()],numStr:d.getDate(),rel:diff===0?'today':diff<=2?'soon':'future'};}
+function isExpired(g){if(!g.date||!g.time)return false;const dt=new Date(g.date+'T'+g.time);return dt<new Date();}
+
+// ── Avatar ──────────────────────────────────────────────────────────────
+function Avatar({photoURL,name,size=36,bg='linear-gradient(135deg,#d1fae5,#a7f3d0)'}){
+    const letter=(name||'?')[0].toUpperCase();
+    return(<div style={{width:size,height:size,borderRadius:'50%',background:bg,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',flexShrink:0,border:'2px solid rgba(255,255,255,.5)'}}>
+        {photoURL?<img src={photoURL} alt={name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+        :<span style={{fontSize:size*.44,fontWeight:700,color:'#059669'}}>{letter}</span>}
+    </div>);
+}
+
+// ── Toast ───────────────────────────────────────────────────────────────
+function Toast({msg}){return msg?<div className="toast">{msg}</div>:null;}
+
+// ── User Pill ───────────────────────────────────────────────────────────
+function UserPill({user,profile,onSignOut}){
+    const[open,setOpen]=useState(false);
+    const ref=useRef();
+    useEffect(()=>{const h=e=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false);};document.addEventListener('mousedown',h);return()=>document.removeEventListener('mousedown',h);},[]);
+    return(<div className="user-pill" ref={ref} onClick={()=>setOpen(!open)}>
+        <Avatar photoURL={user.photoURL} name={profile?.name||user.email} size={28}/>
+        <span>{(profile?.name||user.email||'').split(' ')[0]}</span>
+        {open&&<div className="upd">
+            <button className="upd-item danger" onClick={onSignOut}>🚪 Sign Out</button>
+        </div>}
+    </div>);
+}
+
+// ── Auth Screen ─────────────────────────────────────────────────────────
+function AuthScreen(){
+    const[mode,setMode]=useState('signin');
+    const[email,setEmail]=useState('');const[pass,setPass]=useState('');const[confirm,setConfirm]=useState('');
+    const[ld,setLd]=useState(false);const[err,setErr]=useState(null);
+    const isFile=window.location.protocol==='file:';
+
+    const googleAuth=async()=>{
+        if(isFile){setErr('Open this page from a web server.');return;}
+        setLd(true);setErr(null);
+        try{await auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider());}
+        catch(e){setErr(e.message);setLd(false);}
+    };
+    const facebookAuth=async()=>{
+        if(isFile){setErr('Open this page from a web server.');return;}
+        setLd(true);setErr(null);
+        const p=new firebase.auth.FacebookAuthProvider();
+        p.addScope('email');p.addScope('public_profile');
+        try{await auth.signInWithRedirect(p);}
+        catch(e){setErr(e.message);setLd(false);}
+    };
+    const emailAuth=async()=>{
+        if(!email.trim()||!pass){setErr('Enter email and password.');return;}
+        if(mode==='signup'&&pass!==confirm){setErr('Passwords do not match.');return;}
+        if(mode==='signup'&&pass.length<6){setErr('Password must be at least 6 characters.');return;}
+        setLd(true);setErr(null);
+        try{
+            if(mode==='signup')await auth.createUserWithEmailAndPassword(email.trim(),pass);
+            else await auth.signInWithEmailAndPassword(email.trim(),pass);
+        }catch(e){
+            const msg={'auth/email-already-in-use':'Account exists — sign in instead.','auth/user-not-found':'No account found.','auth/wrong-password':'Incorrect password.','auth/invalid-email':'Invalid email.','auth/too-many-requests':'Too many attempts. Try later.'}[e.code]||e.message;
+            setErr(msg);
+        }
+        setLd(false);
+    };
+
+    return(<div className="hero-bg">
+        <div className="nav"><a href="index.html" style={{textDecoration:'none'}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg></a><div className="nav-logo">🏓 PICKLECONNECT</div></div>
+        <div className="auth-screen">
+            <div style={{fontSize:56,marginBottom:12}}>🎮</div>
+            <div className="fd" style={{fontSize:34,fontWeight:800,color:'white',marginBottom:6}}>FIND A GAME</div>
+            <div style={{fontSize:14,color:'rgba(255,255,255,.65)',marginBottom:24,maxWidth:340,lineHeight:1.5}}>Organize doubles games, fill 4 spots fast, and get notified when you're set to play.</div>
+            <div style={{display:'flex',background:'rgba(255,255,255,.12)',borderRadius:10,padding:3,marginBottom:20,width:'100%',maxWidth:340}}>
+                {[['signin','Sign In'],['signup','Sign Up']].map(([k,l])=><button key={k} onClick={()=>{setMode(k);setErr(null);}} style={{flex:1,padding:'9px',border:'none',borderRadius:8,fontFamily:'Outfit',fontSize:13,fontWeight:700,cursor:'pointer',background:mode===k?'white':'transparent',color:mode===k?'#059669':'rgba(255,255,255,.75)'}}>{l}</button>)}
+            </div>
+            {err&&<div style={{background:'rgba(239,68,68,.15)',border:'1px solid rgba(239,68,68,.3)',borderRadius:10,padding:'10px 14px',marginBottom:14,maxWidth:340,width:'100%',fontSize:12,color:'#fecaca',textAlign:'left'}}>⚠️ {err}</div>}
+            <div style={{width:'100%',maxWidth:340,display:'flex',flexDirection:'column',gap:8}}>
+                <input value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="Email address" style={{padding:'11px 14px',borderRadius:10,border:'2px solid rgba(255,255,255,.2)',background:'rgba(255,255,255,.12)',color:'white',fontFamily:'Outfit',fontSize:14,outline:'none',width:'100%'}} onKeyDown={e=>e.key==='Enter'&&emailAuth()}/>
+                <input value={pass} onChange={e=>setPass(e.target.value)} type="password" placeholder="Password" style={{padding:'11px 14px',borderRadius:10,border:'2px solid rgba(255,255,255,.2)',background:'rgba(255,255,255,.12)',color:'white',fontFamily:'Outfit',fontSize:14,outline:'none',width:'100%'}} onKeyDown={e=>e.key==='Enter'&&emailAuth()}/>
+                {mode==='signup'&&<input value={confirm} onChange={e=>setConfirm(e.target.value)} type="password" placeholder="Confirm password" style={{padding:'11px 14px',borderRadius:10,border:'2px solid rgba(255,255,255,.2)',background:'rgba(255,255,255,.12)',color:'white',fontFamily:'Outfit',fontSize:14,outline:'none',width:'100%'}} onKeyDown={e=>e.key==='Enter'&&emailAuth()}/>}
+                <button onClick={emailAuth} disabled={ld} style={{padding:'12px',borderRadius:10,border:'none',background:'linear-gradient(135deg,#059669,#10b981)',color:'white',fontFamily:'Outfit',fontSize:14,fontWeight:700,cursor:'pointer',opacity:ld?.6:1}}>{ld?'Please wait…':mode==='signup'?'✅ Create Account':'→ Sign In'}</button>
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:10,width:'100%',maxWidth:340,margin:'16px 0'}}>
+                <div style={{flex:1,height:1,background:'rgba(255,255,255,.15)'}}/>
+                <span style={{fontSize:11,color:'rgba(255,255,255,.4)',fontWeight:600}}>OR</span>
+                <div style={{flex:1,height:1,background:'rgba(255,255,255,.15)'}}/>
+            </div>
+            <button className="google-btn" onClick={googleAuth} disabled={ld} style={{width:'100%',maxWidth:340,justifyContent:'center'}}>
+                <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                {ld?'Redirecting…':'Continue with Google'}
+            </button>
+            <button className="facebook-btn" onClick={facebookAuth} disabled={ld} style={{width:'100%',maxWidth:340,justifyContent:'center',marginTop:10}}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+                {ld?'Redirecting…':'Continue with Facebook'}
+            </button>
+            <div style={{fontSize:11,color:'rgba(255,255,255,.35)',marginTop:16}}>Free · Takes 30 seconds</div>
+        </div>
+    </div>);
+}
+
+// ── Slot component ───────────────────────────────────────────────────────
+function Slot({player,isEmpty,isMine,onJoin,disabled}){
+    if(!isEmpty&&player){
+        return(<div className={`slot ${isMine?'mine':'filled'}`} style={{animation:'popIn .3s ease'}}>
+            <Avatar photoURL={player.photoURL} name={player.name} size={36}/>
+            <div>
+                <div className="slot-name">{player.name}{isMine&&' (you)'}</div>
+                <div className="slot-skill">{player.skill||'Any level'}</div>
+            </div>
+            {isMine&&<div style={{marginLeft:'auto',fontSize:16}}>✅</div>}
+        </div>);
+    }
+    return(<div className="slot empty" onClick={disabled?null:onJoin} style={{opacity:disabled?.5:1,cursor:disabled?'default':'pointer'}}>
+        <div className="slot-empty-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg></div>
+        <div className="slot-empty-text">{disabled?'Game full':'Tap to join'}</div>
+    </div>);
+}
+
+// ── Game Form Modal ──────────────────────────────────────────────────────
+function GameForm({user,profile,onClose,onSaved,editData}){
+    const today=new Date().toISOString().split('T')[0];
+    const[title,setTitle]=useState(editData?.title||'');
+    const[date,setDate]=useState(editData?.date||today);
+    const[time,setTime]=useState(editData?.time||'16:00');
+    const[court,setCourt]=useState(editData?.court||'');
+    const[skill,setSkill]=useState(editData?.skill||'Any');
+    const[note,setNote]=useState(editData?.note||'');
+    const[recurring,setRecurring]=useState(editData?.recurring||false);
+    const[recurDay,setRecurDay]=useState(editData?.recurDay!==undefined?editData.recurDay:new Date().getDay());
+    const[saving,setSaving]=useState(false);
+    const[err,setErr]=useState(null);
+
+    const save=async()=>{
+        if(!court.trim()){setErr('Enter a court or location.');return;}
+        if(!date){setErr('Pick a date.');return;}
+        if(!time){setErr('Pick a time.');return;}
+        setSaving(true);setErr(null);
+        const data={
+            title:title.trim()||`Doubles @ ${court.trim()}`,
+            date,time,court:court.trim(),skill,note:note.trim(),
+            recurring,recurDay:recurring?parseInt(recurDay):null,
+            organizerUid:user.uid,organizerName:profile?.name||user.email,organizerPhoto:user.photoURL||null,
+            players:[{uid:user.uid,name:profile?.name||user.email,photoURL:user.photoURL||null,skill:profile?.skill||skill,joinedAt:Date.now()}],
+            waitlist:[],
+            status:'active',
+            createdAt:editData?.createdAt||Date.now(),
+            updatedAt:Date.now(),
+        };
+        try{
+            if(editData?.id)await db.collection('games').doc(editData.id).update({...data,players:editData.players,waitlist:editData.waitlist});
+            else await db.collection('games').add(data);
+            onSaved();
+        }catch(e){setErr(e.message);setSaving(false);}
+    };
+
+    return(<div className="mo" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+        <div className="ms">
+            <div className="mh"/>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+                <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{editData?'✏️ EDIT GAME':'🎮 CREATE GAME'}</div>
+                <button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:30,height:30,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+            </div>
+
+            {err&&<div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:10,padding:'10px 14px',marginBottom:14,fontSize:12,color:'#dc2626'}}>⚠️ {err}</div>}
+
+            <div className="fg">
+                <label className="fl">Game Title (optional)</label>
+                <input className="fi" value={title} onChange={e=>setTitle(e.target.value)} placeholder={`Doubles @ ${court||'court name'}`}/>
+            </div>
+
+            <div className="fg">
+                <label className="fl">Court / Location *</label>
+                <input className="fi" value={court} onChange={e=>setCourt(e.target.value)} placeholder="e.g. Centennial Park Court 3"/>
+            </div>
+
+            <div className="fg">
+                <label className="fl">Skill Level</label>
+                <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                    {SKILLS.map(s=><button key={s} className={`ob ${skill===s?'s':''}`} onClick={()=>setSkill(s)}>{s}</button>)}
+                </div>
+                <div className="skill-note">Players outside this range can still join — it's a guideline.</div>
+            </div>
+
+            {/* Recurring toggle */}
+            <div className="fg">
+                <label className="fl">Recurring Game?</label>
+                <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:8}}>
+                    <button className={`ob ${!recurring?'s':''}`} onClick={()=>setRecurring(false)}>One-off</button>
+                    <button className={`ob ${recurring?'s':''}`} onClick={()=>setRecurring(true)}>🔁 Weekly repeat</button>
+                </div>
+                {recurring&&<div>
+                    <label className="fl" style={{marginBottom:5}}>Repeats every</label>
+                    <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
+                        {DAYS.map((d,i)=><button key={i} className={`ob ${recurDay==i?'s':''}`} onClick={()=>setRecurDay(i)}>{DAY_SHORT[i]}</button>)}
+                    </div>
+                </div>}
+            </div>
+
+            <div className="time-row fg">
+                <div>
+                    <label className="fl">{recurring?'First Date':'Date'} *</label>
+                    <input className="fi" type="date" value={date} min={today} onChange={e=>setDate(e.target.value)}/>
+                </div>
+                <div>
+                    <label className="fl">Time *</label>
+                    <input className="fi" type="time" value={time} onChange={e=>setTime(e.target.value)}/>
+                </div>
+            </div>
+
+            <div className="fg">
+                <label className="fl">Note (optional)</label>
+                <textarea className="fi" value={note} onChange={e=>setNote(e.target.value)} placeholder="e.g. Bring a can of balls, parking on the street..." rows={2}/>
+            </div>
+
+            <div style={{background:'#f0fdf4',borderRadius:10,padding:'10px 14px',marginBottom:16,fontSize:12,color:'#059669',display:'flex',gap:8,alignItems:'flex-start'}}>
+                <span>ℹ️</span>
+                <span>You'll be added as the first player. All 4 players get notified when the game is full.</span>
+            </div>
+
+            <button onClick={save} disabled={saving} className="btn-g" style={{width:'100%',padding:'13px',fontSize:15}}>
+                {saving?'Saving…':editData?'Save Changes':'🎮 Create Game'}
+            </button>
+        </div>
+    </div>);
+}
+
+// ── Game Card ────────────────────────────────────────────────────────────
+function GameCard({game,myUid,myProfile,onJoin,onLeave,onWaitlist,onEdit,onCancel,showToast}){
+    const[expanded,setExpanded]=useState(false);
+    const players=game.players||[];
+    const waitlist=game.waitlist||[];
+    const isFull=players.length>=4;
+    const isMine=game.organizerUid===myUid;
+    const amIn=players.some(p=>p.uid===myUid);
+    const amWaiting=waitlist.some(p=>p.uid===myUid);
+    const expired=isExpired(game);
+    const {dayStr,numStr,rel}=getDateParts(game.date);
+
+    const recLabel=game.recurring?`Every ${DAYS[game.recurDay]}`:null;
+
+    const cardClass=`gc ${game.recurring?'recurring':isFull?'full':'open'}`;
+
+    return(<div className={cardClass} style={{opacity:expired?.5:1}}>
+        {/* Header */}
+        <div className="gc-head" onClick={()=>setExpanded(!expanded)} style={{cursor:'pointer'}}>
+            <div className={`gc-date-block ${rel}`}>
+                <div className="gc-day">{rel==='today'?'TODAY':dayStr}</div>
+                <div className="gc-num">{numStr}</div>
+            </div>
+            <div className="gc-info">
+                <div className="gc-title">
+                    {game.recurring&&<span className="rec-dot"/>}
+                    {game.title||`Doubles @ ${game.court}`}
+                    {isFull?<span className="gc-badge full-badge">🎉 Full</span>:<span className="gc-badge open-badge">{4-players.length} spot{4-players.length!==1?'s':''} open</span>}
+                    {game.recurring&&<span className="gc-badge rec-badge">🔁 Weekly</span>}
+                </div>
+                <div className="gc-sub">
+                    <span>📍 {game.court}</span>
+                    <span>⏰ {fmtTime(game.time)}</span>
+                    {game.skill&&game.skill!=='Any'&&<span>🎯 {game.skill}</span>}
+                </div>
+                {recLabel&&<div style={{fontSize:11,color:'#8b5cf6',marginTop:3,fontWeight:600}}>{recLabel}</div>}
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" style={{transform:expanded?'rotate(180deg)':'none',transition:'transform .2s',flexShrink:0,marginTop:4}}><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+
+        {/* Roster — always visible */}
+        <div className="roster">
+            {[0,1,2,3].map(i=>{
+                const p=players[i];
+                return<Slot key={i} player={p} isEmpty={!p} isMine={p?.uid===myUid} onJoin={()=>onJoin(game)} disabled={isFull&&!amIn}/>;
+            })}
+        </div>
+
+        {/* Full banner */}
+        {isFull&&<div className="full-banner">
+            <span style={{fontSize:22}}>🎉</span>
+            <div>
+                <div className="full-banner-text">Game is full — you're all set!</div>
+                <div className="full-banner-sub">All players have been notified.</div>
+            </div>
+        </div>}
+
+        {/* Waitlist */}
+        {waitlist.length>0&&<div className="waitlist">
+            <div style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:6}}>⏳ Waitlist ({waitlist.length})</div>
+            {waitlist.map((p,i)=><div key={i} className="waitlist-item">
+                <Avatar photoURL={p.photoURL} name={p.name} size={28}/>
+                <div style={{fontSize:12,fontWeight:600,color:'#475569'}}>{p.name}</div>
+                {p.uid===myUid&&<div style={{marginLeft:'auto',fontSize:10,color:'#d97706',fontWeight:700}}>You're #{i+1}</div>}
+            </div>)}
+        </div>}
+
+        {/* Expanded details */}
+        {expanded&&<div style={{padding:'0 16px 14px',borderTop:'1px solid #f1f5f9',animation:'fadeIn .2s'}}>
+            {game.note&&<div style={{fontSize:13,color:'#475569',marginBottom:10,lineHeight:1.5}}>💬 {game.note}</div>}
+            {game.recurring&&<div style={{fontSize:12,color:'#7c3aed',fontWeight:600,marginBottom:8}}>🔁 Repeats every {DAYS[game.recurDay]} at {fmtTime(game.time)}</div>}
+            <div style={{fontSize:11,color:'#94a3b8'}}>Posted {timeAgo(game.createdAt)} · {game.organizerName}</div>
+        </div>}
+
+        {/* Organizer row + cancel */}
+        <div className="organizer-row">
+            <Avatar photoURL={game.organizerPhoto} name={game.organizerName} size={20}/>
+            <span>by {isMine?'you':game.organizerName}</span>
+            {expired&&<span style={{color:'#f59e0b',fontWeight:700,fontSize:11}}>· expired</span>}
+            {isMine&&!expired&&<>
+                <button onClick={()=>onEdit(game)} style={{marginLeft:8,background:'none',border:'none',fontSize:11,color:'#059669',fontWeight:700,cursor:'pointer',fontFamily:'Outfit',padding:'2px 6px',borderRadius:6,background:'#f0fdf4'}}>Edit</button>
+                <button className="cancel-btn" onClick={()=>onCancel(game.id)}>Cancel</button>
+            </>}
+        </div>
+
+        {/* Actions */}
+        {!expired&&<div className="gc-actions">
+            {amIn?(
+                isMine
+                    ?<div style={{flex:1,fontSize:12,color:'#059669',fontWeight:600,display:'flex',alignItems:'center',gap:6}}>✅ You're in as organizer</div>
+                    :<button className="leave-btn" onClick={()=>onLeave(game)}>Leave game</button>
+            ):isFull?(
+                amWaiting
+                    ?<div style={{flex:1,fontSize:12,color:'#d97706',fontWeight:600}}>⏳ You're on the waitlist</div>
+                    :<button className="waitlist-btn" onClick={()=>onWaitlist(game)}>+ Join Waitlist</button>
+            ):(
+                <button className="join-btn" onClick={()=>onJoin(game)}>🏓 I'm In!</button>
+            )}
+        </div>}
+    </div>);
+}
+
+// ── Skeleton ─────────────────────────────────────────────────────────────
+function Skel(){return(<div className="gc" style={{border:'none',padding:16}}>
+    <div style={{display:'flex',gap:12,marginBottom:16}}>
+        <div className="skeleton" style={{width:52,height:52,borderRadius:12}}/>
+        <div style={{flex:1}}><div className="skeleton" style={{height:16,marginBottom:8}}/><div className="skeleton" style={{height:12,width:'70%'}}/></div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+        {[0,1,2,3].map(i=><div key={i} className="skeleton" style={{height:56,borderRadius:12}}/>)}
+    </div>
+</div>);}
+
+// ── Main App ─────────────────────────────────────────────────────────────
+function App(){
+    const[user,setUser]=useState(undefined);
+    const[profile,setProfile]=useState(undefined);
+    const[games,setGames]=useState([]);
+    const[loading,setLoading]=useState(true);
+    const[tab,setTab]=useState('upcoming');
+    const[showForm,setShowForm]=useState(false);
+    const[editGame,setEditGame]=useState(null);
+    const[toast,setToast]=useState(null);
+    const toastRef=useRef();
+
+    const showToast=useCallback((msg)=>{
+        setToast(msg);
+        clearTimeout(toastRef.current);
+        toastRef.current=setTimeout(()=>setToast(null),3000);
+    },[]);
+
+    // Auth
+    useEffect(()=>{
+        if(!auth)return;
+        return auth.onAuthStateChanged(async u=>{
+            setUser(u||null);
+            if(u){
+                try{
+                    const snap=await db.collection('profiles').doc(u.uid).get();
+                    setProfile(snap.exists?snap.data():null);
+                }catch(e){setProfile(null);}
+            }else{setProfile(null);}
+        });
+    },[]);
+
+    // Handle redirect result
+    useEffect(()=>{
+        if(!auth)return;
+        auth.getRedirectResult().then(async result=>{
+            if(result?.user){
+                const u=result.user;
+                const snap=await db.collection('profiles').doc(u.uid).get();
+                if(!snap.exists){
+                    await db.collection('profiles').doc(u.uid).set({name:u.displayName||'',email:u.email||'',photoURL:u.photoURL||null,uid:u.uid,updatedAt:Date.now()},{merge:true});
+                }
+            }
+        }).catch(()=>{});
+    },[]);
+
+    // Load games
+    useEffect(()=>{
+        if(!db||!user)return;
+        setLoading(true);
+        const unsub=db.collection('games')
+            .where('status','==','active')
+            .orderBy('date','asc')
+            .orderBy('time','asc')
+            .onSnapshot(snap=>{
+                setGames(snap.docs.map(d=>({id:d.id,...d.data()})));
+                setLoading(false);
+            },()=>setLoading(false));
+        return unsub;
+    },[user]);
+
+    // Auto-save profile from social login
+    useEffect(()=>{
+        if(user&&profile===null&&(user.displayName||user.photoURL)){
+            const data={name:user.displayName||'',email:user.email||'',photoURL:user.photoURL||null,uid:user.uid,updatedAt:Date.now()};
+            db.collection('profiles').doc(user.uid).set(data,{merge:true}).then(()=>setProfile(data)).catch(()=>{});
+        }
+    },[user,profile]);
+
+    const signOut=async()=>{if(confirm('Sign out?'))await auth.signOut();};
+
+    const joinGame=async(game)=>{
+        if(!user||!profile&&!user.displayName)return;
+        const players=game.players||[];
+        if(players.length>=4){showToast('Game is already full!');return;}
+        if(players.some(p=>p.uid===user.uid)){showToast("You're already in!");return;}
+        const newPlayer={uid:user.uid,name:profile?.name||user.displayName||user.email,photoURL:user.photoURL||null,skill:profile?.skill||game.skill||'Any',joinedAt:Date.now()};
+        const newPlayers=[...players,newPlayer];
+        const update={players:newPlayers,updatedAt:Date.now()};
+        // If now full, record fullAt
+        if(newPlayers.length===4){update.fullAt=Date.now();showToast('🎉 Game is full! All players notified.');}
+        else{showToast('✅ You joined the game!');}
+        await db.collection('games').doc(game.id).update(update);
+    };
+
+    const leaveGame=async(game)=>{
+        if(!confirm('Leave this game?'))return;
+        const players=(game.players||[]).filter(p=>p.uid!==user.uid);
+        const waitlist=game.waitlist||[];
+        let newPlayers=players;
+        let newWaitlist=waitlist;
+        // Promote first waitlisted player
+        if(waitlist.length>0){
+            const promoted=waitlist[0];
+            newPlayers=[...players,promoted];
+            newWaitlist=waitlist.slice(1);
+            showToast(`${promoted.name} moved from waitlist!`);
+        }else{showToast('You left the game.');}
+        await db.collection('games').doc(game.id).update({players:newPlayers,waitlist:newWaitlist,updatedAt:Date.now()});
+    };
+
+    const joinWaitlist=async(game)=>{
+        if(!user)return;
+        const waitlist=game.waitlist||[];
+        if(waitlist.some(p=>p.uid===user.uid)){showToast("You're already on the waitlist.");return;}
+        const newEntry={uid:user.uid,name:profile?.name||user.displayName||user.email,photoURL:user.photoURL||null,addedAt:Date.now()};
+        await db.collection('games').doc(game.id).update({waitlist:[...waitlist,newEntry],updatedAt:Date.now()});
+        showToast("⏳ Added to waitlist — we'll notify you if a spot opens!");
+    };
+
+    const cancelGame=async(id)=>{
+        if(!confirm('Cancel this game? This cannot be undone.'))return;
+        await db.collection('games').doc(id).update({status:'cancelled',updatedAt:Date.now()});
+        showToast('Game cancelled.');
+    };
+
+    // Filter games by tab
+    const filtered=useMemo(()=>{
+        const now=new Date();
+        return games.filter(g=>{
+            const exp=isExpired(g);
+            if(tab==='upcoming')return !exp;
+            if(tab==='mine')return g.organizerUid===user?.uid||((g.players||[]).some(p=>p.uid===user?.uid));
+            if(tab==='open')return !exp&&(g.players||[]).length<4;
+            if(tab==='recurring')return g.recurring&&!exp;
+            return true;
+        }).sort((a,b)=>{
+            if(a.date!==b.date)return a.date.localeCompare(b.date);
+            return (a.time||'').localeCompare(b.time||'');
+        });
+    },[games,tab,user]);
+
+    if(user===undefined||profile===undefined)return(<div className="hero-bg"><div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',color:'white',fontSize:16}}>Loading…</div></div>);
+    if(!user)return <AuthScreen/>;
+
+    return(<div className="hero-bg">
+        <div className="nav">
+            <a href="index.html" style={{textDecoration:'none'}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg></a>
+            <div className="nav-logo" style={{flex:1}}>🏓 PICKLECONNECT</div>
+            <UserPill user={user} profile={profile} onSignOut={signOut}/>
+        </div>
+
+        <div className="content">
+            {/* Header */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+                <div>
+                    <div className="page-title">Find a Game</div>
+                    <div style={{fontSize:12,color:'rgba(255,255,255,.6)',marginTop:2}}>Fill 4 spots · Play doubles</div>
+                </div>
+                <button className="post-btn" onClick={()=>{setEditGame(null);setShowForm(true);}}>🎮 Create Game</button>
+            </div>
+
+            {/* Tab bar */}
+            <div className="tab-bar">
+                {[['upcoming','📅 Upcoming'],['open','🟢 Open'],['recurring','🔁 Weekly'],['mine','👤 My Games']].map(([k,l])=>(
+                    <button key={k} className={`tab-btn ${tab===k?'active':'inactive'}`} onClick={()=>setTab(k)}>{l}</button>
+                ))}
+            </div>
+
+            {/* Count */}
+            <div style={{fontSize:12,color:'rgba(255,255,255,.5)',marginBottom:12,paddingLeft:2}}>
+                {filtered.length} game{filtered.length!==1?'s':''}
+                {tab==='upcoming'&&games.filter(g=>!isExpired(g)&&(g.players||[]).length<4).length>0&&
+                    <span style={{color:'#6ee7b7',fontWeight:600,marginLeft:6}}>· {games.filter(g=>!isExpired(g)&&(g.players||[]).length<4).length} need players</span>
+                }
+            </div>
+
+            {/* Cards */}
+            {loading?[1,2,3].map(i=><Skel key={i}/>)
+            :filtered.length===0
+                ?<div className="empty-state">
+                    <div style={{fontSize:44,marginBottom:12}}>🏓</div>
+                    <div style={{fontSize:18,fontWeight:700,color:'white',marginBottom:6}}>
+                        {tab==='mine'?'No games yet':'No games found'}
+                    </div>
+                    <div style={{fontSize:13,color:'rgba(255,255,255,.6)',marginBottom:20,lineHeight:1.5}}>
+                        {tab==='mine'?'Create a game and invite players to fill 4 spots.':'Be the first to create a doubles game!'}
+                    </div>
+                    <button className="btn-g" onClick={()=>{setEditGame(null);setShowForm(true);}}>🎮 Create a Game</button>
+                </div>
+                :filtered.map(g=><GameCard
+                    key={g.id} game={g} myUid={user.uid} myProfile={profile}
+                    onJoin={joinGame} onLeave={leaveGame} onWaitlist={joinWaitlist}
+                    onEdit={g=>{setEditGame(g);setShowForm(true);}}
+                    onCancel={cancelGame} showToast={showToast}
+                />)
+            }
+
+            {/* Cross-link to Find Players */}
+            <div style={{display:'flex',gap:8,marginTop:16}}>
+                <a href="findplayer.html" style={{flex:1,display:'flex',alignItems:'center',gap:10,background:'linear-gradient(135deg,#0f766e,#14b8a6)',borderRadius:12,padding:'14px 16px',textDecoration:'none',boxShadow:'0 4px 12px rgba(15,118,110,.3)'}}>
+                    <span style={{fontSize:22}}>👤</span>
+                    <div><div className="fd" style={{fontSize:14,fontWeight:800,color:'white'}}>FIND PLAYERS</div><div style={{fontSize:10,color:'rgba(255,255,255,.7)'}}>Browse who's available</div></div>
+                </a>
+                <a href="index.html" style={{flex:1,display:'flex',alignItems:'center',gap:10,background:'linear-gradient(135deg,#1e40af,#3b82f6)',borderRadius:12,padding:'14px 16px',textDecoration:'none',boxShadow:'0 4px 12px rgba(30,64,175,.3)'}}>
+                    <span style={{fontSize:22}}>🏟️</span>
+                    <div><div className="fd" style={{fontSize:14,fontWeight:800,color:'white'}}>COURTS</div><div style={{fontSize:10,color:'rgba(255,255,255,.7)'}}>Find & book courts</div></div>
+                </a>
+            </div>
+        </div>
+
+        <button className="fab" onClick={()=>{setEditGame(null);setShowForm(true);}} title="Create Game">+</button>
+
+        {showForm&&<GameForm user={user} profile={profile} editData={editGame}
+            onClose={()=>{setShowForm(false);setEditGame(null);}}
+            onSaved={()=>{setShowForm(false);setEditGame(null);showToast(editGame?'Game updated!':'🎮 Game created!');}}
+        />}
+
+        <Toast msg={toast}/>
+    </div>);
+}
+
+ReactDOM.render(<App/>,document.getElementById('root'));
+</script>
+</body>
+</html>
