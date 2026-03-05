@@ -468,7 +468,7 @@ function GameCard({game,myUid,myProfile,onJoin,onLeave,onWaitlist,onEdit,onCance
             <span>by {isMine?'you':game.organizerName}</span>
             {expired&&<span style={{color:'#f59e0b',fontWeight:700,fontSize:11,marginLeft:4}}>· ended</span>}
             {isMine&&!expired&&<>
-                <button onClick={()=>onEdit(game)} style={{marginLeft:8,background:'#f0fdf4',border:'none',fontSize:11,color:'#059669',fontWeight:700,cursor:'pointer',fontFamily:'Outfit',sans:serif,padding:'2px 8px',borderRadius:6}}>Edit</button>
+                <button onClick={()=>onEdit(game)} style={{marginLeft:8,background:'#f0fdf4',border:'none',fontSize:11,color:'#059669',fontWeight:700,cursor:'pointer',fontFamily:'Outfit',padding:'2px 8px',borderRadius:6}}>Edit</button>
                 <button className="cancel-btn" onClick={()=>onCancel(game.id)}>Cancel</button>
             </>}
         </div>
