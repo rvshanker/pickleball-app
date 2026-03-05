@@ -173,7 +173,7 @@ function AuthGate({onAuth}) {
 }
 
 // ── Compose Message Modal ─────────────────────────────────────────────
-function ComposeModal({court, botConfig, courtData, checkins, onClose}) {
+function ComposeModal({court, botConfig, courtData, checkins, existingEventRules=[], onClose}) {
     const [type, setType] = useState('onetime');   // onetime | scheduled | event
     const [msg, setMsg] = useState('');
     const [isDynamic, setIsDynamic] = useState(false);
@@ -262,6 +262,12 @@ function ComposeModal({court, botConfig, courtData, checkins, onClose}) {
     };
 
     const saveEventRule = async () => {
+        // Guard: prevent duplicate rules for the same trigger
+        const duplicate = existingEventRules.find(r => r.trigger === eventTrigger);
+        if (duplicate) {
+            setResult({ok:false, msg:`⚠️ A rule for this trigger already exists. Delete it first before creating a new one.`});
+            return;
+        }
         const text = msg.trim() || '(use default message)';
         const doc = {
             trigger: eventTrigger, customMsg: text !== '(use default message)' ? text : null,
@@ -296,7 +302,7 @@ function ComposeModal({court, botConfig, courtData, checkins, onClose}) {
                 {/* Type selector */}
                 <div style={{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'}}>
                     {[['onetime','⚡ One-Time'],['scheduled','📅 Scheduled'],['event','🔔 Event-Based']].map(([v,l])=>(
-                        <button key={v} onClick={()=>setType(v)} style={{padding:'8px 14px',borderRadius:99,border:'2px solid '+(type===v?'#059669':'#e2e8f0'),background:type===v?'#f0fdf4':'white',color:type===v?'#059669':'#64748b',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:600,cursor:'pointer'}}>
+                        <button key={v} onClick={()=>{setType(v);setMsg('');setIsDynamic(false);setResult(null);}} style={{padding:'8px 14px',borderRadius:99,border:'2px solid '+(type===v?'#059669':'#e2e8f0'),background:type===v?'#f0fdf4':'white',color:type===v?'#059669':'#64748b',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:600,cursor:'pointer'}}>
                             {l}
                         </button>
                     ))}
@@ -710,6 +716,7 @@ function CourtConfigPanel({court}) {
                     botConfig={config||{botId:botId.trim()}}
                     courtData={courtData}
                     checkins={checkins}
+                    existingEventRules={eventRules}
                     onClose={()=>setShowCompose(false)}
                 />
             )}
