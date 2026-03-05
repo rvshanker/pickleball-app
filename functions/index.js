@@ -402,21 +402,24 @@ exports.onCheckinCreated = onDocumentCreated(
       .limit(1)
       .get();
 
+    // ✅ FIX: No checkin rule = stay silent. Previously the default message
+    // fired unconditionally whenever rulesSnap was empty.
+    if (rulesSnap.empty) return;
+
+    const rule = rulesSnap.docs[0].data();
     let msg;
-    if (!rulesSnap.empty) {
-      const rule = rulesSnap.docs[0].data();
-      if (rule.customMsg) {
-        const courtDoc = await db.collection("courts").doc(courtId).get();
-        const courtData = courtDoc.exists ? courtDoc.data() : {};
-        const checkinsSnap = await db
-          .collection("courts").doc(courtId).collection("checkins")
-          .where("status", "==", "active").get();
-        msg = rule.customMsg
-          .replace("{name}", checkin.userName || "Someone")
-          .replace("{court}", courtData.name || "the court")
-          .replace("{players}", String(checkinsSnap.size))
-          .replace("{courts}", String(courtData.openCourts ?? courtData.numberOfCourts ?? 4));
-      }
+
+    if (rule.customMsg) {
+      const courtDoc = await db.collection("courts").doc(courtId).get();
+      const courtData = courtDoc.exists ? courtDoc.data() : {};
+      const checkinsSnap = await db
+        .collection("courts").doc(courtId).collection("checkins")
+        .where("status", "==", "active").get();
+      msg = rule.customMsg
+        .replace("{name}", checkin.userName || "Someone")
+        .replace("{court}", courtData.name || "the court")
+        .replace("{players}", String(checkinsSnap.size))
+        .replace("{courts}", String(courtData.openCourts ?? courtData.numberOfCourts ?? 4));
     }
 
     if (!msg) {
