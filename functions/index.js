@@ -388,7 +388,8 @@ exports.onCheckinCreated = onDocumentCreated(
     const checkin = event.data.data();
     if (!checkin) return;
 
-    const botDoc = await db.collection("groupme_bots").doc(courtId).get();
+    // Only fire for immediate check-ins — ignore "heading there" (status: later)
+    if (checkin.status !== "active") return;
     if (!botDoc.exists) return;
     const botConfig = botDoc.data();
     if (!botConfig.botId || botConfig.enabled === false) return;
