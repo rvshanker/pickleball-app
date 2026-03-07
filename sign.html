@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firebase Google Auth Test</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // TODO: Replace with YOUR Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
+            authDomain: "pickleball-app-1bba7.firebaseapp.com",
+            projectId: "pickleball-app-1bba7",
+            storageBucket: "pickleball-app-1bba7.firebasestorage.app",
+            messagingSenderId: "645604154338",
+            appId: "1:645604154338:web:b92f87c2cd11d950b737bb"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        window.signIn = () => {
+            signInWithPopup(auth, provider)
+                .then((result) => {
+                    document.getElementById('status').innerText = "Hello, " + result.user.displayName;
+                    console.log(result.user);
+                }).catch((error) => {
+                    document.getElementById('status').innerText = "Error: " + error.message;
+                    console.warn("Check if your domain is whitelisted in Firebase console!");
+                });
+        };
+    </script>
+</head>
+<body>
+    <h2>Firebase Auth Test</h2>
+    <button onclick="signIn()">Sign in with Google</button>
+    <p id="status">Not signed in.</p>
+</body>
+</html>
