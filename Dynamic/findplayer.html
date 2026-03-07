@@ -471,6 +471,7 @@ function App(){
     const[showPost,setShowPost]=useState(false);const[editP,setEditP]=useState(null);
     const[chatP,setChatP]=useState(null);const[showInbox,setShowInbox]=useState(false);
     const[showProfile,setShowProfile]=useState(false);const[unread,setUnread]=useState(0);
+    useEffect(()=>{window.__pcnOpenProfile=()=>setShowProfile(true);return()=>{delete window.__pcnOpenProfile;};},[]);
     const[search,setSearch]=useState('');const[tab,setTab]=useState('all');const[expanded,setExpanded]=useState(null);
     const[showF,setShowF]=useState(false);const[fSkill,setFS]=useState('');const[fType,setFT]=useState('');const[fGender,setFG]=useState('');const[fPurpose,setFP]=useState('');
 
@@ -550,11 +551,6 @@ function App(){
                 :grouped.length===0?<div style={{textAlign:'center',padding:'40px 16px'}}><div style={{fontSize:40,marginBottom:8}}>🏓</div><div style={{fontSize:16,fontWeight:700,color:'white',marginBottom:4}}>No players found</div><div style={{fontSize:13,color:'rgba(255,255,255,.6)',marginBottom:16}}>{search||fCount?'Try different filters':'Be the first!'}</div>{(search||fCount>0)?<button onClick={()=>{setSearch('');clearF();}} style={{background:'rgba(255,255,255,.15)',border:'none',borderRadius:10,padding:'8px 20px',color:'white',fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'Outfit'}}>Clear</button>:<button className="btn-g" onClick={()=>{setEditP(null);setShowPost(true);}}>📢 Post</button>}</div>
                 :grouped.map(g=><PlayerCard key={g.uid} g={g} myUid={user.uid} uLat={uLat} uLng={uLng} onChat={setChatP} onEdit={p=>{setEditP(p);setShowPost(true);}} onRemove={async id=>{if(confirm('Remove?'))try{await db.collection('findPlayers').doc(id).update({status:'removed'});}catch(e){alert(e.message);}}} expanded={expanded===g.uid} onToggle={()=>setExpanded(expanded===g.uid?null:g.uid)}/>)}
 
-                {/* Bottom links — distinct colors */}
-                <div style={{display:'flex',gap:8,marginTop:16}}>
-                    <a href="findgame.html" style={{flex:1,display:'flex',alignItems:'center',gap:10,background:'linear-gradient(135deg,#0f766e,#14b8a6)',borderRadius:12,padding:'14px 16px',textDecoration:'none',boxShadow:'0 4px 12px rgba(15,118,110,.3)'}}><span style={{fontSize:22}}>🎮</span><div><div className="fd" style={{fontSize:14,fontWeight:800,color:'white'}}>FIND A GAME</div><div style={{fontSize:10,color:'rgba(255,255,255,.7)'}}>Fill 4 spots · Play now</div></div></a>
-                    <a href="index.html" style={{flex:1,display:'flex',alignItems:'center',gap:10,background:'linear-gradient(135deg,#1e40af,#3b82f6)',borderRadius:12,padding:'14px 16px',textDecoration:'none',boxShadow:'0 4px 12px rgba(30,64,175,.3)'}}><span style={{fontSize:22}}>🏟️</span><div><div className="fd" style={{fontSize:14,fontWeight:800,color:'white'}}>COURTS</div><div style={{fontSize:10,color:'rgba(255,255,255,.7)'}}>Find courts</div></div></a>
-                </div>
                 <div style={{textAlign:'center',marginTop:20,height:8}}></div>
             </div>
             <button className="fab" onClick={()=>{setEditP(null);setShowPost(true);}} title="Post Availability">+</button>

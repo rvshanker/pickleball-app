@@ -7,7 +7,7 @@
 
   const PAGE_META = {
     'pickleconnect-app.html': { id: 'home',       label: 'Home'       },
-    'index.html':             { id: 'courts',     label: 'Courts'     },
+    'index.html':             { id: 'home',       label: 'Home'       },
     'court-main.html':        { id: 'courts',     label: 'Court'      },
     'court.html':             { id: 'courts',     label: 'Court'      },
     'findgame.html':          { id: 'games',      label: 'Games'      },
@@ -16,11 +16,11 @@
   };
 
   const NAV_ITEMS = [
-    { id: 'home',       label: 'Home',       icon: '🏠', href: 'pickleconnect-app.html' },
-    { id: 'courts',     label: 'Courts',     icon: '🏟', href: 'index.html'             },
-    { id: 'games',      label: 'Games',      icon: '🎮', href: 'findgame.html'          },
-    { id: 'players',    label: 'Players',    icon: '👥', href: 'findplayer.html'        },
-    { id: 'tournament', label: 'Tournament', icon: '🏆', href: 'tournament.html'        },
+    { id: 'home',       label: 'Home',       icon: '🏠', href: 'index.html'      },
+    { id: 'courts',     label: 'Courts',     icon: '🏟', href: 'court-main.html' },
+    { id: 'games',      label: 'Games',      icon: '🎮', href: 'findgame.html'   },
+    { id: 'players',    label: 'Players',    icon: '👥', href: 'findplayer.html' },
+    { id: 'tournament', label: 'Tournament', icon: '🏆', href: 'tournament.html' },
   ];
 
   const filename = window.location.pathname.split('/').pop() || 'index.html';
@@ -103,7 +103,7 @@
   const logoEl = document.createElement('div');
   logoEl.className = 'pcn-logo';
   logoEl.innerHTML = 'Pickle<span>Connect</span>';
-  logoEl.addEventListener('click', () => goTo('pickleconnect-app.html'));
+  logoEl.addEventListener('click', () => goTo('index.html'));
 
   const lblEl = document.createElement('div');
   lblEl.className = 'pcn-label';
@@ -190,7 +190,18 @@
     const editBtn = document.createElement('button');
     editBtn.className = 'pcn-dd-btn';
     editBtn.innerHTML = '✏️ Edit Profile';
-    editBtn.addEventListener('click', () => { closeDD(); goTo('findplayer.html'); });
+    editBtn.addEventListener('click', () => {
+      closeDD();
+      // Try to trigger the page's own profile-edit mechanism
+      // findplayer.html exposes setShowProfile on window, findgame has onSignOut only
+      if (typeof window.__pcnOpenProfile === 'function') {
+        window.__pcnOpenProfile();
+      } else {
+        // fallback: click any edit-profile button the page may have rendered
+        const btn = document.querySelector('[data-action="edit-profile"]');
+        if (btn) btn.click();
+      }
+    });
     dd.appendChild(editBtn);
 
     const soBtn = document.createElement('button');
@@ -199,7 +210,7 @@
     soBtn.addEventListener('click', async () => {
       closeDD();
       try { if (window.firebase?.apps?.length) await window.firebase.auth().signOut(); } catch(e){}
-      goTo('pickleconnect-app.html');
+      goTo('index.html');
     });
     dd.appendChild(soBtn);
 

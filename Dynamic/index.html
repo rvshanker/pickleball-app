@@ -26,10 +26,12 @@
   --nav-h:72px;--fab-h:44px;
 }
 html,body,#root{height:100%;overflow:hidden;}
+/* nav.js padding-top override — allow it to work with app-shell */
+body{padding-top:0!important;}
 body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);font-size:15px;-webkit-text-size-adjust:100%;}
 
 /* ── Layout shell ── */
-.app-shell{display:flex;flex-direction:column;height:100%;position:relative;max-width:480px;margin:0 auto;background:var(--navy);}
+.app-shell{display:flex;flex-direction:column;height:100%;position:relative;max-width:480px;margin:0 auto;background:var(--navy);padding-top:var(--pcn-top,52px);box-sizing:border-box;}
 .screen-body{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding-bottom:80px;}
 .screen-body::-webkit-scrollbar{display:none;}
 
@@ -590,7 +592,7 @@ function HomeTab({user,profile,courts,players,games,uLat,uLng,onChat,onNeedLogin
       {/* Stats */}
       <div style={{paddingTop:6,marginBottom:4,fontSize:'0.68rem',fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--muted)'}}>Overview</div>
       <div className="stats-row">
-        <div className="stat-card" onClick={()=>openPage('index.html')} style={{cursor:'pointer'}}>
+        <div className="stat-card" onClick={()=>onSetTab('courts')} style={{cursor:'pointer'}}>
           <div className={`stat-num ${openCourtsCount>0?'hi':''}`}>{openCourtsCount}</div>
           <div className="stat-lbl">Open Courts</div>
         </div>
@@ -1151,7 +1153,7 @@ function App(){
 
   const handleFabStartGame=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}openPage('findgame.html');};
   const handleFabAvailable=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}openPage('findplayer.html');};
-  const handleFabQueue=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}openPage('index.html');};
+  const handleFabQueue=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}setTab('courts');};
 
   /* Loading */
   if(user===undefined)return(
