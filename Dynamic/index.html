@@ -23,7 +23,7 @@
   --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
   --text:#F0F4F8;--muted:#7A9BB5;--muted2:rgba(122,155,181,0.5);
   --accent:#F7C948;--blue:#5B9BF7;--red:#F75B5B;
-  --nav-h:68px;--fab-h:50px;
+  --nav-h:72px;--fab-h:44px;
 }
 html,body,#root{height:100%;overflow:hidden;}
 body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);font-size:15px;-webkit-text-size-adjust:100%;}
@@ -50,11 +50,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);f
 .nav-label{font-size:0.55rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);}
 .nav-item.active .nav-label{color:var(--green);}
 .nav-item.active .nav-icon{filter:drop-shadow(0 0 5px rgba(46,204,113,0.6));}
-.nav-gap{flex:1.4;}
+.nav-gap{flex:2;min-width:160px;}
 
 /* ── FAB ── */
-.fab-wrap{position:fixed;bottom:calc(var(--nav-h) - var(--fab-h)/2 - 2px);left:50%;transform:translateX(-50%);z-index:200;}
-.fab{background:linear-gradient(135deg,#2ECC71,#27AE60);color:#fff;font-family:'Syne',sans-serif;font-size:0.72rem;font-weight:800;letter-spacing:0.08em;padding:0 20px;height:var(--fab-h);border-radius:28px;display:flex;align-items:center;gap:7px;white-space:nowrap;box-shadow:0 6px 24px rgba(46,204,113,0.5);cursor:pointer;border:2px solid rgba(255,255,255,0.2);transition:transform .15s,box-shadow .15s;}
+.fab-wrap{position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:200;height:var(--nav-h);display:flex;align-items:center;justify-content:center;pointer-events:none;width:180px;}
+.fab{pointer-events:all;background:linear-gradient(135deg,#2ECC71,#27AE60);color:#fff;font-family:'Syne',sans-serif;font-size:0.68rem;font-weight:800;letter-spacing:0.06em;padding:0 16px;height:42px;border-radius:24px;display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 4px 16px rgba(46,204,113,0.5);cursor:pointer;border:2px solid rgba(255,255,255,0.2);transition:transform .15s,box-shadow .15s;}
+.fab:hover{transform:scale(1.04);}
 .fab:hover{transform:scale(1.04);box-shadow:0 8px 32px rgba(46,204,113,0.6);}
 .fab.open{background:linear-gradient(135deg,#142232,#1A2B3C);}
 
@@ -172,10 +173,11 @@ textarea.fi{resize:vertical;min-height:60px;}
 .google-btn{background:white;color:#333;border:none;border-radius:12px;padding:13px 24px;font-weight:700;font-size:0.95rem;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.25);display:flex;align-items:center;gap:10px;width:100%;max-width:320px;justify-content:center;}
 
 /* ── Greeting ── */
-.greeting{margin-bottom:20px;padding:0 2px;}
-.greeting h2{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;line-height:1.25;}
-.greeting-sub{font-size:0.78rem;color:var(--muted);margin-top:4px;}
-.weather-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:20px;padding:4px 10px;font-size:0.7rem;color:var(--green);font-weight:600;margin-top:8px;}
+.greeting{margin-bottom:16px;padding:0 2px;}
+.greeting h2{font-family:'Syne',sans-serif;font-size:1.35rem;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.greeting-meta{display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap;}
+.greeting-date{font-size:0.75rem;color:var(--muted);}
+.weather-pill{display:inline-flex;align-items:center;gap:4px;background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);border-radius:20px;padding:3px 9px;font-size:0.68rem;color:var(--green);font-weight:600;}
 
 /* ── Map placeholder ── */
 .map-box{border-radius:16px;overflow:hidden;height:140px;margin-bottom:16px;position:relative;background:#0f1f14;border:1px solid var(--border);}
@@ -253,58 +255,132 @@ const GoogleSVG=()=><svg width="18" height="18" viewBox="0 0 24 24"><path d="M22
 ════════════════════════════════════════ */
 function AuthScreen({onBack}){
   const[mode,setMode]=useState('signin');
-  const[email,setEmail]=useState('');const[pass,setPass]=useState('');const[confirm,setConfirm]=useState('');
-  const[ld,setLd]=useState(false);const[err,setErr]=useState(null);
+  const[email,setEmail]=useState('');
+  const[pass,setPass]=useState('');
+  const[confirmPass,setConfirmPass]=useState('');
+  const[ld,setLd]=useState(false);
+  const[err,setErr]=useState(null);
   const isFile=window.location.protocol==='file:';
 
+  const inputStyle={
+    width:'100%',padding:'12px 14px',borderRadius:12,
+    border:'1px solid rgba(255,255,255,0.15)',
+    background:'rgba(255,255,255,0.08)',
+    color:'#F0F4F8',fontFamily:'DM Sans',fontSize:'0.9rem',
+    outline:'none',transition:'border-color .15s',
+  };
+
   const googleAuth=async()=>{
-    if(isFile){setErr('Serve via http:// — not file://. Run: npx serve . or python -m http.server');return;}
+    if(isFile){setErr('Open via a web server (http://), not as a file:// URL.\n\nRun: npx serve . then open http://localhost:3000');return;}
     setLd(true);setErr(null);
     try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());}
     catch(e){if(e.code!=='auth/popup-closed-by-user')setErr(e.message);}
     setLd(false);
   };
+
   const emailAuth=async()=>{
-    if(!email.trim()||!pass){setErr('Enter email and password.');return;}
-    if(mode==='signup'&&pass!==confirm){setErr('Passwords do not match.');return;}
-    if(mode==='signup'&&pass.length<6){setErr('Password needs 6+ chars.');return;}
+    if(!email.trim()||!pass){setErr('Enter your email and password.');return;}
+    if(mode==='signup'&&pass!==confirmPass){setErr('Passwords do not match.');return;}
+    if(mode==='signup'&&pass.length<6){setErr('Password must be at least 6 characters.');return;}
     setLd(true);setErr(null);
     try{
       if(mode==='signup')await auth.createUserWithEmailAndPassword(email.trim(),pass);
       else await auth.signInWithEmailAndPassword(email.trim(),pass);
     }catch(e){
-      setErr({'auth/email-already-in-use':'Email already used. Sign in.','auth/user-not-found':'No account found.','auth/wrong-password':'Wrong password.','auth/invalid-email':'Invalid email.','auth/too-many-requests':'Too many attempts.'}[e.code]||e.message);
+      const msgs={
+        'auth/email-already-in-use':'That email is already registered. Try signing in instead.',
+        'auth/user-not-found':'No account found with that email.',
+        'auth/wrong-password':'Incorrect password. Try again.',
+        'auth/invalid-email':'Please enter a valid email address.',
+        'auth/invalid-credential':'Email or password is incorrect.',
+        'auth/too-many-requests':'Too many failed attempts. Please wait a moment.',
+        'auth/network-request-failed':'Network error. Check your connection.',
+      };
+      setErr(msgs[e.code]||e.message);
     }
     setLd(false);
   };
 
+  const forgotPw=async()=>{
+    if(!email.trim()){setErr('Enter your email above first, then click Forgot Password.');return;}
+    try{
+      await auth.sendPasswordResetEmail(email.trim());
+      setErr(null);
+      alert('Password reset email sent! Check your inbox.');
+    }catch(e){setErr(e.message);}
+  };
+
   return(
     <div className="auth-wrap">
-      {onBack&&<button onClick={onBack} style={{position:'absolute',top:16,left:16,background:'none',border:'none',color:' var(--muted)',cursor:'pointer',fontSize:'1.1rem'}}>←</button>}
-      <div style={{fontSize:'3rem',marginBottom:12}}>🏓</div>
+      {onBack&&(
+        <button onClick={onBack} style={{position:'absolute',top:16,left:16,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:10,padding:'6px 12px',color:'var(--muted)',cursor:'pointer',fontSize:'0.82rem',fontWeight:600}}>← Back</button>
+      )}
+      <div style={{fontSize:'3rem',marginBottom:10}}>🏓</div>
       <div className="auth-logo">PickleConnect</div>
-      <div style={{fontSize:'0.85rem',color:'var(--muted)',marginBottom:28,maxWidth:280,lineHeight:1.5}}>Sign in to message players, post availability & join games.</div>
+      <div style={{fontSize:'0.85rem',color:'var(--muted)',marginBottom:28,maxWidth:300,lineHeight:1.6,textAlign:'center'}}>
+        {mode==='signup'?'Create a free account to message players, post availability & join games.':'Welcome back! Sign in to continue.'}
+      </div>
 
-      <div style={{display:'flex',background:'rgba(255,255,255,0.06)',borderRadius:12,padding:3,marginBottom:18,width:'100%',maxWidth:320}}>
-        {[['signin','Sign In'],['signup','Sign Up']].map(([k,l])=>
-          <button key={k} onClick={()=>{setMode(k);setErr(null);}} style={{flex:1,padding:'9px',border:'none',borderRadius:10,fontFamily:'DM Sans',fontSize:'0.85rem',fontWeight:700,cursor:'pointer',background:mode===k?'var(--card2)':'transparent',color:mode===k?'var(--text)':'var(--muted)',boxShadow:mode===k?'0 1px 4px rgba(0,0,0,0.3)':'none'}}>{l}</button>
+      {/* Mode toggle */}
+      <div style={{display:'flex',background:'rgba(255,255,255,0.06)',borderRadius:12,padding:3,marginBottom:20,width:'100%',maxWidth:320}}>
+        {[['signin','Sign In'],['signup','Sign Up']].map(([k,l])=>(
+          <button key={k} onClick={()=>{setMode(k);setErr(null);setPass('');setConfirmPass('');}} style={{flex:1,padding:'9px',border:'none',borderRadius:10,fontFamily:'DM Sans',fontSize:'0.85rem',fontWeight:700,cursor:'pointer',background:mode===k?'rgba(46,204,113,0.2)':'transparent',color:mode===k?'var(--green)':'var(--muted)',transition:'all .15s'}}>{l}</button>
+        ))}
+      </div>
+
+      {/* Error box */}
+      {err&&(
+        <div style={{background:'rgba(247,91,91,0.12)',border:'1px solid rgba(247,91,91,0.3)',borderRadius:12,padding:'10px 14px',marginBottom:14,maxWidth:320,width:'100%',fontSize:'0.8rem',color:'#FF8A80',lineHeight:1.5,whiteSpace:'pre-line'}}>
+          ⚠️ {err}
+        </div>
+      )}
+
+      {/* Inputs */}
+      <div style={{width:'100%',maxWidth:320,display:'flex',flexDirection:'column',gap:10}}>
+        <input
+          value={email} onChange={e=>setEmail(e.target.value)}
+          type="email" placeholder="Email address"
+          style={inputStyle}
+          onKeyDown={e=>e.key==='Enter'&&emailAuth()}
+        />
+        <input
+          value={pass} onChange={e=>setPass(e.target.value)}
+          type="password" placeholder="Password"
+          style={inputStyle}
+          onKeyDown={e=>e.key==='Enter'&&emailAuth()}
+        />
+        {mode==='signup'&&(
+          <input
+            value={confirmPass} onChange={e=>setConfirmPass(e.target.value)}
+            type="password" placeholder="Confirm password"
+            style={inputStyle}
+            onKeyDown={e=>e.key==='Enter'&&emailAuth()}
+          />
+        )}
+        <button
+          onClick={emailAuth} disabled={ld}
+          className="btn btn-primary"
+          style={{width:'100%',opacity:ld?.6:1,marginTop:2,fontSize:'0.95rem'}}
+        >
+          {ld?'Please wait…':mode==='signup'?'Create Account':'Sign In'}
+        </button>
+        {mode==='signin'&&(
+          <button onClick={forgotPw} style={{background:'none',border:'none',color:'var(--muted)',fontSize:'0.75rem',cursor:'pointer',fontFamily:'DM Sans',textAlign:'right',padding:'2px 0',textDecoration:'underline'}}>
+            Forgot password?
+          </button>
         )}
       </div>
 
-      {err&&<div style={{background:'rgba(247,91,91,0.12)',border:'1px solid rgba(247,91,91,0.25)',borderRadius:10,padding:'9px 13px',marginBottom:12,maxWidth:320,width:'100%',fontSize:'0.78rem',color:'#F75B5B',textAlign:'left'}}>⚠️ {err}</div>}
-
-      <div style={{width:'100%',maxWidth:320,display:'flex',flexDirection:'column',gap:8}}>
-        <input value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="Email" className="fi" onKeyDown={e=>e.key==='Enter'&&emailAuth()}/>
-        <input value={pass} onChange={e=>setPass(e.target.value)} type="password" placeholder="Password" className="fi" onKeyDown={e=>e.key==='Enter'&&emailAuth()}/>
-        {mode==='signup'&&<input value={confirm} onChange={e=>setConfirm(e.target.value)} type="password" placeholder="Confirm password" className="fi" onKeyDown={e=>e.key==='Enter'&&emailAuth()}/>}
-        <button onClick={emailAuth} disabled={ld} className="btn btn-primary" style={{width:'100%',opacity:ld?.6:1,marginTop:2}}>{ld?'Please wait…':mode==='signup'?'Create Account':'Sign In'}</button>
+      {/* Divider */}
+      <div style={{display:'flex',alignItems:'center',gap:10,width:'100%',maxWidth:320,margin:'18px 0'}}>
+        <div style={{flex:1,height:1,background:'rgba(255,255,255,0.1)'}}/><span style={{fontSize:'0.72rem',color:'var(--muted)',fontWeight:600}}>OR</span><div style={{flex:1,height:1,background:'rgba(255,255,255,0.1)'}}/>
       </div>
 
-      <div style={{display:'flex',alignItems:'center',gap:10,width:'100%',maxWidth:320,margin:'16px 0'}}>
-        <div style={{flex:1,height:1,background:'var(--border)'}}/><span style={{fontSize:'0.72rem',color:'var(--muted)',fontWeight:600}}>OR</span><div style={{flex:1,height:1,background:'var(--border)'}}/>
-      </div>
-      <button className="google-btn" onClick={googleAuth} disabled={ld}><GoogleSVG/>Continue with Google</button>
-      <div style={{fontSize:'0.7rem',color:'var(--muted2)',marginTop:14}}>Free · 30 seconds</div>
+      {/* Google */}
+      <button className="google-btn" onClick={googleAuth} disabled={ld}>
+        <GoogleSVG/>Continue with Google
+      </button>
+      <div style={{fontSize:'0.7rem',color:'var(--muted2)',marginTop:16}}>Free · Takes 30 seconds · No spam</div>
     </div>
   );
 }
@@ -510,9 +586,11 @@ function HomeTab({user,profile,courts,players,games,uLat,uLng,onChat,onNeedLogin
     <div className="px fade-in">
       {/* Greeting */}
       <div className="greeting" style={{paddingTop:4}}>
-        <h2>Ready to play,<br/>{name}? 🏓</h2>
-        <div className="greeting-sub">{dayName()}, {dateFmt()}</div>
-        <div className="weather-pill">☀️ Great day to play</div>
+        <h2>Ready to play, {name}? 🏓</h2>
+        <div className="greeting-meta">
+          <span className="greeting-date">{dayName()}, {dateFmt()}</span>
+          <div className="weather-pill">☀️ Great day to play</div>
+        </div>
       </div>
 
       {/* Stats */}
@@ -1020,35 +1098,51 @@ function App(){
   const[showGameForm,setShowGameForm]=useState(false);
   const[showPostForm,setShowPostForm]=useState(false);
 
+  /* Listener cleanup refs */
+  const unsubs=useRef([]);
+  const addUnsub=fn=>{unsubs.current.push(fn);return fn;};
+  const clearUnsubs=()=>{unsubs.current.forEach(fn=>{try{fn();}catch(e){}});unsubs.current=[];};
+
   /* Auth */
-  useEffect(()=>{if(!auth)return;return auth.onAuthStateChanged(u=>{setUser(u||null);if(!u)setProfile(null);});},[]);
+  useEffect(()=>{if(!auth)return;return auth.onAuthStateChanged(u=>{setUser(u||null);if(!u){clearUnsubs();setProfile(null);}});},[]);
   useEffect(()=>{
     if(!user)return;
     if(!fbOk){setProfile(null);return;}
-    return db.collection('profiles').doc(user.uid).onSnapshot(d=>{setProfile(d.exists?{uid:user.uid,...d.data()}:null);},()=>setProfile(null));
-  },[user]);
+    const u=db.collection('profiles').doc(user.uid).onSnapshot(d=>{setProfile(d.exists?{uid:user.uid,...d.data()}:null);},()=>setProfile(null));
+    addUnsub(u);return()=>u();
+  },[user?.uid]);
 
   /* Geo */
   useEffect(()=>{navigator.geolocation?.getCurrentPosition(p=>{setULat(p.coords.latitude);setULng(p.coords.longitude);},()=>{},{timeout:8000});},[]);
 
-  /* Courts */
-  useEffect(()=>{if(!fbOk)return;return db.collection('courts').orderBy('createdAt','desc').onSnapshot(s=>{setCourts(s.docs.map(d=>({id:d.id,...d.data()})));},e=>console.error(e));},[]);
+  /* Courts — public read, no auth needed */
+  useEffect(()=>{
+    if(!fbOk)return;
+    const u=db.collection('courts').orderBy('createdAt','desc').onSnapshot(s=>{setCourts(s.docs.map(d=>({id:d.id,...d.data()})));},e=>{if(e.code!=='permission-denied')console.error('courts:',e);});
+    return()=>u();
+  },[]);
 
-  /* Games */
-  useEffect(()=>{if(!fbOk)return;return db.collection('games').where('status','==','active').orderBy('createdAt','desc').onSnapshot(s=>{setGames(s.docs.map(d=>({id:d.id,...d.data()})));},e=>console.error(e));},[]);
+  /* Games — requires auth per rules */
+  useEffect(()=>{
+    if(!fbOk||!user)return;
+    const u=db.collection('games').where('status','==','active').orderBy('createdAt','desc').onSnapshot(s=>{setGames(s.docs.map(d=>({id:d.id,...d.data()})));},e=>{if(e.code!=='permission-denied')console.error('games:',e);});
+    addUnsub(u);return()=>u();
+  },[user?.uid]);
 
-  /* Players */
+  /* Players — public read, no auth needed */
   useEffect(()=>{
     if(!fbOk)return;
     const cutoff=Date.now()-7*24*60*60*1000;
-    return db.collection('findPlayers').where('status','==','active').where('timestamp','>',cutoff).orderBy('timestamp','desc').onSnapshot(s=>{setPosts(s.docs.map(d=>({id:d.id,...d.data()})));},e=>console.error(e));
+    const u=db.collection('findPlayers').where('status','==','active').where('timestamp','>',cutoff).orderBy('timestamp','desc').onSnapshot(s=>{setPosts(s.docs.map(d=>({id:d.id,...d.data()})));},e=>{if(e.code!=='permission-denied')console.error('players:',e);});
+    return()=>u();
   },[]);
 
-  /* Unread */
+  /* Unread — requires auth */
   useEffect(()=>{
     if(!fbOk||!user)return;
-    return db.collection('conversations').where('participants','array-contains',user.uid).onSnapshot(s=>{let c=0;s.docs.forEach(d=>{const x=d.data();if(x.lastMessageBy!==user.uid&&x.lastTimestamp>(x[`readBy_${user.uid}`]||0))c++;});setUnread(c);},()=>{});
-  },[user]);
+    const u=db.collection('conversations').where('participants','array-contains',user.uid).onSnapshot(s=>{let c=0;s.docs.forEach(d=>{const x=d.data();if(x.lastMessageBy!==user.uid&&x.lastTimestamp>(x[`readBy_${user.uid}`]||0))c++;});setUnread(c);},e=>{if(e.code!=='permission-denied')console.error('unread:',e);setUnread(0);});
+    addUnsub(u);return()=>u();
+  },[user?.uid]);
 
   /* Unique players list (for Inbox lookup) */
   const allPlayers=useMemo(()=>{
@@ -1058,7 +1152,7 @@ function App(){
 
   const handleNeedLogin=player=>{setLoginPromptPlayer(player===undefined?null:player);};
   const handleGoAuth=()=>{setLoginPromptPlayer(undefined);setShowAuth(true);};
-  const handleSignOut=async()=>{if(confirm('Sign out?'))await auth.signOut();};
+  const handleSignOut=async()=>{if(window.confirm('Sign out of PickleConnect?')){clearUnsubs();await auth.signOut();setTab('home');}};
 
   const handleFabStartGame=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}openPage('findgame.html');};
   const handleFabAvailable=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}openPage('findplayer.html');};
