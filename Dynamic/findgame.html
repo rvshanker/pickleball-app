@@ -473,6 +473,7 @@ function GameCard({game,myUid,onJoin,onLeave,onWaitlist,onEdit,onCancel,highligh
     const cardClass=`gc ${game.recurring?'recurring':isFull?'full':'open'}${expired?' dimmed':''}`;
 
     return(<div className={cardClass}>
+        {/* ── Collapsed header — always visible ── */}
         <div className="gc-head" onClick={()=>setExpanded(!expanded)}>
             <div className={`gc-date-block ${rel}`}>
                 <div className="gc-day">{rel==='today'?'TODAY':dayStr}</div>
@@ -480,68 +481,70 @@ function GameCard({game,myUid,onJoin,onLeave,onWaitlist,onEdit,onCancel,highligh
             </div>
             <div className="gc-info" style={{minWidth:0}}>
                 <div className="gc-title">{game.recurring&&<span className="rec-dot"/>}{game.title||`Game @ ${game.court}`}</div>
-                <div className="gc-sub">📍 {game.court}</div>
-                <div style={{display:'flex',alignItems:'center',gap:5,marginTop:5,flexWrap:'wrap'}}>
+                <div style={{display:'flex',alignItems:'center',gap:5,marginTop:4,flexWrap:'wrap'}}>
                     {timeLabel&&<span className="time-chip">⏰ {timeLabel}</span>}
                     {isFull
                         ?<span className="gc-badge full-badge">🎉 Full ({used}/{spots})</span>
-                        :<span className="gc-badge open-badge">{spots-used} of {spots} open</span>}
-                    {game.recurring&&<span className="gc-badge rec-badge">🔁 {DAY_SHORT[game.recurDay]}s</span>}
+                        :<span className="gc-badge open-badge">{spots-used}/{spots} open</span>}
                     {game.skill&&game.skill!=='Any'&&<span className="gc-badge" style={{background:'#f0f9ff',color:'#0369a1'}}>🎯 {game.skill}</span>}
+                    {amIn&&<span className="gc-badge" style={{background:'#f0fdf4',color:'#059669'}}>✓ You're in</span>}
                 </div>
             </div>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" style={{transform:expanded?'rotate(180deg)':'none',transition:'transform .2s',flexShrink:0,marginTop:6}}><path d="M6 9l6 6 6-6"/></svg>
         </div>
 
-        {/* Roster */}
-        <div className="roster" style={{gridTemplateColumns:`repeat(${cols},1fr)`}}>
-            {slotItems.map((p,i)=>(
-                <Slot key={i} player={p} isMine={p?.uid===myUid&&!p?.isGuest} isGuest={p?.isGuest} onJoin={()=>onJoin(game)} isFull={isFull&&!p}/>
-            ))}
-        </div>
+        {/* ── Expanded section ── */}
+        {expanded&&<div style={{animation:'fadeIn .18s'}}>
+            {/* Court + organizer row */}
+            <div style={{padding:'0 16px 8px',display:'flex',alignItems:'center',gap:6,fontSize:12,color:'#64748b',borderTop:'1px solid #f1f5f9',paddingTop:8}}>
+                <span>📍 {game.court}</span>
+                <span style={{color:'#cbd5e1'}}>·</span>
+                <Avatar photoURL={game.organizerPhoto} name={game.organizerName} size={16}/>
+                <span>by {isMine?'you':game.organizerName}</span>
+                {game.recurring&&<span className="gc-badge rec-badge" style={{marginLeft:4}}>🔁 {DAY_SHORT[game.recurDay]}s</span>}
+                {isMine&&!expired&&<>
+                    <button onClick={(e)=>{e.stopPropagation();onEdit(game);}} style={{marginLeft:'auto',background:'#f0fdf4',border:'none',fontSize:11,color:'#059669',fontWeight:700,cursor:'pointer',fontFamily:'Outfit',padding:'2px 8px',borderRadius:6}}>Edit</button>
+                    <button className="cancel-btn" onClick={(e)=>{e.stopPropagation();onCancel(game.id);}}>Cancel</button>
+                </>}
+                {expired&&<span style={{color:'#f59e0b',fontWeight:700,marginLeft:'auto'}}>ended</span>}
+            </div>
 
-        {isFull&&<div className="full-banner">
-            <span style={{fontSize:20}}>🎉</span>
-            <div><div style={{fontSize:13,fontWeight:700,color:'#92400e'}}>Game is full — you're set!</div><div style={{fontSize:11,color:'#b45309',marginTop:1}}>All {spots} players notified.</div></div>
-        </div>}
+            {/* Roster */}
+            <div className="roster" style={{gridTemplateColumns:`repeat(${cols},1fr)`}}>
+                {slotItems.map((p,i)=>(
+                    <Slot key={i} player={p} isMine={p?.uid===myUid&&!p?.isGuest} isGuest={p?.isGuest} onJoin={()=>onJoin(game)} isFull={isFull&&!p}/>
+                ))}
+            </div>
 
-        {waitlist.length>0&&<div className="waitlist">
-            <div style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:5}}>⏳ Waitlist ({waitlist.length})</div>
-            {waitlist.map((p,i)=><div key={i} className="waitlist-item">
-                <Avatar photoURL={p.photoURL} name={p.name} size={24}/>
-                <div style={{fontSize:12,fontWeight:600,color:'#475569'}}>{p.name}</div>
-                {p.uid===myUid&&<div style={{marginLeft:'auto',fontSize:10,color:'#d97706',fontWeight:700}}>You're #{i+1}</div>}
-            </div>)}
-        </div>}
+            {isFull&&<div className="full-banner">
+                <span style={{fontSize:20}}>🎉</span>
+                <div><div style={{fontSize:13,fontWeight:700,color:'#92400e'}}>Game is full!</div><div style={{fontSize:11,color:'#b45309',marginTop:1}}>All {spots} players notified.</div></div>
+            </div>}
 
-        {expanded&&<div style={{padding:'0 14px 12px',borderTop:'1px solid #f1f5f9',animation:'fadeIn .2s',marginTop:4}}>
-            {game.note&&<div style={{fontSize:13,color:'#475569',marginBottom:8,lineHeight:1.5}}>💬 {game.note}</div>}
-            {game.recurring&&<div style={{fontSize:12,color:'#7c3aed',fontWeight:600,marginBottom:6}}>🔁 Every {DAYS[game.recurDay]} · {timeLabel}</div>}
-            <div style={{fontSize:11,color:'#94a3b8'}}>Posted {timeAgo(game.createdAt)} by {game.organizerName}</div>
-        </div>}
+            {waitlist.length>0&&<div className="waitlist">
+                <div style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:5}}>⏳ Waitlist ({waitlist.length})</div>
+                {waitlist.map((p,i)=><div key={i} className="waitlist-item">
+                    <Avatar photoURL={p.photoURL} name={p.name} size={24}/>
+                    <div style={{fontSize:12,fontWeight:600,color:'#475569'}}>{p.name}</div>
+                    {p.uid===myUid&&<div style={{marginLeft:'auto',fontSize:10,color:'#d97706',fontWeight:700}}>You're #{i+1}</div>}
+                </div>)}
+            </div>}
 
-        <div className="organizer-row">
-            <Avatar photoURL={game.organizerPhoto} name={game.organizerName} size={18}/>
-            <span>by {isMine?'you':game.organizerName}</span>
-            {expired&&<span style={{color:'#f59e0b',fontWeight:700,marginLeft:3}}>· ended</span>}
-            {isMine&&!expired&&<>
-                <button onClick={()=>onEdit(game)} style={{marginLeft:6,background:'#f0fdf4',border:'none',fontSize:11,color:'#059669',fontWeight:700,cursor:'pointer',fontFamily:'Outfit',padding:'2px 8px',borderRadius:6}}>Edit</button>
-                <button className="cancel-btn" onClick={()=>onCancel(game.id)}>Cancel</button>
-            </>}
-        </div>
+            {game.note&&<div style={{padding:'0 16px 8px',fontSize:13,color:'#475569',lineHeight:1.5}}>💬 {game.note}</div>}
 
-        {!expired&&<div className="gc-actions">
-            {amIn?(
-                isMine
-                    ?<div style={{flex:1,fontSize:12,color:'#059669',fontWeight:600}}>✅ You're in as organizer</div>
-                    :<button className="leave-btn" onClick={()=>onLeave(game)}>Leave game</button>
-            ):isFull?(
-                amWaiting
-                    ?<div style={{flex:1,fontSize:12,color:'#d97706',fontWeight:600}}>⏳ On waitlist</div>
-                    :<button className="waitlist-btn" onClick={()=>onWaitlist(game)}>+ Join Waitlist</button>
-            ):(
-                <button className="join-btn" onClick={()=>onJoin(game)}>🏓 I'm In!</button>
-            )}
+            {!expired&&<div className="gc-actions">
+                {amIn?(
+                    isMine
+                        ?<div style={{flex:1,fontSize:12,color:'#059669',fontWeight:600}}>✅ You're in as organizer</div>
+                        :<button className="leave-btn" onClick={()=>onLeave(game)}>Leave game</button>
+                ):isFull?(
+                    amWaiting
+                        ?<div style={{flex:1,fontSize:12,color:'#d97706',fontWeight:600}}>⏳ On waitlist</div>
+                        :<button className="waitlist-btn" onClick={()=>onWaitlist(game)}>+ Join Waitlist</button>
+                ):(
+                    <button className="join-btn" onClick={()=>onJoin(game)}>🏓 I'm In!</button>
+                )}
+            </div>}
         </div>}
     </div>);
 }
@@ -841,6 +844,7 @@ function App(){
 
 ReactDOM.render(<App/>,document.getElementById('root'));
 </script>
+<script src="nav.js"></script>
 <script src="nav.js"></script>
 </body>
 </html>

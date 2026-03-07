@@ -463,7 +463,8 @@ function doPrint(name,schedule,scores,players,withScores){
 
     const vp=players.filter(p=>p.trim());
     if(vp.length)html+=`<div class="pls"><strong>Players (${vp.length}):</strong> ${vp.join(' · ')}</div>`;
-    html+=`<div class="ft">© 2025 PickleConnect. All rights reserved. · Pickleball Tournament Generator</div></body></html>`;
+    html+=`<div class="ft">© 2025 PickleConnect. All rights reserved. · Pickleball Tournament Generator</div><script src="nav.js"></script>
+</body></html>`;
 
     const w=window.open('','_blank');
     if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
@@ -1840,6 +1841,7 @@ function FullApp({user,onLogout,onBack,onFeedback}){
 
 ReactDOM.render(<App/>,document.getElementById('root'));
 </script>
+<script src="nav.js"></script>
 <script src="nav.js"></script>
 </body>
 </html>

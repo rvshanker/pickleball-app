@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PickleConnect – Find a Court</title>
+    <meta name="description" content="Find pickleball courts near you. Check in, see who's playing, and track court availability in real time.">
+    <meta name="keywords" content="pickleball courts near me, find pickleball courts, pickleball check in, pickleball players, outdoor pickleball, indoor pickleball, pickleball court finder, pickleball app, pickleball community, court availability">
+    <meta name="author" content="PickleConnect">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://rvhanker.github.io/index.html">
+    <meta property="og:title" content="PickleConnect – Find Pickleball Courts Near You">
+    <meta property="og:description" content="Find nearby pickleball courts, check in to let others know you're playing, and see live player counts in real time.">
+    <meta property="og:image" content="https://rvhanker.github.io/og-image.png">
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://rvhanker.github.io/index.html">
+    <meta property="twitter:title" content="PickleConnect – Find Pickleball Courts Near You">
+    <meta property="twitter:description" content="Find nearby pickleball courts, check in to let others know you're playing, and see live player counts in real time.">
+    <meta property="twitter:image" content="https://rvhanker.github.io/og-image.png">
+    <link rel="canonical" href="https://rvhanker.github.io/index.html">
+    <meta name="theme-color" content="#059669">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8VE2FTD711"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-8VE2FTD711');
+    </script>
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "PickleConnect",
+      "description": "Find pickleball courts near you, check in, and see who's playing in real time.",
+      "url": "https://rvhanker.github.io/",
+      "applicationCategory": "SportsApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {"@type":"Offer","price":"0","priceCurrency":"USD"},
+      "keywords": "pickleball, courts, find courts, check in, players"
+    }
+    </script>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="PickleConnect">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23059669'/><circle cx='50' cy='50' r='28' fill='white' opacity='0.15'/><ellipse cx='50' cy='50' rx='20' ry='20' fill='none' stroke='white' stroke-width='3'/><line x1='30' y1='50' x2='70' y2='50' stroke='white' stroke-width='3'/><line x1='50' y1='30' x2='50' y2='70' stroke='white' stroke-width='3'/><circle cx='50' cy='50' r='6' fill='white'/></svg>" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        html{scroll-behavior:smooth;}
+        body{font-family:'Outfit',sans-serif;background:#f1f5f9;font-size:16px;-webkit-text-size-adjust:100%;}
+        .fd{font-family:'Barlow Condensed',sans-serif;}
+
+        /* Nav */
+        .nav{background:#0f172a;padding:13px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;}
+
+        /* Page */
+        .pg{padding:16px;max-width:740px;width:100%;margin:0 auto;padding-bottom:16px;}
+
+        /* Cards */
+        .card{background:white;border-radius:14px;padding:18px 20px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:13px;}
+
+        /* Buttons */
+        .btn-g{background:linear-gradient(135deg,#059669,#10b981);color:white;border-radius:10px;padding:12px 22px;font-weight:700;font-size:15px;border:none;cursor:pointer;transition:all .2s;font-family:'Outfit',sans-serif;box-shadow:0 4px 12px rgba(5,150,105,.25);}
+        .btn-g:hover{background:linear-gradient(135deg,#047857,#059669);transform:translateY(-1px);}
+        .btn-g:active{transform:translateY(0);}
+        .btn-out{background:transparent;color:#059669;border:2px solid #059669;border-radius:10px;padding:10px 20px;font-weight:600;font-size:14px;cursor:pointer;transition:all .15s;font-family:'Outfit',sans-serif;}
+        .btn-out:hover{background:#059669;color:white;}
+
+        /* Hero card (last visited) */
+        .hero-court{background:linear-gradient(135deg,#0f172a 0%,#1e3a2f 55%,#052e16 100%);border-radius:16px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden;}
+        .hero-court::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(5,150,105,.15);border-radius:50%;}
+
+        /* Court list item */
+        .court-item{background:white;border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px;border:2px solid transparent;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:10px;}
+        .court-item:hover{border-color:#10b981;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1);}
+        .court-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#059669,#10b981);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+        .court-icon.photo{background-size:cover;background-position:center;}
+
+        /* Status dot */
+        .sdot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;}
+        .sdot.green{background:#10b981;}
+        .sdot.yellow{background:#f59e0b;}
+        .sdot.red{background:#ef4444;}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+        .sdot.live{animation:pulse 2s infinite;}
+
+        /* Search */
+        .search-wrap{position:relative;margin-bottom:14px;}
+        .search-inp{width:100%;background:white;border:2px solid #e2e8f0;border-radius:12px;padding:12px 16px 12px 44px;font-size:15px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .15s;}
+        .search-inp:focus{border-color:#059669;}
+        .search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none;}
+
+        /* Distance badge */
+        .dist-badge{background:#f0fdf4;color:#059669;border:1px solid #a7f3d0;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;}
+
+        /* Player count pill */
+        .player-pill{display:inline-flex;align-items:center;gap:4px;background:#f0fdf4;color:#059669;border-radius:8px;padding:3px 8px;font-size:12px;font-weight:700;}
+        .player-pill.busy{background:#fef3c7;color:#d97706;}
+        .player-pill.empty{background:#f1f5f9;color:#94a3b8;}
+
+        /* Floating tournament button */
+        .float-btn{position:fixed;bottom:24px;right:20px;z-index:200;display:flex;align-items:center;gap:9px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;border:none;border-radius:50px;padding:13px 20px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 24px rgba(124,58,237,.4);transition:all .2s;}
+        .float-btn:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(124,58,237,.5);}
+        .float-btn:active{transform:translateY(0);}
+        .float-btn-label{display:flex;flex-direction:column;line-height:1.25;}
+        .float-btn-title{font-size:14px;font-weight:700;}
+        .float-btn-sub{font-size:10px;opacity:.85;font-weight:500;}
+        @media(max-width:480px){
+            .float-btn{padding:12px 16px;}
+            .float-btn-sub{display:none;}
+            .float-btn-title{font-size:13px;}
+        }
+        /* Add court modal */
+        .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:500;padding:0;}
+        .modal-sheet{background:white;border-radius:20px 20px 0 0;width:100%;max-width:740px;padding:24px 20px 32px;max-height:90vh;overflow-y:auto;}
+        .field{width:100%;padding:11px 14px;font-size:15px;border-radius:10px;border:2px solid #e2e8f0;font-family:'Outfit',sans-serif;outline:none;background:white;transition:border-color .15s;}
+        .field:focus{border-color:#059669;}
+        .flbl{font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;}
+
+        /* Amenity tags */
+        .amen-tag{display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;border:2px solid #e2e8f0;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;transition:all .15s;margin:3px;}
+        .amen-tag.on{background:#f0fdf4;border-color:#10b981;color:#059669;}
+
+        /* Empty state */
+        .empty-state{text-align:center;padding:48px 20px;color:#94a3b8;}
+
+        /* Loading spinner */
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .spin{animation:spin 1s linear infinite;display:inline-block;}
+
+        /* Section header */
+        .sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+
+        @media(max-width:480px){
+            .search-inp{font-size:14px;}
+        }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState, useEffect, useRef, useCallback} = React;
+
+// ── Feedback Modal ────────────────────────────────────────────────────
+function FeedbackModal({onClose}) {
+    const [name, setName] = React.useState('');
+    const [email, setEmail] = React.useState('');
+    const [type, setType] = React.useState('general');
+    const [rating, setRating] = React.useState(0);
+    const [hoverRating, setHoverRating] = React.useState(0);
+    const [msg, setMsg] = React.useState('');
+    const [busy, setBusy] = React.useState(false);
+    const [done, setDone] = React.useState(false);
+
+    const submit = async () => {
+        if (!msg.trim()) { alert('Please enter a message.'); return; }
+        setBusy(true);
+        try {
+            if (fbOk && db) {
+                await db.collection('feedback').add({
+                    name: name.trim() || 'Anonymous', email: email.trim() || '', type, rating,
+                    message: msg.trim(), page: 'home', timestamp: Date.now(), createdAt: new Date().toISOString()
+                });
+            }
+        } catch(e) {}
+        setBusy(false);
+        setDone(true);
+        setTimeout(() => { setDone(false); onClose(); }, 2200);
+    };
+    const types = [['general','💬 General'],['bug','🐛 Bug'],['feature','💡 Feature'],['compliment','⭐ Compliment']];
+    return (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:16}}>
+            <div style={{background:'white',borderRadius:20,padding:28,maxWidth:460,width:'100%',boxShadow:'0 24px 64px rgba(0,0,0,.25)',maxHeight:'90vh',overflowY:'auto'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:26,fontWeight:800,color:'#0f172a'}}>💬 SEND FEEDBACK</div>
+                    <button onClick={onClose} style={{background:'none',border:'none',fontSize:26,cursor:'pointer',color:'#94a3b8',lineHeight:1}}>×</button>
+                </div>
+                {done ? (
+                    <div style={{textAlign:'center',padding:'32px 0'}}>
+                        <div style={{fontSize:48,marginBottom:12}}>🎉</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:18,fontWeight:700,color:'#059669'}}>Thanks for your feedback!</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#64748b',marginTop:6}}>We really appreciate it.</div>
+                    </div>
+                ) : (
+                    <div style={{display:'flex',flexDirection:'column',gap:16}}>
+                        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                            <div>
+                                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>Name (optional)</div>
+                                <input style={{width:'100%',padding:'10px 13px',fontSize:14,border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',outline:'none'}} value={name} onChange={e=>setName(e.target.value)} placeholder="Your name"/>
+                            </div>
+                            <div>
+                                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>Email (optional)</div>
+                                <input type="email" style={{width:'100%',padding:'10px 13px',fontSize:14,border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',outline:'none'}} value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@email.com"/>
+                            </div>
+                        </div>
+                        <div>
+                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Feedback Type</div>
+                            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                                {types.map(([v,l])=>(
+                                    <button key={v} onClick={()=>setType(v)} style={{padding:'8px 14px',border:'2px solid '+(type===v?'#059669':'#e2e8f0'),borderRadius:99,background:type===v?'#f0fdf4':'white',color:type===v?'#059669':'#64748b',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:600,cursor:'pointer'}}>
+                                        {l}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Overall Rating</div>
+                            <div style={{display:'flex',gap:4}}>
+                                {[1,2,3,4,5].map(s=>(
+                                    <button key={s} onClick={()=>setRating(s)} onMouseEnter={()=>setHoverRating(s)} onMouseLeave={()=>setHoverRating(0)} style={{background:'none',border:'none',fontSize:28,cursor:'pointer',opacity:s<=(hoverRating||rating)?1:.3}}>⭐</button>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>Message *</div>
+                            <textarea style={{width:'100%',padding:'10px 13px',fontSize:14,border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',outline:'none',resize:'vertical',minHeight:90}} value={msg} onChange={e=>setMsg(e.target.value)} placeholder="Tell us what's on your mind…"/>
+                        </div>
+                        <button onClick={submit} disabled={busy} style={{background:'linear-gradient(135deg,#059669,#10b981)',color:'white',border:'none',borderRadius:10,padding:'14px',fontFamily:'Outfit,sans-serif',fontSize:15,fontWeight:700,cursor:'pointer',width:'100%',boxShadow:'0 4px 12px rgba(5,150,105,.3)'}}>
+                            {busy ? '⏳ Sending…' : '📤 Send Feedback'}
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── Firebase ──────────────────────────────────────────────────────────
+const FB = {
+    apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
+    authDomain:"pickleball-app-1bba7.firebaseapp.com",
+    projectId:"pickleball-app-1bba7",
+    storageBucket:"pickleball-app-1bba7.firebasestorage.app",
+    messagingSenderId:"645604154338",
+    appId:"1:645604154338:web:b92f87c2cd11d950b737bb"
+};
+let db = null, fbOk = false;
+try {
+    if (!firebase.apps.length) firebase.initializeApp(FB);
+    db = firebase.firestore();
+    fbOk = true;
+} catch(e) { console.error('Firebase:', e); }
+
+// ── Geo helpers ───────────────────────────────────────────────────────
+function haversine(lat1, lon1, lat2, lon2) {
+    const R = 3958.8; // miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+function fmtDist(miles) {
+    if (miles < 0.1) return 'Nearby';
+    if (miles < 10) return miles.toFixed(1) + ' mi';
+    return Math.round(miles) + ' mi';
+}
+
+// ── Amenity definitions ───────────────────────────────────────────────
+const AMENITIES = [
+    {key:'restrooms',label:'🚻 Restrooms'},
+    {key:'parking',label:'🅿️ Parking'},
+    {key:'lights',label:'💡 Lights'},
+    {key:'water',label:'💧 Water'},
+    {key:'benches',label:'🪑 Benches'},
+    {key:'shade',label:'⛱️ Shade'},
+    {key:'indoor',label:'🏢 Indoor'},
+    {key:'pro_shop',label:'🛒 Pro Shop'},
+];
+
+// ── Add Court Modal ───────────────────────────────────────────────────
+function AddCourtModal({onClose, onAdded}) {
+    const [name, setName] = useState('');
+    const [address, setAddress] = useState('');
+    const [numCourts, setNumCourts] = useState(4);
+    const [amenities, setAmenities] = useState([]);
+    const [rules, setRules] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [locating, setLocating] = useState(false);
+    const [lat, setLat] = useState(null);
+    const [lng, setLng] = useState(null);
+
+    const toggleAmenity = (key) => setAmenities(a => a.includes(key) ? a.filter(x=>x!==key) : [...a, key]);
+
+    const geolocate = () => {
+        setLocating(true);
+        navigator.geolocation.getCurrentPosition(pos => {
+            setLat(pos.coords.latitude);
+            setLng(pos.coords.longitude);
+            setLocating(false);
+        }, () => {
+            alert('Could not get location. Please enter address manually.');
+            setLocating(false);
+        });
+    };
+
+    // Simple geocode via nominatim
+    const geocodeAddress = async (addr) => {
+        try {
+            const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`);
+            const d = await r.json();
+            if (d.length) return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
+        } catch(e) {}
+        return null;
+    };
+
+    const save = async () => {
+        if (!name.trim()) { alert('Please enter a court name.'); return; }
+        if (!address.trim()) { alert('Please enter an address.'); return; }
+        setSaving(true);
+        let finalLat = lat, finalLng = lng;
+        if (!finalLat || !finalLng) {
+            const geo = await geocodeAddress(address);
+            if (geo) {
+                finalLat = geo.lat;
+                finalLng = geo.lng;
+            } else {
+                // Warn user — don't silently store 0,0 which breaks distance sorting
+                setSaving(false);
+                alert('⚠️ Could not find coordinates for this address. Distances may show incorrectly.\n\nTip: Use the 📍 button to capture your GPS location, or enter a more specific address (include city and state).');
+                finalLat = 0;
+                finalLng = 0;
+            }
+        }
+        const court = {
+            name: name.trim(),
+            address: address.trim(),
+            lat: finalLat,
+            lng: finalLng,
+            numberOfCourts: numCourts,
+            amenities,
+            courtRules: rules.trim(),
+            openCourts: numCourts,
+            crowdLevel: 'low',
+            condition: 'open',
+            createdAt: Date.now(),
+        };
+        try {
+            if (fbOk && db) {
+                const ref = await db.collection('courts').add(court);
+                court.id = ref.id;
+                onAdded(court);
+            } else {
+                alert('Database not available. Please try again.');
+            }
+        } catch(e) {
+            alert('Failed to save court: ' + e.message);
+        }
+        setSaving(false);
+    };
+
+    return (
+        <div className="modal-bg" onClick={e => { if(e.target.className === 'modal-bg') onClose(); }}>
+            <div className="modal-sheet">
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
+                    <div className="fd" style={{fontSize:26,fontWeight:800,color:'#0f172a'}}>ADD A COURT</div>
+                    <button onClick={onClose} style={{background:'none',border:'none',fontSize:26,cursor:'pointer',color:'#94a3b8',lineHeight:1}}>×</button>
+                </div>
+
+                <div style={{marginBottom:14}}>
+                    <span className="flbl">Court / Park Name *</span>
+                    <input className="field" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Dardenne Prairie Athletic Complex"/>
+                </div>
+
+                <div style={{marginBottom:14}}>
+                    <span className="flbl">Address *</span>
+                    <div style={{display:'flex',gap:8}}>
+                        <input className="field" value={address} onChange={e=>setAddress(e.target.value)} placeholder="Full street address, city, state" style={{flex:1}}/>
+                        <button onClick={geolocate} style={{background:'#f0fdf4',border:'2px solid #10b981',borderRadius:10,padding:'0 14px',cursor:'pointer',fontSize:18,flexShrink:0}} title="Use my location">
+                            {locating ? <span className="spin">⏳</span> : '📍'}
+                        </button>
+                    </div>
+                    {lat && <div style={{fontSize:12,color:'#059669',marginTop:4}}>📍 Location captured ({lat.toFixed(4)}, {lng.toFixed(4)})</div>}
+                </div>
+
+                <div style={{marginBottom:14}}>
+                    <span className="flbl">Number of Courts</span>
+                    <div style={{display:'flex',alignItems:'center',gap:12}}>
+                        <button onClick={()=>setNumCourts(n=>Math.max(1,n-1))} style={{width:38,height:38,background:'#f1f5f9',border:'2px solid #e2e8f0',borderRadius:9,fontSize:20,cursor:'pointer',fontWeight:700}}>−</button>
+                        <span style={{fontSize:24,fontWeight:800,fontFamily:'Barlow Condensed,sans-serif',color:'#0f172a',minWidth:32,textAlign:'center'}}>{numCourts}</span>
+                        <button onClick={()=>setNumCourts(n=>Math.min(30,n+1))} style={{width:38,height:38,background:' linear-gradient(135deg,#059669,#10b981)',border:'none',borderRadius:9,fontSize:20,cursor:'pointer',fontWeight:700,color:'white'}}>+</button>
+                    </div>
+                </div>
+
+                <div style={{marginBottom:14}}>
+                    <span className="flbl">Amenities</span>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:2}}>
+                        {AMENITIES.map(a => (
+                            <button key={a.key} className={`amen-tag ${amenities.includes(a.key)?'on':''}`} onClick={()=>toggleAmenity(a.key)}>{a.label}</button>
+                        ))}
+                    </div>
+                </div>
+
+                <div style={{marginBottom:22}}>
+                    <span className="flbl">Court Rules / Notes (optional)</span>
+                    <textarea className="field" value={rules} onChange={e=>setRules(e.target.value)} placeholder="e.g. Open daily 6am–10pm. Bring your own balls. First come first served." rows={3} style={{resize:'vertical'}}/>
+                </div>
+
+                <button className="btn-g" onClick={save} disabled={saving} style={{width:'100%',padding:14,fontSize:16}}>
+                    {saving ? '⏳ Saving…' : '➕ Add Court'}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// ── Court Card ────────────────────────────────────────────────────────
+function CourtCard({court, userLat, userLng, isHero}) {
+    const [checkinCount, setCheckinCount] = useState(null);
+
+    useEffect(() => {
+        if (!fbOk || !db || !court.id) return;
+        // Count active check-ins in this court's subcollection
+        const unsub = db.collection('courts').doc(court.id).collection('checkins')
+            .where('status', '==', 'active')
+            .onSnapshot(snap => setCheckinCount(snap.size), () => setCheckinCount(0));
+        return () => unsub();
+    }, [court.id]);
+
+    const dist = (userLat && userLng && court.lat && court.lng)
+        ? haversine(userLat, userLng, court.lat, court.lng) : null;
+
+    const pillClass = checkinCount === null ? 'empty' : checkinCount === 0 ? 'empty' : checkinCount > 8 ? 'busy' : '';
+
+    const open = court.openCourts !== undefined ? court.openCourts : court.numberOfCourts;
+    const total = court.numberOfCourts || 4;
+
+    const goToCourt = () => {
+        localStorage.setItem('lastCourtId', court.id);
+        localStorage.setItem('lastCourtName', court.name);
+        window.location.href = `court.html?id=${court.id}`;
+    };
+
+    if (isHero) {
+        return (
+            <div className="hero-court" onClick={goToCourt} style={{cursor:'pointer'}}>
+                <div style={{position:'relative',zIndex:1}}>
+                    <div style={{fontSize:11,fontWeight:700,color:'#6ee7b7',textTransform:'uppercase',letterSpacing:.8,marginBottom:6}}>
+                        📍 Last Visited
+                    </div>
+                    <div className="fd" style={{fontSize:26,fontWeight:800,color:'white',marginBottom:4,lineHeight:1.1}}>{court.name}</div>
+                    <div style={{fontSize:13,color:'#94a3b8',marginBottom:14}}>{court.address}</div>
+                    <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:16}}>
+                        <div style={{background:'rgba(255,255,255,.1)',borderRadius:8,padding:'7px 11px',fontSize:13,color:'white',fontWeight:600,display:'flex',flexDirection:'column',gap:4}}>
+                            <div style={{fontSize:10,color:'#6ee7b7',fontWeight:700,textTransform:'uppercase',letterSpacing:.5}}>Courts in Rotation</div>
+                            <div style={{display:'flex',alignItems:'center',gap:6}}>
+                                <div style={{display:'flex',gap:2}}>
+                                    {Array.from({length:Math.min(total,8)}).map((_,i)=>(
+                                        <div key={i} style={{width:10,height:10,borderRadius:2,background:i<open?'#10b981':'rgba(255,255,255,.2)'}}/>
+                                    ))}
+                                </div>
+                                <span style={{fontSize:12}}>{open}/{total}</span>
+                            </div>
+                        </div>
+                        {checkinCount !== null && (
+                            <div style={{background:'rgba(16,185,129,.2)',borderRadius:8,padding:'5px 11px',fontSize:13,color:'#6ee7b7',fontWeight:600}}>
+                                👥 {checkinCount} playing
+                            </div>
+                        )}
+                        {dist !== null && (
+                            <div style={{background:'rgba(255,255,255,.08)',borderRadius:8,padding:'5px 11px',fontSize:13,color:'#94a3b8',fontWeight:600}}>
+                                📏 {fmtDist(dist)}
+                            </div>
+                        )}
+                    </div>
+                    <button className="btn-g" style={{fontSize:15,padding:'11px 28px'}} onClick={e=>{e.stopPropagation();goToCourt();}}>
+                        Check In →
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="court-item" onClick={goToCourt}>
+            <div className="court-icon">🏟️</div>
+            <div style={{flex:1,minWidth:0}}>
+                <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:3}}>
+                    <div style={{fontWeight:700,fontSize:15,color:'#0f172a',flex:1,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{court.name}</div>
+                    {dist !== null && <span className="dist-badge" style={{flexShrink:0}}>{fmtDist(dist)}</span>}
+                </div>
+                <div style={{fontSize:13,color:'#64748b',marginBottom:5,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'100%'}}>{court.address}</div>
+                <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
+                    <span className={`player-pill ${pillClass}`}>
+                        👥 {checkinCount === null ? '…' : checkinCount} playing
+                    </span>
+                    <span style={{fontSize:12,color:'#94a3b8'}}>🏟️ {open}/{total}</span>
+                    {court.condition && court.condition !== 'open' && (
+                        <span style={{fontSize:12,color:'#d97706'}}>⚠️ {court.condition}</span>
+                    )}
+                </div>
+            </div>
+            <div style={{display:'flex',alignItems:'center',flexShrink:0,paddingLeft:4}}>
+                <span style={{color:'#cbd5e1',fontSize:18}}>›</span>
+            </div>
+        </div>
+    );
+}
+
+// ── Main App ──────────────────────────────────────────────────────────
+function App() {
+    const [courts, setCourts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [userLat, setUserLat] = useState(() => {
+        const v = localStorage.getItem('pickleUserLat');
+        return v ? parseFloat(v) : null;
+    });
+    const [userLng, setUserLng] = useState(() => {
+        const v = localStorage.getItem('pickleUserLng');
+        return v ? parseFloat(v) : null;
+    });
+    // 'unknown' | 'denied' | 'granted' | 'unavailable'
+    const [locStatus, setLocStatus] = useState('unknown');
+    const [search, setSearch] = useState('');
+    const [showAdd, setShowAdd] = useState(false);
+    const [showFB, setShowFB] = useState(false);
+    const [lastCourt, setLastCourt] = useState(null);
+
+    // Load last visited court info
+    useEffect(() => {
+        const lastId = localStorage.getItem('lastCourtId');
+        const lastName = localStorage.getItem('lastCourtName');
+        if (lastId && lastName) {
+            setLastCourt({ id: lastId, name: lastName, _stub: true });
+            // Fetch full details
+            if (fbOk && db) {
+                db.collection('courts').doc(lastId).get().then(doc => {
+                    if (doc.exists) setLastCourt({ id: doc.id, ...doc.data() });
+                }).catch(() => {});
+            }
+        }
+    }, []);
+
+    // Get user location — checks Permissions API first to know actual state
+    useEffect(() => {
+        if (!navigator.geolocation) { setLocStatus('unavailable'); return; }
+        const tryGet = () => {
+            navigator.geolocation.getCurrentPosition(
+                pos => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    setUserLat(lat); setUserLng(lng);
+                    setLocStatus('granted');
+                    localStorage.setItem('pickleUserLat', lat);
+                    localStorage.setItem('pickleUserLng', lng);
+                },
+                err => {
+                    // PERMISSION_DENIED = 1
+                    if (err.code === 1) {
+                        setLocStatus('denied');
+                    } else {
+                        setLocStatus('unavailable');
+                    }
+                },
+                { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
+            );
+        };
+        // Use Permissions API where available to check state without triggering prompt
+        if (navigator.permissions) {
+            navigator.permissions.query({ name: 'geolocation' }).then(result => {
+                if (result.state === 'denied') {
+                    setLocStatus('denied');
+                } else {
+                    tryGet(); // 'granted' or 'prompt' — try to get
+                    result.onchange = () => {
+                        if (result.state === 'granted') tryGet();
+                        else if (result.state === 'denied') setLocStatus('denied');
+                    };
+                }
+            }).catch(() => tryGet());
+        } else {
+            tryGet();
+        }
+    }, []);
+
+    // Load all courts
+    useEffect(() => {
+        if (!fbOk || !db) { setLoading(false); return; }
+        const unsub = db.collection('courts').orderBy('createdAt', 'desc').onSnapshot(snap => {
+            const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setCourts(list);
+            setLoading(false);
+        }, err => {
+            console.error('Courts load:', err);
+            setLoading(false);
+        });
+        return () => unsub();
+    }, []);
+
+    // Sort courts by distance if we have location
+    const sortedCourts = [...courts].sort((a, b) => {
+        if (!userLat || !userLng) return 0;
+        const da = (a.lat && a.lng) ? haversine(userLat, userLng, a.lat, a.lng) : 9999;
+        const db2 = (b.lat && b.lng) ? haversine(userLat, userLng, b.lat, b.lng) : 9999;
+        return da - db2;
+    });
+
+    const filtered = sortedCourts.filter(c =>
+        !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.address.toLowerCase().includes(search.toLowerCase())
+    );
+
+    // Courts to show in list (exclude the last-visited one from list if hero is shown)
+    const [showAll, setShowAll] = React.useState(false);
+    const baseList = lastCourt
+        ? filtered.filter(c => c.id !== lastCourt.id)
+        : filtered;
+    const listCourts = search ? baseList : (showAll ? baseList : baseList.slice(0, 10));
+
+    const handleAdded = (court) => {
+        setShowAdd(false);
+        localStorage.setItem('lastCourtId', court.id);
+        localStorage.setItem('lastCourtName', court.name);
+        window.location.href = `court.html?id=${court.id}`;
+    };
+
+    return (
+        <div style={{minHeight:'100vh',background:'#f1f5f9',display:'flex',flexDirection:'column'}}>
+            {/* Nav */}
+            <div className="nav">
+                <div className="fd" style={{fontSize:24,fontWeight:800,flex:1}}>
+                    <span style={{color:'white'}}>PICKLE</span><span style={{color:'#34d399'}}>CONNECT</span>
+                </div>
+                <div style={{width:8,height:8,borderRadius:'50%',background:'#10b981',animation:'pulse 2s infinite',flexShrink:0}}/>
+                <span style={{fontSize:12,color:'#6ee7b7',fontWeight:600}}>Live</span>
+            </div>
+
+            <div className="pg">
+                {/* Hero — last visited court */}
+                {lastCourt && (
+                    <CourtCard court={lastCourt} userLat={userLat} userLng={userLng} isHero={true}/>
+                )}
+
+                {/* Section header */}
+                <div className="sec-hdr">
+                    <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>
+                        {userLat ? '📍 NEARBY COURTS' : '🏟️ ALL COURTS'}
+                    </div>
+                    <button className="btn-g" onClick={()=>setShowAdd(true)} style={{padding:'8px 16px',fontSize:13}}>
+                        + Add Court
+                    </button>
+                </div>
+
+                {/* Location prompt — shown only if no location at all */}
+                {!userLat && locStatus !== 'unknown' && (
+                    <div style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:12,padding:'12px 14px',marginBottom:12}}>
+                        <div style={{display:'flex',alignItems:'flex-start',gap:10}}>
+                            <span style={{fontSize:20,flexShrink:0,marginTop:1}}>📍</span>
+                            <div style={{flex:1,fontFamily:'Outfit,sans-serif',fontSize:13,color:'#92400e',lineHeight:1.5}}>
+                                {locStatus === 'denied' ? (
+                                    <div>
+                                        <strong>Location blocked.</strong> To see distances, enable location for this site in your browser settings:
+                                        <div style={{marginTop:6,display:'flex',flexDirection:'column',gap:3}}>
+                                            <span>• <strong>Chrome/Android:</strong> tap the 🔒 lock icon → Site settings → Location → Allow</span>
+                                            <span>• <strong>Safari/iOS:</strong> Settings → Safari → Location → Allow</span>
+                                            <span>• <strong>Firefox:</strong> tap 🔒 → Permissions → Location → Allow</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <strong>Enable location</strong>
+                                )}
+                            </div>
+                            <button onClick={()=>window.location.reload()} style={{background:'#f59e0b',color:'white',border:'none',borderRadius:8,padding:'7px 12px',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',flexShrink:0,whiteSpace:'nowrap',marginTop:0}}>
+                                {locStatus === 'denied' ? 'Reload ↺' : 'Enable →'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Search */}
+                <div className="search-wrap">
+                    <span className="search-icon">🔍</span>
+                    <input
+                        className="search-inp"
+                        value={search}
+                        onChange={e=>setSearch(e.target.value)}
+                        placeholder="Search by name or city…"
+                    />
+                </div>
+
+                {/* Court list */}
+                {loading ? (
+                    <div style={{textAlign:'center',padding:'48px 0',color:'#94a3b8'}}>
+                        <span className="spin" style={{fontSize:28}}>⚡</span>
+                        <div style={{marginTop:10,fontSize:14}}>Loading courts…</div>
+                    </div>
+                ) : listCourts.length === 0 && !lastCourt ? (
+                    <div className="empty-state">
+                        <div style={{fontSize:48,marginBottom:12}}>🏟️</div>
+                        <div style={{fontSize:18,fontWeight:700,color:'#374151',marginBottom:6}}>
+                            {search ? 'No courts found' : 'No courts yet'}
+                        </div>
+                        <div style={{fontSize:14,marginBottom:20}}>
+                            {search ? 'Try a different search term' : 'Be the first to add your local courts!'}
+                        </div>
+                        {!search && <button className="btn-g" onClick={()=>setShowAdd(true)}>+ Add a Court</button>}
+                    </div>
+                ) : (
+                    <>
+                        {listCourts.map(court => (
+                            <CourtCard key={court.id} court={court} userLat={userLat} userLng={userLng}/>
+                        ))}
+                        {!search && !showAll && baseList.length > 10 && (
+                            <button onClick={()=>setShowAll(true)} style={{width:'100%',padding:'12px',background:'white',border:'2px solid #e2e8f0',borderRadius:12,fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:600,color:'#059669',cursor:'pointer',marginTop:4}}>
+                                Show all {baseList.length} courts ↓
+                            </button>
+                        )}
+                        {listCourts.length === 0 && lastCourt && (
+                            <div className="empty-state">
+                                <div style={{fontSize:14}}>No other courts found nearby.</div>
+                            </div>
+                        )}
+                    </>
+                )}
+                {/* Tournament Generator Card — inside pg, respects max-width */}
+                <div style={{background:'linear-gradient(135deg,#4c1d95 0%,#7c3aed 50%,#a855f7 100%)',borderRadius:14,padding:'16px 18px',display:'flex',alignItems:'center',gap:14,marginTop:4}}>
+                    <div style={{width:44,height:44,background:'rgba(255,255,255,.15)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,flexShrink:0}}>🏆</div>
+                    <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:18,fontWeight:800,color:'white',letterSpacing:.3}}>TOURNAMENT GENERATOR</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,color:'#e9d5ff',marginTop:1}}>Round-robin brackets & live scoring</div>
+                    </div>
+                    <a href="tournament.html" style={{background:'white',color:'#7c3aed',padding:'9px 16px',borderRadius:9,fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:800,textDecoration:'none',whiteSpace:'nowrap',boxShadow:'0 4px 12px rgba(0,0,0,.2)',flexShrink:0}}>Open →</a>
+                </div>
+            </div>
+
+            {/* Footer */}
+            <div>
+                <div style={{textAlign:'center',padding:'16px 16px 24px',fontSize:12,color:'#94a3b8',borderTop:'1px solid #e2e8f0',background:'white',marginTop:4}}>
+                    <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+                        <span>© 2025 PickleConnect. All rights reserved.</span>
+                        <span>·</span>
+                        <button onClick={()=>setShowFB(true)} style={{background:'none',border:'none',color:'#059669',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',padding:0}}>💬 Feedback</button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Add court modal */}
+            {showAdd && <AddCourtModal onClose={()=>setShowAdd(false)} onAdded={handleAdded}/>}
+            {showFB && <FeedbackModal onClose={()=>setShowFB(false)}/>}
+        </div>
+    );
+}
+
+ReactDOM.render(<App/>, document.getElementById('root'));
+</script>
+<script src="nav.js"></script>
+</body>
+</html>
