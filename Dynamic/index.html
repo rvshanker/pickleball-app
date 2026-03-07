@@ -30,11 +30,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);f
 
 /* ── Layout shell ── */
 .app-shell{display:flex;flex-direction:column;height:100%;position:relative;max-width:480px;margin:0 auto;background:var(--navy);}
-.screen-body{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding-bottom:calc(var(--nav-h) + 24px);}
+.screen-body{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding-bottom:80px;}
 .screen-body::-webkit-scrollbar{display:none;}
 
-/* ── Top bar ── */
-.top-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 10px;flex-shrink:0;}
+.top-bar{display:none !important;}
+.bottom-nav{display:none !important;}
+.fab-wrap{bottom:calc(var(--pc-bot-h, 62px) + 8px) !important;}
 .logo{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:800;color:var(--green);letter-spacing:-0.02em;}
 .logo span{color:var(--text);}
 .top-actions{display:flex;align-items:center;gap:10px;}
@@ -217,6 +218,7 @@ textarea.fi{resize:vertical;min-height:60px;}
 /* Scrollable inner area padding */
 .px{padding:0 18px;}
 </style>
+<script src="nav.js"></script>
 </head>
 <body>
 <div id="root"></div>
@@ -585,15 +587,8 @@ function HomeTab({user,profile,courts,players,games,uLat,uLng,onChat,onNeedLogin
   return(
     <div className="px fade-in">
       {/* Greeting */}
-      <div className="greeting" style={{paddingTop:4}}>
-        <h2>Ready to play, {name}? 🏓</h2>
-        <div className="greeting-meta">
-          <span className="greeting-date">{dayName()}, {dateFmt()}</span>
-          <div className="weather-pill">☀️ Great day to play</div>
-        </div>
-      </div>
-
       {/* Stats */}
+      <div style={{paddingTop:6,marginBottom:4,fontSize:'0.68rem',fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--muted)'}}>Overview</div>
       <div className="stats-row">
         <div className="stat-card" onClick={()=>openPage('index.html')} style={{cursor:'pointer'}}>
           <div className={`stat-num ${openCourtsCount>0?'hi':''}`}>{openCourtsCount}</div>
