@@ -26,18 +26,16 @@
   --nav-h:72px;--fab-h:44px;
 }
 html,body,#root{height:100%;overflow:hidden;}
-/* nav.js padding-top override — allow it to work with app-shell */
-body{padding-top:0!important;}
+body{padding-top:0!important;padding-bottom:0!important;}
 body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);font-size:15px;-webkit-text-size-adjust:100%;}
 
 /* ── Layout shell ── */
-.app-shell{display:flex;flex-direction:column;height:100%;position:relative;max-width:480px;margin:0 auto;background:var(--navy);padding-top:var(--pcn-top,52px);box-sizing:border-box;}
-.screen-body{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding-bottom:80px;}
+.app-shell{display:flex;flex-direction:column;position:fixed;top:52px;left:0;right:0;bottom:62px;max-width:480px;margin:0 auto;background:var(--navy);}
+.screen-body{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding-bottom:8px;}
 .screen-body::-webkit-scrollbar{display:none;}
 
 .top-bar{display:none !important;}
 .bottom-nav{display:none !important;}
-.fab-wrap{bottom:calc(var(--pc-bot-h, 62px) + 8px) !important;}
 .logo{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:800;color:var(--green);letter-spacing:-0.02em;}
 .logo span{color:var(--text);}
 .top-actions{display:flex;align-items:center;gap:10px;}
@@ -56,14 +54,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);f
 .nav-gap{flex:2;min-width:160px;}
 
 /* ── FAB ── */
-.fab-wrap{position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:200;height:var(--nav-h);display:flex;align-items:center;justify-content:center;pointer-events:none;width:180px;}
+.fab-wrap{position:fixed;bottom:62px;left:50%;transform:translateX(-50%);z-index:200;height:44px;display:flex;align-items:center;justify-content:center;pointer-events:none;width:180px;}
 .fab{pointer-events:all;background:linear-gradient(135deg,#2ECC71,#27AE60);color:#fff;font-family:'Syne',sans-serif;font-size:0.68rem;font-weight:800;letter-spacing:0.06em;padding:0 16px;height:42px;border-radius:24px;display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 4px 16px rgba(46,204,113,0.5);cursor:pointer;border:2px solid rgba(255,255,255,0.2);transition:transform .15s,box-shadow .15s;}
 .fab:hover{transform:scale(1.04);}
 .fab:hover{transform:scale(1.04);box-shadow:0 8px 32px rgba(46,204,113,0.6);}
 .fab.open{background:linear-gradient(135deg,#142232,#1A2B3C);}
 
 /* ── FAB Sheet ── */
-.fab-overlay{position:fixed;inset:0;background:rgba(5,10,15,0.88);backdrop-filter:blur(10px);z-index:150;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding-bottom:calc(var(--nav-h) + 16px);animation:fadeUp .22s ease;}
+.fab-overlay{position:fixed;inset:0;background:rgba(5,10,15,0.88);backdrop-filter:blur(10px);z-index:150;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding-bottom:calc(62px + 60px);animation:fadeUp .22s ease;}
 .fab-sheet{width:100%;max-width:480px;padding:0 20px 8px;}
 .fab-sheet-title{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;text-align:center;margin-bottom:4px;}
 .fab-sheet-sub{text-align:center;font-size:0.8rem;color:var(--muted);margin-bottom:22px;}
@@ -596,11 +594,11 @@ function HomeTab({user,profile,courts,players,games,uLat,uLng,onChat,onNeedLogin
           <div className={`stat-num ${openCourtsCount>0?'hi':''}`}>{openCourtsCount}</div>
           <div className="stat-lbl">Open Courts</div>
         </div>
-        <div className="stat-card" onClick={()=>openPage('findplayer.html')} style={{cursor:'pointer'}}>
+        <div className="stat-card" onClick={()=>switchTab('players')} style={{cursor:'pointer'}}>
           <div className="stat-num">{activePlayers}</div>
           <div className="stat-lbl">Players Near</div>
         </div>
-        <div className="stat-card" onClick={()=>openPage('findgame.html')} style={{cursor:'pointer'}}>
+        <div className="stat-card" onClick={()=>switchTab('games')} style={{cursor:'pointer'}}>
           <div className="stat-num">{todayGames}</div>
           <div className="stat-lbl">Games Today</div>
         </div>
@@ -628,7 +626,7 @@ function HomeTab({user,profile,courts,players,games,uLat,uLng,onChat,onNeedLogin
         <div className="divider"/>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
           <div className="section-title" style={{marginBottom:0}}>Available Players</div>
-          <button onClick={()=>openPage('findplayer.html')} style={{background:'none',border:'none',color:'var(--green)',fontSize:'0.75rem',fontWeight:700,cursor:'pointer'}}>See All →</button>
+          <button onClick={()=>switchTab('players')} style={{background:'none',border:'none',color:'var(--green)',fontSize:'0.75rem',fontWeight:700,cursor:'pointer'}}>See All →</button>
         </div>
         {players.slice(0,2).map(g=>(
           <div key={g.uid} className="court-card" style={{cursor:'default'}}>
@@ -1080,7 +1078,12 @@ function FabSheet({onClose,onStartGame,onAvailable,onQueue}){
 function App(){
   const[user,setUser]=useState(undefined);
   const[profile,setProfile]=useState(undefined);
-  const[tab,setTab]=useState('home');
+  const[tab,setTab]=useState(()=>{
+    const p=new URLSearchParams(window.location.search).get('tab');
+    return p||'home';
+  });
+  const switchTab=t=>{setTab(t);if(window.__pcnOnTabChange)window.__pcnOnTabChange(t);};
+  useEffect(()=>{window.__pcnSetTab=switchTab;return()=>{delete window.__pcnSetTab;};},[]);
   const[courts,setCourts]=useState([]);
   const[games,setGames]=useState([]);
   const[posts,setPosts]=useState([]);
@@ -1149,11 +1152,11 @@ function App(){
 
   const handleNeedLogin=player=>{setLoginPromptPlayer(player===undefined?null:player);};
   const handleGoAuth=()=>{setLoginPromptPlayer(undefined);setShowAuth(true);};
-  const handleSignOut=async()=>{if(window.confirm('Sign out of PickleConnect?')){clearUnsubs();await auth.signOut();setTab('home');}};
+  const handleSignOut=async()=>{if(window.confirm('Sign out of PickleConnect?')){clearUnsubs();await auth.signOut();switchTab('home');}};
 
-  const handleFabStartGame=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}openPage('findgame.html');};
-  const handleFabAvailable=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}openPage('findplayer.html');};
-  const handleFabQueue=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}setTab('courts');};
+  const handleFabStartGame=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}switchTab('games');};
+  const handleFabAvailable=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}switchTab('players');};
+  const handleFabQueue=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}switchTab('courts');};
 
   /* Loading */
   if(user===undefined)return(
@@ -1183,13 +1186,13 @@ function App(){
   );
 
   const NAV_LEFT=[
-    {id:'home',icon:'🏠',label:'Home',action:()=>setTab('home')},
+    {id:'home',icon:'🏠',label:'Home',action:()=>switchTab('home')},
     {id:'courts',icon:'🏟',label:'Courts',action:()=>openPage('index.html')},
   ];
   const NAV_RIGHT=[
-    {id:'games',icon:'🎮',label:'Games',action:()=>openPage('findgame.html')},
-    {id:'players',icon:'👥',label:'Players',action:()=>openPage('findplayer.html')},
-    {id:'profile',icon:'👤',label:'Profile',action:()=>setTab('profile')},
+    {id:'games',icon:'🎮',label:'Games',action:()=>switchTab('games')},
+    {id:'players',icon:'👥',label:'Players',action:()=>switchTab('players')},
+    {id:'profile',icon:'👤',label:'Profile',action:()=>switchTab('profile')},
   ];
 
   return(
@@ -1201,7 +1204,7 @@ function App(){
           {user&&<button className="icon-btn" onClick={()=>setShowInbox(true)} title="Messages">
             💬{unread>0&&<div className="badge-dot">{unread>9?'9+':unread}</div>}
           </button>}
-          <button className="icon-btn" onClick={()=>setTab('profile')} title="Profile">
+          <button className="icon-btn" onClick={()=>switchTab('profile')} title="Profile">
             {user?(profile?.photoURL||user.photoURL?<img src={profile?.photoURL||user.photoURL} referrerPolicy="no-referrer" style={{width:20,height:20,objectFit:'cover',borderRadius:'50%'}}/>:'👤'):'🔑'}
           </button>
         </div>
@@ -1209,7 +1212,7 @@ function App(){
 
       {/* Screen content */}
       <div className="screen-body">
-        {tab==='home'&&<HomeTab user={user} profile={profile} courts={courts} players={allPlayers} games={games} uLat={uLat} uLng={uLng} onChat={setChatP} onNeedLogin={handleNeedLogin} onSetTab={setTab}/>}
+        {tab==='home'&&<HomeTab user={user} profile={profile} courts={courts} players={allPlayers} games={games} uLat={uLat} uLng={uLng} onChat={setChatP} onNeedLogin={handleNeedLogin} onSetTab={switchTab}/>}
         {tab==='courts'&&<CourtsTab courts={courts} uLat={uLat} uLng={uLng}/>}
         {tab==='games'&&<GamesTab user={user} profile={profile} games={games} onNeedLogin={handleNeedLogin}/>}
         {tab==='players'&&<PlayersTab user={user} posts={posts} players={allPlayers} onChat={setChatP} onNeedLogin={handleNeedLogin}/>}
@@ -1244,10 +1247,10 @@ function App(){
       {showFab&&<FabSheet onClose={()=>setShowFab(false)} onStartGame={handleFabStartGame} onAvailable={handleFabAvailable} onQueue={handleFabQueue}/>}
 
       {/* Game form from FAB */}
-      {showGameForm&&user&&profile&&<GameForm user={user} profile={profile} onClose={()=>setShowGameForm(false)} onSaved={()=>{setShowGameForm(false);setTab('games');}}/>}
+      {showGameForm&&user&&profile&&<GameForm user={user} profile={profile} onClose={()=>setShowGameForm(false)} onSaved={()=>{setShowGameForm(false);switchTab('games');}}/>}
 
       {/* Post form from FAB */}
-      {showPostForm&&user&&<PostForm user={user} onClose={()=>setShowPostForm(false)} onPosted={()=>{setShowPostForm(false);setTab('players');}}/>}
+      {showPostForm&&user&&<PostForm user={user} onClose={()=>setShowPostForm(false)} onPosted={()=>{setShowPostForm(false);switchTab('players');}}/>}
 
       {/* Login prompt */}
       {loginPromptPlayer!==undefined&&<LoginPrompt player={loginPromptPlayer} onClose={()=>setLoginPromptPlayer(undefined)} onGoAuth={handleGoAuth}/>}

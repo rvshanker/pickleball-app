@@ -25,7 +25,7 @@
         .hero-bg{background:linear-gradient(135deg,#064e3b 0%,#059669 50%,#34d399 100%);min-height:100vh;}
         .nav{padding:14px 18px;display:flex;align-items:center;gap:12px;}
         .nav-logo{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:white;letter-spacing:1px;}
-        .content{padding:0 16px 100px;max-width:740px;margin:0 auto;}
+        .content{padding:16px 16px 100px;max-width:740px;margin:0 auto;}
         .page-title{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:white;}
         .btn-g{background:linear-gradient(135deg,#059669,#10b981);color:white;border-radius:10px;padding:10px 20px;font-weight:700;font-size:14px;border:none;cursor:pointer;font-family:'Outfit',sans-serif;box-shadow:0 2px 8px rgba(5,150,105,.25);}
         .btn-g:hover{opacity:.9;}
@@ -33,7 +33,7 @@
         .post-btn:hover{box-shadow:0 6px 20px rgba(0,0,0,.2);}
         /* Modal */
         .mo{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:200;backdrop-filter:blur(4px);}
-        .ms{background:white;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:740px;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease;}
+        .ms{background:white;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:740px;max-height:calc(92vh - 52px);overflow-y:auto;animation:slideUp .3s ease;}
         @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         @keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}

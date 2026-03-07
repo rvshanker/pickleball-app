@@ -17,7 +17,7 @@
 
   const NAV_ITEMS = [
     { id: 'home',       label: 'Home',       icon: '🏠', href: 'index.html'      },
-    { id: 'courts',     label: 'Courts',     icon: '🏟', href: 'court-main.html' },
+    { id: 'courts',     label: 'Courts',     icon: '🏟', href: 'index.html'      },
     { id: 'games',      label: 'Games',      icon: '🎮', href: 'findgame.html'   },
     { id: 'players',    label: 'Players',    icon: '👥', href: 'findplayer.html' },
     { id: 'tournament', label: 'Tournament', icon: '🏆', href: 'tournament.html' },
@@ -89,11 +89,46 @@
   fade.id = 'pcn-fade';
   document.body.appendChild(fade);
 
+  // Map each page to its SPA tab on index.html (avoids full reload)
+  const SPA_TAB = {
+    'index.html':        'home',
+    'findgame.html':     'games',
+    'findplayer.html':   'players',
+  };
+
   function goTo(href) {
     if (!href) return;
-    if (href.split('/').pop() === filename) return;
+    const target = href.split('?')[0].split('/').pop();
+    // If we're already on index.html and target has a SPA tab, switch tab instantly
+    if (filename === 'index.html' && SPA_TAB[target] !== undefined) {
+      const tab = SPA_TAB[target];
+      if (window.__pcnSetTab) { window.__pcnSetTab(tab); updateActive(tab); return; }
+    }
+    // If target is index.html and we're on a sub-page, navigate there with tab param
+    if (target === 'index.html' && filename !== 'index.html') {
+      fade.classList.add('go');
+      setTimeout(() => { window.location.href = 'index.html'; }, 160);
+      return;
+    }
+    // If target is a page that the SPA handles, go to index.html with ?tab=
+    if (SPA_TAB[target] !== undefined && filename !== 'index.html') {
+      const tab = SPA_TAB[target];
+      fade.classList.add('go');
+      setTimeout(() => { window.location.href = `index.html?tab=${tab}`; }, 160);
+      return;
+    }
+    if (target === filename) return;
     fade.classList.add('go');
     setTimeout(() => { window.location.href = href; }, 160);
+  }
+
+  function updateActive(tabId) {
+    // Map SPA tab names back to nav item IDs
+    const tabToNav = { home:'home', courts:'courts', games:'games', players:'players', profile:'players' };
+    const navId = tabToNav[tabId] || tabId;
+    document.querySelectorAll('.pcn-ni').forEach(el => {
+      el.classList.toggle('active', el.dataset.id === navId);
+    });
   }
 
   /* ── TOP BAR ──────────────────────────────────────────────────────── */
@@ -109,6 +144,13 @@
   lblEl.className = 'pcn-label';
   lblEl.textContent = meta.label;
 
+  // Expose for SPA to call when tab changes
+  const TAB_LABELS = { home:'Home', courts:'Courts', games:'Games', players:'Players', profile:'Profile', tournament:'Tournament' };
+  window.__pcnOnTabChange = (tabId) => {
+    lblEl.textContent = TAB_LABELS[tabId] || '';
+    updateActive(tabId);
+  };
+
   const pillWrap = document.createElement('div');
   pillWrap.id = 'pcn-pill';
 
@@ -123,6 +165,7 @@
   NAV_ITEMS.forEach(item => {
     const el = document.createElement('div');
     el.className = 'pcn-ni' + (item.id === meta.id ? ' active' : '');
+    el.dataset.id = item.id;
     el.innerHTML = `<div class="pcn-ni-icon">${item.icon}</div><div class="pcn-ni-lbl">${item.label}</div>`;
     el.addEventListener('click', () => goTo(item.href));
     botNav.appendChild(el);
