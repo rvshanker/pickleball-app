@@ -1084,6 +1084,8 @@ function App(){
   });
   const switchTab=t=>{setTab(t);if(window.__pcnOnTabChange)window.__pcnOnTabChange(t);};
   useEffect(()=>{window.__pcnSetTab=switchTab;return()=>{delete window.__pcnSetTab;};},[]);
+  useEffect(()=>{window.__pcnOpenAuth=()=>setShowAuth(true);return()=>{delete window.__pcnOpenAuth;};},[]);
+  useEffect(()=>{window.__pcnOpenProfile=()=>setShowProfile(true);return()=>{delete window.__pcnOpenProfile;};},[]);
   const[courts,setCourts]=useState([]);
   const[games,setGames]=useState([]);
   const[posts,setPosts]=useState([]);
@@ -1187,7 +1189,7 @@ function App(){
 
   const NAV_LEFT=[
     {id:'home',icon:'🏠',label:'Home',action:()=>switchTab('home')},
-    {id:'courts',icon:'🏟',label:'Courts',action:()=>openPage('index.html')},
+    {id:'courts',icon:'🏟',label:'Courts',action:()=>switchTab('courts')},
   ];
   const NAV_RIGHT=[
     {id:'games',icon:'🎮',label:'Games',action:()=>switchTab('games')},

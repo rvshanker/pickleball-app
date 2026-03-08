@@ -17,7 +17,7 @@
 
   const NAV_ITEMS = [
     { id: 'home',       label: 'Home',       icon: '🏠', href: 'index.html'      },
-    { id: 'courts',     label: 'Courts',     icon: '🏟', href: 'index.html'      },
+    { id: 'courts',     label: 'Courts',     icon: '🏟', href: 'court-main.html'      },
     { id: 'games',      label: 'Games',      icon: '🎮', href: 'findgame.html'   },
     { id: 'players',    label: 'Players',    icon: '👥', href: 'findplayer.html' },
     { id: 'tournament', label: 'Tournament', icon: '🏆', href: 'tournament.html' },
@@ -35,9 +35,9 @@
 
     /* TOP BAR */
     #pcn-top{position:fixed;top:0;left:0;right:0;height:var(--pcn-top);background:rgba(13,27,42,0.97);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--pcn-border);display:flex;align-items:center;justify-content:space-between;padding:0 14px 0 16px;z-index:9900;box-sizing:border-box;font-family:'DM Sans','Outfit',sans-serif;}
-    .pcn-logo{font-family:'Syne','Barlow Condensed','Outfit',sans-serif;font-size:1.08rem;font-weight:800;color:var(--pcn-green);letter-spacing:-0.02em;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+    .pcn-logo{font-family:'Syne','Barlow Condensed','Outfit',sans-serif;font-size:1rem;font-weight:800;color:var(--pcn-green);letter-spacing:-0.02em;cursor:pointer;white-space:nowrap;flex-shrink:0;line-height:1;}
     .pcn-logo span{color:var(--pcn-text);}
-    .pcn-label{font-family:'Syne','Barlow Condensed','Outfit',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.11em;text-transform:uppercase;color:var(--pcn-muted);flex:1;text-align:center;}
+    .pcn-label{font-family:'DM Sans','Outfit',sans-serif;font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--pcn-muted);position:absolute;left:50%;transform:translateX(-50%);pointer-events:none;white-space:nowrap;}
 
     /* PILL BUTTON */
     #pcn-pill{position:relative;flex-shrink:0;}
@@ -191,7 +191,10 @@
     const btn = document.createElement('button');
     btn.id = 'pcn-signin';
     btn.textContent = '🔑 Sign In';
-    btn.addEventListener('click', () => goTo('findplayer.html'));
+    btn.addEventListener('click', () => {
+      if (window.__pcnOpenAuth) { window.__pcnOpenAuth(); return; }
+      goTo('index.html');
+    });
     pillWrap.appendChild(btn);
   }
 
@@ -235,15 +238,11 @@
     editBtn.innerHTML = '✏️ Edit Profile';
     editBtn.addEventListener('click', () => {
       closeDD();
-      // Try to trigger the page's own profile-edit mechanism
-      // findplayer.html exposes setShowProfile on window, findgame has onSignOut only
-      if (typeof window.__pcnOpenProfile === 'function') {
-        window.__pcnOpenProfile();
-      } else {
-        // fallback: click any edit-profile button the page may have rendered
-        const btn = document.querySelector('[data-action="edit-profile"]');
-        if (btn) btn.click();
-      }
+      if (typeof window.__pcnOpenProfile === 'function') { window.__pcnOpenProfile(); return; }
+      const b = document.querySelector('[data-action="edit-profile"]');
+      if (b) { b.click(); return; }
+      // fallback: switch to profile tab if on index.html
+      if (window.__pcnSetTab) window.__pcnSetTab('profile');
     });
     dd.appendChild(editBtn);
 
