@@ -813,21 +813,31 @@ function CourtPage() {
         const tick = async () => {
             const now = Date.now(), list = checkInsRef.current;
             for (const c of list) {
-                // Delete expired active check-ins instead of marking checked-out
-                if (c.status==='active' && c.duration && now > c.timestamp + c.duration*60000) {
+                const startTime = c.status==='active' ? c.timestamp : c.arrivalTime;
+                const expired = c.duration && startTime && now > startTime + c.duration*60000;
+                // Delete expired active check-ins
+                if (c.status==='active' && expired) {
                     await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).delete().catch(()=>{});
+                    continue;
                 }
-                // Also clean up any stale checked-out docs older than 10 minutes
+                // Also delete expired 'later' check-ins (in case promotion failed)
+                if (c.status==='later' && expired) {
+                    await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).delete().catch(()=>{});
+                    continue;
+                }
+                // Clean up stale checked-out docs
                 if (c.status==='checked-out' && c.timestamp && now > c.timestamp + 10*60000) {
                     await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).delete().catch(()=>{});
+                    continue;
                 }
+                // Promote 'later' to 'active' when arrival time is reached
                 if (c.status==='later' && c.arrivalTime && now >= c.arrivalTime) {
                     await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).update({status:'active',timestamp:now}).catch(()=>{});
                 }
             }
         };
         tick();
-        const t = setInterval(tick, 60000);
+        const t = setInterval(tick, 15000);
         return () => clearInterval(t);
     }, [courtId]);
 
@@ -1457,5 +1467,6 @@ function CourtPage() {
 
 ReactDOM.render(<CourtPage/>, document.getElementById('root'));
 </script>
+<script src="nav.js"></script>
 </body>
 </html>
