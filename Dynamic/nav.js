@@ -17,7 +17,7 @@
 
   const NAV_ITEMS = [
     { id: 'home',       label: 'Home',       icon: '🏠', href: 'index.html'      },
-    { id: 'courts',     label: 'Courts',     icon: '🏟', href: 'court-main.html' },
+    { id: 'courts',     label: 'Courts',     icon: '🏟', href: 'index.html'      },
     { id: 'games',      label: 'Games',      icon: '🎮', href: 'findgame.html'   },
     { id: 'players',    label: 'Players',    icon: '👥', href: 'findplayer.html' },
     { id: 'tournament', label: 'Tournament', icon: '🏆', href: 'tournament.html' },

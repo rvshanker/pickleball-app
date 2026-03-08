@@ -322,6 +322,7 @@ function EditCourtModal({court, onClose, onSaved}) {
     const [geoFixing, setGeoFixing] = useState(false);
     const [lat, setLat] = useState(court.lat||null);
     const [lng, setLng] = useState(court.lng||null);
+    const geoDebounceRef = useRef(null);
 
     const toggleAmenity = key => setAmenities(a => a.includes(key)?a.filter(x=>x!==key):[...a,key]);
 
@@ -332,6 +333,26 @@ function EditCourtModal({court, onClose, onSaved}) {
             if (d.length) return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon), display: d[0].display_name };
         } catch(e) {}
         return null;
+    };
+
+    // Auto-geocode when address changes, debounced 900ms
+    const handleAddressChange = (val) => {
+        setAddress(val);
+        setGeoStatus(null);
+        if (geoDebounceRef.current) clearTimeout(geoDebounceRef.current);
+        if (!val.trim() || val.trim().length < 8) return;
+        geoDebounceRef.current = setTimeout(async () => {
+            setGeoFixing(true);
+            const geo = await geocodeAddress(val.trim());
+            if (geo) {
+                setLat(geo.lat);
+                setLng(geo.lng);
+                setGeoStatus({ok:true, msg:`📍 Auto-located: ${geo.lat.toFixed(4)}, ${geo.lng.toFixed(4)}`});
+            } else {
+                setGeoStatus({ok:false, msg:'Could not auto-locate. Try clicking Fix Location.'});
+            }
+            setGeoFixing(false);
+        }, 900);
     };
 
     const fixCoords = async () => {
@@ -384,18 +405,20 @@ function EditCourtModal({court, onClose, onSaved}) {
                 </div>
                 <div style={{marginBottom:14}}>
                     <span className="flbl">Address</span>
-                    <input className="field" value={address} onChange={e=>{setAddress(e.target.value);setGeoStatus(null);}}/>
+                    <input className="field" value={address} onChange={e=>handleAddressChange(e.target.value)} placeholder="e.g. 123 Main St, Springfield, IL"/>
                 </div>
                 {/* Coordinates row */}
-                <div style={{marginBottom:14,background:'#f8fafc',border:'2px solid',borderColor:hasCoords&&lat!==0?'#a7f3d0':'#fca5a5',borderRadius:10,padding:'12px 14px'}}>
+                <div style={{marginBottom:14,background:'#f8fafc',border:'2px solid',borderColor:geoFixing?'#fbbf24':hasCoords&&lat!==0?'#a7f3d0':'#fca5a5',borderRadius:10,padding:'12px 14px'}}>
                     <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}>
                         <div>
-                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:2}}>📍 Stored Coordinates</div>
-                            {hasCoords && lat !== 0
-                                ? <div style={{fontSize:13,color:'#059669',fontWeight:600}}>{lat.toFixed(5)}, {lng.toFixed(5)}</div>
-                                : <div style={{fontSize:13,color:'#ef4444',fontWeight:600}}>⚠️ Missing or incorrect — distances will be wrong</div>
+                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:2}}>📍 Coordinates</div>
+                            {geoFixing
+                                ? <div style={{fontSize:13,color:'#d97706',fontWeight:600}}>⏳ Auto-locating…</div>
+                                : hasCoords && lat !== 0
+                                    ? <div style={{fontSize:13,color:'#059669',fontWeight:600}}>{lat.toFixed(5)}, {lng.toFixed(5)}</div>
+                                    : <div style={{fontSize:13,color:'#ef4444',fontWeight:600}}>⚠️ Missing — type address above to auto-locate</div>
                             }
-                            {geoStatus && (
+                            {geoStatus && !geoFixing && (
                                 <div style={{fontSize:12,color:geoStatus.ok?'#059669':'#ef4444',marginTop:4,fontWeight:600}}>{geoStatus.msg}</div>
                             )}
                         </div>
@@ -518,6 +541,174 @@ function FeedbackModal({onClose, courtId}) {
     );
 }
 
+// ── GroupMe Integration ───────────────────────────────────────────────
+const GROUPME_BOT_KEY = 'pickleGroupMeBotId';
+
+async function postGroupMe(text, botId) {
+    if (!botId) return;
+    try {
+        await fetch('https://api.groupme.com/v3/bots/post', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bot_id: botId, text })
+        });
+    } catch(e) {
+        console.warn('GroupMe post failed:', e);
+    }
+}
+
+function buildCheckInMsg(name, status, guests, courtName, nowPlaying, nowLater, openCourts, arrivalTime) {
+    const nameStr = name + (guests > 0 ? ` (+${guests} guest${guests !== 1 ? 's' : ''})` : '');
+    const action = status === 'active' ? 'is playing at' : 'is heading to';
+    const arrivalLabel = (status === 'later' && arrivalTime)
+        ? new Date(arrivalTime).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})
+        : null;
+    const line1 = arrivalLabel
+        ? `${nameStr} ${action} ${courtName} at ${arrivalLabel}`
+        : `${nameStr} ${action} ${courtName}`;
+    return [
+        line1,
+        `🎾 ${nowPlaying} player${nowPlaying !== 1 ? 's' : ''} playing now`,
+        `📅 ${nowLater} arriving soon  🏟 ${openCourts} court${openCourts !== 1 ? 's' : ''} rotating`,
+    ].join('\n');
+}
+
+function buildCheckOutMsg(name, courtName, nowPlaying, nowLater, openCourts) {
+    return [
+        `👋 ${name} left ${courtName}`,
+        `🎾 ${nowPlaying} player${nowPlaying !== 1 ? 's' : ''} playing now`,
+        `📅 ${nowLater} arriving soon  🏟 ${openCourts} court${openCourts !== 1 ? 's' : ''} rotating`,
+    ].join('\n');
+}
+
+function buildStatusMsg(courtName, field, value) {
+    const labels = {
+        condition: { open: '✅ Courts Open', closed: '🚫 Courts Closed', wet: '💧 Courts Wet', hot: '🥵 Very Hot', windy: '🌬️ Windy Conditions' },
+        crowdLevel: { low: '🟢 Light crowd (0–12)', medium: '🟡 Busy (12–24)', high: '🔴 Packed (24+)' },
+    };
+    const map = labels[field];
+    if (!map) return null;
+    const label = map[value];
+    if (!label) return null;
+    return `${label} at ${courtName}`;
+}
+
+function applyPlaceholders(template, {name='', court='', players='', courts=''}) {
+    return template
+        .replace(/\{name\}/g, name)
+        .replace(/\{court\}/g, court)
+        .replace(/\{players\}/g, players)
+        .replace(/\{courts\}/g, courts);
+}
+
+// Fire a GroupMe event for a given trigger type, using event_rules from Firestore if available
+async function fireGroupMeEvent(courtId, trigger, defaultMsg, placeholders) {
+    if (!fbOk || !db || !courtId) return;
+
+    // Get bot config from Firestore only — no localStorage fallback
+    // (localStorage would bleed Court A's bot into Court B)
+    const botDoc = await db.collection('groupme_bots').doc(courtId).get().catch(()=>null);
+    const botCfg = botDoc?.exists ? botDoc.data() : null;
+    if (!botCfg?.enabled || !botCfg?.botId) return; // this court has no bot configured
+
+    const botId = botCfg.botId;
+
+    // Check if an event rule exists for this specific trigger on this court
+    const rulesSnap = await db.collection('groupme_bots').doc(courtId).collection('event_rules')
+        .where('trigger','==',trigger).where('enabled','==',true).get().catch(()=>null);
+
+    // Only fire if an explicit event rule exists for this trigger
+    if (!rulesSnap || rulesSnap.empty) return;
+
+    const rule = rulesSnap.docs[0].data();
+    const msg = rule.customMsg ? applyPlaceholders(rule.customMsg, placeholders||{}) : defaultMsg;
+    if (msg) await postGroupMe(msg, botId);
+}
+
+function GroupMeSettingsModal({onClose}) {
+    const [botId, setBotId] = React.useState(localStorage.getItem(GROUPME_BOT_KEY)||'');
+    const [testing, setTesting] = React.useState(false);
+    const [testResult, setTestResult] = React.useState(null);
+
+    const save = () => {
+        localStorage.setItem(GROUPME_BOT_KEY, botId.trim());
+        onClose();
+    };
+
+    const test = async () => {
+        const id = botId.trim();
+        if (!id) { setTestResult({ok:false,msg:'Enter a Bot ID first'}); return; }
+        setTesting(true);
+        setTestResult(null);
+        try {
+            const r = await fetch('https://api.groupme.com/v3/bots/post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bot_id: id, text: '🎾 PickleConnect connected! Court updates will now post here automatically.' })
+            });
+            setTestResult(r.ok || r.status === 202 || r.status === 200
+                ? {ok:true, msg:'✅ Test message sent! Check your GroupMe group.'}
+                : {ok:false, msg:`Error ${r.status} — double-check your Bot ID`});
+        } catch(e) {
+            setTestResult({ok:false, msg:'Network error — check Bot ID and try again'});
+        }
+        setTesting(false);
+    };
+
+    return (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:16}}>
+            <div style={{background:'white',borderRadius:20,padding:28,maxWidth:440,width:'100%',boxShadow:'0 24px 64px rgba(0,0,0,.25)'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:24,fontWeight:800,color:'#0f172a'}}>💬 GROUPME BOT</div>
+                    <button onClick={onClose} style={{background:'none',border:'none',fontSize:26,cursor:'pointer',color:'#94a3b8',lineHeight:1}}>×</button>
+                </div>
+                <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#64748b',marginBottom:20,lineHeight:1.5}}>
+                    Auto-post check-ins & court updates to your GroupMe group.
+                </div>
+
+                <div style={{background:'#f0fdf4',border:'1px solid #a7f3d0',borderRadius:12,padding:'14px 16px',marginBottom:20,fontFamily:'Outfit,sans-serif',fontSize:13,color:'#065f46',lineHeight:1.6}}>
+                    <strong>How to get a Bot ID:</strong><br/>
+                    1. Go to <a href="https://dev.groupme.com/bots" target="_blank" style={{color:'#059669'}}>dev.groupme.com/bots</a><br/>
+                    2. Click <strong>Create Bot</strong><br/>
+                    3. Select your pickleball group<br/>
+                    4. Name it (e.g. "PickleConnect") → Submit<br/>
+                    5. Copy the <strong>Bot ID</strong> and paste below
+                </div>
+
+                <div style={{marginBottom:12}}>
+                    <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>Bot ID</div>
+                    <input
+                        value={botId}
+                        onChange={e=>{ setBotId(e.target.value); setTestResult(null); }}
+                        placeholder="e.g. abc123def456..."
+                        style={{width:'100%',padding:'11px 14px',fontSize:14,border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',outline:'none',fontFamily:'monospace'}}
+                    />
+                </div>
+
+                {testResult && (
+                    <div style={{padding:'10px 14px',borderRadius:10,background:testResult.ok?'#f0fdf4':'#fef2f2',border:'1px solid '+(testResult.ok?'#a7f3d0':'#fca5a5'),fontFamily:'Outfit,sans-serif',fontSize:13,color:testResult.ok?'#065f46':'#b91c1c',marginBottom:12}}>
+                        {testResult.msg}
+                    </div>
+                )}
+
+                <div style={{display:'flex',gap:10}}>
+                    <button onClick={test} disabled={testing||!botId.trim()} style={{flex:1,padding:'12px',background:'white',border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:700,color:'#475569',cursor:'pointer',opacity:testing||!botId.trim()?.5:1}}>
+                        {testing ? '⏳ Testing…' : '🧪 Test'}
+                    </button>
+                    <button onClick={save} style={{flex:1,padding:'12px',background:'linear-gradient(135deg,#059669,#10b981)',color:'white',border:'none',borderRadius:10,fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:700,cursor:'pointer',boxShadow:'0 4px 12px rgba(5,150,105,.3)'}}>
+                        💾 Save
+                    </button>
+                </div>
+                {botId && (
+                    <button onClick={()=>{localStorage.removeItem(GROUPME_BOT_KEY);setBotId('');}} style={{width:'100%',marginTop:10,padding:'10px',background:'none',border:'1px solid #fca5a5',borderRadius:10,color:'#ef4444',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:600,cursor:'pointer'}}>
+                        🗑️ Disconnect GroupMe
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}
+
 function CourtPage() {
     const courtId = getCourtId();
     const [courtData,   setCourtData]   = useState(null);
@@ -543,6 +734,7 @@ function CourtPage() {
     const [flashInput,  setFlashInput]  = useState('');
     const [showEdit,    setShowEdit]    = useState(false);
     const [showFB,      setShowFB]      = useState(false);
+    const [showGroupMe, setShowGroupMe] = useState(false);
     const [showTotalEdit,setShowTotalEdit]=useState(false);
     const [newTotal,    setNewTotal]    = useState('');
     const [tick,        setTick]        = useState(0);
@@ -599,8 +791,15 @@ function CourtPage() {
         const unsub = db.collection('courts').doc(courtId).collection('checkins')
             .onSnapshot(snap => {
                 const now = Date.now(), cutoff = now - 24*3600000;
+                // Delete any checked-out or stale docs we encounter
+                snap.docs.forEach(d => {
+                    const c = d.data();
+                    if (c.status === 'checked-out') {
+                        d.ref.delete().catch(()=>{});
+                    }
+                });
                 const list = snap.docs.map(d=>({id:d.id,...d.data()}))
-                    .filter(c => c.timestamp > cutoff)
+                    .filter(c => c.status !== 'checked-out' && c.timestamp > cutoff)
                     .sort((a,b) => (a.arrivalTime||a.timestamp)-(b.arrivalTime||b.timestamp));
                 checkInsRef.current = list;
                 setCheckIns(list);
@@ -614,16 +813,31 @@ function CourtPage() {
         const tick = async () => {
             const now = Date.now(), list = checkInsRef.current;
             for (const c of list) {
-                if (c.status==='active' && c.duration && now > c.timestamp + c.duration*60000) {
-                    await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).update({status:'checked-out'}).catch(()=>{});
+                const startTime = c.status==='active' ? c.timestamp : c.arrivalTime;
+                const expired = c.duration && startTime && now > startTime + c.duration*60000;
+                // Delete expired active check-ins
+                if (c.status==='active' && expired) {
+                    await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).delete().catch(()=>{});
+                    continue;
                 }
+                // Also delete expired 'later' check-ins (in case promotion failed)
+                if (c.status==='later' && expired) {
+                    await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).delete().catch(()=>{});
+                    continue;
+                }
+                // Clean up stale checked-out docs
+                if (c.status==='checked-out' && c.timestamp && now > c.timestamp + 10*60000) {
+                    await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).delete().catch(()=>{});
+                    continue;
+                }
+                // Promote 'later' to 'active' when arrival time is reached
                 if (c.status==='later' && c.arrivalTime && now >= c.arrivalTime) {
                     await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).update({status:'active',timestamp:now}).catch(()=>{});
                 }
             }
         };
         tick();
-        const t = setInterval(tick, 60000);
+        const t = setInterval(tick, 15000);
         return () => clearInterval(t);
     }, [courtId]);
 
@@ -661,12 +875,42 @@ function CourtPage() {
     const updateCourt = async (field, value) => {
         if (!fbOk || !db || !courtId) return;
         await db.collection('courts').doc(courtId).update({[field]:value,lastUpdate:firebase.firestore.FieldValue.serverTimestamp()}).catch(console.error);
+        // GroupMe notifications for status changes
+        const cName = courtData?.name||'Court';
+        const openC = courtData?.openCourts !== undefined ? courtData.openCourts : (courtData?.numberOfCourts||4);
+        const players = String(checkInsRef.current.filter(c=>c.status==='active').length||0);
+        const courts = String(openC);
+        if (field === 'condition') {
+            const triggerMap = {closed:'status_closed', open:'status_open', wet:'status_wet'};
+            const trigger = triggerMap[value];
+            if (trigger) {
+                const defaultMsg = buildStatusMsg(cName, field, value);
+                if (defaultMsg) fireGroupMeEvent(courtId, trigger, defaultMsg, {court:cName, players, courts});
+            }
+        } else if (field === 'lightsOn') {
+            const trigger = value ? 'lights_on' : 'lights_off';
+            const defaultMsg = value ? `💡 Lights are ON at ${cName}` : `🌙 Lights are OFF at ${cName}`;
+            fireGroupMeEvent(courtId, trigger, defaultMsg, {court:cName, players, courts});
+        } else if (field === 'crowdLevel') {
+            const crowdTriggerMap = {high:'crowd_high', low:'crowd_low'};
+            const crowdTrigger = crowdTriggerMap[value];
+            if (crowdTrigger) {
+                const defaultMsg = buildStatusMsg(cName, field, value);
+                if (defaultMsg) fireGroupMeEvent(courtId, crowdTrigger, defaultMsg, {court:cName, players, courts});
+            }
+        }
     };
 
     const saveFlashMsg = async () => {
         const msg = flashInput.trim();
         await db.collection('courts').doc(courtId).update({flashMsg:msg,flashMsgTime:msg?Date.now():null,lastUpdate:firebase.firestore.FieldValue.serverTimestamp()});
         setFlashInput('');
+        // GroupMe notification for flash announcements
+        if (msg) {
+            const cName = courtData?.name||'Court';
+            const defaultMsg = `📣 ${cName} Announcement:\n${msg}`;
+            fireGroupMeEvent(courtId, 'flash', defaultMsg, {court:cName});
+        }
     };
 
     const clearFlashMsg = async () => {
@@ -691,10 +935,11 @@ function CourtPage() {
         if (!fbOk || !db) { alert('Database not available'); return; }
         try {
             await deleteMyCheckIns();
+            const ciStatus = status==='now' ? 'active' : 'later';
             await db.collection('courts').doc(courtId).collection('checkins').add({
                 userName, deviceId,
                 rating: userRating||null,
-                status: status==='now' ? 'active' : 'later',
+                status: ciStatus,
                 guests: guestCount,
                 duration,
                 comment: comment.trim()||'',
@@ -705,12 +950,27 @@ function CourtPage() {
             localStorage.setItem('pickleCourtUserName', userName);
             localStorage.setItem('pickleCourtRating', userRating);
             setShowForm(false); setArrivalTime(''); setShowLaterTime(false); setGuestCount(0); setFunnyMsg(''); setDurationFunny(''); setGuestFunny(''); setComment('');
+            // GroupMe notification
+            const newPlayingCount = ciStatus === 'active' ? nowTotal + 1 + guestCount : nowTotal;
+            const newLaterCount = ciStatus === 'later' ? laterTotal + 1 + guestCount : laterTotal;
+            const openC = courtData?.openCourts !== undefined ? courtData.openCourts : (courtData?.numberOfCourts||4);
+            const cName = courtData?.name||'the court';
+            const defaultMsg = buildCheckInMsg(userName, ciStatus, guestCount, cName, newPlayingCount, newLaterCount, openC, atTime);
+            fireGroupMeEvent(courtId, 'checkin', defaultMsg, {name:userName, court:cName, players:String(newPlayingCount), courts:String(openC)});
         } catch(e) { alert('Check-in failed: '+e.message); }
     };
 
     const handleCheckOut = async () => {
         if (!fbOk || !db) return;
+        const name = myCheckIn?.userName || userName;
+        const openC = courtData?.openCourts !== undefined ? courtData.openCourts : (courtData?.numberOfCourts||4);
+        const cName = courtData?.name||'the court';
+        const remainingPlaying = Math.max(0, nowTotal - 1 - (myCheckIn?.guests||0));
         await deleteMyCheckIns();
+        if (name) {
+            const defaultMsg = buildCheckOutMsg(name, cName, remainingPlaying, laterTotal, openC);
+            fireGroupMeEvent(courtId, 'checkout', defaultMsg, {name, court:cName, players:String(remainingPlaying), courts:String(openC)});
+        }
     };
 
     const handleRatingChange = val => {
@@ -783,7 +1043,7 @@ function CourtPage() {
                     <div>
                         <div className="fd" style={{fontSize:24,fontWeight:800,color:'white',letterSpacing:.3,lineHeight:1.1}}>{courtData.name}</div>
                         <div style={{fontSize:12,color:'#6ee7b7',marginTop:4,display:'flex',alignItems:'center',gap:6,overflow:'hidden'}}>
-                            <span className="live-dot" style={{flexShrink:0}}/> <span style={{whiteSpace:'nowrap'}}>Live ·</span> <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>📍 {courtData.address}</span>
+                            <span className="live-dot" style={{flexShrink:0}}/> <span style={{whiteSpace:'nowrap'}}>Live ·</span> <a href={`https://maps.google.com/?q=${encodeURIComponent(courtData.address||courtData.name)}`} target="_blank" rel="noopener noreferrer" style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:'#6ee7b7',textDecoration:'none'}}>📍 {courtData.address}</a>
                         </div>
                         {courtData.amenities?.length>0 && (
                             <div style={{display:'flex',gap:5,flexWrap:'wrap',marginTop:8}}>
@@ -1200,6 +1460,7 @@ function CourtPage() {
             {/* Edit modal */}
             {showEdit&&<EditCourtModal court={courtData} onClose={()=>setShowEdit(false)} onSaved={c=>{setCourtData(c);setShowEdit(false);}}/> }
             {showFB&&<FeedbackModal onClose={()=>setShowFB(false)} courtId={courtId}/>}
+            {showGroupMe&&<GroupMeSettingsModal onClose={()=>setShowGroupMe(false)}/>}
         </div>
     );
 }
