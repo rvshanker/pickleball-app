@@ -557,11 +557,17 @@ async function postGroupMe(text, botId) {
     }
 }
 
-function buildCheckInMsg(name, status, guests, courtName, nowPlaying, nowLater, openCourts) {
+function buildCheckInMsg(name, status, guests, courtName, nowPlaying, nowLater, openCourts, arrivalTime) {
     const nameStr = name + (guests > 0 ? ` (+${guests} guest${guests !== 1 ? 's' : ''})` : '');
     const action = status === 'active' ? 'is playing at' : 'is heading to';
+    const arrivalLabel = (status === 'later' && arrivalTime)
+        ? new Date(arrivalTime).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})
+        : null;
+    const line1 = arrivalLabel
+        ? `${nameStr} ${action} ${courtName} at ${arrivalLabel}`
+        : `${nameStr} ${action} ${courtName}`;
     return [
-        `${nameStr} ${action} ${courtName}`,
+        line1,
         `🎾 ${nowPlaying} player${nowPlaying !== 1 ? 's' : ''} playing now`,
         `📅 ${nowLater} arriving soon  🏟 ${openCourts} court${openCourts !== 1 ? 's' : ''} rotating`,
     ].join('\n');
@@ -939,7 +945,7 @@ function CourtPage() {
             const newLaterCount = ciStatus === 'later' ? laterTotal + 1 + guestCount : laterTotal;
             const openC = courtData?.openCourts !== undefined ? courtData.openCourts : (courtData?.numberOfCourts||4);
             const cName = courtData?.name||'the court';
-            const defaultMsg = buildCheckInMsg(userName, ciStatus, guestCount, cName, newPlayingCount, newLaterCount, openC);
+            const defaultMsg = buildCheckInMsg(userName, ciStatus, guestCount, cName, newPlayingCount, newLaterCount, openC, atTime);
             fireGroupMeEvent(courtId, 'checkin', defaultMsg, {name:userName, court:cName, players:String(newPlayingCount), courts:String(openC)});
         } catch(e) { alert('Check-in failed: '+e.message); }
     };
