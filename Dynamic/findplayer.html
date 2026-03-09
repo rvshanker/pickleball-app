@@ -84,7 +84,7 @@
 
         /* Modal */
         .mo{position:fixed;top:0;left:0;right:0;bottom:var(--pcn-bot,62px);background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:9950;backdrop-filter:blur(4px);}
-        .ms{background:white;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:740px;max-height:calc(90vh - 54px);overflow-y:auto;animation:slideUp .3s ease;}
+        .ms{background:white;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:740px;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease;}
         @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         .mh{width:40px;height:4px;background:#cbd5e1;border-radius:2px;margin:0 auto 16px;}
@@ -141,6 +141,9 @@ const FB={apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",authDomain:"picklebal
 let db=null,auth=null,fbOk=false;
 try{if(!firebase.apps.length)firebase.initializeApp(FB);db=firebase.firestore();auth=firebase.auth();fbOk=true;}catch(e){console.error('FB:',e);}
 
+// Strip undefined values so Firestore never rejects the write
+function sanitize(obj){const r={};for(const k in obj){const v=obj[k];if(v!==undefined)r[k]=v;}return r;}
+
 function haversine(a,b,c,d){const R=3958.8,dL=(c-a)*Math.PI/180,dN=(d-b)*Math.PI/180,x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dN/2)**2;return R*2*Math.asin(Math.sqrt(x));}
 function timeAgo(t){if(!t)return '';const d=Date.now()-t,m=Math.floor(d/60000);if(m<1)return 'now';if(m<60)return m+'m';const h=Math.floor(m/60);if(h<24)return h+'h';return Math.floor(h/24)+'d';}
 function fmtTime(ts){if(!ts)return '';const[h,m]=ts.split(':').map(Number);return `${h%12||12}:${m.toString().padStart(2,'0')}${h>=12?'PM':'AM'}`;}
@@ -161,12 +164,12 @@ async function cleanOldPosts(uid){
 const SKILLS=['2.0-2.5','2.5-3.0','3.0-3.5','3.5-4.0','4.0-4.5','4.5-5.0','5.0+'];
 const SKILL_L={'2.0-2.5':'Beginner','2.5-3.0':'Novice','3.0-3.5':'Intermediate','3.5-4.0':'Advanced','4.0-4.5':'Competitive','4.5-5.0':'Expert','5.0+':'Pro'};
 const PTYPES=['Casual','Competitive','Tournament','Drilling','League'];
-const PT_E={'Casual':'','Competitive':'','Tournament':'','Drilling':'','League':''};
+const PT_E={'Casual':'🎾','Competitive':'🔥','Tournament':'🏆','Drilling':'🎯','League':'🏅'};
 const AVAIL=['Now','Today','This Week','Custom Schedule'];
-const PURPOSES=[{id:'play',label:'Looking to Play',emoji:''},{id:'partner',label:'Need a Partner',emoji:''},{id:'drill',label:'Drilling Session',emoji:''},{id:'group',label:'Group / Open Play',emoji:''}];
+const PURPOSES=[{id:'play',label:'Looking to Play',emoji:'🏓'},{id:'partner',label:'Need a Partner',emoji:'🤝'},{id:'drill',label:'Drilling Session',emoji:'🎯'},{id:'group',label:'Group / Open Play',emoji:'👥'}];
 const PU_TAG={'play':'t-green','partner':'t-blue','drill':'t-purple','group':'t-amber'};
 const AV_CLS={'Now':'avail-now','Today':'avail-later','This Week':'avail-later','Custom Schedule':'avail-flex'};
-const AV_ICO={'Now':'⚡','Today':'','This Week':'️','Custom Schedule':''};
+const AV_ICO={'Now':'⚡','Today':'📅','This Week':'🗓️','Custom Schedule':'📆'};
 const DAYS_SHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const DAYS_FULL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const GENDERS=['Male','Female','Non-binary','Any'];
@@ -201,10 +204,10 @@ function AuthScreen(){
     };
     return(<div className="hero-bg">
         <div style={{padding:'14px 18px',display:'flex',alignItems:'center',gap:12}}>
-            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:800,color:'white'}}> PICKLECONNECT</div>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:800,color:'white'}}>🏓 PICKLECONNECT</div>
         </div>
         <div className="auth-screen">
-            <div style={{fontSize:52,marginBottom:10}}></div>
+            <div style={{fontSize:52,marginBottom:10}}>🏓</div>
             <div className="fd" style={{fontSize:32,fontWeight:800,color:'white',marginBottom:6}}>FIND PLAYERS</div>
             <div style={{fontSize:14,color:'rgba(255,255,255,.65)',marginBottom:24,maxWidth:320,lineHeight:1.5}}>Connect with pickleball players near you. Post availability and chat privately.</div>
             <div style={{display:'flex',background:'rgba(255,255,255,.12)',borderRadius:10,padding:3,marginBottom:20,width:'100%',maxWidth:320}}>
@@ -240,7 +243,7 @@ function ProfileSetup({user,profile,onSave,onClose}){
         try{await db.collection('profiles').doc(user.uid).set(data,{merge:true});onSave(data);}catch(e){alert('Failed: '+e.message);}setSaving(false);};
     return(<div className="mo" onClick={e=>{if(e.target===e.currentTarget&&onClose)onClose();}}>
         <div className="ms"><div className="mh"/>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}><div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{profile?'✏️ EDIT PROFILE':' SET UP PROFILE'}</div>{onClose&&<button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:30,height:30,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>}</div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}><div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{profile?'✏️ EDIT PROFILE':'👋 SET UP PROFILE'}</div>{onClose&&<button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:30,height:30,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>}</div>
             {!profile&&<div style={{fontSize:13,color:'#64748b',marginBottom:14}}>Set up once — used everywhere in PickleConnect.</div>}
             <div className="fg"><div className="fl">Display Name *</div><input className="fi" value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" maxLength={40}/></div>
             <div className="fg"><div className="fl">Skill Level *</div><div className="og">{SKILLS.map(s=><button key={s} className={`ob ${skill===s?'s':''}`} onClick={()=>setSkill(s)} style={{fontSize:11}}>{s} <span style={{fontSize:9,opacity:.5}}>{SKILL_L[s]}</span></button>)}</div></div>
@@ -293,102 +296,99 @@ function WeekSchedulePicker({schedule,onChange}){
     </div>);
 }
 
-
-// ── Player Picker (for share-to-players / group members) ─────────────
-function PlayerPicker({myUid,onSelect,selected,title,subtitle}){
+// ── Player Picker ────────────────────────────────────────────────────
+function PlayerPicker({myUid,onSelect,selected,subtitle}){
     const[players,setPlayers]=useState([]);const[ld,setLd]=useState(true);const[search,setSearch]=useState('');
     useEffect(()=>{
         if(!fbOk){setLd(false);return;}
-        const cutoff=Date.now()-7*24*60*60*1000;
-        db.collection('findPlayers').where('status','==','active').where('timestamp','>',cutoff).limit(80).get()
+        // Single-field query — no composite index needed
+        db.collection('findPlayers').where('status','==','active').limit(100).get()
             .then(snap=>{
                 const byUid={};
                 snap.docs.forEach(d=>{const p=d.data();if(p.uid!==myUid&&!byUid[p.uid])byUid[p.uid]=p;});
                 setPlayers(Object.values(byUid));setLd(false);
-            }).catch(()=>setLd(false));
+            }).catch(e=>{console.error('PlayerPicker query failed:',e);setLd(false);});
     },[]);
-    const filtered=search.trim()?players.filter(p=>[p.name,p.city,p.skill,p.gender].some(v=>(v||'').toLowerCase().includes(search.toLowerCase()))):players;
-    const toggle=p=>{const isSel=selected.some(s=>s.uid===p.uid);onSelect(isSel?selected.filter(s=>s.uid!==p.uid):[...selected,{uid:p.uid,name:p.name,photoURL:p.photoURL||null,skill:p.skill||''}]);};
+    const filtered=search.trim()
+        ?players.filter(p=>[p.name,p.city,p.skill,p.gender].some(v=>(v||'').toLowerCase().includes(search.toLowerCase())))
+        :players;
+    const toggle=p=>{
+        const sel=selected.some(s=>s.uid===p.uid);
+        onSelect(sel?selected.filter(s=>s.uid!==p.uid):[...selected,{uid:p.uid,name:p.name,photoURL:p.photoURL||null,skill:p.skill||''}]);
+    };
     return(<div>
-        {title&&<div style={{fontSize:12,fontWeight:700,color:'#0f172a',marginBottom:4}}>{title}</div>}
         {subtitle&&<div style={{fontSize:11,color:'#64748b',marginBottom:8}}>{subtitle}</div>}
         <div style={{position:'relative',marginBottom:8}}>
-            <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-            <input style={{width:'100%',padding:'8px 10px 8px 30px',border:'1.5px solid #e2e8f0',borderRadius:9,fontFamily:'Outfit',fontSize:13,outline:'none',color:'#0f172a'}} value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search players…"/>
+            <svg style={{position:'absolute',left:9,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input style={{width:'100%',padding:'8px 10px 8px 30px',border:'1.5px solid #e2e8f0',borderRadius:9,fontFamily:'Outfit',fontSize:13,outline:'none',color:'#0f172a'}} value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search players..."/>
         </div>
         {selected.length>0&&<div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:8}}>
             {selected.map(s=><div key={s.uid} style={{display:'inline-flex',alignItems:'center',gap:4,background:'#ecfdf5',border:'1px solid #a7f3d0',borderRadius:20,padding:'3px 10px 3px 6px',fontSize:11,fontWeight:600,color:'#059669'}}>
                 <div style={{width:18,height:18,borderRadius:'50%',background:'#059669',color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:800,flexShrink:0}}>{(s.name||'?')[0].toUpperCase()}</div>
                 {s.name.split(' ')[0]}
-                <button onClick={()=>onSelect(selected.filter(x=>x.uid!==s.uid))} style={{background:'none',border:'none',cursor:'pointer',color:'#059669',fontSize:12,lineHeight:1,padding:0,marginLeft:1}}>×</button>
+                <button onClick={()=>onSelect(selected.filter(x=>x.uid!==s.uid))} style={{background:'none',border:'none',cursor:'pointer',color:'#059669',fontSize:14,lineHeight:1,padding:0,marginLeft:1}}>&times;</button>
             </div>)}
         </div>}
-        <div style={{maxHeight:200,overflowY:'auto',border:'1px solid #e2e8f0',borderRadius:10,overflow:'hidden'}}>
-            {ld?<div style={{padding:16,textAlign:'center',fontSize:12,color:'#94a3b8'}}>Loading…</div>
-            :filtered.length===0?<div style={{padding:16,textAlign:'center',fontSize:12,color:'#94a3b8'}}>No players found</div>
-            :filtered.slice(0,30).map(p=>{const sel=selected.some(s=>s.uid===p.uid);return(<div key={p.uid} onClick={()=>toggle(p)} style={{display:'flex',alignItems:'center',gap:9,padding:'9px 12px',cursor:'pointer',background:sel?'#f0fdf4':'white',borderBottom:'1px solid #f8fafc',transition:'background .1s'}}>
-                <div className="av-sm" style={{width:30,height:30,fontSize:11}}>{(p.name||'?')[0].toUpperCase()}</div>
-                <div style={{flex:1,minWidth:0}}><div style={{fontSize:13,fontWeight:600,color:'#0f172a'}}>{p.name}</div><div style={{fontSize:11,color:'#64748b'}}>{p.skill||''}{p.city?` · ${p.city}`:''}{p.gender?` · ${p.gender}`:''}</div></div>
-                {sel&&<span style={{color:'#059669',fontSize:16}}>✓</span>}
+        <div style={{maxHeight:190,overflowY:'auto',border:'1px solid #e2e8f0',borderRadius:10,overflow:'hidden'}}>
+            {ld?<div style={{padding:14,textAlign:'center',fontSize:12,color:'#94a3b8'}}>Loading...</div>
+            :filtered.length===0?<div style={{padding:14,textAlign:'center',fontSize:12,color:'#94a3b8'}}>No players found</div>
+            :filtered.slice(0,30).map(p=>{const isSel=selected.some(s=>s.uid===p.uid);return(<div key={p.uid} onClick={()=>toggle(p)} style={{display:'flex',alignItems:'center',gap:9,padding:'9px 12px',cursor:'pointer',background:isSel?'#f0fdf4':'white',borderBottom:'1px solid #f8fafc',transition:'background .1s'}}>
+                <div className="av-sm" style={{width:30,height:30,fontSize:11,flexShrink:0}}>{(p.name||'?')[0].toUpperCase()}</div>
+                <div style={{flex:1,minWidth:0}}><div style={{fontSize:13,fontWeight:600,color:'#0f172a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.name}</div><div style={{fontSize:11,color:'#64748b'}}>{p.skill||''}{p.city?' \u00b7 '+p.city:''}{p.gender?' \u00b7 '+p.gender:''}</div></div>
+                {isSel&&<span style={{color:'#059669',fontSize:16,flexShrink:0}}>{'\u2713'}</span>}
             </div>);})}
         </div>
     </div>);
 }
 
-// ── Group Manager ────────────────────────────────────────────────────
-function GroupManager({myUid,selectedGroupId,onSelectGroup,onGroupsChange}){
+// ── Group Manager ─────────────────────────────────────────────────────
+function GroupManager({myUid,selectedGroupId,onSelectGroup}){
     const[groups,setGroups]=useState([]);const[ld,setLd]=useState(true);
-    const[showCreate,setShowCreate]=useState(false);const[newGroupName,setNGN]=useState('');
-    const[newGroupMembers,setNGM]=useState([]);const[saving,setSaving]=useState(false);
+    const[showCreate,setShowCreate]=useState(false);const[newName,setNN]=useState('');
+    const[newMembers,setNM]=useState([]);const[saving,setSaving]=useState(false);
 
-    const loadGroups=useCallback(()=>{
+    const load=useCallback(()=>{
         if(!fbOk){setLd(false);return;}
         db.collection('playerGroups').where('ownerUid','==',myUid).orderBy('createdAt','desc').get()
-            .then(snap=>{const g=snap.docs.map(d=>({id:d.id,...d.data()}));setGroups(g);if(onGroupsChange)onGroupsChange(g);setLd(false);})
+            .then(snap=>{setGroups(snap.docs.map(d=>({id:d.id,...d.data()})));setLd(false);})
             .catch(()=>setLd(false));
     },[myUid]);
-    useEffect(()=>loadGroups(),[]);
+    useEffect(()=>load(),[]);
 
-    const createGroup=async()=>{
-        if(!newGroupName.trim()){alert('Enter a group name.');return;}
-        if(newGroupMembers.length===0){alert('Select at least one player.');return;}
+    const create=async()=>{
+        if(!newName.trim()){alert('Enter a group name.');return;}
+        if(newMembers.length===0){alert('Select at least one player.');return;}
         setSaving(true);
         try{
-            await db.collection('playerGroups').add({ownerUid:myUid,name:newGroupName.trim(),members:newGroupMembers,createdAt:Date.now()});
-            setNGN('');setNGM([]);setShowCreate(false);loadGroups();
+            await db.collection('playerGroups').add({ownerUid:myUid,name:newName.trim(),members:newMembers,createdAt:Date.now()});
+            setNN('');setNM([]);setShowCreate(false);load();
         }catch(e){alert('Failed: '+e.message);}
         setSaving(false);
     };
-
-    const deleteGroup=async(id)=>{
+    const del=async id=>{
         if(!confirm('Delete this group?'))return;
-        try{await db.collection('playerGroups').doc(id).delete();loadGroups();}catch(e){alert(e.message);}
+        try{await db.collection('playerGroups').doc(id).delete();load();}catch(e){alert(e.message);}
     };
 
-    if(showCreate){return(<div>
+    if(showCreate)return(<div>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
-            <div style={{fontSize:13,fontWeight:800,color:'#0f172a'}}>Create New Group</div>
+            <div style={{fontSize:13,fontWeight:800,color:'#0f172a'}}>New Group</div>
             <button onClick={()=>setShowCreate(false)} style={{background:'#f1f5f9',border:'none',borderRadius:7,padding:'4px 10px',fontSize:12,cursor:'pointer',color:'#64748b'}}>Cancel</button>
         </div>
-        <input className="fi" style={{marginBottom:10,fontSize:13}} value={newGroupName} onChange={e=>setNGN(e.target.value)} placeholder="Group name (e.g. Tuesday Crew)" maxLength={50}/>
-        <PlayerPicker myUid={myUid} selected={newGroupMembers} onSelect={setNGM} subtitle="Select members to add to this group."/>
-        <button className="btn-g" onClick={createGroup} disabled={saving} style={{width:'100%',padding:'10px',fontSize:14,marginTop:10,opacity:saving?.6:1}}>{saving?'Saving…':'✅ Create Group'}</button>
-    </div>);}
+        <input className="fi" style={{marginBottom:10,fontSize:13}} value={newName} onChange={e=>setNN(e.target.value)} placeholder="Group name (e.g. Tuesday Crew)" maxLength={50}/>
+        <PlayerPicker myUid={myUid} selected={newMembers} onSelect={setNM} subtitle="Select players to add to this group."/>
+        <button className="btn-g" onClick={create} disabled={saving} style={{width:'100%',padding:'10px',fontSize:13,marginTop:10,opacity:saving?.6:1}}>{saving?'Saving...':'Create Group'}</button>
+    </div>);
 
     return(<div>
-        {ld?<div style={{fontSize:12,color:'#94a3b8',padding:'8px 0'}}>Loading groups…</div>
+        {ld?<div style={{fontSize:12,color:'#94a3b8',padding:'6px 0'}}>Loading groups...</div>
         :groups.length===0?<div style={{fontSize:12,color:'#94a3b8',marginBottom:8}}>No groups yet.</div>
-        :groups.map(g=>(
-            <div key={g.id} onClick={()=>onSelectGroup(selectedGroupId===g.id?null:g)} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 12px',borderRadius:10,border:`2px solid ${selectedGroupId===g.id?'#059669':'#e2e8f0'}`,background:selectedGroupId===g.id?'#ecfdf5':'white',cursor:'pointer',marginBottom:6,transition:'all .15s'}}>
-                <div style={{fontSize:20}}>️</div>
-                <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:700,color:'#0f172a'}}>{g.name}</div>
-                    <div style={{fontSize:11,color:'#64748b'}}>{g.members?.length||0} member{g.members?.length!==1?'s':''}</div>
-                </div>
-                {selectedGroupId===g.id&&<span style={{color:'#059669',fontSize:16}}>✓</span>}
-                <button onClick={e=>{e.stopPropagation();deleteGroup(g.id);}} style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:6,padding:'3px 8px',fontSize:11,color:'#dc2626',cursor:'pointer',fontFamily:'Outfit',fontWeight:600}}>Delete</button>
-            </div>
-        ))}
+        :groups.map(g=>(<div key={g.id} onClick={()=>onSelectGroup(selectedGroupId===g.id?null:g)} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 12px',borderRadius:10,border:'2px solid '+(selectedGroupId===g.id?'#059669':'#e2e8f0'),background:selectedGroupId===g.id?'#ecfdf5':'white',cursor:'pointer',marginBottom:6,transition:'all .15s'}}>
+            <span style={{fontSize:18}}>&#127991;</span>
+            <div style={{flex:1,minWidth:0}}><div style={{fontSize:13,fontWeight:700,color:'#0f172a'}}>{g.name}</div><div style={{fontSize:11,color:'#64748b'}}>{g.members?.length||0} members</div></div>
+            {selectedGroupId===g.id&&<span style={{color:'#059669',fontSize:15}}>{'\u2713'}</span>}
+            <button onClick={e=>{e.stopPropagation();del(g.id);}} style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:6,padding:'3px 8px',fontSize:11,color:'#dc2626',cursor:'pointer',fontFamily:'Outfit',fontWeight:600}}>Delete</button>
+        </div>))}
         <button onClick={()=>setShowCreate(true)} style={{width:'100%',padding:'9px',border:'2px dashed #e2e8f0',borderRadius:10,background:'white',fontSize:13,fontWeight:600,color:'#059669',cursor:'pointer',fontFamily:'Outfit',marginTop:4}}>+ Create New Group</button>
     </div>);
 }
@@ -404,17 +404,38 @@ function PostForm({profile,onClose,onPosted,editData,uLat,uLng}){
     const[courtName,setCourt]=useState(editData?.courtName||'');
     const[message,setMsg]=useState(editData?.message||'');
     const[partnerGender,setPG]=useState(editData?.partnerGender||'');
-    const[shareMode,setShare]=useState(editData?.shareMode||'public');
     // shareMode: 'public' | 'connections' | 'players' | 'group'
-    const[sharePlayers,setSharePlayers]=useState(editData?.sharePlayerIds?.map(uid=>({uid,name:'',photoURL:null,skill:''}))||[]);
-    const[shareGroup,setShareGroup]=useState(null);
+    const[shareMode,setShare]=useState(editData?.shareMode||'public');
+    const[sharePlayers,setSP]=useState([]);  // for 'players' mode
+    const[shareGroup,setSG]=useState(null);  // for 'group' mode
     const[saving,setSaving]=useState(false);
     const togglePT=t=>setPT(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t]);
     const today=new Date().toISOString().split('T')[0];
+
+    const SHARE_MODES=[
+        {id:'public',icon:'&#127757;',label:'Everyone'},
+        {id:'connections',icon:'&#128101;',label:'Connections'},
+        {id:'players',icon:'&#128100;',label:'Select Players'},
+        {id:'group',icon:'&#127991;',label:'My Groups'},
+    ];
+    const shareModeDesc={
+        public:'Visible to all PickleConnect players.',
+        connections:"Only shown to people you've chatted with before.",
+        players:sharePlayers.length>0?`Only shown to ${sharePlayers.length} selected player${sharePlayers.length!==1?'s':''}.`:'Choose specific players below.',
+        group:shareGroup?`Members of "${shareGroup.name}" only.`:'Select or create a group below.',
+    };
+
     const save=async()=>{
         if(playTypes.length===0){alert('Select at least one play type.');return;}
         if(availability==='Custom Schedule'&&weekSchedule.length===0){alert('Select at least one day for your schedule.');return;}
+        if(shareMode==='players'&&sharePlayers.length===0){alert('Select at least one player to share with.');return;}
+        if(shareMode==='group'&&!shareGroup){alert('Select a group to share with.');return;}
         setSaving(true);
+
+        const sharePlayerIds=
+            shareMode==='players'?sharePlayers.map(p=>p.uid):
+            shareMode==='group'?(shareGroup.members||[]).map(m=>m.uid):[];
+
         const data={
             uid:profile.uid,name:profile.name,skill:profile.skill,city:profile.city||null,
             age:profile.age||null,gender:profile.gender||null,duprId:profile.duprId||null,
@@ -424,110 +445,91 @@ function PostForm({profile,onClose,onPosted,editData,uLat,uLng}){
             weekSchedule:availability==='Custom Schedule'?weekSchedule:[],
             courtName:courtName.trim()||null,message:message.trim()||null,
             partnerGender:purpose==='partner'?(partnerGender||null):null,
-            shareMode,
-            sharePlayerIds:shareMode==='players'?sharePlayers.map(p=>p.uid):shareMode==='group'?(shareGroup?.members||[]).map(m=>m.uid):[],
-            shareGroupName:shareMode==='group'?shareGroup?.name||null:null,
+            shareMode,sharePlayerIds,
+            shareGroupName:shareMode==='group'?(shareGroup?.name||null):null,
             lat:uLat||null,lng:uLng||null,timestamp:Date.now(),status:'active'
         };
-        // Strip undefined values
-        const cleanData=Object.fromEntries(Object.entries(data).filter(([,v])=>v!==undefined));
         try{
-            if(editData?.id){await db.collection('findPlayers').doc(editData.id).update(cleanData);}
-            else{await db.collection('findPlayers').add(cleanData);}
+            if(editData?.id){await db.collection('findPlayers').doc(editData.id).update(sanitize(data));}
+            else{await db.collection('findPlayers').add(sanitize(data));}
             onPosted();
         }catch(e){alert('Failed: '+e.message);}
         setSaving(false);
     };
+
     return(<div className="mo" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
         <div className="ms"><div className="mh"/>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-                <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{editData?'✏️ EDIT POST':' POST AVAILABILITY'}</div>
-                <button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:30,height:30,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+                <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{editData?'EDIT POST':'POST AVAILABILITY'}</div>
+                <button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:30,height:30,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>X</button>
             </div>
             <div style={{fontSize:13,color:'#64748b',marginBottom:14}}>Let others know you're available. You can post multiple times.</div>
 
-            {/* Player info */}
             <div style={{display:'flex',alignItems:'center',gap:10,padding:10,background:'#f8fafc',borderRadius:10,marginBottom:14}}>
                 {profile.photoURL?<img src={profile.photoURL} style={{width:32,height:32,borderRadius:'50%'}} referrerPolicy="no-referrer"/>:<div className="av-sm" style={{width:32,height:32,fontSize:13}}>{profile.name[0]}</div>}
-                <div><div style={{fontSize:13,fontWeight:700}}>{profile.name}</div><div style={{fontSize:11,color:'#64748b'}}>{profile.skill}{profile.gender?` · ${profile.gender}`:''}{profile.city?` · ${profile.city}`:''}</div></div>
+                <div><div style={{fontSize:13,fontWeight:700}}>{profile.name}</div><div style={{fontSize:11,color:'#64748b'}}>{profile.skill}{profile.gender?' \u00b7 '+profile.gender:''}{profile.city?' \u00b7 '+profile.city:''}</div></div>
             </div>
 
-            {/* Purpose */}
             <div className="fg"><div className="fl">What are you looking for? *</div>
-                <div className="og">{PURPOSES.map(p=><button key={p.id} className={`ob ${purpose===p.id?'s':''}`} onClick={()=>setPurpose(p.id)} style={{fontSize:12}}>{p.emoji} {p.label}</button>)}</div>
+                <div className="og">{PURPOSES.map(p=><button key={p.id} className={'ob'+(purpose===p.id?' s':'')} onClick={()=>setPurpose(p.id)} style={{fontSize:12}}>{p.emoji} {p.label}</button>)}</div>
             </div>
 
-            {/* Partner gender preference */}
             {purpose==='partner'&&<div className="fg"><div className="fl">Partner Gender Preference</div>
                 <div className="og">
-                    <button className={`ob ${partnerGender===''?'s':''}`} onClick={()=>setPG('')} style={{fontSize:12}}> Any</button>
-                    {['Male','Female','Non-binary'].map(g=><button key={g} className={`ob ${partnerGender===g?'s':''}`} onClick={()=>setPG(partnerGender===g?'':g)} style={{fontSize:12}}>{g==='Male'?'':g==='Female'?'':''} {g}</button>)}
+                    <button className={'ob'+(partnerGender===''?' s':'')} onClick={()=>setPG('')} style={{fontSize:12}}>Any</button>
+                    {['Male','Female','Non-binary'].map(g=><button key={g} className={'ob'+(partnerGender===g?' s':'')} onClick={()=>setPG(partnerGender===g?'':g)} style={{fontSize:12}}>{g==='Male'?'M':g==='Female'?'F':'NB'} {g}</button>)}
                 </div>
             </div>}
 
-            {/* Play type */}
             <div className="fg"><div className="fl">Play Type *</div>
-                <div className="og">{PTYPES.map(t=><button key={t} className={`ob ${playTypes.includes(t)?'s':''}`} onClick={()=>togglePT(t)} style={{fontSize:12}}>{PT_E[t]} {t}</button>)}</div>
+                <div className="og">{PTYPES.map(t=><button key={t} className={'ob'+(playTypes.includes(t)?' s':'')} onClick={()=>togglePT(t)} style={{fontSize:12}}>{PT_E[t]} {t}</button>)}</div>
             </div>
 
-            {/* Availability */}
             <div className="fg"><div className="fl">When</div>
                 <div className="og" style={{marginBottom:8}}>
-                    {['Now','Today','This Week','Custom Schedule'].map(a=><button key={a} className={`ob ${availability===a?'s':''}`} onClick={()=>setAv(a)} style={{fontSize:12}}>{AV_ICO[a]} {a}</button>)}
+                    {['Now','Today','This Week','Custom Schedule'].map(a=><button key={a} className={'ob'+(availability===a?' s':'')} onClick={()=>setAv(a)} style={{fontSize:12}}>{AV_ICO[a]} {a}</button>)}
                 </div>
-
-                {/* Today: date + time */}
                 {availability==='Today'&&<div style={{display:'flex',gap:8,marginTop:6}}>
                     <input type="date" className="fi" value={availDate} onChange={e=>setAD(e.target.value)} min={today} style={{flex:1,fontSize:13}}/>
                     <input type="time" className="fi" value={availTime} onChange={e=>setAT(e.target.value)} style={{flex:1,fontSize:13}}/>
                 </div>}
-
-                {/* This week: date range */}
-                {availability==='This Week'&&<div style={{display:'flex',gap:8,marginTop:6}}>
-                    <div style={{flex:1}}><div style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',marginBottom:3}}>Start Date</div><input type="date" className="fi" value={availDate} onChange={e=>setAD(e.target.value)} min={today} style={{fontSize:13}}/></div>
+                {availability==='This Week'&&<div style={{marginTop:6}}>
+                    <div style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',marginBottom:3}}>Start Date</div>
+                    <input type="date" className="fi" value={availDate} onChange={e=>setAD(e.target.value)} min={today} style={{fontSize:13}}/>
                 </div>}
-
-                {/* Custom schedule: day+time picker */}
                 {availability==='Custom Schedule'&&<div style={{marginTop:8}}>
-                    <div style={{fontSize:11,color:'#64748b',marginBottom:8}}>Tap days you're available each week. Set your preferred time for each.</div>
+                    <div style={{fontSize:11,color:'#64748b',marginBottom:8}}>Tap days you're available each week. Set preferred times.</div>
                     <WeekSchedulePicker schedule={weekSchedule} onChange={setWS}/>
                 </div>}
             </div>
 
-            {/* Court */}
             <div className="fg"><div className="fl">Court (optional)</div>
                 <input className="fi" value={courtName} onChange={e=>setCourt(e.target.value)} placeholder="e.g. Heritage Park Courts" maxLength={100}/>
             </div>
 
-            {/* Message */}
             <div className="fg"><div className="fl">Message</div>
-                <textarea className="fi" value={message} onChange={e=>setMsg(e.target.value)} placeholder={purpose==='partner'?'Looking for 3.5+ doubles partner…':'Available for games, message me!'} maxLength={300} rows={2}/>
+                <textarea className="fi" value={message} onChange={e=>setMsg(e.target.value)} placeholder={purpose==='partner'?'Looking for 3.5+ doubles partner...':'Available for games, message me!'} maxLength={300} rows={2}/>
             </div>
 
-            {/* ── Share Availability ── */}
+            {/* Share Availability To */}
             <div className="fg"><div className="fl">Share Availability To</div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:8}}>
-                    {[['public','🌍','Everyone'],['connections','👥','My Connections'],['players','👤','Select Players'],['group','🏷️','My Groups']].map(([mode,icon,label])=>(
-                        <button key={mode} onClick={()=>setShare(mode)} style={{padding:'9px 10px',borderRadius:10,border:`2px solid ${shareMode===mode?'#059669':'#e2e8f0'}`,background:shareMode===mode?'#ecfdf5':'white',fontFamily:'Outfit',fontSize:12,fontWeight:700,cursor:'pointer',color:shareMode===mode?'#059669':'#475569',display:'flex',alignItems:'center',gap:6}}>
-                            <span>{icon}</span>{label}
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7,marginBottom:8}}>
+                    {SHARE_MODES.map(m=>(
+                        <button key={m.id} onClick={()=>setShare(m.id)} style={{padding:'10px',borderRadius:10,border:'2px solid '+(shareMode===m.id?'#059669':'#e2e8f0'),background:shareMode===m.id?'#ecfdf5':'white',fontFamily:'Outfit',fontSize:12,fontWeight:700,cursor:'pointer',color:shareMode===m.id?'#059669':'#475569',display:'flex',alignItems:'center',gap:6,justifyContent:'center'}}>
+                            <span dangerouslySetInnerHTML={{__html:m.icon}}/>{m.label}
                         </button>
                     ))}
                 </div>
-                <div style={{fontSize:11,color:'#94a3b8',marginBottom:shareMode==='players'||shareMode==='group'?10:0}}>
-                    {shareMode==='public'&&'Visible to all PickleConnect players.'}
-                    {shareMode==='connections'&&"Only shown to people you've messaged before."}
-                    {shareMode==='players'&&`Shown only to ${sharePlayers.length} selected player${sharePlayers.length!==1?'s':''}.`}
-                    {shareMode==='group'&&(shareGroup?`Shown only to members of "${shareGroup.name}".`:'Select a group below.')}
-                </div>
+                <div style={{fontSize:11,color:'#64748b',marginBottom:shareMode==='players'||shareMode==='group'?10:0}}>{shareModeDesc[shareMode]}</div>
                 {shareMode==='players'&&<div style={{background:'#f8fafc',borderRadius:10,padding:12}}>
-                    <PlayerPicker myUid={profile.uid} selected={sharePlayers} onSelect={setSharePlayers} subtitle="Choose specific players who can see this post."/>
+                    <PlayerPicker myUid={profile.uid} selected={sharePlayers} onSelect={setSP} subtitle="Only selected players will see this post."/>
                 </div>}
                 {shareMode==='group'&&<div style={{background:'#f8fafc',borderRadius:10,padding:12}}>
-                    <GroupManager myUid={profile.uid} selectedGroupId={shareGroup?.id||null} onSelectGroup={g=>setShareGroup(g)} onGroupsChange={()=>{}}/>
+                    <GroupManager myUid={profile.uid} selectedGroupId={shareGroup?.id||null} onSelectGroup={g=>setSG(g)}/>
                 </div>}
             </div>
 
-            <button className="btn-g" onClick={save} disabled={saving} style={{width:'100%',padding:'12px',fontSize:15,opacity:saving?.6:1}}>{saving?'Saving…':' Post'}</button>
+            <button className="btn-g" onClick={save} disabled={saving} style={{width:'100%',padding:'12px',fontSize:15,opacity:saving?.6:1}}>{saving?'Saving...':'Post Availability'}</button>
         </div>
     </div>);
 }
@@ -552,10 +554,10 @@ function ChatModal({player,myUid,myName,onClose}){
                 <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg></button>
                 <div className="av-sm">{(player.name||'?')[0].toUpperCase()}</div>
                 <div style={{flex:1}}><div style={{fontWeight:700,fontSize:14}}>{player.name}</div><div style={{fontSize:11,color:'#64748b'}}>{player.skill}</div></div>
-                <div className="sb" style={{padding:'3px 7px',fontSize:10}}> Private</div>
+                <div className="sb" style={{padding:'3px 7px',fontSize:10}}>🔒 Private</div>
             </div>
             <div style={{flex:1,overflowY:'auto',padding:'12px 16px',display:'flex',flexDirection:'column',gap:3}}>
-                {msgs.length===0&&<div style={{textAlign:'center',padding:'30px',color:'#94a3b8'}}><div style={{fontSize:28,marginBottom:6}}></div><div style={{fontSize:13}}>Say hi to {player.name}!</div></div>}
+                {msgs.length===0&&<div style={{textAlign:'center',padding:'30px',color:'#94a3b8'}}><div style={{fontSize:28,marginBottom:6}}>💬</div><div style={{fontSize:13}}>Say hi to {player.name}!</div></div>}
                 {msgs.map(m=><div key={m.id} style={{display:'flex',flexDirection:'column',alignItems:m.senderUid===myUid?'flex-end':'flex-start'}}><div className={`cb ${m.senderUid===myUid?'me':'them'}`}>{m.text}<div className="ct">{timeAgo(m.timestamp)}</div></div></div>)}
                 <div ref={endRef}/>
             </div>
@@ -574,10 +576,10 @@ function Inbox({onClose,onOpen,myUid,players}){
     const go=c=>{const{ouid,nm}=info(c);const mp=players.find(p=>p.uid===ouid);onOpen(mp||{uid:ouid,name:nm,skill:'',photoURL:null});onClose();};
     return(<div className="mo" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
         <div className="ms" style={{minHeight:'40vh'}}><div className="mh"/>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}><div className="fd" style={{fontSize:20,fontWeight:800}}> MESSAGES</div><button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:30,height:30,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button></div>
-            <div className="sb" style={{marginBottom:14}}> All chats are private 1-on-1</div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}><div className="fd" style={{fontSize:20,fontWeight:800}}>💬 MESSAGES</div><button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:30,height:30,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button></div>
+            <div className="sb" style={{marginBottom:14}}>🔒 All chats are private 1-on-1</div>
             {ld?<div style={{textAlign:'center',padding:30,color:'#94a3b8'}}>Loading…</div>
-            :cs.length===0?<div style={{textAlign:'center',padding:30,color:'#94a3b8'}}><div style={{fontSize:36,marginBottom:8}}></div><div style={{fontWeight:700,color:'#374151'}}>No messages yet</div></div>
+            :cs.length===0?<div style={{textAlign:'center',padding:30,color:'#94a3b8'}}><div style={{fontSize:36,marginBottom:8}}>💬</div><div style={{fontWeight:700,color:'#374151'}}>No messages yet</div></div>
             :cs.map(c=>{const{nm,ur}=info(c);return(<div key={c.id} className={`ix ${ur?'ur':''}`} onClick={()=>go(c)}><div className="av-sm">{nm[0].toUpperCase()}</div><div style={{flex:1,minWidth:0}}><div style={{display:'flex',alignItems:'center',gap:6}}><span style={{fontWeight:ur?800:600,fontSize:14}}>{nm}</span>{ur&&<div style={{width:7,height:7,borderRadius:'50%',background:'#059669'}}/>}</div><div style={{fontSize:12,color:ur?'#334155':'#94a3b8',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{c.lastMessageBy===myUid?'You: ':''}{c.lastMessage}</div></div><div style={{fontSize:10,color:'#94a3b8'}}>{timeAgo(c.lastTimestamp)}</div></div>);})}
         </div></div>);
 }
@@ -598,12 +600,60 @@ function WeekDisplay({schedule}){
 }
 
 // ── Player Card ──────────────────────────────────────────────────────
+function PostRow({p,mine,onEdit,onRemove}){
+    const pu=PURPOSES.find(x=>x.id===p.purpose);
+    const rows=[
+        {label:'Looking For', value:pu?`${pu.emoji} ${pu.label}`:p.purpose},
+        {label:'Availability', value:`${AV_ICO[p.availability]||''} ${p.availability}${p.availDate?` — ${p.availDate}${p.availTime?` @ ${fmtTime(p.availTime)}`:''}`:''}`},
+        ...(p.playTypes?.length>0?[{label:'Play Type', value:p.playTypes.map(t=>`${PT_E[t]||''} ${t}`).join('  ·  ')}]:[]),
+        ...(p.partnerGender?[{label:'Seeking', value:p.partnerGender}]:[]),
+        ...(p.courtName?[{label:'Court', value:`📍 ${p.courtName}`}]:[]),
+        ...(p.shareMode&&p.shareMode!=='public'?[{label:'Visible To', value:p.shareMode==='connections'?'👥 Connections':p.shareMode==='group'?`🏷️ ${p.shareGroupName||'Group'}`:p.shareMode==='players'?`👤 Select Players`:'Everyone'}]:[]),
+    ];
+    return(
+        <div style={{borderRadius:10,border:'1px solid #e2e8f0',overflow:'hidden',marginBottom:8,background:'white'}}>
+            {/* Header bar */}
+            <div style={{background:p.availability==='Now'?'#ecfdf5':p.availability==='Today'?'#fffbeb':'#f8fafc',padding:'7px 12px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #f1f5f9'}}>
+                <div style={{display:'flex',alignItems:'center',gap:6}}>
+                    <span className={`avail-pill ${AV_CLS[p.availability]||'avail-flex'}`} style={{fontSize:11}}>{AV_ICO[p.availability]} {p.availability}</span>
+                    <span className={`tag ${PU_TAG[p.purpose]||'t-green'}`} style={{fontSize:10}}>{pu?.emoji} {pu?.label}</span>
+                </div>
+                <span style={{fontSize:10,color:'#94a3b8'}}>{timeAgo(p.timestamp)} ago</span>
+            </div>
+            {/* Table body */}
+            <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+                <tbody>
+                    {rows.map((r,i)=>(
+                        <tr key={i} style={{borderBottom:i<rows.length-1?'1px solid #f8fafc':'none'}}>
+                            <td style={{padding:'6px 12px',fontWeight:700,color:'#64748b',textTransform:'uppercase',fontSize:10,letterSpacing:'0.3px',whiteSpace:'nowrap',width:'33%',verticalAlign:'top',paddingTop:8}}>{r.label}</td>
+                            <td style={{padding:'6px 12px 6px 0',color:'#1e293b',fontWeight:500,verticalAlign:'top',paddingTop:8}}>{r.value}</td>
+                        </tr>
+                    ))}
+                    {p.message&&(
+                        <tr><td colSpan={2} style={{padding:'6px 12px 8px',fontStyle:'italic',color:'#475569',fontSize:12,borderTop:'1px solid #f8fafc'}}>"{p.message}"</td></tr>
+                    )}
+                </tbody>
+            </table>
+            {/* Week schedule if set */}
+            {p.availability==='Custom Schedule'&&p.weekSchedule?.length>0&&<div style={{padding:'0 12px 10px'}}><WeekDisplay schedule={p.weekSchedule}/></div>}
+            {/* Edit/remove actions for own posts */}
+            {mine&&<div style={{display:'flex',gap:6,padding:'6px 10px',borderTop:'1px solid #f1f5f9',background:'#fafafa'}}>
+                <button className="btn-out" onClick={()=>onEdit(p)} style={{padding:'4px 10px',fontSize:11,borderWidth:1.5}}>Edit</button>
+                <button onClick={()=>onRemove(p.id)} style={{padding:'4px 10px',fontSize:11,border:'1.5px solid #fca5a5',background:'#fef2f2',color:'#dc2626',borderRadius:7,fontWeight:600,fontFamily:'Outfit',cursor:'pointer'}}>Remove</button>
+            </div>}
+        </div>
+    );
+}
+
 function PlayerCard({g,myUid,uLat,uLng,onChat,onEdit,onRemove,expanded,onToggle}){
     const mine=g.uid===myUid;
     const dist=(uLat&&g.lat)?haversine(uLat,uLng,g.lat,g.lng):null;
     const duprLink=g.duprId?`https://dashboard.dupr.com/dashboard/player/${g.duprId}`:null;
+    // Summary line for collapsed view
+    const latestPost=g.posts[0];
+    const pu=latestPost?PURPOSES.find(p=>p.id===latestPost.purpose):null;
     return(
-        <div className={`pc ${expanded?'expanded':''}`} onClick={onToggle} style={mine?{borderLeftColor:'#059669'}:{}}>
+        <div className={`pc ${expanded?'expanded':''}`} onClick={onToggle} style={mine?{borderLeftColor:'#059669',borderLeftWidth:4}:{}}>
             <div className="pc-main">
                 <div className="pc-avatar">{g.photoURL?<img src={g.photoURL} referrerPolicy="no-referrer"/>:<div className="pc-avatar-letter">{(g.name||'?')[0].toUpperCase()}</div>}</div>
                 <div className="pc-info">
@@ -616,8 +666,12 @@ function PlayerCard({g,myUid,uLat,uLng,onChat,onEdit,onRemove,expanded,onToggle}
                     <div className="pc-meta">
                         {g.gender&&<span>{g.gender}</span>}
                         {g.age&&<><span>·</span><span>{g.age}</span></>}
-                        {g.posts.length===1&&<span className={`tag ${PU_TAG[g.posts[0].purpose]||'t-green'}`}>{PURPOSES.find(p=>p.id===g.posts[0].purpose)?.emoji} {PURPOSES.find(p=>p.id===g.posts[0].purpose)?.label}</span>}
-                        {g.posts[0]?.shareMode==='connections'&&<span className="priv-pill priv-conn"> Connections</span>}
+                        {/* Collapsed summary: show purpose + availability */}
+                        {latestPost&&!expanded&&<>
+                            <span>·</span>
+                            <span className={`tag ${PU_TAG[latestPost.purpose]||'t-green'}`} style={{fontSize:10}}>{pu?.emoji} {pu?.label}</span>
+                            <span className={`avail-pill ${AV_CLS[latestPost.availability]||'avail-flex'}`} style={{fontSize:10}}>{AV_ICO[latestPost.availability]} {latestPost.availability}</span>
+                        </>}
                     </div>
                 </div>
                 <div className="pc-rating">
@@ -628,40 +682,22 @@ function PlayerCard({g,myUid,uLat,uLng,onChat,onEdit,onRemove,expanded,onToggle}
 
             {expanded&&(
                 <div className="pc-expand" onClick={e=>e.stopPropagation()}>
-                    <div style={{paddingTop:10}}>
-                        {g.posts.map(p=>{
-                            const pu=PURPOSES.find(x=>x.id===p.purpose);
-                            return(<div key={p.id} style={{background:'#f8fafc',borderRadius:10,padding:'10px 12px',marginBottom:8}}>
-                                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6,flexWrap:'wrap'}}>
-                                    <span className={`tag ${PU_TAG[p.purpose]||'t-green'}`}>{pu?.emoji} {pu?.label}</span>
-                                    <span className={`avail-pill ${AV_CLS[p.availability]||'avail-flex'}`}>{AV_ICO[p.availability]} {p.availability}</span>
-                                    {p.partnerGender&&<span className="tag t-pink">Seeking {p.partnerGender}</span>}
-                                    {p.shareMode==='connections'&&<span className="priv-pill priv-conn"> Connections</span>}
-                                    {p.shareMode==='public'&&<span className="priv-pill priv-pub"> Public</span>}
-                                </div>
-                                {/* Show time for Today */}
-                                {p.availDate&&<div style={{fontSize:11,color:'#64748b',marginBottom:4}}> {p.availDate}{p.availTime?` at ${fmtTime(p.availTime)}`:''}</div>}
-                                {/* Week schedule */}
-                                {p.availability==='Custom Schedule'&&p.weekSchedule?.length>0&&<WeekDisplay schedule={p.weekSchedule}/>}
-                                {p.playTypes?.length>0&&<div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>{p.playTypes.map(t=><span key={t} className="tag t-purple" style={{fontSize:9}}>{PT_E[t]} {t}</span>)}</div>}
-                                {p.courtName&&<div style={{fontSize:11,color:'#64748b'}}> {p.courtName}</div>}
-                                {p.message&&<div style={{fontSize:11,color:'#334155',marginTop:4,fontStyle:'italic'}}>"{p.message}"</div>}
-                                {mine&&<div style={{display:'flex',gap:6,marginTop:8}}>
-                                    <button className="btn-out" onClick={()=>onEdit(p)} style={{padding:'4px 10px',fontSize:11,borderWidth:1.5}}>Edit</button>
-                                    <button onClick={()=>onRemove(p.id)} style={{padding:'4px 10px',fontSize:11,border:'1.5px solid #fca5a5',background:'#fef2f2',color:'#dc2626',borderRadius:7,fontWeight:600,fontFamily:'Outfit',cursor:'pointer'}}>Remove</button>
-                                </div>}
-                            </div>);
-                        })}
+                    {/* Player profile summary row */}
+                    <div style={{display:'flex',gap:16,padding:'8px 0 12px',borderBottom:'1px solid #f1f5f9',marginBottom:10,flexWrap:'wrap'}}>
+                        {g.age&&<div style={{fontSize:11}}><span style={{color:'#94a3b8',fontWeight:700,textTransform:'uppercase',fontSize:10}}>Age </span><span style={{color:'#1e293b',fontWeight:600}}>{g.age}</span></div>}
+                        {g.gender&&<div style={{fontSize:11}}><span style={{color:'#94a3b8',fontWeight:700,textTransform:'uppercase',fontSize:10}}>Gender </span><span style={{color:'#1e293b',fontWeight:600}}>{g.gender}</span></div>}
+                        {g.city&&<div style={{fontSize:11}}><span style={{color:'#94a3b8',fontWeight:700,textTransform:'uppercase',fontSize:10}}>City </span><span style={{color:'#1e293b',fontWeight:600}}>{g.city}</span></div>}
+                        {g.duprId&&<a href={duprLink} target="_blank" style={{fontSize:11,color:'#059669',fontWeight:700,textDecoration:'none'}}>DUPR: {g.duprId}</a>}
+                    </div>
 
-                        {/* Actions */}
-                        <div style={{display:'flex',gap:8,paddingTop:8,borderTop:'1px solid #f1f5f9',flexWrap:'wrap'}}>
-                            {!mine&&<button className="btn-g" onClick={()=>onChat(g)} style={{padding:'8px 16px',fontSize:13}}> Message</button>}
-                            {mine&&<button className="btn-g" onClick={()=>onEdit(null)} style={{padding:'8px 16px',fontSize:13}}>+ New Post</button>}
-                            {g.duprId&&<a href={duprLink} target="_blank" style={{fontSize:12,color:'#059669',fontWeight:600,textDecoration:'none',display:'inline-flex',alignItems:'center',gap:4,padding:'8px 10px',border:'1.5px solid #a7f3d0',borderRadius:10,background:'#f0fdf4',whiteSpace:'nowrap'}}>
-                                DUPR: {g.duprId}
-                            </a>}
-                        </div>
-                        <div style={{fontSize:10,color:'#94a3b8',marginTop:6}}>Last posted {timeAgo(g.posts[0]?.timestamp)} ago</div>
+                    {/* Post rows in tabular format */}
+                    {g.posts.length>1&&<div style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:6}}>{g.posts.length} Active Posts</div>}
+                    {g.posts.map(p=><PostRow key={p.id} p={p} mine={mine} onEdit={onEdit} onRemove={onRemove}/>)}
+
+                    {/* Action buttons */}
+                    <div style={{display:'flex',gap:8,paddingTop:4,flexWrap:'wrap'}}>
+                        {!mine&&<button className="btn-g" onClick={()=>onChat(g)} style={{padding:'9px 18px',fontSize:13}}>💬 Message</button>}
+                        {mine&&<button className="btn-g" onClick={()=>onEdit(null)} style={{padding:'9px 18px',fontSize:13}}>+ New Post</button>}
                     </div>
                 </div>
             )}
@@ -686,18 +722,18 @@ function App(){
     const clearF=()=>{setFS('');setFT('');setFG('');setFP('');setFD('');};
     const fCount=[fSkill,fType,fGender,fPurpose,fDist].filter(Boolean).length;
 
-    useEffect(()=>{const params=new URLSearchParams(window.location.search);if(params.get('inbox')==='1')setTimeout(()=>setShowInbox(true),250);window.__pcnOpenProfile=()=>setShowProfile(true);window.__pcnOpenInbox=()=>setShowInbox(true);return()=>{delete window.__pcnOpenProfile;delete window.__pcnOpenInbox;};},[]);
+    useEffect(()=>{window.__pcnOpenProfile=()=>setShowProfile(true);window.__pcnOpenInbox=()=>setShowInbox(true);if(new URLSearchParams(window.location.search).get('inbox')==='1'){setTimeout(()=>setShowInbox(true),250);}return()=>{delete window.__pcnOpenProfile;delete window.__pcnOpenInbox;};},[]);
 
     useEffect(()=>{if(!auth)return;auth.getRedirectResult().catch(()=>{});const u=auth.onAuthStateChanged(u=>{setUser(u||null);if(!u)setProfile(null);});return()=>u();},[]);
     useEffect(()=>{if(user===undefined||user===null)return;setProfile(undefined);if(!fbOk)return;const u=db.collection('profiles').doc(user.uid).onSnapshot(d=>{if(d.exists)setProfile({uid:user.uid,...d.data()});else setProfile(null);},()=>setProfile(null));return()=>u();},[user]);
     useEffect(()=>{if(user?.uid){cleanOldPosts(user.uid);};},[user]);
     useEffect(()=>{if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(p=>{setULat(p.coords.latitude);setULng(p.coords.longitude);},()=>{},{enableHighAccuracy:false,timeout:8000,maximumAge:300000});},[]);
-    useEffect(()=>{if(!fbOk){setLoading(false);return;}const c=Date.now()-7*24*60*60*1000;const u=db.collection('findPlayers').where('status','==','active').onSnapshot(s=>{setPosts(s.docs.map(d=>({id:d.id,...d.data()})));setLoading(false);},()=>setLoading(false));return()=>u();},[]);
+    useEffect(()=>{if(!fbOk){setLoading(false);return;}const u=db.collection('findPlayers').where('status','==','active').orderBy('timestamp','desc').onSnapshot(s=>{setPosts(s.docs.map(d=>({id:d.id,...d.data()})));setLoading(false);},()=>setLoading(false));return()=>u();},[]);
 
     const grouped=useMemo(()=>{
         let fp=[...posts];
         // Apply share mode filter (connections only visible to those who have chatted)
-        if(user){fp=fp.filter(p=>p.shareMode!=='connections'||p.uid===user.uid);}
+        if(user){fp=fp.filter(p=>{if(!p.shareMode||p.shareMode==='public')return true;if(p.uid===user.uid)return true;if(p.shareMode==='connections')return false;if(p.shareMode==='players'||p.shareMode==='group')return(p.sharePlayerIds||[]).includes(user.uid);return true;});}
         if(tab==='nearby'&&uLat)fp=fp.filter(p=>p.lat&&haversine(uLat,uLng,p.lat,p.lng)<=25);
         else if(tab==='now')fp=fp.filter(p=>p.availability==='Now'||p.availability==='Today');
         else if(tab==='partner')fp=fp.filter(p=>p.purpose==='partner');
@@ -730,7 +766,7 @@ function App(){
                 {/* Header row */}
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
                     <div className="page-title">Find Players</div>
-                    <button className="post-btn" onClick={()=>{setEditP(null);setShowPost(true);}}> Post</button>
+                    <button className="post-btn" onClick={()=>{setEditP(null);setShowPost(true);}}>📢 Post</button>
                 </div>
 
                 {/* Search + Filter */}
@@ -757,17 +793,17 @@ function App(){
 
                 {/* Tabs */}
                 <div style={{display:'flex',gap:0,marginBottom:12,background:'rgba(255,255,255,.1)',borderRadius:10,padding:3}}>
-                    {[['all',' All'],['now','⚡ Now'],['partner',' Partner'],['nearby',' Nearby']].map(([k,l])=><button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:'7px 2px',border:'none',borderRadius:8,fontFamily:'Outfit',fontSize:11,fontWeight:600,cursor:'pointer',background:tab===k?'white':'transparent',color:tab===k?'#059669':'rgba(255,255,255,.7)',boxShadow:tab===k?'0 1px 4px rgba(0,0,0,.1)':'none'}}>{l}</button>)}
+                    {[['all','🏓 All'],['now','⚡ Now'],['partner','🤝 Partner'],['nearby','📍 Nearby']].map(([k,l])=><button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:'7px 2px',border:'none',borderRadius:8,fontFamily:'Outfit',fontSize:11,fontWeight:600,cursor:'pointer',background:tab===k?'white':'transparent',color:tab===k?'#059669':'rgba(255,255,255,.7)',boxShadow:tab===k?'0 1px 4px rgba(0,0,0,.1)':'none'}}>{l}</button>)}
                 </div>
 
                 <div style={{fontSize:12,color:'rgba(255,255,255,.5)',marginBottom:10,paddingLeft:2}}>{grouped.length} player{grouped.length!==1?'s':''}</div>
 
                 {loading?[1,2,3].map(i=><Skel key={i}/>)
                 :grouped.length===0?(<div style={{textAlign:'center',padding:'40px 16px'}}>
-                    <div style={{fontSize:40,marginBottom:8}}></div>
+                    <div style={{fontSize:40,marginBottom:8}}>🏓</div>
                     <div style={{fontSize:16,fontWeight:700,color:'white',marginBottom:4}}>No players found</div>
                     <div style={{fontSize:13,color:'rgba(255,255,255,.6)',marginBottom:14}}>{search||fCount?'Try different filters':'Be the first!'}</div>
-                    {(search||fCount>0)?<button onClick={()=>{setSearch('');clearF();}} style={{background:'rgba(255,255,255,.15)',border:'none',borderRadius:10,padding:'8px 18px',color:'white',fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'Outfit'}}>Clear</button>:<button className="btn-g" onClick={()=>setShowPost(true)}> Post</button>}
+                    {(search||fCount>0)?<button onClick={()=>{setSearch('');clearF();}} style={{background:'rgba(255,255,255,.15)',border:'none',borderRadius:10,padding:'8px 18px',color:'white',fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'Outfit'}}>Clear</button>:<button className="btn-g" onClick={()=>setShowPost(true)}>📢 Post</button>}
                 </div>)
                 :grouped.map(g=><PlayerCard key={g.uid} g={g} myUid={user.uid} uLat={uLat} uLng={uLng} onChat={setChatP} onEdit={p=>{setEditP(p);setShowPost(true);}} onRemove={async id=>{if(confirm('Remove this post?'))try{await db.collection('findPlayers').doc(id).update({status:'removed'});}catch(e){alert(e.message);}}} expanded={expanded===g.uid} onToggle={()=>setExpanded(expanded===g.uid?null:g.uid)}/>)}
             </div>
