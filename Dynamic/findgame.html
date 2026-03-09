@@ -240,26 +240,20 @@ function InviteStep({game,profile,uLat,uLng,onInvitesSent,onSkip}){
 
     useEffect(()=>{
         if(!db)return;
-        // Single-field query avoids needing a composite Firestore index
-        db.collection('findPlayers').where('status','==','active').limit(100).get()
+        // Query ALL registered profiles so organizer can invite anyone
+        db.collection('profiles').get()
             .then(snap=>{
-                const raw=snap.docs.map(d=>({id:d.id,...d.data()}));
-                // Group by uid, dedupe
-                const byUid={};
-                raw.forEach(p=>{if(!byUid[p.uid]||p.timestamp>byUid[p.uid].timestamp)byUid[p.uid]=p;});
-                let arr=Object.values(byUid).filter(p=>p.uid!==profile.uid);
+                let arr=snap.docs.map(d=>({uid:d.id,...d.data()})).filter(p=>p.uid!==profile.uid&&p.name);
                 // Score by match quality
                 arr=arr.map(p=>{
                     let score=0;
                     if(skillInRange(p.skill,game.skillMin,game.skillMax))score+=30;
-                    if(p.playTypes?.includes(game.playType))score+=20;
                     if(uLat&&p.lat){const d=haversine(uLat,uLng,p.lat,p.lng);if(d<=parseInt(game.radiusMi||25))score+=20;p._dist=d;}
-                    if(p.availability==='Now'||p.availability==='Today')score+=10;
                     p._score=score;
                     return p;
                 });
                 arr.sort((a,b)=>b._score-a._score);
-                setPlayers(arr.slice(0,40));
+                setPlayers(arr);
                 setLoading(false);
             })
             .catch(()=>setLoading(false));

@@ -236,14 +236,14 @@
     // Try page-registered handlers first
     if (window.__pcnOpenMessages) { window.__pcnOpenMessages(); return; }
     if (window.__pcnOpenInbox) { window.__pcnOpenInbox(); return; }
-    // If already on findplayer.html, React may not have registered yet — retry after mount
-    if (filename === 'findplayer.html') {
+    // If on current page, React may not have registered yet — retry after mount
+    if (filename === 'findplayer.html' || filename === 'index.html') {
       setTimeout(() => { if (window.__pcnOpenInbox) window.__pcnOpenInbox(); }, 300);
       return;
     }
-    // Navigate to findplayer.html with ?inbox=1 so it auto-opens the inbox
+    // Navigate to index.html with ?inbox=1 so it auto-opens the inbox
     fade.classList.add('go');
-    setTimeout(() => { window.location.href = 'findplayer.html?inbox=1'; }, 160);
+    setTimeout(() => { window.location.href = 'index.html?inbox=1'; }, 160);
   });
 
   // ── Notifications icon button ──

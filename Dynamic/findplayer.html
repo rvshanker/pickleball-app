@@ -233,13 +233,13 @@ function AuthScreen(){
 }
 
 // ── Profile Setup ────────────────────────────────────────────────────
-function ProfileSetup({user,profile,onSave,onClose}){
+function ProfileSetup({user,profile,onSave,onClose,uLat,uLng}){
     const[name,setName]=useState(profile?.name||user?.displayName||'');
     const[skill,setSkill]=useState(profile?.skill||'');const[city,setCity]=useState(profile?.city||'');
     const[age,setAge]=useState(profile?.age||'');const[gender,setGender]=useState(profile?.gender||'');
     const[duprId,setDupr]=useState(profile?.duprId||'');const[saving,setSaving]=useState(false);
     const save=async()=>{if(!name.trim()){alert('Enter your name.');return;}if(!skill){alert('Select skill level.');return;}setSaving(true);
-        const data={name:name.trim(),skill,city:city.trim()||null,age:age||null,gender:gender||null,duprId:duprId.trim()||null,photoURL:user.photoURL||null,email:user.email||null,uid:user.uid,updatedAt:Date.now()};
+        const data={name:name.trim(),skill,city:city.trim()||null,age:age||null,gender:gender||null,duprId:duprId.trim()||null,photoURL:user.photoURL||null,email:user.email||null,uid:user.uid,lat:uLat||null,lng:uLng||null,updatedAt:Date.now()};
         try{await db.collection('profiles').doc(user.uid).set(data,{merge:true});onSave(data);}catch(e){alert('Failed: '+e.message);}setSaving(false);};
     return(<div className="mo" onClick={e=>{if(e.target===e.currentTarget&&onClose)onClose();}}>
         <div className="ms"><div className="mh"/>
@@ -301,12 +301,11 @@ function PlayerPicker({myUid,onSelect,selected,subtitle}){
     const[players,setPlayers]=useState([]);const[ld,setLd]=useState(true);const[search,setSearch]=useState('');
     useEffect(()=>{
         if(!fbOk){setLd(false);return;}
-        // Single-field query — no composite index needed
-        db.collection('findPlayers').where('status','==','active').limit(100).get()
+        // Query all registered profiles so user can share with anyone
+        db.collection('profiles').get()
             .then(snap=>{
-                const byUid={};
-                snap.docs.forEach(d=>{const p=d.data();if(p.uid!==myUid&&!byUid[p.uid])byUid[p.uid]=p;});
-                setPlayers(Object.values(byUid));setLd(false);
+                const arr=snap.docs.filter(d=>d.id!==myUid).map(d=>({uid:d.id,...d.data()})).filter(p=>p.name);
+                setPlayers(arr);setLd(false);
             }).catch(e=>{console.error('PlayerPicker query failed:',e);setLd(false);});
     },[]);
     const filtered=search.trim()
@@ -732,8 +731,15 @@ function App(){
 
     const grouped=useMemo(()=>{
         let fp=[...posts];
-        // Apply share mode filter (connections only visible to those who have chatted)
-        if(user){fp=fp.filter(p=>{if(!p.shareMode||p.shareMode==='public')return true;if(p.uid===user.uid)return true;if(p.shareMode==='connections')return false;if(p.shareMode==='players'||p.shareMode==='group')return(p.sharePlayerIds||[]).includes(user.uid);return true;});}
+        // Apply share mode filter — only public posts visible to everyone; private modes restricted
+        fp=fp.filter(p=>{
+            if(!p.shareMode||p.shareMode==='public')return true;
+            if(!user)return false; // Not logged in — only public visible
+            if(p.uid===user.uid)return true; // Own posts always visible
+            if(p.shareMode==='connections')return false; // TODO: check conversation history
+            if(p.shareMode==='players'||p.shareMode==='group')return(p.sharePlayerIds||[]).includes(user.uid);
+            return true;
+        });
         if(tab==='nearby'&&uLat)fp=fp.filter(p=>p.lat&&haversine(uLat,uLng,p.lat,p.lng)<=25);
         else if(tab==='now')fp=fp.filter(p=>p.availability==='Now'||p.availability==='Today');
         else if(tab==='partner')fp=fp.filter(p=>p.purpose==='partner');
@@ -758,7 +764,7 @@ function App(){
     const signOut=async()=>{if(confirm('Sign out?'))await auth.signOut();};
     if(user===undefined||profile===undefined)return(<div className="hero-bg"><div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',color:'white'}}>Loading…</div></div>);
     if(!user)return <AuthScreen/>;
-    if(profile===null)return(<div className="hero-bg"><ProfileSetup user={user} profile={null} onSave={p=>setProfile({uid:user.uid,...p})}/></div>);
+    if(profile===null)return(<div className="hero-bg"><ProfileSetup user={user} profile={null} onSave={p=>setProfile({uid:user.uid,...p})} uLat={uLat} uLng={uLng}/></div>);
 
     return(
         <div className="hero-bg">
@@ -812,7 +818,7 @@ function App(){
             {showPost&&<PostForm profile={profile} onClose={()=>{setShowPost(false);setEditP(null);}} onPosted={()=>{setShowPost(false);setEditP(null);}} editData={editP} uLat={uLat} uLng={uLng}/>}
             {chatP&&<ChatModal player={chatP} myUid={user.uid} myName={profile.name} onClose={()=>setChatP(null)}/>}
             {showInbox&&<Inbox onClose={()=>setShowInbox(false)} onOpen={setChatP} myUid={user.uid} players={posts}/>}
-            {showProfile&&<ProfileSetup user={user} profile={profile} onSave={p=>{setProfile({uid:user.uid,...p});setShowProfile(false);}} onClose={()=>setShowProfile(false)}/>}
+            {showProfile&&<ProfileSetup user={user} profile={profile} onSave={p=>{setProfile({uid:user.uid,...p});setShowProfile(false);}} onClose={()=>setShowProfile(false)} uLat={uLat} uLng={uLng}/>}
         </div>
     );
 }
