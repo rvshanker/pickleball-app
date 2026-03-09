@@ -199,7 +199,7 @@ function fmtTimeRange(s,e){if(!s)return '';if(!e)return fmtTime(s);const[sh,sm]=
 function timeAgo(t){if(!t)return '';const d=Date.now()-t,m=Math.floor(d/60000);if(m<1)return 'just now';if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
 function getDateParts(ds){if(!ds)return{dayStr:'?',numStr:'?',rel:'future'};const d=new Date(ds+'T12:00:00');const today=new Date();today.setHours(0,0,0,0);const diff=Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-today)/86400000);return{dayStr:DAYS_SHORT[d.getDay()],numStr:d.getDate(),rel:diff===0?'today':diff<=2?'soon':'future'};}
 function isExpired(g){const t=g.timeEnd||g.time;if(!g.date||!t)return false;return new Date(g.date+'T'+t)<new Date();}
-function slotsUsed(invitees){return(invitees||[]).filter(p=>p.status!=='declined').length;}
+function slotsUsed(players){return(players||[]).filter(p=>p.status!=='declined').length;}
 function ymd(date){return`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;}
 function fmtFullDate(ds){if(!ds)return '';const d=new Date(ds+'T12:00:00');return d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});}
 function skillInRange(playerSkill,minSkill,maxSkill){
@@ -272,7 +272,7 @@ function InviteStep({game,profile,uLat,uLng,onInvitesSent,onSkip}){
     },[players,search]);
 
     const toggle=p=>{
-        const alreadyInGame=game.invitees?.some(i=>i.uid===p.uid);
+        const alreadyInGame=game.players?.some(i=>i.uid===p.uid);
         if(alreadyInGame)return;
         setSelected(s=>s.includes(p.uid)?s.filter(x=>x!==p.uid):[...s,p.uid]);
     };
@@ -282,11 +282,11 @@ function InviteStep({game,profile,uLat,uLng,onInvitesSent,onSkip}){
         setSending(true);
         try{
             const batch=db.batch();
-            const newInvitees=[...(game.invitees||[])];
+            const newRoster=[...(game.players||[])];
             selected.forEach(uid=>{
                 const pl=players.find(p=>p.uid===uid);
                 if(!pl)return;
-                newInvitees.push({uid,name:pl.name,skill:pl.skill,photoURL:pl.photoURL||null,status:'invited',invitedAt:Date.now()});
+                newRoster.push({uid,name:pl.name,skill:pl.skill,photoURL:pl.photoURL||null,status:'invited',invitedAt:Date.now()});
                 // Write notification
                 const nRef=db.collection('notifications').doc();
                 batch.set(nRef,{
@@ -295,7 +295,7 @@ function InviteStep({game,profile,uLat,uLng,onInvitesSent,onSkip}){
                     ref:game.id,read:false,timestamp:Date.now()
                 });
             });
-            await db.collection('games').doc(game.id).update({invitees:newInvitees});
+            await db.collection('games').doc(game.id).update({players:newRoster,updatedAt:Date.now()});
             await batch.commit();
             if(window.__pcnPlaySound)window.__pcnPlaySound('notification');
             onInvitesSent();
@@ -315,13 +315,13 @@ function InviteStep({game,profile,uLat,uLng,onInvitesSent,onSkip}){
             <input style={{width:'100%',padding:'9px 12px 9px 36px',border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit',fontSize:14,outline:'none'}} value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search players…"/>
         </div>
 
-        {selected.length>0&&<div style={{background:'#ecfdf5',border:'1px solid #a7f3d0',borderRadius:10,padding:'8px 12px',marginBottom:10,fontSize:13,fontWeight:600,color:'#059669'}}>{selected.length} player{selected.length>1?'s':''} selected · {game.totalSlots-1-slotsUsed(game.invitees)} slot{game.totalSlots-1-slotsUsed(game.invitees)!==1?'s':''} remaining</div>}
+        {selected.length>0&&<div style={{background:'#ecfdf5',border:'1px solid #a7f3d0',borderRadius:10,padding:'8px 12px',marginBottom:10,fontSize:13,fontWeight:600,color:'#059669'}}>{selected.length} player{selected.length>1?'s':''} selected · {game.totalSlots-1-slotsUsed(game.players)} slot{game.totalSlots-1-slotsUsed(game.players)!==1?'s':''} remaining</div>}
 
         {loading?<div style={{textAlign:'center',padding:30,color:'#94a3b8'}}>Finding matched players…</div>
         :filtered.length===0?<div style={{textAlign:'center',padding:30,color:'#94a3b8'}}>No available players found</div>
         :filtered.map(p=>{
             const isSel=selected.includes(p.uid);
-            const alreadyIn=game.invitees?.some(i=>i.uid===p.uid);
+            const alreadyIn=game.players?.some(i=>i.uid===p.uid);
             return(<div key={p.uid} className={`inv-card${isSel?' sel':''}${alreadyIn?' sent':''}`} onClick={()=>toggle(p)}>
                 <div className="inv-av">{p.photoURL?<img src={p.photoURL} referrerPolicy="no-referrer"/>:(p.name||'?')[0].toUpperCase()}</div>
                 <div style={{flex:1,minWidth:0}}>
@@ -372,7 +372,7 @@ function CreateGameForm({profile,onClose,onCreated,uLat,uLng,editGame}){
             skillMin,skillMax,totalSlots,notes:notes.trim()||null,
             isPrivate,radiusMi:parseInt(radiusMi)||25,
             lat:uLat||null,lng:uLng||null,
-            invitees:[{uid:profile.uid,name:profile.name,skill:profile.skill,photoURL:profile.photoURL||null,status:'accepted',isOrganizer:true}],
+            players:[{uid:profile.uid,name:profile.name,skill:profile.skill,photoURL:profile.photoURL||null,status:'accepted',isOrganizer:true}],
             status:'active',createdAt:Date.now(),timestamp:Date.now()
         };
         try{
@@ -464,10 +464,10 @@ function CreateGameForm({profile,onClose,onCreated,uLat,uLng,editGame}){
 function GameCard({game,user,profile,onAction,expanded,onToggle}){
     const{dayStr,numStr,rel}=getDateParts(game.date);
     const expired=isExpired(game);
-    const used=slotsUsed(game.invitees);
+    const used=slotsUsed(game.players);
     const isFull=used>=game.totalSlots;
     const isOrg=game.organizerUid===user?.uid;
-    const myInvite=game.invitees?.find(i=>i.uid===user?.uid);
+    const myInvite=game.players?.find(i=>i.uid===user?.uid);
     const amIn=myInvite&&myInvite.status==='accepted';
     const amInvited=myInvite&&myInvite.status==='invited';
     const openSlots=Math.max(0,game.totalSlots-used);
@@ -510,7 +510,7 @@ function GameCard({game,user,profile,onAction,expanded,onToggle}){
             </div>
             <div className="roster" style={{gridTemplateColumns:`repeat(${Math.min(2,game.totalSlots)},1fr)`}}>
                 {Array.from({length:game.totalSlots}).map((_,i)=>{
-                    const inv=(game.invitees||[])[i];
+                    const inv=(game.players||[])[i];
                     if(inv){
                         return(<div key={i} className={`slot ${inv.uid===user?.uid?'mine':inv.status==='declined'?'declined-slot':inv.status==='invited'?'invited-slot':'filled'}`}>
                             <div className="slot-av">{inv.photoURL?<img src={inv.photoURL} referrerPolicy="no-referrer"/>:(inv.name||'?')[0].toUpperCase()}</div>
@@ -559,8 +559,8 @@ function CalendarView({games,user,onSelectDay,selectedDay,onToggle,expanded}){
         const[gy,gm,gd]=g.date.split('-').map(Number);
         if(gy===year&&gm-1===month){
             if(!dotMap[gd])dotMap[gd]=[];
-            const used=slotsUsed(g.invitees),full=used>=g.totalSlots;
-            const inv=g.invitees?.find(i=>i.uid===user?.uid);
+            const used=slotsUsed(g.players),full=used>=g.totalSlots;
+            const inv=g.players?.find(i=>i.uid===user?.uid);
             if(inv&&inv.status==='invited')dotMap[gd].push('invited');
             else if(full)dotMap[gd].push('full');
             else if(g.isPrivate)dotMap[gd].push('private');
@@ -636,21 +636,21 @@ function App(){
         if(type==='accept'||type==='decline'||type==='join'||type==='leave'){
             const ref=db.collection('games').doc(game.id);
             try{
-                let invitees=[...(game.invitees||[])];
+                let roster=[...(game.players||[])];
                 if(type==='join'){
-                    const used=slotsUsed(invitees);
+                    const used=slotsUsed(roster);
                     if(used>=game.totalSlots){showToast('Game is full.');return;}
-                    if(invitees.find(i=>i.uid===user.uid)){showToast('Already in this game.');return;}
-                    invitees.push({uid:user.uid,name:profile.name,skill:profile.skill,photoURL:profile.photoURL||null,status:'accepted',joinedAt:Date.now()});
+                    if(roster.find(i=>i.uid===user.uid)){showToast('Already in this game.');return;}
+                    roster.push({uid:user.uid,name:profile.name,skill:profile.skill,photoURL:profile.photoURL||null,status:'accepted',joinedAt:Date.now()});
                 }else if(type==='accept'){
-                    invitees=invitees.map(i=>i.uid===user.uid?{...i,status:'accepted'}:i);
+                    roster=roster.map(i=>i.uid===user.uid?{...i,status:'accepted'}:i);
                     if(window.__pcnPlaySound)window.__pcnPlaySound('notification');
                 }else if(type==='decline'){
-                    invitees=invitees.map(i=>i.uid===user.uid?{...i,status:'declined'}:i);
+                    roster=roster.map(i=>i.uid===user.uid?{...i,status:'declined'}:i);
                 }else if(type==='leave'){
-                    invitees=invitees.filter(i=>i.uid!==user.uid);
+                    roster=roster.filter(i=>i.uid!==user.uid);
                 }
-                await ref.update({invitees});
+                await ref.update({players:roster,updatedAt:Date.now()});
                 if(type==='accept')showToast('✅ You joined the game!');
                 if(type==='decline')showToast('Invite declined.');
                 if(type==='join')showToast('✅ You joined the game!');
@@ -667,9 +667,9 @@ function App(){
     // Filtered + sorted games
     const filtered=useMemo(()=>{
         let arr=[...games];
-        if(tab==='invited')return arr.filter(g=>g.invitees?.some(i=>i.uid===user?.uid&&i.status==='invited'));
+        if(tab==='invited')return arr.filter(g=>g.players?.some(i=>i.uid===user?.uid&&i.status==='invited'));
         // Hide private games (unless organizer or invited)
-        arr=arr.filter(g=>!g.isPrivate||g.organizerUid===user?.uid||g.invitees?.some(i=>i.uid===user?.uid));
+        arr=arr.filter(g=>!g.isPrivate||g.organizerUid===user?.uid||g.players?.some(i=>i.uid===user?.uid));
         if(selectedDay)arr=arr.filter(g=>g.date===selectedDay);
         if(search.trim()){const q=search.toLowerCase();arr=arr.filter(g=>[g.title,g.court,g.organizerName,g.playType].some(v=>(v||'').toLowerCase().includes(q)));}
         if(fType)arr=arr.filter(g=>g.playType===fType);
@@ -679,8 +679,8 @@ function App(){
         if(fDist&&uLat)arr=arr.filter(g=>g.lat&&haversine(uLat,uLng,g.lat,g.lng)<=parseInt(fDist));
         // Sort: invited first, then by date
         arr.sort((a,b)=>{
-            const ai=a.invitees?.find(i=>i.uid===user?.uid);
-            const bi=b.invitees?.find(i=>i.uid===user?.uid);
+            const ai=a.players?.find(i=>i.uid===user?.uid);
+            const bi=b.players?.find(i=>i.uid===user?.uid);
             if(ai?.status==='invited'&&bi?.status!=='invited')return -1;
             if(bi?.status==='invited'&&ai?.status!=='invited')return 1;
             if(a.date&&b.date)return a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||'');
@@ -689,7 +689,7 @@ function App(){
         return arr;
     },[games,tab,selectedDay,search,fType,fSkill,fVis,fDist,uLat,uLng,user]);
 
-    const invitedCount=games.filter(g=>g.invitees?.some(i=>i.uid===user?.uid&&i.status==='invited')).length;
+    const invitedCount=games.filter(g=>g.players?.some(i=>i.uid===user?.uid&&i.status==='invited')).length;
 
     if(user===undefined)return(<div className="hero-bg"><div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',color:'white'}}>Loading…</div></div>);
     if(!user)return <AuthScreen/>;

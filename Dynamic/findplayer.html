@@ -83,8 +83,8 @@
         .filter-btn.active{background:white;color:#059669;}
 
         /* Modal */
-        .mo{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:9950;backdrop-filter:blur(4px);}
-        .ms{background:white;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:740px;max-height:calc(90vh - 54px);overflow-y:auto;animation:slideUp .3s ease;}
+        .mo{position:fixed;top:0;left:0;right:0;bottom:var(--pcn-bot,62px);background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:9950;backdrop-filter:blur(4px);}
+        .ms{background:white;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:740px;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease;}
         @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         .mh{width:40px;height:4px;background:#cbd5e1;border-radius:2px;margin:0 auto 16px;}
@@ -293,6 +293,103 @@ function WeekSchedulePicker({schedule,onChange}){
     </div>);
 }
 
+// ── Player Picker ────────────────────────────────────────────────────
+function PlayerPicker({myUid,onSelect,selected,subtitle}){
+    const[players,setPlayers]=useState([]);const[ld,setLd]=useState(true);const[search,setSearch]=useState('');
+    useEffect(()=>{
+        if(!fbOk){setLd(false);return;}
+        db.collection('findPlayers').where('status','==','active').where('timestamp','>',Date.now()-7*24*60*60*1000)
+            .limit(80).get()
+            .then(snap=>{
+                const byUid={};
+                snap.docs.forEach(d=>{const p=d.data();if(p.uid!==myUid&&!byUid[p.uid])byUid[p.uid]=p;});
+                setPlayers(Object.values(byUid));setLd(false);
+            }).catch(()=>setLd(false));
+    },[]);
+    const filtered=search.trim()
+        ?players.filter(p=>[p.name,p.city,p.skill,p.gender].some(v=>(v||'').toLowerCase().includes(search.toLowerCase())))
+        :players;
+    const toggle=p=>{
+        const sel=selected.some(s=>s.uid===p.uid);
+        onSelect(sel?selected.filter(s=>s.uid!==p.uid):[...selected,{uid:p.uid,name:p.name,photoURL:p.photoURL||null,skill:p.skill||''}]);
+    };
+    return(<div>
+        {subtitle&&<div style={{fontSize:11,color:'#64748b',marginBottom:8}}>{subtitle}</div>}
+        <div style={{position:'relative',marginBottom:8}}>
+            <svg style={{position:'absolute',left:9,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input style={{width:'100%',padding:'8px 10px 8px 30px',border:'1.5px solid #e2e8f0',borderRadius:9,fontFamily:'Outfit',fontSize:13,outline:'none',color:'#0f172a'}} value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search players..."/>
+        </div>
+        {selected.length>0&&<div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:8}}>
+            {selected.map(s=><div key={s.uid} style={{display:'inline-flex',alignItems:'center',gap:4,background:'#ecfdf5',border:'1px solid #a7f3d0',borderRadius:20,padding:'3px 10px 3px 6px',fontSize:11,fontWeight:600,color:'#059669'}}>
+                <div style={{width:18,height:18,borderRadius:'50%',background:'#059669',color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:800,flexShrink:0}}>{(s.name||'?')[0].toUpperCase()}</div>
+                {s.name.split(' ')[0]}
+                <button onClick={()=>onSelect(selected.filter(x=>x.uid!==s.uid))} style={{background:'none',border:'none',cursor:'pointer',color:'#059669',fontSize:14,lineHeight:1,padding:0,marginLeft:1}}>&times;</button>
+            </div>)}
+        </div>}
+        <div style={{maxHeight:190,overflowY:'auto',border:'1px solid #e2e8f0',borderRadius:10,overflow:'hidden'}}>
+            {ld?<div style={{padding:14,textAlign:'center',fontSize:12,color:'#94a3b8'}}>Loading...</div>
+            :filtered.length===0?<div style={{padding:14,textAlign:'center',fontSize:12,color:'#94a3b8'}}>No players found</div>
+            :filtered.slice(0,30).map(p=>{const isSel=selected.some(s=>s.uid===p.uid);return(<div key={p.uid} onClick={()=>toggle(p)} style={{display:'flex',alignItems:'center',gap:9,padding:'9px 12px',cursor:'pointer',background:isSel?'#f0fdf4':'white',borderBottom:'1px solid #f8fafc',transition:'background .1s'}}>
+                <div className="av-sm" style={{width:30,height:30,fontSize:11,flexShrink:0}}>{(p.name||'?')[0].toUpperCase()}</div>
+                <div style={{flex:1,minWidth:0}}><div style={{fontSize:13,fontWeight:600,color:'#0f172a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.name}</div><div style={{fontSize:11,color:'#64748b'}}>{p.skill||''}{p.city?' \u00b7 '+p.city:''}{p.gender?' \u00b7 '+p.gender:''}</div></div>
+                {isSel&&<span style={{color:'#059669',fontSize:16,flexShrink:0}}>{'\u2713'}</span>}
+            </div>);})}
+        </div>
+    </div>);
+}
+
+// ── Group Manager ─────────────────────────────────────────────────────
+function GroupManager({myUid,selectedGroupId,onSelectGroup}){
+    const[groups,setGroups]=useState([]);const[ld,setLd]=useState(true);
+    const[showCreate,setShowCreate]=useState(false);const[newName,setNN]=useState('');
+    const[newMembers,setNM]=useState([]);const[saving,setSaving]=useState(false);
+
+    const load=useCallback(()=>{
+        if(!fbOk){setLd(false);return;}
+        db.collection('playerGroups').where('ownerUid','==',myUid).orderBy('createdAt','desc').get()
+            .then(snap=>{setGroups(snap.docs.map(d=>({id:d.id,...d.data()})));setLd(false);})
+            .catch(()=>setLd(false));
+    },[myUid]);
+    useEffect(()=>load(),[]);
+
+    const create=async()=>{
+        if(!newName.trim()){alert('Enter a group name.');return;}
+        if(newMembers.length===0){alert('Select at least one player.');return;}
+        setSaving(true);
+        try{
+            await db.collection('playerGroups').add({ownerUid:myUid,name:newName.trim(),members:newMembers,createdAt:Date.now()});
+            setNN('');setNM([]);setShowCreate(false);load();
+        }catch(e){alert('Failed: '+e.message);}
+        setSaving(false);
+    };
+    const del=async id=>{
+        if(!confirm('Delete this group?'))return;
+        try{await db.collection('playerGroups').doc(id).delete();load();}catch(e){alert(e.message);}
+    };
+
+    if(showCreate)return(<div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+            <div style={{fontSize:13,fontWeight:800,color:'#0f172a'}}>New Group</div>
+            <button onClick={()=>setShowCreate(false)} style={{background:'#f1f5f9',border:'none',borderRadius:7,padding:'4px 10px',fontSize:12,cursor:'pointer',color:'#64748b'}}>Cancel</button>
+        </div>
+        <input className="fi" style={{marginBottom:10,fontSize:13}} value={newName} onChange={e=>setNN(e.target.value)} placeholder="Group name (e.g. Tuesday Crew)" maxLength={50}/>
+        <PlayerPicker myUid={myUid} selected={newMembers} onSelect={setNM} subtitle="Select players to add to this group."/>
+        <button className="btn-g" onClick={create} disabled={saving} style={{width:'100%',padding:'10px',fontSize:13,marginTop:10,opacity:saving?.6:1}}>{saving?'Saving...':'Create Group'}</button>
+    </div>);
+
+    return(<div>
+        {ld?<div style={{fontSize:12,color:'#94a3b8',padding:'6px 0'}}>Loading groups...</div>
+        :groups.length===0?<div style={{fontSize:12,color:'#94a3b8',marginBottom:8}}>No groups yet.</div>
+        :groups.map(g=>(<div key={g.id} onClick={()=>onSelectGroup(selectedGroupId===g.id?null:g)} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 12px',borderRadius:10,border:'2px solid '+(selectedGroupId===g.id?'#059669':'#e2e8f0'),background:selectedGroupId===g.id?'#ecfdf5':'white',cursor:'pointer',marginBottom:6,transition:'all .15s'}}>
+            <span style={{fontSize:18}}>&#127991;</span>
+            <div style={{flex:1,minWidth:0}}><div style={{fontSize:13,fontWeight:700,color:'#0f172a'}}>{g.name}</div><div style={{fontSize:11,color:'#64748b'}}>{g.members?.length||0} members</div></div>
+            {selectedGroupId===g.id&&<span style={{color:'#059669',fontSize:15}}>{'\u2713'}</span>}
+            <button onClick={e=>{e.stopPropagation();del(g.id);}} style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:6,padding:'3px 8px',fontSize:11,color:'#dc2626',cursor:'pointer',fontFamily:'Outfit',fontWeight:600}}>Delete</button>
+        </div>))}
+        <button onClick={()=>setShowCreate(true)} style={{width:'100%',padding:'9px',border:'2px dashed #e2e8f0',borderRadius:10,background:'white',fontSize:13,fontWeight:600,color:'#059669',cursor:'pointer',fontFamily:'Outfit',marginTop:4}}>+ Create New Group</button>
+    </div>);
+}
+
 // ── Post Form ────────────────────────────────────────────────────────
 function PostForm({profile,onClose,onPosted,editData,uLat,uLng}){
     const[purpose,setPurpose]=useState(editData?.purpose||'play');
@@ -304,14 +401,38 @@ function PostForm({profile,onClose,onPosted,editData,uLat,uLng}){
     const[courtName,setCourt]=useState(editData?.courtName||'');
     const[message,setMsg]=useState(editData?.message||'');
     const[partnerGender,setPG]=useState(editData?.partnerGender||'');
-    const[shareMode,setShare]=useState(editData?.shareMode||'public');// 'public' | 'connections'
+    // shareMode: 'public' | 'connections' | 'players' | 'group'
+    const[shareMode,setShare]=useState(editData?.shareMode||'public');
+    const[sharePlayers,setSP]=useState([]);  // for 'players' mode
+    const[shareGroup,setSG]=useState(null);  // for 'group' mode
     const[saving,setSaving]=useState(false);
     const togglePT=t=>setPT(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t]);
     const today=new Date().toISOString().split('T')[0];
+
+    const SHARE_MODES=[
+        {id:'public',icon:'&#127757;',label:'Everyone'},
+        {id:'connections',icon:'&#128101;',label:'Connections'},
+        {id:'players',icon:'&#128100;',label:'Select Players'},
+        {id:'group',icon:'&#127991;',label:'My Groups'},
+    ];
+    const shareModeDesc={
+        public:'Visible to all PickleConnect players.',
+        connections:"Only shown to people you've chatted with before.",
+        players:sharePlayers.length>0?`Only shown to ${sharePlayers.length} selected player${sharePlayers.length!==1?'s':''}.`:'Choose specific players below.',
+        group:shareGroup?`Members of "${shareGroup.name}" only.`:'Select or create a group below.',
+    };
+
     const save=async()=>{
         if(playTypes.length===0){alert('Select at least one play type.');return;}
         if(availability==='Custom Schedule'&&weekSchedule.length===0){alert('Select at least one day for your schedule.');return;}
+        if(shareMode==='players'&&sharePlayers.length===0){alert('Select at least one player to share with.');return;}
+        if(shareMode==='group'&&!shareGroup){alert('Select a group to share with.');return;}
         setSaving(true);
+
+        const sharePlayerIds=
+            shareMode==='players'?sharePlayers.map(p=>p.uid):
+            shareMode==='group'?(shareGroup.members||[]).map(m=>m.uid):[];
+
         const data={
             uid:profile.uid,name:profile.name,skill:profile.skill,city:profile.city||null,
             age:profile.age||null,gender:profile.gender||null,duprId:profile.duprId||null,
@@ -321,7 +442,9 @@ function PostForm({profile,onClose,onPosted,editData,uLat,uLng}){
             weekSchedule:availability==='Custom Schedule'?weekSchedule:[],
             courtName:courtName.trim()||null,message:message.trim()||null,
             partnerGender:purpose==='partner'?(partnerGender||null):null,
-            shareMode,lat:uLat||null,lng:uLng||null,timestamp:Date.now(),status:'active'
+            shareMode,sharePlayerIds,
+            shareGroupName:shareMode==='group'?(shareGroup?.name||null):null,
+            lat:uLat||null,lng:uLng||null,timestamp:Date.now(),status:'active'
         };
         try{
             if(editData?.id){await db.collection('findPlayers').doc(editData.id).update(data);}
@@ -330,82 +453,80 @@ function PostForm({profile,onClose,onPosted,editData,uLat,uLng}){
         }catch(e){alert('Failed: '+e.message);}
         setSaving(false);
     };
+
     return(<div className="mo" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
         <div className="ms"><div className="mh"/>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-                <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{editData?'✏️ EDIT POST':'📢 POST AVAILABILITY'}</div>
-                <button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:30,height:30,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+                <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{editData?'EDIT POST':'POST AVAILABILITY'}</div>
+                <button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:30,height:30,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>X</button>
             </div>
             <div style={{fontSize:13,color:'#64748b',marginBottom:14}}>Let others know you're available. You can post multiple times.</div>
 
-            {/* Player info */}
             <div style={{display:'flex',alignItems:'center',gap:10,padding:10,background:'#f8fafc',borderRadius:10,marginBottom:14}}>
                 {profile.photoURL?<img src={profile.photoURL} style={{width:32,height:32,borderRadius:'50%'}} referrerPolicy="no-referrer"/>:<div className="av-sm" style={{width:32,height:32,fontSize:13}}>{profile.name[0]}</div>}
-                <div><div style={{fontSize:13,fontWeight:700}}>{profile.name}</div><div style={{fontSize:11,color:'#64748b'}}>{profile.skill}{profile.gender?` · ${profile.gender}`:''}{profile.city?` · ${profile.city}`:''}</div></div>
+                <div><div style={{fontSize:13,fontWeight:700}}>{profile.name}</div><div style={{fontSize:11,color:'#64748b'}}>{profile.skill}{profile.gender?' \u00b7 '+profile.gender:''}{profile.city?' \u00b7 '+profile.city:''}</div></div>
             </div>
 
-            {/* Purpose */}
             <div className="fg"><div className="fl">What are you looking for? *</div>
-                <div className="og">{PURPOSES.map(p=><button key={p.id} className={`ob ${purpose===p.id?'s':''}`} onClick={()=>setPurpose(p.id)} style={{fontSize:12}}>{p.emoji} {p.label}</button>)}</div>
+                <div className="og">{PURPOSES.map(p=><button key={p.id} className={'ob'+(purpose===p.id?' s':'')} onClick={()=>setPurpose(p.id)} style={{fontSize:12}}>{p.emoji} {p.label}</button>)}</div>
             </div>
 
-            {/* Partner gender preference */}
             {purpose==='partner'&&<div className="fg"><div className="fl">Partner Gender Preference</div>
                 <div className="og">
-                    <button className={`ob ${partnerGender===''?'s':''}`} onClick={()=>setPG('')} style={{fontSize:12}}>🏓 Any</button>
-                    {['Male','Female','Non-binary'].map(g=><button key={g} className={`ob ${partnerGender===g?'s':''}`} onClick={()=>setPG(partnerGender===g?'':g)} style={{fontSize:12}}>{g==='Male'?'👨':g==='Female'?'👩':'🧑'} {g}</button>)}
+                    <button className={'ob'+(partnerGender===''?' s':'')} onClick={()=>setPG('')} style={{fontSize:12}}>Any</button>
+                    {['Male','Female','Non-binary'].map(g=><button key={g} className={'ob'+(partnerGender===g?' s':'')} onClick={()=>setPG(partnerGender===g?'':g)} style={{fontSize:12}}>{g==='Male'?'M':g==='Female'?'F':'NB'} {g}</button>)}
                 </div>
             </div>}
 
-            {/* Play type */}
             <div className="fg"><div className="fl">Play Type *</div>
-                <div className="og">{PTYPES.map(t=><button key={t} className={`ob ${playTypes.includes(t)?'s':''}`} onClick={()=>togglePT(t)} style={{fontSize:12}}>{PT_E[t]} {t}</button>)}</div>
+                <div className="og">{PTYPES.map(t=><button key={t} className={'ob'+(playTypes.includes(t)?' s':'')} onClick={()=>togglePT(t)} style={{fontSize:12}}>{PT_E[t]} {t}</button>)}</div>
             </div>
 
-            {/* Availability */}
             <div className="fg"><div className="fl">When</div>
                 <div className="og" style={{marginBottom:8}}>
-                    {['Now','Today','This Week','Custom Schedule'].map(a=><button key={a} className={`ob ${availability===a?'s':''}`} onClick={()=>setAv(a)} style={{fontSize:12}}>{AV_ICO[a]} {a}</button>)}
+                    {['Now','Today','This Week','Custom Schedule'].map(a=><button key={a} className={'ob'+(availability===a?' s':'')} onClick={()=>setAv(a)} style={{fontSize:12}}>{AV_ICO[a]} {a}</button>)}
                 </div>
-
-                {/* Today: date + time */}
                 {availability==='Today'&&<div style={{display:'flex',gap:8,marginTop:6}}>
                     <input type="date" className="fi" value={availDate} onChange={e=>setAD(e.target.value)} min={today} style={{flex:1,fontSize:13}}/>
                     <input type="time" className="fi" value={availTime} onChange={e=>setAT(e.target.value)} style={{flex:1,fontSize:13}}/>
                 </div>}
-
-                {/* This week: date range */}
-                {availability==='This Week'&&<div style={{display:'flex',gap:8,marginTop:6}}>
-                    <div style={{flex:1}}><div style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',marginBottom:3}}>Start Date</div><input type="date" className="fi" value={availDate} onChange={e=>setAD(e.target.value)} min={today} style={{fontSize:13}}/></div>
+                {availability==='This Week'&&<div style={{marginTop:6}}>
+                    <div style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',marginBottom:3}}>Start Date</div>
+                    <input type="date" className="fi" value={availDate} onChange={e=>setAD(e.target.value)} min={today} style={{fontSize:13}}/>
                 </div>}
-
-                {/* Custom schedule: day+time picker */}
                 {availability==='Custom Schedule'&&<div style={{marginTop:8}}>
-                    <div style={{fontSize:11,color:'#64748b',marginBottom:8}}>Tap days you're available each week. Set your preferred time for each.</div>
+                    <div style={{fontSize:11,color:'#64748b',marginBottom:8}}>Tap days you're available each week. Set preferred times.</div>
                     <WeekSchedulePicker schedule={weekSchedule} onChange={setWS}/>
                 </div>}
             </div>
 
-            {/* Court */}
             <div className="fg"><div className="fl">Court (optional)</div>
                 <input className="fi" value={courtName} onChange={e=>setCourt(e.target.value)} placeholder="e.g. Heritage Park Courts" maxLength={100}/>
             </div>
 
-            {/* Message */}
             <div className="fg"><div className="fl">Message</div>
-                <textarea className="fi" value={message} onChange={e=>setMsg(e.target.value)} placeholder={purpose==='partner'?'Looking for 3.5+ doubles partner…':'Available for games, message me!'} maxLength={300} rows={2}/>
+                <textarea className="fi" value={message} onChange={e=>setMsg(e.target.value)} placeholder={purpose==='partner'?'Looking for 3.5+ doubles partner...':'Available for games, message me!'} maxLength={300} rows={2}/>
             </div>
 
-            {/* Share to */}
+            {/* Share Availability To */}
             <div className="fg"><div className="fl">Share Availability To</div>
-                <div className="share-toggle">
-                    <button className={`share-opt ${shareMode==='public'?'s':''}`} onClick={()=>setShare('public')}>🌍 Everyone</button>
-                    <button className={`share-opt ${shareMode==='connections'?'s':''}`} onClick={()=>setShare('connections')}>👥 My Connections</button>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7,marginBottom:8}}>
+                    {SHARE_MODES.map(m=>(
+                        <button key={m.id} onClick={()=>setShare(m.id)} style={{padding:'10px',borderRadius:10,border:'2px solid '+(shareMode===m.id?'#059669':'#e2e8f0'),background:shareMode===m.id?'#ecfdf5':'white',fontFamily:'Outfit',fontSize:12,fontWeight:700,cursor:'pointer',color:shareMode===m.id?'#059669':'#475569',display:'flex',alignItems:'center',gap:6,justifyContent:'center'}}>
+                            <span dangerouslySetInnerHTML={{__html:m.icon}}/>{m.label}
+                        </button>
+                    ))}
                 </div>
-                <div style={{fontSize:11,color:'#94a3b8',marginTop:6}}>{shareMode==='public'?'Visible to all PickleConnect players.':'Only shown to people you\'ve messaged before.'}</div>
+                <div style={{fontSize:11,color:'#64748b',marginBottom:shareMode==='players'||shareMode==='group'?10:0}}>{shareModeDesc[shareMode]}</div>
+                {shareMode==='players'&&<div style={{background:'#f8fafc',borderRadius:10,padding:12}}>
+                    <PlayerPicker myUid={profile.uid} selected={sharePlayers} onSelect={setSP} subtitle="Only selected players will see this post."/>
+                </div>}
+                {shareMode==='group'&&<div style={{background:'#f8fafc',borderRadius:10,padding:12}}>
+                    <GroupManager myUid={profile.uid} selectedGroupId={shareGroup?.id||null} onSelectGroup={g=>setSG(g)}/>
+                </div>}
             </div>
 
-            <button className="btn-g" onClick={save} disabled={saving} style={{width:'100%',padding:'12px',fontSize:15,opacity:saving?.6:1}}>{saving?'Saving…':'📢 Post'}</button>
+            <button className="btn-g" onClick={save} disabled={saving} style={{width:'100%',padding:'12px',fontSize:15,opacity:saving?.6:1}}>{saving?'Saving...':'Post Availability'}</button>
         </div>
     </div>);
 }
@@ -575,7 +696,7 @@ function App(){
     const grouped=useMemo(()=>{
         let fp=[...posts];
         // Apply share mode filter (connections only visible to those who have chatted)
-        if(user){fp=fp.filter(p=>p.shareMode!=='connections'||p.uid===user.uid);}
+        if(user){fp=fp.filter(p=>{if(!p.shareMode||p.shareMode==='public')return true;if(p.uid===user.uid)return true;if(p.shareMode==='connections')return false;if(p.shareMode==='players'||p.shareMode==='group')return(p.sharePlayerIds||[]).includes(user.uid);return true;});}
         if(tab==='nearby'&&uLat)fp=fp.filter(p=>p.lat&&haversine(uLat,uLng,p.lat,p.lng)<=25);
         else if(tab==='now')fp=fp.filter(p=>p.availability==='Now'||p.availability==='Today');
         else if(tab==='partner')fp=fp.filter(p=>p.purpose==='partner');

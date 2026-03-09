@@ -157,6 +157,9 @@
 
     /* HIDE OLD NAV ELEMENTS */
     .nav,.float-btn,.logout-btn-desktop{display:none!important;}
+
+    /* MODAL SHEET FIX — ensure bottom-sheet modals (.mo) sit fully above the bottom nav */
+    .mo{bottom:var(--pcn-bot,62px)!important;}
   `;
   document.head.appendChild(S);
 
@@ -165,31 +168,20 @@
   fade.id = 'pcn-fade';
   document.body.appendChild(fade);
 
-  const SPA_TAB = {
-    'index.html':      'home',
-    'findgame.html':   'games',
-    'findplayer.html': 'players',
-  };
+  // Only Home routes through index.html SPA.
+  // Games, Players, Courts always go to their own standalone pages.
+  const SPA_TAB = { 'index.html': 'home' };
 
   function goTo(href) {
     if (!href) return;
     const target = href.split('?')[0].split('/').pop();
+    // On index.html going home = switch tab
     if (filename === 'index.html' && SPA_TAB[target] !== undefined) {
-      const tab = SPA_TAB[target];
-      if (window.__pcnSetTab) { window.__pcnSetTab(tab); updateActive(tab); return; }
+      if (window.__pcnSetTab) { window.__pcnSetTab(SPA_TAB[target]); updateActive(SPA_TAB[target]); return; }
     }
-    if (target === 'index.html' && filename !== 'index.html') {
-      fade.classList.add('go');
-      setTimeout(() => { window.location.href = 'index.html'; }, 160);
-      return;
-    }
-    if (SPA_TAB[target] !== undefined && filename !== 'index.html') {
-      const tab = SPA_TAB[target];
-      fade.classList.add('go');
-      setTimeout(() => { window.location.href = `index.html?tab=${tab}`; }, 160);
-      return;
-    }
+    // Same page = do nothing
     if (target === filename) return;
+    // Full navigation
     fade.classList.add('go');
     setTimeout(() => { window.location.href = href; }, 160);
   }
@@ -241,11 +233,17 @@
   msgBadge.style.display = 'none';
   msgBtn.appendChild(msgBadge);
   msgBtn.addEventListener('click', () => {
-    // Open messages – delegate to page if available, else go to findplayer (inbox)
+    // Try page-registered handlers first
     if (window.__pcnOpenMessages) { window.__pcnOpenMessages(); return; }
     if (window.__pcnOpenInbox) { window.__pcnOpenInbox(); return; }
-    // fallback: open inbox in findplayer
-    goTo('findplayer.html');
+    // If already on findplayer.html, React may not have registered yet — retry after mount
+    if (filename === 'findplayer.html') {
+      setTimeout(() => { if (window.__pcnOpenInbox) window.__pcnOpenInbox(); }, 300);
+      return;
+    }
+    // Navigate to findplayer.html where inbox lives
+    fade.classList.add('go');
+    setTimeout(() => { window.location.href = 'findplayer.html'; }, 160);
   });
 
   // ── Notifications icon button ──
