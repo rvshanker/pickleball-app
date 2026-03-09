@@ -158,8 +158,8 @@
     /* HIDE OLD NAV ELEMENTS */
     .nav,.float-btn,.logout-btn-desktop{display:none!important;}
 
-    /* MODAL SHEET FIX — ensure bottom-sheet modals (.mo) sit fully above the bottom nav */
-    .mo{bottom:var(--pcn-bot,62px)!important;}
+    /* MODAL SHEET FIX — ensure bottom-sheet modals sit fully above the bottom nav */
+    .mo,.modal-overlay{bottom:var(--pcn-bot,62px)!important;top:0!important;}
   `;
   document.head.appendChild(S);
 
@@ -241,9 +241,9 @@
       setTimeout(() => { if (window.__pcnOpenInbox) window.__pcnOpenInbox(); }, 300);
       return;
     }
-    // Navigate to findplayer.html where inbox lives
+    // Navigate to findplayer.html with ?inbox=1 so it auto-opens the inbox
     fade.classList.add('go');
-    setTimeout(() => { window.location.href = 'findplayer.html'; }, 160);
+    setTimeout(() => { window.location.href = 'findplayer.html?inbox=1'; }, 160);
   });
 
   // ── Notifications icon button ──

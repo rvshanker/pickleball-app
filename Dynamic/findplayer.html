@@ -298,13 +298,13 @@ function PlayerPicker({myUid,onSelect,selected,subtitle}){
     const[players,setPlayers]=useState([]);const[ld,setLd]=useState(true);const[search,setSearch]=useState('');
     useEffect(()=>{
         if(!fbOk){setLd(false);return;}
-        db.collection('findPlayers').where('status','==','active').where('timestamp','>',Date.now()-7*24*60*60*1000)
-            .limit(80).get()
+        // Single-field query — no composite index needed
+        db.collection('findPlayers').where('status','==','active').limit(100).get()
             .then(snap=>{
                 const byUid={};
                 snap.docs.forEach(d=>{const p=d.data();if(p.uid!==myUid&&!byUid[p.uid])byUid[p.uid]=p;});
                 setPlayers(Object.values(byUid));setLd(false);
-            }).catch(()=>setLd(false));
+            }).catch(e=>{console.error('PlayerPicker query failed:',e);setLd(false);});
     },[]);
     const filtered=search.trim()
         ?players.filter(p=>[p.name,p.city,p.skill,p.gender].some(v=>(v||'').toLowerCase().includes(search.toLowerCase())))
@@ -685,13 +685,13 @@ function App(){
     const clearF=()=>{setFS('');setFT('');setFG('');setFP('');setFD('');};
     const fCount=[fSkill,fType,fGender,fPurpose,fDist].filter(Boolean).length;
 
-    useEffect(()=>{window.__pcnOpenProfile=()=>setShowProfile(true);window.__pcnOpenInbox=()=>setShowInbox(true);return()=>{delete window.__pcnOpenProfile;delete window.__pcnOpenInbox;};},[]);
+    useEffect(()=>{window.__pcnOpenProfile=()=>setShowProfile(true);window.__pcnOpenInbox=()=>setShowInbox(true);if(new URLSearchParams(window.location.search).get('inbox')==='1'){setTimeout(()=>setShowInbox(true),250);}return()=>{delete window.__pcnOpenProfile;delete window.__pcnOpenInbox;};},[]);
 
     useEffect(()=>{if(!auth)return;auth.getRedirectResult().catch(()=>{});const u=auth.onAuthStateChanged(u=>{setUser(u||null);if(!u)setProfile(null);});return()=>u();},[]);
     useEffect(()=>{if(user===undefined||user===null)return;setProfile(undefined);if(!fbOk)return;const u=db.collection('profiles').doc(user.uid).onSnapshot(d=>{if(d.exists)setProfile({uid:user.uid,...d.data()});else setProfile(null);},()=>setProfile(null));return()=>u();},[user]);
     useEffect(()=>{if(user?.uid){cleanOldPosts(user.uid);};},[user]);
     useEffect(()=>{if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(p=>{setULat(p.coords.latitude);setULng(p.coords.longitude);},()=>{},{enableHighAccuracy:false,timeout:8000,maximumAge:300000});},[]);
-    useEffect(()=>{if(!fbOk){setLoading(false);return;}const c=Date.now()-7*24*60*60*1000;const u=db.collection('findPlayers').where('status','==','active').where('timestamp','>',c).orderBy('timestamp','desc').onSnapshot(s=>{setPosts(s.docs.map(d=>({id:d.id,...d.data()})));setLoading(false);},()=>setLoading(false));return()=>u();},[]);
+    useEffect(()=>{if(!fbOk){setLoading(false);return;}const u=db.collection('findPlayers').where('status','==','active').orderBy('timestamp','desc').onSnapshot(s=>{setPosts(s.docs.map(d=>({id:d.id,...d.data()})));setLoading(false);},()=>setLoading(false));return()=>u();},[]);
 
     const grouped=useMemo(()=>{
         let fp=[...posts];

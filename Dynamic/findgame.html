@@ -240,8 +240,8 @@ function InviteStep({game,profile,uLat,uLng,onInvitesSent,onSkip}){
 
     useEffect(()=>{
         if(!db)return;
-        const cutoff=Date.now()-7*24*60*60*1000;
-        db.collection('findPlayers').where('status','==','active').where('timestamp','>',cutoff).get()
+        // Single-field query avoids needing a composite Firestore index
+        db.collection('findPlayers').where('status','==','active').limit(100).get()
             .then(snap=>{
                 const raw=snap.docs.map(d=>({id:d.id,...d.data()}));
                 // Group by uid, dedupe
