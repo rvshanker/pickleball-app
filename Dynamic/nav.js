@@ -89,11 +89,10 @@
   fade.id = 'pcn-fade';
   document.body.appendChild(fade);
 
-  // Map each page to its SPA tab on index.html (avoids full reload)
+  // Only 'home' routes through the index.html SPA.
+  // Games and Players always navigate to their own standalone pages.
   const SPA_TAB = {
-    'index.html':        'home',
-    'findgame.html':     'games',
-    'findplayer.html':   'players',
+    'index.html': 'home',
   };
 
   function goTo(href) {
