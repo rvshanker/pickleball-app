@@ -433,8 +433,8 @@ function PostForm({profile,onClose,onPosted,editData,uLat,uLng}){
         setSaving(true);
 
         const sharePlayerIds=
-            shareMode==='players'?sharePlayers.map(p=>p.uid):
-            shareMode==='group'?(shareGroup.members||[]).map(m=>m.uid):[];
+            shareMode==='players'?sharePlayers.map(p=>p.uid).filter(Boolean):
+            shareMode==='group'?(shareGroup.members||[]).map(m=>m.uid||m).filter(Boolean):[];
 
         const data={
             uid:profile.uid,name:profile.name,skill:profile.skill,city:profile.city||null,
