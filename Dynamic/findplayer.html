@@ -141,6 +141,9 @@ const FB={apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",authDomain:"picklebal
 let db=null,auth=null,fbOk=false;
 try{if(!firebase.apps.length)firebase.initializeApp(FB);db=firebase.firestore();auth=firebase.auth();fbOk=true;}catch(e){console.error('FB:',e);}
 
+// Strip undefined values so Firestore never rejects the write
+function sanitize(obj){const r={};for(const k in obj){const v=obj[k];if(v!==undefined)r[k]=v;}return r;}
+
 function haversine(a,b,c,d){const R=3958.8,dL=(c-a)*Math.PI/180,dN=(d-b)*Math.PI/180,x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dN/2)**2;return R*2*Math.asin(Math.sqrt(x));}
 function timeAgo(t){if(!t)return '';const d=Date.now()-t,m=Math.floor(d/60000);if(m<1)return 'now';if(m<60)return m+'m';const h=Math.floor(m/60);if(h<24)return h+'h';return Math.floor(h/24)+'d';}
 function fmtTime(ts){if(!ts)return '';const[h,m]=ts.split(':').map(Number);return `${h%12||12}:${m.toString().padStart(2,'0')}${h>=12?'PM':'AM'}`;}
@@ -447,8 +450,8 @@ function PostForm({profile,onClose,onPosted,editData,uLat,uLng}){
             lat:uLat||null,lng:uLng||null,timestamp:Date.now(),status:'active'
         };
         try{
-            if(editData?.id){await db.collection('findPlayers').doc(editData.id).update(data);}
-            else{await db.collection('findPlayers').add(data);}
+            if(editData?.id){await db.collection('findPlayers').doc(editData.id).update(sanitize(data));}
+            else{await db.collection('findPlayers').add(sanitize(data));}
             onPosted();
         }catch(e){alert('Failed: '+e.message);}
         setSaving(false);
@@ -597,12 +600,60 @@ function WeekDisplay({schedule}){
 }
 
 // ── Player Card ──────────────────────────────────────────────────────
+function PostRow({p,mine,onEdit,onRemove}){
+    const pu=PURPOSES.find(x=>x.id===p.purpose);
+    const rows=[
+        {label:'Looking For', value:pu?`${pu.emoji} ${pu.label}`:p.purpose},
+        {label:'Availability', value:`${AV_ICO[p.availability]||''} ${p.availability}${p.availDate?` — ${p.availDate}${p.availTime?` @ ${fmtTime(p.availTime)}`:''}`:''}`},
+        ...(p.playTypes?.length>0?[{label:'Play Type', value:p.playTypes.map(t=>`${PT_E[t]||''} ${t}`).join('  ·  ')}]:[]),
+        ...(p.partnerGender?[{label:'Seeking', value:p.partnerGender}]:[]),
+        ...(p.courtName?[{label:'Court', value:`📍 ${p.courtName}`}]:[]),
+        ...(p.shareMode&&p.shareMode!=='public'?[{label:'Visible To', value:p.shareMode==='connections'?'👥 Connections':p.shareMode==='group'?`🏷️ ${p.shareGroupName||'Group'}`:p.shareMode==='players'?`👤 Select Players`:'Everyone'}]:[]),
+    ];
+    return(
+        <div style={{borderRadius:10,border:'1px solid #e2e8f0',overflow:'hidden',marginBottom:8,background:'white'}}>
+            {/* Header bar */}
+            <div style={{background:p.availability==='Now'?'#ecfdf5':p.availability==='Today'?'#fffbeb':'#f8fafc',padding:'7px 12px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #f1f5f9'}}>
+                <div style={{display:'flex',alignItems:'center',gap:6}}>
+                    <span className={`avail-pill ${AV_CLS[p.availability]||'avail-flex'}`} style={{fontSize:11}}>{AV_ICO[p.availability]} {p.availability}</span>
+                    <span className={`tag ${PU_TAG[p.purpose]||'t-green'}`} style={{fontSize:10}}>{pu?.emoji} {pu?.label}</span>
+                </div>
+                <span style={{fontSize:10,color:'#94a3b8'}}>{timeAgo(p.timestamp)} ago</span>
+            </div>
+            {/* Table body */}
+            <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+                <tbody>
+                    {rows.map((r,i)=>(
+                        <tr key={i} style={{borderBottom:i<rows.length-1?'1px solid #f8fafc':'none'}}>
+                            <td style={{padding:'6px 12px',fontWeight:700,color:'#64748b',textTransform:'uppercase',fontSize:10,letterSpacing:'0.3px',whiteSpace:'nowrap',width:'33%',verticalAlign:'top',paddingTop:8}}>{r.label}</td>
+                            <td style={{padding:'6px 12px 6px 0',color:'#1e293b',fontWeight:500,verticalAlign:'top',paddingTop:8}}>{r.value}</td>
+                        </tr>
+                    ))}
+                    {p.message&&(
+                        <tr><td colSpan={2} style={{padding:'6px 12px 8px',fontStyle:'italic',color:'#475569',fontSize:12,borderTop:'1px solid #f8fafc'}}>"{p.message}"</td></tr>
+                    )}
+                </tbody>
+            </table>
+            {/* Week schedule if set */}
+            {p.availability==='Custom Schedule'&&p.weekSchedule?.length>0&&<div style={{padding:'0 12px 10px'}}><WeekDisplay schedule={p.weekSchedule}/></div>}
+            {/* Edit/remove actions for own posts */}
+            {mine&&<div style={{display:'flex',gap:6,padding:'6px 10px',borderTop:'1px solid #f1f5f9',background:'#fafafa'}}>
+                <button className="btn-out" onClick={()=>onEdit(p)} style={{padding:'4px 10px',fontSize:11,borderWidth:1.5}}>Edit</button>
+                <button onClick={()=>onRemove(p.id)} style={{padding:'4px 10px',fontSize:11,border:'1.5px solid #fca5a5',background:'#fef2f2',color:'#dc2626',borderRadius:7,fontWeight:600,fontFamily:'Outfit',cursor:'pointer'}}>Remove</button>
+            </div>}
+        </div>
+    );
+}
+
 function PlayerCard({g,myUid,uLat,uLng,onChat,onEdit,onRemove,expanded,onToggle}){
     const mine=g.uid===myUid;
     const dist=(uLat&&g.lat)?haversine(uLat,uLng,g.lat,g.lng):null;
     const duprLink=g.duprId?`https://dashboard.dupr.com/dashboard/player/${g.duprId}`:null;
+    // Summary line for collapsed view
+    const latestPost=g.posts[0];
+    const pu=latestPost?PURPOSES.find(p=>p.id===latestPost.purpose):null;
     return(
-        <div className={`pc ${expanded?'expanded':''}`} onClick={onToggle} style={mine?{borderLeftColor:'#059669'}:{}}>
+        <div className={`pc ${expanded?'expanded':''}`} onClick={onToggle} style={mine?{borderLeftColor:'#059669',borderLeftWidth:4}:{}}>
             <div className="pc-main">
                 <div className="pc-avatar">{g.photoURL?<img src={g.photoURL} referrerPolicy="no-referrer"/>:<div className="pc-avatar-letter">{(g.name||'?')[0].toUpperCase()}</div>}</div>
                 <div className="pc-info">
@@ -615,8 +666,12 @@ function PlayerCard({g,myUid,uLat,uLng,onChat,onEdit,onRemove,expanded,onToggle}
                     <div className="pc-meta">
                         {g.gender&&<span>{g.gender}</span>}
                         {g.age&&<><span>·</span><span>{g.age}</span></>}
-                        {g.posts.length===1&&<span className={`tag ${PU_TAG[g.posts[0].purpose]||'t-green'}`}>{PURPOSES.find(p=>p.id===g.posts[0].purpose)?.emoji} {PURPOSES.find(p=>p.id===g.posts[0].purpose)?.label}</span>}
-                        {g.posts[0]?.shareMode==='connections'&&<span className="priv-pill priv-conn">👥 Connections</span>}
+                        {/* Collapsed summary: show purpose + availability */}
+                        {latestPost&&!expanded&&<>
+                            <span>·</span>
+                            <span className={`tag ${PU_TAG[latestPost.purpose]||'t-green'}`} style={{fontSize:10}}>{pu?.emoji} {pu?.label}</span>
+                            <span className={`avail-pill ${AV_CLS[latestPost.availability]||'avail-flex'}`} style={{fontSize:10}}>{AV_ICO[latestPost.availability]} {latestPost.availability}</span>
+                        </>}
                     </div>
                 </div>
                 <div className="pc-rating">
@@ -627,40 +682,22 @@ function PlayerCard({g,myUid,uLat,uLng,onChat,onEdit,onRemove,expanded,onToggle}
 
             {expanded&&(
                 <div className="pc-expand" onClick={e=>e.stopPropagation()}>
-                    <div style={{paddingTop:10}}>
-                        {g.posts.map(p=>{
-                            const pu=PURPOSES.find(x=>x.id===p.purpose);
-                            return(<div key={p.id} style={{background:'#f8fafc',borderRadius:10,padding:'10px 12px',marginBottom:8}}>
-                                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6,flexWrap:'wrap'}}>
-                                    <span className={`tag ${PU_TAG[p.purpose]||'t-green'}`}>{pu?.emoji} {pu?.label}</span>
-                                    <span className={`avail-pill ${AV_CLS[p.availability]||'avail-flex'}`}>{AV_ICO[p.availability]} {p.availability}</span>
-                                    {p.partnerGender&&<span className="tag t-pink">Seeking {p.partnerGender}</span>}
-                                    {p.shareMode==='connections'&&<span className="priv-pill priv-conn">👥 Connections</span>}
-                                    {p.shareMode==='public'&&<span className="priv-pill priv-pub">🌍 Public</span>}
-                                </div>
-                                {/* Show time for Today */}
-                                {p.availDate&&<div style={{fontSize:11,color:'#64748b',marginBottom:4}}>📅 {p.availDate}{p.availTime?` at ${fmtTime(p.availTime)}`:''}</div>}
-                                {/* Week schedule */}
-                                {p.availability==='Custom Schedule'&&p.weekSchedule?.length>0&&<WeekDisplay schedule={p.weekSchedule}/>}
-                                {p.playTypes?.length>0&&<div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>{p.playTypes.map(t=><span key={t} className="tag t-purple" style={{fontSize:9}}>{PT_E[t]} {t}</span>)}</div>}
-                                {p.courtName&&<div style={{fontSize:11,color:'#64748b'}}>📍 {p.courtName}</div>}
-                                {p.message&&<div style={{fontSize:11,color:'#334155',marginTop:4,fontStyle:'italic'}}>"{p.message}"</div>}
-                                {mine&&<div style={{display:'flex',gap:6,marginTop:8}}>
-                                    <button className="btn-out" onClick={()=>onEdit(p)} style={{padding:'4px 10px',fontSize:11,borderWidth:1.5}}>Edit</button>
-                                    <button onClick={()=>onRemove(p.id)} style={{padding:'4px 10px',fontSize:11,border:'1.5px solid #fca5a5',background:'#fef2f2',color:'#dc2626',borderRadius:7,fontWeight:600,fontFamily:'Outfit',cursor:'pointer'}}>Remove</button>
-                                </div>}
-                            </div>);
-                        })}
+                    {/* Player profile summary row */}
+                    <div style={{display:'flex',gap:16,padding:'8px 0 12px',borderBottom:'1px solid #f1f5f9',marginBottom:10,flexWrap:'wrap'}}>
+                        {g.age&&<div style={{fontSize:11}}><span style={{color:'#94a3b8',fontWeight:700,textTransform:'uppercase',fontSize:10}}>Age </span><span style={{color:'#1e293b',fontWeight:600}}>{g.age}</span></div>}
+                        {g.gender&&<div style={{fontSize:11}}><span style={{color:'#94a3b8',fontWeight:700,textTransform:'uppercase',fontSize:10}}>Gender </span><span style={{color:'#1e293b',fontWeight:600}}>{g.gender}</span></div>}
+                        {g.city&&<div style={{fontSize:11}}><span style={{color:'#94a3b8',fontWeight:700,textTransform:'uppercase',fontSize:10}}>City </span><span style={{color:'#1e293b',fontWeight:600}}>{g.city}</span></div>}
+                        {g.duprId&&<a href={duprLink} target="_blank" style={{fontSize:11,color:'#059669',fontWeight:700,textDecoration:'none'}}>DUPR: {g.duprId}</a>}
+                    </div>
 
-                        {/* Actions */}
-                        <div style={{display:'flex',gap:8,paddingTop:8,borderTop:'1px solid #f1f5f9',flexWrap:'wrap'}}>
-                            {!mine&&<button className="btn-g" onClick={()=>onChat(g)} style={{padding:'8px 16px',fontSize:13}}>💬 Message</button>}
-                            {mine&&<button className="btn-g" onClick={()=>onEdit(null)} style={{padding:'8px 16px',fontSize:13}}>+ New Post</button>}
-                            {g.duprId&&<a href={duprLink} target="_blank" style={{fontSize:12,color:'#059669',fontWeight:600,textDecoration:'none',display:'inline-flex',alignItems:'center',gap:4,padding:'8px 10px',border:'1.5px solid #a7f3d0',borderRadius:10,background:'#f0fdf4',whiteSpace:'nowrap'}}>
-                                DUPR: {g.duprId}
-                            </a>}
-                        </div>
-                        <div style={{fontSize:10,color:'#94a3b8',marginTop:6}}>Last posted {timeAgo(g.posts[0]?.timestamp)} ago</div>
+                    {/* Post rows in tabular format */}
+                    {g.posts.length>1&&<div style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:6}}>{g.posts.length} Active Posts</div>}
+                    {g.posts.map(p=><PostRow key={p.id} p={p} mine={mine} onEdit={onEdit} onRemove={onRemove}/>)}
+
+                    {/* Action buttons */}
+                    <div style={{display:'flex',gap:8,paddingTop:4,flexWrap:'wrap'}}>
+                        {!mine&&<button className="btn-g" onClick={()=>onChat(g)} style={{padding:'9px 18px',fontSize:13}}>💬 Message</button>}
+                        {mine&&<button className="btn-g" onClick={()=>onEdit(null)} style={{padding:'9px 18px',fontSize:13}}>+ New Post</button>}
                     </div>
                 </div>
             )}

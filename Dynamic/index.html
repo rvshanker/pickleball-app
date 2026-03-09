@@ -26,7 +26,8 @@
   --nav-h:62px;
 }
 html,body,#root{height:100%;overflow:hidden;}
-/* padding handled by nav.js */
+/* Override nav.js body padding — index uses fixed app-shell positioning */
+body{padding-top:0!important;padding-bottom:0!important;}
 body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);font-size:15px;-webkit-text-size-adjust:100%;}
 
 /* Layout shell — sits between nav bars injected by nav.js */
@@ -905,8 +906,7 @@ function App(){
 
   useEffect(()=>{
     if(!fbOk)return;
-    const cutoff=Date.now()-7*24*60*60*1000;
-    const u=db.collection('findPlayers').where('status','==','active').where('timestamp','>',cutoff).orderBy('timestamp','desc').onSnapshot(s=>{setPosts(s.docs.map(d=>({id:d.id,...d.data()})));},e=>{if(e.code!=='permission-denied')console.error(e);});
+    const u=db.collection('findPlayers').where('status','==','active').orderBy('timestamp','desc').onSnapshot(s=>{setPosts(s.docs.map(d=>({id:d.id,...d.data()})));},e=>{if(e.code!=='permission-denied')console.error(e);});
     return()=>u();
   },[]);
 
