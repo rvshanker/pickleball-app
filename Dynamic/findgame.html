@@ -266,8 +266,9 @@ function InviteStep({game,profile,uLat,uLng,onInvitesSent,onSkip}){
     },[players,search]);
 
     const toggle=p=>{
-        const alreadyInGame=game.players?.some(i=>i.uid===p.uid);
-        if(alreadyInGame)return;
+        const existing=game.players?.find(i=>i.uid===p.uid);
+        // Block if already accepted (already in game)
+        if(existing&&existing.status==='accepted')return;
         setSelected(s=>s.includes(p.uid)?s.filter(x=>x!==p.uid):[...s,p.uid]);
     };
 
@@ -276,11 +277,17 @@ function InviteStep({game,profile,uLat,uLng,onInvitesSent,onSkip}){
         setSending(true);
         try{
             const batch=db.batch();
-            const newRoster=[...(game.players||[])];
+            let newRoster=[...(game.players||[])];
             selected.forEach(uid=>{
                 const pl=players.find(p=>p.uid===uid);
                 if(!pl)return;
-                newRoster.push({uid,name:pl.name,skill:pl.skill,photoURL:pl.photoURL||null,status:'invited',invitedAt:Date.now()});
+                // If player was previously declined or in roster, update their status
+                const existingIdx=newRoster.findIndex(i=>i.uid===uid);
+                if(existingIdx>=0){
+                    newRoster[existingIdx]={...newRoster[existingIdx],status:'invited',invitedAt:Date.now()};
+                }else{
+                    newRoster.push({uid,name:pl.name,skill:pl.skill,photoURL:pl.photoURL||null,status:'invited',invitedAt:Date.now()});
+                }
                 // Write notification
                 const nRef=db.collection('notifications').doc();
                 batch.set(nRef,{
@@ -300,37 +307,42 @@ function InviteStep({game,profile,uLat,uLng,onInvitesSent,onSkip}){
     return(<div className="ms"><div className="mh"/>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
             <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>🎯 INVITE PLAYERS</div>
-            <button onClick={onSkip} style={{background:'#f1f5f9',border:'none',borderRadius:8,padding:'5px 10px',fontSize:12,fontWeight:600,cursor:'pointer',color:'#64748b'}}>Skip</button>
+            <button onClick={onSkip} style={{background:'#f1f5f9',border:'none',borderRadius:8,padding:'5px 10px',fontSize:12,fontWeight:600,cursor:'pointer',color:'#64748b'}}>Done</button>
         </div>
-        <div style={{fontSize:12,color:'#64748b',marginBottom:12}}>Players matched to your game's skill level, play type, and distance. Tap to select.</div>
+        <div style={{fontSize:12,color:'#64748b',marginBottom:12}}>Select players to invite. You can re-invite declined players.</div>
 
         <div style={{position:'relative',marginBottom:12}}>
             <svg style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)'}} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
             <input style={{width:'100%',padding:'9px 12px 9px 36px',border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit',fontSize:14,outline:'none'}} value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search players…"/>
         </div>
 
-        {selected.length>0&&<div style={{background:'#ecfdf5',border:'1px solid #a7f3d0',borderRadius:10,padding:'8px 12px',marginBottom:10,fontSize:13,fontWeight:600,color:'#059669'}}>{selected.length} player{selected.length>1?'s':''} selected · {game.totalSlots-1-slotsUsed(game.players)} slot{game.totalSlots-1-slotsUsed(game.players)!==1?'s':''} remaining</div>}
+        {selected.length>0&&<div style={{background:'#ecfdf5',border:'1px solid #a7f3d0',borderRadius:10,padding:'8px 12px',marginBottom:10,fontSize:13,fontWeight:600,color:'#059669'}}>{selected.length} player{selected.length>1?'s':''} selected</div>}
 
-        {loading?<div style={{textAlign:'center',padding:30,color:'#94a3b8'}}>Finding matched players…</div>
-        :filtered.length===0?<div style={{textAlign:'center',padding:30,color:'#94a3b8'}}>No available players found</div>
+        {loading?<div style={{textAlign:'center',padding:30,color:'#94a3b8'}}>Finding players…</div>
+        :filtered.length===0?<div style={{textAlign:'center',padding:30,color:'#94a3b8'}}>No players found</div>
         :filtered.map(p=>{
             const isSel=selected.includes(p.uid);
-            const alreadyIn=game.players?.some(i=>i.uid===p.uid);
-            return(<div key={p.uid} className={`inv-card${isSel?' sel':''}${alreadyIn?' sent':''}`} onClick={()=>toggle(p)}>
+            const existing=game.players?.find(i=>i.uid===p.uid);
+            const isAccepted=existing&&existing.status==='accepted';
+            const isInvited=existing&&existing.status==='invited';
+            const isDeclined=existing&&existing.status==='declined';
+            return(<div key={p.uid} className={`inv-card${isSel?' sel':''}${isAccepted?' sent':''}`} onClick={()=>toggle(p)} style={isAccepted?{opacity:.6,cursor:'default'}:{}}>
                 <div className="inv-av">{p.photoURL?<img src={p.photoURL} referrerPolicy="no-referrer"/>:(p.name||'?')[0].toUpperCase()}</div>
                 <div style={{flex:1,minWidth:0}}>
                     <div style={{fontWeight:700,fontSize:13,color:'#0f172a'}}>{p.name}</div>
                     <div style={{fontSize:11,color:'#64748b'}}>{p.skill}{p.city?` · ${p.city}`:''}{p._dist!==undefined?` · ${p._dist<1?p._dist.toFixed(1):Math.round(p._dist)} mi`:''}</div>
                 </div>
-                {p._score>=50&&<span style={{fontSize:9,fontWeight:700,background:'#ecfdf5',color:'#059669',padding:'2px 6px',borderRadius:6}}>Best Match</span>}
-                {alreadyIn&&<span style={{fontSize:9,fontWeight:700,background:'#dbeafe',color:'#1d4ed8',padding:'2px 6px',borderRadius:6}}>Invited</span>}
+                {isAccepted&&<span style={{fontSize:9,fontWeight:700,background:'#ecfdf5',color:'#059669',padding:'2px 6px',borderRadius:6}}>Joined</span>}
+                {isInvited&&!isSel&&<span style={{fontSize:9,fontWeight:700,background:'#dbeafe',color:'#1d4ed8',padding:'2px 6px',borderRadius:6}}>Pending</span>}
+                {isDeclined&&!isSel&&<span style={{fontSize:9,fontWeight:700,background:'#fef2f2',color:'#dc2626',padding:'2px 6px',borderRadius:6}}>Declined</span>}
+                {p._score>=50&&!existing&&<span style={{fontSize:9,fontWeight:700,background:'#ecfdf5',color:'#059669',padding:'2px 6px',borderRadius:6}}>Match</span>}
                 {isSel&&<span style={{fontSize:14}}>✓</span>}
             </div>);
         })}
 
         <div style={{display:'flex',gap:8,marginTop:12}}>
-            <button onClick={onSkip} style={{flex:1,padding:'11px',border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit',fontSize:13,fontWeight:700,cursor:'pointer',background:'white',color:'#64748b'}}>Skip</button>
-            <button className="btn-g" onClick={sendInvites} disabled={sending} style={{flex:2,padding:'11px',fontSize:14,opacity:sending?.6:1}}>{sending?'Sending…':`Send ${selected.length>0?selected.length+' ':''}Invite${selected.length!==1?'s':''}`}</button>
+            <button onClick={onSkip} style={{flex:1,padding:'11px',border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit',fontSize:13,fontWeight:700,cursor:'pointer',background:'white',color:'#64748b'}}>Done</button>
+            <button className="btn-g" onClick={sendInvites} disabled={sending||selected.length===0} style={{flex:2,padding:'11px',fontSize:14,opacity:(sending||selected.length===0)?.5:1}}>{sending?'Sending…':`Send ${selected.length} Invite${selected.length!==1?'s':''}`}</button>
         </div>
     </div>);
 }
@@ -366,15 +378,23 @@ function CreateGameForm({profile,onClose,onCreated,uLat,uLng,editGame}){
             skillMin,skillMax,totalSlots,notes:notes.trim()||null,
             isPrivate,radiusMi:parseInt(radiusMi)||25,
             lat:uLat||null,lng:uLng||null,
-            players:[{uid:profile.uid,name:profile.name,skill:profile.skill,photoURL:profile.photoURL||null,status:'accepted',isOrganizer:true}],
-            status:'active',createdAt:Date.now(),timestamp:Date.now()
+            status:'active',timestamp:Date.now()
         };
         try{
             let id;
-            if(editGame?.id){await db.collection('games').doc(editGame.id).update(data);id=editGame.id;}
-            else{const r=await db.collection('games').add(data);id=r.id;}
-            setCreatedGame({...data,id});
-            setShowInvite(true);
+            if(editGame?.id){
+                // Edit — preserve existing players, don't overwrite
+                await db.collection('games').doc(editGame.id).update(data);
+                id=editGame.id;
+                onCreated();// Just close, no invite step for edits
+            }else{
+                // New game — add organizer as first player
+                data.players=[{uid:profile.uid,name:profile.name,skill:profile.skill,photoURL:profile.photoURL||null,status:'accepted',isOrganizer:true}];
+                data.createdAt=Date.now();
+                const r=await db.collection('games').add(data);id=r.id;
+                setCreatedGame({...data,id});
+                setShowInvite(true);
+            }
         }catch(e){alert('Failed: '+e.message);}
         setSaving(false);
     };
@@ -448,7 +468,7 @@ function CreateGameForm({profile,onClose,onCreated,uLat,uLng,editGame}){
             </div>
 
             <button className="btn-g" onClick={save} disabled={saving} style={{width:'100%',padding:'13px',fontSize:15,opacity:saving?.6:1}}>
-                {saving?'Saving…':'✅ Create Game & Invite Players →'}
+                {saving?'Saving…':editGame?'✅ Save Changes':'✅ Create Game & Invite Players →'}
             </button>
         </div>
     </div>);
@@ -464,6 +484,7 @@ function GameCard({game,user,profile,onAction,expanded,onToggle}){
     const myInvite=game.players?.find(i=>i.uid===user?.uid);
     const amIn=myInvite&&myInvite.status==='accepted';
     const amInvited=myInvite&&myInvite.status==='invited';
+    const amDeclined=myInvite&&myInvite.status==='declined';
     const openSlots=Math.max(0,game.totalSlots-used);
 
     return(<div className={`gc${isFull?' full':' open'}${game.isPrivate?' private':''}${isOrg?' mine':''}${amInvited?' invited':''}`} style={expired?{opacity:.5}:{}}>
@@ -480,7 +501,9 @@ function GameCard({game,user,profile,onAction,expanded,onToggle}){
                     {game.isPrivate&&<span className="badge-pill badge-private">🔒 Private</span>}
                     {!game.isPrivate&&<span className="badge-pill badge-public">🌍 Public</span>}
                     {isOrg&&<span className="badge-pill badge-mine">👑 You organize</span>}
+                    {amIn&&!isOrg&&<span className="badge-pill badge-mine">✓ Joined</span>}
                     {amInvited&&<span className="badge-pill badge-invited">📩 Invited</span>}
+                    {amDeclined&&<span style={{fontSize:10,fontWeight:700,background:'#fef2f2',color:'#dc2626',padding:'2px 7px',borderRadius:10}}>Declined</span>}
                     {game.skillMin&&game.skillMin!=='Any'&&<span style={{fontSize:10,fontWeight:600,color:'#94a3b8'}}>{game.skillMin}{game.skillMax&&game.skillMax!==game.skillMin&&game.skillMax!=='Any'?`–${game.skillMax}`:''}</span>}
                 </div>
             </div>
@@ -528,10 +551,15 @@ function GameCard({game,user,profile,onAction,expanded,onToggle}){
             {/* Actions */}
             <div className="gc-actions">
                 {amInvited&&<><button className="accept-btn" onClick={()=>onAction('accept',game)}>✓ Accept Invite</button><button className="decline-btn" onClick={()=>onAction('decline',game)}>Decline</button></>}
-                {!isOrg&&!amIn&&!amInvited&&!isFull&&!expired&&!game.isPrivate&&<button className="join-btn" onClick={()=>onAction('join',game)}>🏓 Join Game</button>}
+                {/* Declined players can rejoin if not full */}
+                {myInvite&&myInvite.status==='declined'&&!isFull&&!expired&&<button className="join-btn" onClick={()=>onAction('rejoin',game)}>🏓 Rejoin Game</button>}
+                {/* New players can join public games */}
+                {!isOrg&&!myInvite&&!isFull&&!expired&&!game.isPrivate&&<button className="join-btn" onClick={()=>onAction('join',game)}>🏓 Join Game</button>}
                 {amIn&&!isOrg&&<button className="leave-btn" onClick={()=>onAction('leave',game)}>Leave</button>}
-                {isOrg&&<button className="btn-g" style={{padding:'9px 14px',fontSize:13}} onClick={()=>onAction('invite',game)}>+ Invite Players</button>}
-                {isOrg&&<button className="cancel-btn" onClick={()=>onAction('cancel',game)}>Cancel Game</button>}
+                {/* Organizer actions */}
+                {isOrg&&<button className="btn-g" style={{padding:'9px 14px',fontSize:13}} onClick={()=>onAction('edit',game)}>✏️ Edit</button>}
+                {isOrg&&<button className="btn-g" style={{padding:'9px 14px',fontSize:13,background:'linear-gradient(135deg,#2563eb,#3b82f6)'}} onClick={()=>onAction('invite',game)}>+ Invite</button>}
+                {isOrg&&<button className="cancel-btn" onClick={()=>onAction('cancel',game)}>Cancel</button>}
             </div>
             <div style={{padding:'0 14px 10px',fontSize:10,color:'#94a3b8'}}>By {game.organizerName} · {timeAgo(game.createdAt)}</div>
         </div>)}
@@ -624,18 +652,26 @@ function App(){
     useEffect(()=>{if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(p=>{setULat(p.coords.latitude);setULng(p.coords.longitude);},()=>{});},[]);
     useEffect(()=>{if(!db){setLoading(false);return;}const u=db.collection('games').where('status','==','active').onSnapshot(s=>{const arr=s.docs.map(d=>({id:d.id,...d.data()}));arr.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));setGames(arr);setLoading(false);},(e)=>{console.error('games listener:',e.message);setLoading(false);});return()=>u();},[]);
 
-    // Handle accept/decline/join/leave/cancel
+    // Handle accept/decline/join/leave/cancel/edit/rejoin
     const handleAction=async(type,game)=>{
         if(!user||!profile)return;
-        if(type==='accept'||type==='decline'||type==='join'||type==='leave'){
+        if(type==='edit'){
+            setEditGame(game);setShowCreate(true);return;
+        }
+        if(type==='accept'||type==='decline'||type==='join'||type==='leave'||type==='rejoin'){
             const ref=db.collection('games').doc(game.id);
             try{
                 let roster=[...(game.players||[])];
                 if(type==='join'){
                     const used=slotsUsed(roster);
                     if(used>=game.totalSlots){showToast('Game is full.');return;}
-                    if(roster.find(i=>i.uid===user.uid)){showToast('Already in this game.');return;}
+                    if(roster.find(i=>i.uid===user.uid&&i.status!=='declined')){showToast('Already in this game.');return;}
+                    // Remove any old declined entry first
+                    roster=roster.filter(i=>i.uid!==user.uid);
                     roster.push({uid:user.uid,name:profile.name,skill:profile.skill,photoURL:profile.photoURL||null,status:'accepted',joinedAt:Date.now()});
+                }else if(type==='rejoin'){
+                    // Declined player wants to rejoin
+                    roster=roster.map(i=>i.uid===user.uid?{...i,status:'accepted',joinedAt:Date.now()}:i);
                 }else if(type==='accept'){
                     roster=roster.map(i=>i.uid===user.uid?{...i,status:'accepted'}:i);
                     if(window.__pcnPlaySound)window.__pcnPlaySound('notification');
@@ -645,7 +681,7 @@ function App(){
                     roster=roster.filter(i=>i.uid!==user.uid);
                 }
                 await ref.update({players:roster,updatedAt:Date.now()});
-                if(type==='accept')showToast('✅ You joined the game!');
+                if(type==='accept'||type==='rejoin')showToast('✅ You joined the game!');
                 if(type==='decline')showToast('Invite declined.');
                 if(type==='join')showToast('✅ You joined the game!');
                 if(type==='leave')showToast('Left the game.');
@@ -662,6 +698,7 @@ function App(){
     const filtered=useMemo(()=>{
         let arr=[...games];
         if(tab==='invited')return arr.filter(g=>g.players?.some(i=>i.uid===user?.uid&&i.status==='invited'));
+        if(tab==='mine')return arr.filter(g=>g.organizerUid===user?.uid||(g.players||[]).some(i=>i.uid===user?.uid&&i.status!=='declined')).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.time||'').localeCompare(b.time||''));
         // Hide private games (unless organizer or invited)
         arr=arr.filter(g=>!g.isPrivate||g.organizerUid===user?.uid||g.players?.some(i=>i.uid===user?.uid));
         if(selectedDay)arr=arr.filter(g=>g.date===selectedDay);
@@ -699,7 +736,7 @@ function App(){
 
                 {/* Tabs */}
                 <div className="tab-bar">
-                    {[['list','📋 List'],['calendar','📅 Calendar'],['invited',`📩 Invited${invitedCount>0?` (${invitedCount})`:''}`]].map(([k,l])=>
+                    {[['list','📋 All'],['mine','🏓 My Games'],['calendar','📅 Calendar'],['invited',`📩 Invited${invitedCount>0?` (${invitedCount})`:''}`]].map(([k,l])=>
                         <button key={k} className={`tab-btn ${tab===k?'active':'inactive'}`} onClick={()=>{setTab(k);setSelectedDay(null);}}>{l}</button>
                     )}
                 </div>
@@ -736,9 +773,9 @@ function App(){
                 {/* Game list */}
                 {loading?[1,2].map(i=><div key={i} style={{background:'white',borderRadius:16,marginBottom:12,height:100,overflow:'hidden'}}><div className="skeleton" style={{height:'100%'}}/></div>)
                 :filtered.length===0?(<div style={{textAlign:'center',padding:'40px 16px'}}>
-                    <div style={{fontSize:40,marginBottom:8}}>{tab==='invited'?'📩':'🎮'}</div>
-                    <div style={{fontSize:16,fontWeight:700,color:'white',marginBottom:4}}>{tab==='invited'?'No pending invites':'No games found'}</div>
-                    <div style={{fontSize:13,color:'rgba(255,255,255,.6)',marginBottom:14}}>{tab==='invited'?'You\'re all caught up!':selectedDay?'No games on this day':search||fCount?'Try different filters':'Be the first to create one!'}</div>
+                    <div style={{fontSize:40,marginBottom:8}}>{tab==='invited'?'📩':tab==='mine'?'🏓':'🎮'}</div>
+                    <div style={{fontSize:16,fontWeight:700,color:'white',marginBottom:4}}>{tab==='invited'?'No pending invites':tab==='mine'?'No games yet':'No games found'}</div>
+                    <div style={{fontSize:13,color:'rgba(255,255,255,.6)',marginBottom:14}}>{tab==='invited'?'You\'re all caught up!':tab==='mine'?'Create or join a game to see it here':selectedDay?'No games on this day':search||fCount?'Try different filters':'Be the first to create one!'}</div>
                     {tab!=='invited'&&<button className="post-btn" onClick={()=>setShowCreate(true)} style={{margin:'0 auto'}}>🎮 Create Game</button>}
                 </div>)
                 :filtered.map(g=><GameCard key={g.id} game={g} user={user} profile={profile} onAction={handleAction} expanded={expanded===g.id} onToggle={()=>setExpanded(expanded===g.id?null:g.id)}/>)}

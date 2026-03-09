@@ -348,9 +348,13 @@ function GroupManager({myUid,selectedGroupId,onSelectGroup}){
 
     const load=useCallback(()=>{
         if(!fbOk){setLd(false);return;}
-        db.collection('playerGroups').where('ownerUid','==',myUid).orderBy('createdAt','desc').get()
-            .then(snap=>{setGroups(snap.docs.map(d=>({id:d.id,...d.data()})));setLd(false);})
-            .catch(()=>setLd(false));
+        db.collection('playerGroups').where('ownerUid','==',myUid).get()
+            .then(snap=>{
+                const arr=snap.docs.map(d=>({id:d.id,...d.data()}));
+                arr.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+                setGroups(arr);setLd(false);
+            })
+            .catch(e=>{console.error('GroupManager load failed:',e);setLd(false);});
     },[myUid]);
     useEffect(()=>load(),[]);
 
