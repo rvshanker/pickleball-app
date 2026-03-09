@@ -33,7 +33,7 @@
         .post-btn{background:white;color:#064e3b;border:none;border-radius:12px;padding:9px 14px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.15);display:flex;align-items:center;gap:6px;}
 
         /* Modal */
-        .mo{position:fixed;top:0;left:0;right:0;bottom:var(--pcn-bot,62px);background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:9950;backdrop-filter:blur(4px);}
+        .mo{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:9950;backdrop-filter:blur(4px);}
         .ms{background:white;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:740px;max-height:calc(92vh - 54px);overflow-y:auto;animation:slideUp .3s ease;}
         @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -189,7 +189,7 @@ try{if(!firebase.apps.length)firebase.initializeApp(FB);db=firebase.firestore();
 
 const SKILLS=['Any','2.0-2.5','2.5-3.0','3.0-3.5','3.5-4.0','4.0-4.5','4.5-5.0','5.0+'];
 const PTYPES=['Casual','Competitive','Tournament','Drilling','League'];
-const PT_E={'Casual':'','Competitive':'','Tournament':'','Drilling':'','League':''};
+const PT_E={'Casual':'🎾','Competitive':'🔥','Tournament':'🏆','Drilling':'🎯','League':'🏅'};
 const DAYS_SHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -199,7 +199,7 @@ function fmtTimeRange(s,e){if(!s)return '';if(!e)return fmtTime(s);const[sh,sm]=
 function timeAgo(t){if(!t)return '';const d=Date.now()-t,m=Math.floor(d/60000);if(m<1)return 'just now';if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
 function getDateParts(ds){if(!ds)return{dayStr:'?',numStr:'?',rel:'future'};const d=new Date(ds+'T12:00:00');const today=new Date();today.setHours(0,0,0,0);const diff=Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-today)/86400000);return{dayStr:DAYS_SHORT[d.getDay()],numStr:d.getDate(),rel:diff===0?'today':diff<=2?'soon':'future'};}
 function isExpired(g){const t=g.timeEnd||g.time;if(!g.date||!t)return false;return new Date(g.date+'T'+t)<new Date();}
-function slotsUsed(invitees){return(invitees||[]).filter(p=>p.status!=='declined').length;}
+function slotsUsed(players){return(players||[]).filter(p=>p.status!=='declined').length;}
 function ymd(date){return`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;}
 function fmtFullDate(ds){if(!ds)return '';const d=new Date(ds+'T12:00:00');return d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});}
 function skillInRange(playerSkill,minSkill,maxSkill){
@@ -220,7 +220,7 @@ function AuthScreen(){
     };
     return(<div className="hero-bg">
         <div className="auth-screen">
-            <div style={{fontSize:52,marginBottom:10}}></div>
+            <div style={{fontSize:52,marginBottom:10}}>🎮</div>
             <div className="fd" style={{fontSize:32,fontWeight:800,color:'white',marginBottom:6}}>FIND GAMES</div>
             <div style={{fontSize:14,color:'rgba(255,255,255,.65)',marginBottom:28,maxWidth:320,lineHeight:1.5}}>Join or create pickleball games near you. Invite players automatically matched to your skill.</div>
             {err&&<div style={{background:'rgba(239,68,68,.15)',border:'1px solid rgba(239,68,68,.3)',borderRadius:10,padding:'10px 14px',marginBottom:14,fontSize:12,color:'#fecaca'}}>⚠️ {err}</div>}
@@ -240,7 +240,7 @@ function InviteStep({game,profile,uLat,uLng,onInvitesSent,onSkip}){
 
     useEffect(()=>{
         if(!db)return;
-        const cutoff=Date.now()-7*24*60*60*1000;
+        // Single-field query avoids needing a composite Firestore index
         db.collection('findPlayers').where('status','==','active').limit(100).get()
             .then(snap=>{
                 const raw=snap.docs.map(d=>({id:d.id,...d.data()}));
@@ -272,7 +272,7 @@ function InviteStep({game,profile,uLat,uLng,onInvitesSent,onSkip}){
     },[players,search]);
 
     const toggle=p=>{
-        const alreadyInGame=game.invitees?.some(i=>i.uid===p.uid);
+        const alreadyInGame=game.players?.some(i=>i.uid===p.uid);
         if(alreadyInGame)return;
         setSelected(s=>s.includes(p.uid)?s.filter(x=>x!==p.uid):[...s,p.uid]);
     };
@@ -282,11 +282,11 @@ function InviteStep({game,profile,uLat,uLng,onInvitesSent,onSkip}){
         setSending(true);
         try{
             const batch=db.batch();
-            const newInvitees=[...(game.invitees||[])];
+            const newRoster=[...(game.players||[])];
             selected.forEach(uid=>{
                 const pl=players.find(p=>p.uid===uid);
                 if(!pl)return;
-                newInvitees.push({uid,name:pl.name,skill:pl.skill,photoURL:pl.photoURL||null,status:'invited',invitedAt:Date.now()});
+                newRoster.push({uid,name:pl.name,skill:pl.skill,photoURL:pl.photoURL||null,status:'invited',invitedAt:Date.now()});
                 // Write notification
                 const nRef=db.collection('notifications').doc();
                 batch.set(nRef,{
@@ -295,7 +295,7 @@ function InviteStep({game,profile,uLat,uLng,onInvitesSent,onSkip}){
                     ref:game.id,read:false,timestamp:Date.now()
                 });
             });
-            await db.collection('games').doc(game.id).update({invitees:newInvitees});
+            await db.collection('games').doc(game.id).update({players:newRoster,updatedAt:Date.now()});
             await batch.commit();
             if(window.__pcnPlaySound)window.__pcnPlaySound('notification');
             onInvitesSent();
@@ -305,7 +305,7 @@ function InviteStep({game,profile,uLat,uLng,onInvitesSent,onSkip}){
 
     return(<div className="ms"><div className="mh"/>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-            <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}> INVITE PLAYERS</div>
+            <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>🎯 INVITE PLAYERS</div>
             <button onClick={onSkip} style={{background:'#f1f5f9',border:'none',borderRadius:8,padding:'5px 10px',fontSize:12,fontWeight:600,cursor:'pointer',color:'#64748b'}}>Skip</button>
         </div>
         <div style={{fontSize:12,color:'#64748b',marginBottom:12}}>Players matched to your game's skill level, play type, and distance. Tap to select.</div>
@@ -315,13 +315,13 @@ function InviteStep({game,profile,uLat,uLng,onInvitesSent,onSkip}){
             <input style={{width:'100%',padding:'9px 12px 9px 36px',border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit',fontSize:14,outline:'none'}} value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search players…"/>
         </div>
 
-        {selected.length>0&&<div style={{background:'#ecfdf5',border:'1px solid #a7f3d0',borderRadius:10,padding:'8px 12px',marginBottom:10,fontSize:13,fontWeight:600,color:'#059669'}}>{selected.length} player{selected.length>1?'s':''} selected · {game.totalSlots-1-slotsUsed(game.invitees)} slot{game.totalSlots-1-slotsUsed(game.invitees)!==1?'s':''} remaining</div>}
+        {selected.length>0&&<div style={{background:'#ecfdf5',border:'1px solid #a7f3d0',borderRadius:10,padding:'8px 12px',marginBottom:10,fontSize:13,fontWeight:600,color:'#059669'}}>{selected.length} player{selected.length>1?'s':''} selected · {game.totalSlots-1-slotsUsed(game.players)} slot{game.totalSlots-1-slotsUsed(game.players)!==1?'s':''} remaining</div>}
 
         {loading?<div style={{textAlign:'center',padding:30,color:'#94a3b8'}}>Finding matched players…</div>
         :filtered.length===0?<div style={{textAlign:'center',padding:30,color:'#94a3b8'}}>No available players found</div>
         :filtered.map(p=>{
             const isSel=selected.includes(p.uid);
-            const alreadyIn=game.invitees?.some(i=>i.uid===p.uid);
+            const alreadyIn=game.players?.some(i=>i.uid===p.uid);
             return(<div key={p.uid} className={`inv-card${isSel?' sel':''}${alreadyIn?' sent':''}`} onClick={()=>toggle(p)}>
                 <div className="inv-av">{p.photoURL?<img src={p.photoURL} referrerPolicy="no-referrer"/>:(p.name||'?')[0].toUpperCase()}</div>
                 <div style={{flex:1,minWidth:0}}>
@@ -372,13 +372,13 @@ function CreateGameForm({profile,onClose,onCreated,uLat,uLng,editGame}){
             skillMin,skillMax,totalSlots,notes:notes.trim()||null,
             isPrivate,radiusMi:parseInt(radiusMi)||25,
             lat:uLat||null,lng:uLng||null,
-            invitees:[{uid:profile.uid,name:profile.name,skill:profile.skill,photoURL:profile.photoURL||null,status:'accepted',isOrganizer:true}],
+            players:[{uid:profile.uid,name:profile.name,skill:profile.skill,photoURL:profile.photoURL||null,status:'accepted',isOrganizer:true}],
             status:'active',createdAt:Date.now(),timestamp:Date.now()
         };
         try{
             let id;
             if(editGame?.id){await db.collection('games').doc(editGame.id).update(data);id=editGame.id;}
-            else{const r=await db.collection('games').add(Object.fromEntries(Object.entries(data).filter(([,v])=>v!==undefined)));id=r.id;}
+            else{const r=await db.collection('games').add(data);id=r.id;}
             setCreatedGame({...data,id});
             setShowInvite(true);
         }catch(e){alert('Failed: '+e.message);}
@@ -392,7 +392,7 @@ function CreateGameForm({profile,onClose,onCreated,uLat,uLng,editGame}){
     return(<div className="mo" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
         <div className="ms"><div className="mh"/>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-                <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{editGame?'✏️ EDIT GAME':' CREATE GAME'}</div>
+                <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{editGame?'✏️ EDIT GAME':'🎮 CREATE GAME'}</div>
                 <button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:30,height:30,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
             </div>
 
@@ -447,8 +447,8 @@ function CreateGameForm({profile,onClose,onCreated,uLat,uLng,editGame}){
 
             <div className="fg"><div className="fl">Visibility</div>
                 <div className="og">
-                    <button className={`ob ${!isPrivate?'s':''}`} onClick={()=>setPrivate(false)} style={{fontSize:12}}> Public — Anyone can join</button>
-                    <button className={`ob ${isPrivate?'s':''}`} onClick={()=>setPrivate(true)} style={{fontSize:12}}> Private — Invite Only</button>
+                    <button className={`ob ${!isPrivate?'s':''}`} onClick={()=>setPrivate(false)} style={{fontSize:12}}>🌍 Public — Anyone can join</button>
+                    <button className={`ob ${isPrivate?'s':''}`} onClick={()=>setPrivate(true)} style={{fontSize:12}}>🔒 Private — Invite Only</button>
                 </div>
                 <div style={{fontSize:11,color:'#64748b',marginTop:5}}>{isPrivate?'Only invited players can see and join.':'Visible to all players. Anyone can request to join.'}</div>
             </div>
@@ -464,10 +464,10 @@ function CreateGameForm({profile,onClose,onCreated,uLat,uLng,editGame}){
 function GameCard({game,user,profile,onAction,expanded,onToggle}){
     const{dayStr,numStr,rel}=getDateParts(game.date);
     const expired=isExpired(game);
-    const used=slotsUsed(game.invitees);
+    const used=slotsUsed(game.players);
     const isFull=used>=game.totalSlots;
     const isOrg=game.organizerUid===user?.uid;
-    const myInvite=game.invitees?.find(i=>i.uid===user?.uid);
+    const myInvite=game.players?.find(i=>i.uid===user?.uid);
     const amIn=myInvite&&myInvite.status==='accepted';
     const amInvited=myInvite&&myInvite.status==='invited';
     const openSlots=Math.max(0,game.totalSlots-used);
@@ -480,13 +480,13 @@ function GameCard({game,user,profile,onAction,expanded,onToggle}){
             </div>
             <div className="gc-info">
                 <div className="gc-title">{game.title||`${game.playType||'Casual'} Game`}</div>
-                <div className="gc-sub"> {game.court} · ⏰ {fmtTimeRange(game.time,game.timeEnd)}</div>
+                <div className="gc-sub">📍 {game.court} · ⏰ {fmtTimeRange(game.time,game.timeEnd)}</div>
                 <div className="gc-badges">
                     <span className={`badge-pill ${isFull?'badge-full':'badge-open'}`}>{isFull?'Full':`${openSlots} spot${openSlots!==1?'s':''} left`}</span>
-                    {game.isPrivate&&<span className="badge-pill badge-private"> Private</span>}
-                    {!game.isPrivate&&<span className="badge-pill badge-public"> Public</span>}
-                    {isOrg&&<span className="badge-pill badge-mine"> You organize</span>}
-                    {amInvited&&<span className="badge-pill badge-invited"> Invited</span>}
+                    {game.isPrivate&&<span className="badge-pill badge-private">🔒 Private</span>}
+                    {!game.isPrivate&&<span className="badge-pill badge-public">🌍 Public</span>}
+                    {isOrg&&<span className="badge-pill badge-mine">👑 You organize</span>}
+                    {amInvited&&<span className="badge-pill badge-invited">📩 Invited</span>}
                     {game.skillMin&&game.skillMin!=='Any'&&<span style={{fontSize:10,fontWeight:600,color:'#94a3b8'}}>{game.skillMin}{game.skillMax&&game.skillMax!==game.skillMin&&game.skillMax!=='Any'?`–${game.skillMax}`:''}</span>}
                 </div>
             </div>
@@ -495,7 +495,7 @@ function GameCard({game,user,profile,onAction,expanded,onToggle}){
         {/* Invite banner for invited players */}
         {amInvited&&!expanded&&(<div style={{padding:'0 14px 10px'}}>
             <div className="inv-banner">
-                <div className="inv-banner-text"> {game.organizerName} invited you to play!</div>
+                <div className="inv-banner-text">🎾 {game.organizerName} invited you to play!</div>
                 <div className="inv-banner-btns">
                     <button className="accept-btn" style={{flex:0,padding:'7px 14px',fontSize:12}} onClick={()=>onAction('accept',game)}>✓ Accept</button>
                     <button className="decline-btn" style={{padding:'7px 12px',fontSize:12}} onClick={()=>onAction('decline',game)}>✕</button>
@@ -510,12 +510,12 @@ function GameCard({game,user,profile,onAction,expanded,onToggle}){
             </div>
             <div className="roster" style={{gridTemplateColumns:`repeat(${Math.min(2,game.totalSlots)},1fr)`}}>
                 {Array.from({length:game.totalSlots}).map((_,i)=>{
-                    const inv=(game.invitees||[])[i];
+                    const inv=(game.players||[])[i];
                     if(inv){
                         return(<div key={i} className={`slot ${inv.uid===user?.uid?'mine':inv.status==='declined'?'declined-slot':inv.status==='invited'?'invited-slot':'filled'}`}>
                             <div className="slot-av">{inv.photoURL?<img src={inv.photoURL} referrerPolicy="no-referrer"/>:(inv.name||'?')[0].toUpperCase()}</div>
                             <div style={{flex:1,minWidth:0}}>
-                                <div className="slot-name">{inv.name}{inv.isOrganizer?<span style={{marginLeft:4,fontSize:9,color:'#94a3b8'}}></span>:''}</div>
+                                <div className="slot-name">{inv.name}{inv.isOrganizer?<span style={{marginLeft:4,fontSize:9,color:'#94a3b8'}}>👑</span>:''}</div>
                                 <div className="slot-skill">{inv.skill}</div>
                             </div>
                             <span className={`slot-status ${inv.status==='accepted'?'st-accepted':inv.status==='invited'?'st-invited':'st-declined'}`}>{inv.status==='accepted'?'✓':inv.status==='invited'?'Pending':'Declined'}</span>
@@ -534,7 +534,7 @@ function GameCard({game,user,profile,onAction,expanded,onToggle}){
             {/* Actions */}
             <div className="gc-actions">
                 {amInvited&&<><button className="accept-btn" onClick={()=>onAction('accept',game)}>✓ Accept Invite</button><button className="decline-btn" onClick={()=>onAction('decline',game)}>Decline</button></>}
-                {!isOrg&&!amIn&&!amInvited&&!isFull&&!expired&&!game.isPrivate&&<button className="join-btn" onClick={()=>onAction('join',game)}> Join Game</button>}
+                {!isOrg&&!amIn&&!amInvited&&!isFull&&!expired&&!game.isPrivate&&<button className="join-btn" onClick={()=>onAction('join',game)}>🏓 Join Game</button>}
                 {amIn&&!isOrg&&<button className="leave-btn" onClick={()=>onAction('leave',game)}>Leave</button>}
                 {isOrg&&<button className="btn-g" style={{padding:'9px 14px',fontSize:13}} onClick={()=>onAction('invite',game)}>+ Invite Players</button>}
                 {isOrg&&<button className="cancel-btn" onClick={()=>onAction('cancel',game)}>Cancel Game</button>}
@@ -559,8 +559,8 @@ function CalendarView({games,user,onSelectDay,selectedDay,onToggle,expanded}){
         const[gy,gm,gd]=g.date.split('-').map(Number);
         if(gy===year&&gm-1===month){
             if(!dotMap[gd])dotMap[gd]=[];
-            const used=slotsUsed(g.invitees),full=used>=g.totalSlots;
-            const inv=g.invitees?.find(i=>i.uid===user?.uid);
+            const used=slotsUsed(g.players),full=used>=g.totalSlots;
+            const inv=g.players?.find(i=>i.uid===user?.uid);
             if(inv&&inv.status==='invited')dotMap[gd].push('invited');
             else if(full)dotMap[gd].push('full');
             else if(g.isPrivate)dotMap[gd].push('private');
@@ -628,7 +628,7 @@ function App(){
 
     useEffect(()=>{if(!auth)return;auth.getRedirectResult().catch(()=>{});const u=auth.onAuthStateChanged(async u=>{setUser(u||null);if(!u){setProfile(null);return;}try{const s=await db.collection('profiles').doc(u.uid).get();setProfile(s.exists?{uid:u.uid,...s.data()}:{uid:u.uid,name:u.displayName||u.email,skill:'',photoURL:u.photoURL||null});}catch(e){}});return()=>u();},[]);
     useEffect(()=>{if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(p=>{setULat(p.coords.latitude);setULng(p.coords.longitude);},()=>{});},[]);
-    useEffect(()=>{if(!db){setLoading(false);return;}const cutoff=Date.now()-24*60*60*1000;const u=db.collection('games').where('status','==','active').where('timestamp','>',cutoff-90*24*60*60*1000).orderBy('timestamp','desc').onSnapshot(s=>{setGames(s.docs.map(d=>({id:d.id,...d.data()})));setLoading(false);},()=>setLoading(false));return()=>u();},[]);
+    useEffect(()=>{if(!db){setLoading(false);return;}const u=db.collection('games').where('status','==','active').orderBy('timestamp','desc').onSnapshot(s=>{setGames(s.docs.map(d=>({id:d.id,...d.data()})));setLoading(false);},()=>setLoading(false));return()=>u();},[]);
 
     // Handle accept/decline/join/leave/cancel
     const handleAction=async(type,game)=>{
@@ -636,21 +636,21 @@ function App(){
         if(type==='accept'||type==='decline'||type==='join'||type==='leave'){
             const ref=db.collection('games').doc(game.id);
             try{
-                let invitees=[...(game.invitees||[])];
+                let roster=[...(game.players||[])];
                 if(type==='join'){
-                    const used=slotsUsed(invitees);
+                    const used=slotsUsed(roster);
                     if(used>=game.totalSlots){showToast('Game is full.');return;}
-                    if(invitees.find(i=>i.uid===user.uid)){showToast('Already in this game.');return;}
-                    invitees.push({uid:user.uid,name:profile.name,skill:profile.skill,photoURL:profile.photoURL||null,status:'accepted',joinedAt:Date.now()});
+                    if(roster.find(i=>i.uid===user.uid)){showToast('Already in this game.');return;}
+                    roster.push({uid:user.uid,name:profile.name,skill:profile.skill,photoURL:profile.photoURL||null,status:'accepted',joinedAt:Date.now()});
                 }else if(type==='accept'){
-                    invitees=invitees.map(i=>i.uid===user.uid?{...i,status:'accepted'}:i);
+                    roster=roster.map(i=>i.uid===user.uid?{...i,status:'accepted'}:i);
                     if(window.__pcnPlaySound)window.__pcnPlaySound('notification');
                 }else if(type==='decline'){
-                    invitees=invitees.map(i=>i.uid===user.uid?{...i,status:'declined'}:i);
+                    roster=roster.map(i=>i.uid===user.uid?{...i,status:'declined'}:i);
                 }else if(type==='leave'){
-                    invitees=invitees.filter(i=>i.uid!==user.uid);
+                    roster=roster.filter(i=>i.uid!==user.uid);
                 }
-                await ref.update({invitees});
+                await ref.update({players:roster,updatedAt:Date.now()});
                 if(type==='accept')showToast('✅ You joined the game!');
                 if(type==='decline')showToast('Invite declined.');
                 if(type==='join')showToast('✅ You joined the game!');
@@ -667,9 +667,9 @@ function App(){
     // Filtered + sorted games
     const filtered=useMemo(()=>{
         let arr=[...games];
-        if(tab==='invited')return arr.filter(g=>g.invitees?.some(i=>i.uid===user?.uid&&i.status==='invited'));
+        if(tab==='invited')return arr.filter(g=>g.players?.some(i=>i.uid===user?.uid&&i.status==='invited'));
         // Hide private games (unless organizer or invited)
-        arr=arr.filter(g=>!g.isPrivate||g.organizerUid===user?.uid||g.invitees?.some(i=>i.uid===user?.uid));
+        arr=arr.filter(g=>!g.isPrivate||g.organizerUid===user?.uid||g.players?.some(i=>i.uid===user?.uid));
         if(selectedDay)arr=arr.filter(g=>g.date===selectedDay);
         if(search.trim()){const q=search.toLowerCase();arr=arr.filter(g=>[g.title,g.court,g.organizerName,g.playType].some(v=>(v||'').toLowerCase().includes(q)));}
         if(fType)arr=arr.filter(g=>g.playType===fType);
@@ -679,8 +679,8 @@ function App(){
         if(fDist&&uLat)arr=arr.filter(g=>g.lat&&haversine(uLat,uLng,g.lat,g.lng)<=parseInt(fDist));
         // Sort: invited first, then by date
         arr.sort((a,b)=>{
-            const ai=a.invitees?.find(i=>i.uid===user?.uid);
-            const bi=b.invitees?.find(i=>i.uid===user?.uid);
+            const ai=a.players?.find(i=>i.uid===user?.uid);
+            const bi=b.players?.find(i=>i.uid===user?.uid);
             if(ai?.status==='invited'&&bi?.status!=='invited')return -1;
             if(bi?.status==='invited'&&ai?.status!=='invited')return 1;
             if(a.date&&b.date)return a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||'');
@@ -689,7 +689,7 @@ function App(){
         return arr;
     },[games,tab,selectedDay,search,fType,fSkill,fVis,fDist,uLat,uLng,user]);
 
-    const invitedCount=games.filter(g=>g.invitees?.some(i=>i.uid===user?.uid&&i.status==='invited')).length;
+    const invitedCount=games.filter(g=>g.players?.some(i=>i.uid===user?.uid&&i.status==='invited')).length;
 
     if(user===undefined)return(<div className="hero-bg"><div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',color:'white'}}>Loading…</div></div>);
     if(!user)return <AuthScreen/>;
@@ -700,19 +700,19 @@ function App(){
                 {/* Header */}
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
                     <div className="page-title">Find Games</div>
-                    <button className="post-btn" onClick={()=>{setEditGame(null);setShowCreate(true);}}> Create</button>
+                    <button className="post-btn" onClick={()=>{setEditGame(null);setShowCreate(true);}}>🎮 Create</button>
                 </div>
 
                 {/* Tabs */}
                 <div className="tab-bar">
-                    {[['list',' List'],['calendar',' Calendar'],['invited',` Invited${invitedCount>0?` (${invitedCount})`:''}`]].map(([k,l])=>
+                    {[['list','📋 List'],['calendar','📅 Calendar'],['invited',`📩 Invited${invitedCount>0?` (${invitedCount})`:''}`]].map(([k,l])=>
                         <button key={k} className={`tab-btn ${tab===k?'active':'inactive'}`} onClick={()=>{setTab(k);setSelectedDay(null);}}>{l}</button>
                     )}
                 </div>
 
                 {/* Calendar view */}
                 {tab==='calendar'&&<CalendarView games={games} user={user} onSelectDay={setSelectedDay} selectedDay={selectedDay} onToggle={setExpanded} expanded={expanded}/>}
-                {tab==='calendar'&&selectedDay&&<div style={{fontSize:12,color:'white',marginBottom:8,paddingLeft:2}}> {fmtFullDate(selectedDay)} · {filtered.length} game{filtered.length!==1?'s':''}<button onClick={()=>setSelectedDay(null)} style={{marginLeft:8,background:'rgba(255,255,255,.2)',border:'none',borderRadius:6,padding:'2px 8px',color:'white',fontSize:11,cursor:'pointer',fontFamily:'Outfit'}}>Clear</button></div>}
+                {tab==='calendar'&&selectedDay&&<div style={{fontSize:12,color:'white',marginBottom:8,paddingLeft:2}}>📅 {fmtFullDate(selectedDay)} · {filtered.length} game{filtered.length!==1?'s':''}<button onClick={()=>setSelectedDay(null)} style={{marginLeft:8,background:'rgba(255,255,255,.2)',border:'none',borderRadius:6,padding:'2px 8px',color:'white',fontSize:11,cursor:'pointer',fontFamily:'Outfit'}}>Clear</button></div>}
 
                 {/* Search + Filter for list/calendar */}
                 {tab!=='invited'&&(<>
@@ -729,7 +729,7 @@ function App(){
                     {showF&&<div className="fp">
                         <div><div className="fp-label">Play Type</div><div className="fp-pills"><button className={`fp-pill ${!fType?'s':''}`} onClick={()=>setFT('')}>All</button>{PTYPES.map(t=><button key={t} className={`fp-pill ${fType===t?'s':''}`} onClick={()=>setFT(fType===t?'':t)}>{PT_E[t]} {t}</button>)}</div></div>
                         <div><div className="fp-label">My Skill</div><div className="fp-pills"><button className={`fp-pill ${!fSkill?'s':''}`} onClick={()=>setFS('')}>Any</button>{SKILLS.filter(s=>s!=='Any').map(s=><button key={s} className={`fp-pill ${fSkill===s?'s':''}`} onClick={()=>setFS(fSkill===s?'':s)}>{s}</button>)}</div></div>
-                        <div><div className="fp-label">Visibility</div><div className="fp-pills"><button className={`fp-pill ${!fVis?'s':''}`} onClick={()=>setFV('')}>All</button><button className={`fp-pill ${fVis==='public'?'s':''}`} onClick={()=>setFV(fVis==='public'?'':'public')}> Public</button><button className={`fp-pill ${fVis==='private'?'s':''}`} onClick={()=>setFV(fVis==='private'?'':'private')}> Private</button></div></div>
+                        <div><div className="fp-label">Visibility</div><div className="fp-pills"><button className={`fp-pill ${!fVis?'s':''}`} onClick={()=>setFV('')}>All</button><button className={`fp-pill ${fVis==='public'?'s':''}`} onClick={()=>setFV(fVis==='public'?'':'public')}>🌍 Public</button><button className={`fp-pill ${fVis==='private'?'s':''}`} onClick={()=>setFV(fVis==='private'?'':'private')}>🔒 Private</button></div></div>
                         {uLat&&<div><div className="fp-label">Distance</div><div className="fp-pills"><button className={`fp-pill ${!fDist?'s':''}`} onClick={()=>setFD('')}>Any</button>{['5','10','25','50'].map(d=><button key={d} className={`fp-pill ${fDist===d?'s':''}`} onClick={()=>setFD(fDist===d?'':d)}>Within {d} mi</button>)}</div></div>}
                         {fCount>0&&<div style={{marginTop:8,textAlign:'right'}}><button onClick={clearF} style={{background:'none',border:'none',color:'#fca5a5',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'Outfit'}}>✕ Clear all</button></div>}
                     </div>}
@@ -742,10 +742,10 @@ function App(){
                 {/* Game list */}
                 {loading?[1,2].map(i=><div key={i} style={{background:'white',borderRadius:16,marginBottom:12,height:100,overflow:'hidden'}}><div className="skeleton" style={{height:'100%'}}/></div>)
                 :filtered.length===0?(<div style={{textAlign:'center',padding:'40px 16px'}}>
-                    <div style={{fontSize:40,marginBottom:8}}>{tab==='invited'?'':''}</div>
+                    <div style={{fontSize:40,marginBottom:8}}>{tab==='invited'?'📩':'🎮'}</div>
                     <div style={{fontSize:16,fontWeight:700,color:'white',marginBottom:4}}>{tab==='invited'?'No pending invites':'No games found'}</div>
                     <div style={{fontSize:13,color:'rgba(255,255,255,.6)',marginBottom:14}}>{tab==='invited'?'You\'re all caught up!':selectedDay?'No games on this day':search||fCount?'Try different filters':'Be the first to create one!'}</div>
-                    {tab!=='invited'&&<button className="post-btn" onClick={()=>setShowCreate(true)} style={{margin:'0 auto'}}> Create Game</button>}
+                    {tab!=='invited'&&<button className="post-btn" onClick={()=>setShowCreate(true)} style={{margin:'0 auto'}}>🎮 Create Game</button>}
                 </div>)
                 :filtered.map(g=><GameCard key={g.id} game={g} user={user} profile={profile} onAction={handleAction} expanded={expanded===g.id} onToggle={()=>setExpanded(expanded===g.id?null:g.id)}/>)}
             </div>
