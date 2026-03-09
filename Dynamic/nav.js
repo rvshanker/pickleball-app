@@ -124,36 +124,6 @@
     #pcn-notif-panel{display:none;position:fixed;top:var(--pcn-top);right:0;width:min(340px,100vw);background:white;box-shadow:-4px 0 24px rgba(0,0,0,.15);z-index:9990;overflow:hidden;animation:pcnSlideR .2s ease;max-height:calc(100vh - var(--pcn-top) - var(--pcn-bot));overflow-y:auto;}
     #pcn-notif-panel.open{display:block;}
     @keyframes pcnSlideR{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
-
-    /* INBOX PANEL */
-    #pcn-inbox-panel{display:none;position:fixed;top:var(--pcn-top);right:0;width:min(380px,100vw);background:white;box-shadow:-4px 0 24px rgba(0,0,0,.15);z-index:9991;overflow:hidden;animation:pcnSlideR .2s ease;max-height:calc(100vh - var(--pcn-top) - var(--pcn-bot));overflow-y:auto;}
-    #pcn-inbox-panel.open{display:block;}
-    .pcn-inbox-item{padding:12px 16px;border-bottom:1px solid #f1f5f9;display:flex;gap:10px;align-items:center;cursor:pointer;transition:background .1s;}
-    .pcn-inbox-item:hover{background:#f8fafc;}
-    .pcn-inbox-item.unread{background:#f0fdf4;}
-    .pcn-inbox-av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#059669,#2ECC71);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:white;flex-shrink:0;overflow:hidden;}
-    .pcn-inbox-av img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
-    .pcn-inbox-body{flex:1;min-width:0;}
-    .pcn-inbox-name{font-size:13px;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:6px;}
-    .pcn-inbox-msg{font-size:12px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
-    .pcn-inbox-msg.ur{color:#1e293b;font-weight:600;}
-    .pcn-inbox-time{font-size:10px;color:#94a3b8;flex-shrink:0;}
-    .pcn-inbox-dot{width:8px;height:8px;border-radius:50%;background:var(--pcn-green);flex-shrink:0;}
-
-    /* CHAT PANEL */
-    #pcn-chat-panel{display:none;position:fixed;top:var(--pcn-top);right:0;bottom:var(--pcn-bot);width:min(400px,100vw);background:white;box-shadow:-4px 0 24px rgba(0,0,0,.15);z-index:9992;overflow:hidden;animation:pcnSlideR .2s ease;flex-direction:column;}
-    #pcn-chat-panel.open{display:flex;}
-    .pcn-chat-hdr{padding:12px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;flex-shrink:0;background:white;}
-    .pcn-chat-msgs{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:3px;}
-    .pcn-chat-inp{padding:10px 14px;border-top:1px solid #f1f5f9;display:flex;gap:8px;align-items:flex-end;flex-shrink:0;background:white;}
-    .pcn-chat-inp textarea{flex:1;padding:9px 12px;border:2px solid #e2e8f0;border-radius:10px;font-family:'Outfit','DM Sans',sans-serif;font-size:14px;resize:none;outline:none;max-height:70px;line-height:1.4;}
-    .pcn-chat-inp textarea:focus{border-color:#2ECC71;}
-    .pcn-chat-inp button{padding:9px 14px;border:none;border-radius:10px;background:linear-gradient(135deg,#059669,#10b981);color:white;font-family:'Outfit','DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;}
-    .pcn-chat-inp button:disabled{opacity:.4;}
-    .pcn-bubble{max-width:80%;padding:9px 13px;border-radius:14px;font-size:14px;line-height:1.5;word-wrap:break-word;}
-    .pcn-bubble.me{background:linear-gradient(135deg,#059669,#10b981);color:white;border-bottom-right-radius:4px;align-self:flex-end;}
-    .pcn-bubble.them{background:#f1f5f9;color:#1e293b;border-bottom-left-radius:4px;align-self:flex-start;}
-    .pcn-bubble-time{font-size:10px;opacity:.55;margin-top:2px;}
     .pcn-panel-hdr{padding:14px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:white;z-index:1;}
     .pcn-panel-title{font-size:15px;font-weight:800;color:#0f172a;}
     .pcn-panel-close{background:#f1f5f9;border:none;border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:13px;}
@@ -262,23 +232,18 @@
   msgBadge.className = 'pcn-badge';
   msgBadge.style.display = 'none';
   msgBtn.appendChild(msgBadge);
-  msgBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    // Always use nav.js built-in inbox
-    if (!window._pcnUid) {
-      // Not logged in — redirect to sign in
-      if (window.__pcnOpenAuth) { window.__pcnOpenAuth(); return; }
-      goTo('index.html');
+  msgBtn.addEventListener('click', () => {
+    // Try page-registered handlers first
+    if (window.__pcnOpenMessages) { window.__pcnOpenMessages(); return; }
+    if (window.__pcnOpenInbox) { window.__pcnOpenInbox(); return; }
+    // If on current page, React may not have registered yet — retry after mount
+    if (filename === 'findplayer.html' || filename === 'index.html') {
+      setTimeout(() => { if (window.__pcnOpenInbox) window.__pcnOpenInbox(); }, 300);
       return;
     }
-    inboxOpen = !inboxOpen;
-    inboxPanel.classList.toggle('open', inboxOpen);
-    msgBtn.style.background = inboxOpen ? 'rgba(255,255,255,0.18)' : '';
-    // Close other panels
-    if (inboxOpen) {
-      notifOpen = false; notifPanel.classList.remove('open'); notifBtn.style.background = '';
-      closeChatPanel();
-    }
+    // Navigate to index.html with ?inbox=1 so it auto-opens the inbox
+    fade.classList.add('go');
+    setTimeout(() => { window.location.href = 'index.html?inbox=1'; }, 160);
   });
 
   // ── Notifications icon button ──
@@ -309,12 +274,7 @@
     notifOpen = !notifOpen;
     notifPanel.classList.toggle('open', notifOpen);
     notifBtn.style.background = notifOpen ? 'rgba(255,255,255,0.18)' : '';
-    if (notifOpen) {
-      markNotifsRead();
-      // Close inbox and chat
-      inboxOpen = false; inboxPanel.classList.remove('open'); msgBtn.style.background = '';
-      closeChatPanel();
-    }
+    if (notifOpen) markNotifsRead();
   });
   document.getElementById('pcn-notif-close').addEventListener('click', () => {
     notifOpen = false;
@@ -332,149 +292,6 @@
   // Profile pill wrapper
   const pillWrap = document.createElement('div');
   pillWrap.id = 'pcn-pill';
-
-  /* ── INBOX PANEL ─────────────────────────────────────────────────── */
-  const inboxPanel = document.createElement('div');
-  inboxPanel.id = 'pcn-inbox-panel';
-  inboxPanel.innerHTML = `
-    <div class="pcn-panel-hdr">
-      <div class="pcn-panel-title">💬 Messages</div>
-      <button class="pcn-panel-close" id="pcn-inbox-close">✕</button>
-    </div>
-    <div id="pcn-inbox-list"><div class="pcn-empty">No messages yet</div></div>
-  `;
-  document.body.appendChild(inboxPanel);
-  let inboxOpen = false;
-  let _conversations = [];
-
-  document.addEventListener('click', (e) => {
-    if (inboxOpen && !inboxPanel.contains(e.target) && !msgBtn.contains(e.target) && !chatPanel.contains(e.target)) {
-      inboxOpen = false; inboxPanel.classList.remove('open'); msgBtn.style.background = '';
-    }
-  });
-  inboxPanel.querySelector('#pcn-inbox-close').addEventListener('click', () => {
-    inboxOpen = false; inboxPanel.classList.remove('open'); msgBtn.style.background = '';
-  });
-
-  function renderInbox(convos) {
-    const list = document.getElementById('pcn-inbox-list');
-    if (!list) return;
-    const uid = window._pcnUid;
-    if (!convos || convos.length === 0) { list.innerHTML = '<div class="pcn-empty">No messages yet.<br>Chat with players to start conversations.</div>'; return; }
-    list.innerHTML = convos.map(c => {
-      const ouid = c.participants.find(p => p !== uid);
-      const nm = c.participantNames?.[ouid] || 'Player';
-      const rt = c['readBy_' + uid] || 0;
-      const ur = c.lastMessageBy !== uid && c.lastTimestamp > rt;
-      const initial = (nm || '?')[0].toUpperCase();
-      return `<div class="pcn-inbox-item${ur ? ' unread' : ''}" data-ouid="${ouid}" data-oname="${nm}">
-        <div class="pcn-inbox-av">${initial}</div>
-        <div class="pcn-inbox-body">
-          <div class="pcn-inbox-name">${nm}${ur ? ' <div class="pcn-inbox-dot"></div>' : ''}</div>
-          <div class="pcn-inbox-msg${ur ? ' ur' : ''}">${c.lastMessageBy === uid ? 'You: ' : ''}${c.lastMessage || ''}</div>
-        </div>
-        <div class="pcn-inbox-time">${timeAgoStr(c.lastTimestamp)}</div>
-      </div>`;
-    }).join('');
-    list.querySelectorAll('.pcn-inbox-item').forEach(el => {
-      el.addEventListener('click', () => {
-        openChatPanel(el.dataset.ouid, el.dataset.oname);
-      });
-    });
-  }
-
-  /* ── CHAT PANEL ──────────────────────────────────────────────────── */
-  const chatPanel = document.createElement('div');
-  chatPanel.id = 'pcn-chat-panel';
-  chatPanel.innerHTML = `
-    <div class="pcn-chat-hdr">
-      <button id="pcn-chat-back" style="background:#f1f5f9;border:none;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">←</button>
-      <div class="pcn-inbox-av" id="pcn-chat-av" style="width:32px;height:32px;font-size:12px;"></div>
-      <div style="flex:1"><div id="pcn-chat-name" style="font-weight:700;font-size:14px;color:#0f172a;"></div><div style="font-size:11px;color:#94a3b8;">Private chat</div></div>
-    </div>
-    <div class="pcn-chat-msgs" id="pcn-chat-msgs"></div>
-    <div class="pcn-chat-inp">
-      <textarea id="pcn-chat-input" rows="1" placeholder="Message…"></textarea>
-      <button id="pcn-chat-send">Send</button>
-    </div>
-  `;
-  document.body.appendChild(chatPanel);
-  let _chatUnsub = null;
-  let _chatOuid = null;
-  let _chatOname = null;
-
-  chatPanel.querySelector('#pcn-chat-back').addEventListener('click', closeChatPanel);
-  chatPanel.querySelector('#pcn-chat-send').addEventListener('click', sendChatMsg);
-  chatPanel.querySelector('#pcn-chat-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMsg(); }
-  });
-
-  function chatCid(a, b) { return [a, b].sort().join('__'); }
-
-  function openChatPanel(ouid, oname) {
-    _chatOuid = ouid; _chatOname = oname;
-    chatPanel.querySelector('#pcn-chat-name').textContent = oname;
-    chatPanel.querySelector('#pcn-chat-av').textContent = (oname || '?')[0].toUpperCase();
-    chatPanel.querySelector('#pcn-chat-msgs').innerHTML = '<div class="pcn-empty">💬 Say hi!</div>';
-    chatPanel.querySelector('#pcn-chat-input').value = '';
-    chatPanel.classList.add('open');
-    // Close inbox panel
-    inboxOpen = false; inboxPanel.classList.remove('open'); msgBtn.style.background = '';
-    // Mark as read
-    const uid = window._pcnUid, dbs = window._pcnDb;
-    if (uid && dbs) {
-      const cid = chatCid(uid, ouid);
-      dbs.collection('conversations').doc(cid).update({ ['readBy_' + uid]: Date.now() }).catch(() => {});
-    }
-    // Listen to messages
-    if (_chatUnsub) { _chatUnsub(); _chatUnsub = null; }
-    if (dbs && uid) {
-      const cid = chatCid(uid, ouid);
-      _chatUnsub = dbs.collection('chatMessages').where('convoId', '==', cid).orderBy('timestamp', 'asc').onSnapshot(snap => {
-        const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        const box = chatPanel.querySelector('#pcn-chat-msgs');
-        if (msgs.length === 0) { box.innerHTML = '<div class="pcn-empty">💬 Say hi!</div>'; return; }
-        box.innerHTML = msgs.map(m => {
-          const mine = m.senderUid === uid;
-          return `<div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'}">
-            <div class="pcn-bubble ${mine ? 'me' : 'them'}">${escHtml(m.text)}<div class="pcn-bubble-time">${timeAgoStr(m.timestamp)}</div></div>
-          </div>`;
-        }).join('');
-        box.scrollTop = box.scrollHeight;
-        // Mark read
-        dbs.collection('conversations').doc(cid).update({ ['readBy_' + uid]: Date.now() }).catch(() => {});
-      }, () => {});
-    }
-  }
-
-  function closeChatPanel() {
-    chatPanel.classList.remove('open');
-    if (_chatUnsub) { _chatUnsub(); _chatUnsub = null; }
-    _chatOuid = null; _chatOname = null;
-  }
-
-  async function sendChatMsg() {
-    const inp = chatPanel.querySelector('#pcn-chat-input');
-    const txt = (inp.value || '').trim();
-    if (!txt || !_chatOuid) return;
-    const uid = window._pcnUid, dbs = window._pcnDb;
-    if (!uid || !dbs) return;
-    inp.value = '';
-    const now = Date.now();
-    const cid = chatCid(uid, _chatOuid);
-    // Get my name from profile
-    let myName = 'Player';
-    try { const s = await dbs.collection('profiles').doc(uid).get(); if (s.exists) myName = s.data().name || myName; } catch(e) {}
-    try {
-      const ref = dbs.collection('conversations').doc(cid);
-      const cd = { participants: [uid, _chatOuid].sort(), participantNames: { [uid]: myName, [_chatOuid]: _chatOname }, lastMessage: txt, lastMessageBy: uid, lastTimestamp: now, ['readBy_' + uid]: now };
-      try { await ref.set({ ...cd, createdAt: now }); } catch(e) { await ref.update({ lastMessage: txt, lastMessageBy: uid, lastTimestamp: now, ['readBy_' + uid]: now }); }
-      await dbs.collection('chatMessages').add({ convoId: cid, text: txt, senderUid: uid, senderName: myName, timestamp: now });
-      if (window.__pcnPlaySound) window.__pcnPlaySound('message');
-    } catch(e) { console.error('Send failed:', e); }
-  }
-
-  function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
   // Assemble top bar
   topBar.appendChild(logoEl);
@@ -646,6 +463,7 @@
     soBtn.innerHTML = '↩ Sign Out';
     soBtn.addEventListener('click', async () => {
       closeDD();
+      try { sessionStorage.removeItem('pcn_user'); } catch(e) {}
       try { if (window.firebase?.apps?.length) await window.firebase.auth().signOut(); } catch(e) {}
       goTo('index.html');
     });
@@ -665,7 +483,17 @@
   }
 
   /* ── Watch Firebase Auth + listen for notifications/messages ─────── */
-  guestPill();
+
+  // FLICKER FIX: Restore cached user pill immediately (before Firebase loads)
+  try {
+    const cached = sessionStorage.getItem('pcn_user');
+    if (cached) {
+      const c = JSON.parse(cached);
+      userPill(c.displayName || '', c.email || '', c.photoURL || '', c.skill || '', c.city || '');
+    } else {
+      guestPill();
+    }
+  } catch(e) { guestPill(); }
 
   function watchAuth() {
     if (!window.firebase?.apps?.length) { setTimeout(watchAuth, 300); return; }
@@ -673,7 +501,11 @@
       const auth = window.firebase.auth();
       const db   = window.firebase.firestore?.();
       auth.onAuthStateChanged(async user => {
-        if (!user) { guestPill(); updateMsgBadge(0); updateNotifBadge(0); return; }
+        if (!user) {
+          guestPill(); updateMsgBadge(0); updateNotifBadge(0);
+          try { sessionStorage.removeItem('pcn_user'); } catch(e) {}
+          return;
+        }
 
         window._pcnUid = user.uid;
         window._pcnDb  = db;
@@ -687,20 +519,26 @@
         }
         userPill(user.displayName||'', user.email||'', user.photoURL||'', skill, city);
 
+        // Cache for next page load to avoid flicker
+        try {
+          sessionStorage.setItem('pcn_user', JSON.stringify({
+            displayName: user.displayName||'', email: user.email||'',
+            photoURL: user.photoURL||'', skill, city
+          }));
+        } catch(e) {}
+
         // ── Listen: unread messages ──
         if (db) {
           db.collection('conversations')
             .where('participants', 'array-contains', user.uid)
             .onSnapshot(snap => {
-              _conversations = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-              _conversations.sort((a, b) => (b.lastTimestamp || 0) - (a.lastTimestamp || 0));
               let unread = 0;
-              _conversations.forEach(c => {
-                if (c.lastMessageBy !== user.uid && c.lastTimestamp > (c['readBy_' + user.uid] || 0)) unread++;
+              snap.docs.forEach(d => {
+                const x = d.data();
+                if (x.lastMessageBy !== user.uid && x.lastTimestamp > (x[`readBy_${user.uid}`] || 0)) unread++;
               });
               const prev = parseInt(msgBadge.textContent) || 0;
               updateMsgBadge(unread);
-              renderInbox(_conversations);
               if (unread > prev) playSound('message');
               if (window.__pcnOnUnreadMsg) window.__pcnOnUnreadMsg(unread);
             }, () => {});

@@ -212,7 +212,7 @@ function AuthScreen({onBack}){
   const[email,setEmail]=useState('');const[pass,setPass]=useState('');const[confirm,setConfirm]=useState('');
   const[ld,setLd]=useState(false);const[err,setErr]=useState(null);
   const iStyle={width:'100%',padding:'12px 14px',borderRadius:12,border:'1px solid rgba(255,255,255,0.15)',background:'rgba(255,255,255,0.08)',color:'#F0F4F8',fontFamily:'DM Sans',fontSize:'0.9rem',outline:'none'};
-  const googleAuth=async()=>{setLd(true);setErr(null);try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());}catch(e){if(e.code!=='auth/popup-closed-by-user')setErr(e.message);}setLd(false);};
+  const googleAuth=async()=>{setLd(true);setErr(null);try{await auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider());}catch(e){if(e.code!=='auth/popup-closed-by-user')setErr(e.message);setLd(false);}};
   const emailAuth=async()=>{
     if(!email.trim()||!pass){setErr('Enter email and password.');return;}
     if(mode==='signup'&&pass!==confirm){setErr('Passwords do not match.');return;}
@@ -881,6 +881,7 @@ function App(){
   // ── AUTH STATE — automatically dismisses auth screen when user signs in
   useEffect(()=>{
     if(!auth)return;
+    auth.getRedirectResult().catch(()=>{});
     return auth.onAuthStateChanged(u=>{
       setUser(u||null);
       if(u){
