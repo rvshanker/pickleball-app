@@ -1,7 +1,6 @@
 /**
- * PickleConnect — Unified Navigation v3
+ * PickleConnect — Unified Navigation v2
  * Add before </body> in every page:  <script src="nav.js"></script>
- * New in v3: Messages icon, Notifications icon (with sound), cleaner header layout
  */
 (function () {
   'use strict';
@@ -9,8 +8,8 @@
   const PAGE_META = {
     'pickleconnect-app.html': { id: 'home',       label: 'Home'       },
     'index.html':             { id: 'home',       label: 'Home'       },
-    'court-main.html':        { id: 'courts',     label: 'Courts'     },
-    'court.html':             { id: 'courts',     label: 'Courts'     },
+    'court-main.html':        { id: 'courts',     label: 'Court'      },
+    'court.html':             { id: 'courts',     label: 'Court'      },
     'findgame.html':          { id: 'games',      label: 'Games'      },
     'findplayer.html':        { id: 'players',    label: 'Players'    },
     'tournament.html':        { id: 'tournament', label: 'Tournament' },
@@ -18,97 +17,39 @@
 
   const NAV_ITEMS = [
     { id: 'home',       label: 'Home',       icon: '🏠', href: 'index.html'      },
-    { id: 'courts',     label: 'Courts',     icon: '🏟', href: 'court-main.html' },
+    { id: 'courts',     label: 'Courts',     icon: '🏟', href: 'court-main.html'      },
     { id: 'games',      label: 'Games',      icon: '🎮', href: 'findgame.html'   },
     { id: 'players',    label: 'Players',    icon: '👥', href: 'findplayer.html' },
     { id: 'tournament', label: 'Tournament', icon: '🏆', href: 'tournament.html' },
   ];
 
   const filename = window.location.pathname.split('/').pop() || 'index.html';
-  const meta     = PAGE_META[filename] || { id: 'home', label: '' };
-
-  /* ── Sound Engine (Web Audio API) ────────────────────────────────── */
-  let _audioCtx = null;
-  function getAudioCtx() {
-    if (!_audioCtx) {
-      try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-    }
-    return _audioCtx;
-  }
-
-  function playSound(type) {
-    const ctx = getAudioCtx();
-    if (!ctx) return;
-    try {
-      if (type === 'message') {
-        // Soft two-tone chime
-        [440, 550].forEach((freq, i) => {
-          const o = ctx.createOscillator();
-          const g = ctx.createGain();
-          o.connect(g); g.connect(ctx.destination);
-          o.type = 'sine';
-          o.frequency.value = freq;
-          const t = ctx.currentTime + i * 0.12;
-          g.gain.setValueAtTime(0, t);
-          g.gain.linearRampToValueAtTime(0.18, t + 0.02);
-          g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-          o.start(t); o.stop(t + 0.32);
-        });
-      } else if (type === 'notification') {
-        // Bright single ping
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        o.connect(g); g.connect(ctx.destination);
-        o.type = 'sine';
-        o.frequency.setValueAtTime(880, ctx.currentTime);
-        o.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.15);
-        g.gain.setValueAtTime(0.22, ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-        o.start(); o.stop(ctx.currentTime + 0.42);
-      }
-    } catch(e) {}
-  }
+  const meta     = PAGE_META[filename] || { id: 'courts', label: '' };
 
   /* ── CSS ──────────────────────────────────────────────────────────── */
   const S = document.createElement('style');
   S.id = 'pcn-css';
   S.textContent = `
-    :root{--pcn-green:#2ECC71;--pcn-navy:#0D1B2A;--pcn-border:rgba(255,255,255,0.09);--pcn-muted:#7A9BB5;--pcn-text:#F0F4F8;--pcn-top:54px;--pcn-bot:62px;}
-    body{padding-top:var(--pcn-top)!important;padding-bottom:var(--pcn-bot)!important;}
+    :root{--pcn-green:#2ECC71;--pcn-navy:#0D1B2A;--pcn-border:rgba(255,255,255,0.09);--pcn-muted:#7A9BB5;--pcn-text:#F0F4F8;--pcn-top:52px;--pcn-bot:62px;}
+    body:not([data-fixed-layout]){padding-top:var(--pcn-top)!important;padding-bottom:var(--pcn-bot)!important;}
 
     /* TOP BAR */
-    #pcn-top{position:fixed;top:0;left:0;right:0;height:var(--pcn-top);background:rgba(13,27,42,0.97);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--pcn-border);display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 14px;z-index:9900;box-sizing:border-box;font-family:'DM Sans','Outfit',sans-serif;gap:8px;}
-
-    /* LOGO */
+    #pcn-top{position:fixed;top:0;left:0;right:0;height:var(--pcn-top);background:rgba(13,27,42,0.97);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--pcn-border);display:flex;align-items:center;justify-content:space-between;padding:0 14px 0 16px;z-index:9900;box-sizing:border-box;font-family:'DM Sans','Outfit',sans-serif;}
     .pcn-logo{font-family:'Syne','Barlow Condensed','Outfit',sans-serif;font-size:1rem;font-weight:800;color:var(--pcn-green);letter-spacing:-0.02em;cursor:pointer;white-space:nowrap;flex-shrink:0;line-height:1;}
     .pcn-logo span{color:var(--pcn-text);}
-
-    /* PAGE LABEL */
-    .pcn-label{font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--pcn-muted);white-space:nowrap;display:none;}
-    @media(min-width:380px){.pcn-label{display:block;}}
-
-    /* SPACER */
-    .pcn-spacer{flex:1;}
-
-    /* ICON BUTTONS ROW */
-    .pcn-icons{display:flex;align-items:center;gap:4px;flex-shrink:0;}
-    .pcn-icon-btn{position:relative;width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;flex-shrink:0;}
-    .pcn-icon-btn:hover{background:rgba(255,255,255,0.13);}
-    .pcn-icon-btn svg{width:17px;height:17px;stroke:var(--pcn-text);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-    .pcn-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;background:#ef4444;color:white;border-radius:8px;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 3px;border:1.5px solid rgba(13,27,42,0.97);animation:pcnPop .2s ease;}
-    @keyframes pcnPop{from{transform:scale(0)}to{transform:scale(1)}}
+    .pcn-label{font-family:'DM Sans','Outfit',sans-serif;font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--pcn-muted);position:absolute;left:50%;transform:translateX(-50%);pointer-events:none;white-space:nowrap;}
 
     /* PILL BUTTON */
     #pcn-pill{position:relative;flex-shrink:0;}
-    .pcn-pill-btn{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:4px 9px 4px 4px;cursor:pointer;font-family:'DM Sans','Outfit',sans-serif;transition:background .15s;}
+    .pcn-pill-btn{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:4px 10px 4px 5px;cursor:pointer;font-family:'DM Sans','Outfit',sans-serif;transition:background .15s;}
     .pcn-pill-btn:hover{background:rgba(255,255,255,0.13);}
-    .pcn-pill-av{width:27px;height:27px;border-radius:50%;background:linear-gradient(135deg,#059669,#2ECC71);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;overflow:hidden;flex-shrink:0;}
+    .pcn-pill-av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#059669,#2ECC71);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:white;overflow:hidden;flex-shrink:0;}
     .pcn-pill-av img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
-    .pcn-pill-name{font-size:0.78rem;font-weight:700;color:var(--pcn-text);max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .pcn-pill-caret{width:0;height:0;border-left:3.5px solid transparent;border-right:3.5px solid transparent;border-top:4.5px solid var(--pcn-muted);transition:transform .2s;}
+    .pcn-pill-name{font-size:0.82rem;font-weight:700;color:var(--pcn-text);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .pcn-pill-caret{width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--pcn-muted);transition:transform .2s;}
     .pcn-pill-btn.open .pcn-pill-caret{transform:rotate(180deg);}
 
-    /* PILL DROPDOWN */
+    /* DROPDOWN */
     #pcn-dd{display:none;position:absolute;top:calc(100% + 8px);right:0;background:white;border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,0.18);border:1px solid #e8f0fe;min-width:170px;overflow:hidden;z-index:9999;animation:pcnDrop .16s ease;}
     #pcn-dd.open{display:block;}
     @keyframes pcnDrop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
@@ -120,25 +61,8 @@
     .pcn-dd-btn.red{color:#dc2626;}
     .pcn-dd-btn.red:hover{background:#fef2f2;}
 
-    /* NOTIFICATION PANEL */
-    #pcn-notif-panel{display:none;position:fixed;top:var(--pcn-top);right:0;width:min(340px,100vw);background:white;box-shadow:-4px 0 24px rgba(0,0,0,.15);z-index:9990;overflow:hidden;animation:pcnSlideR .2s ease;max-height:calc(100vh - var(--pcn-top) - var(--pcn-bot));overflow-y:auto;}
-    #pcn-notif-panel.open{display:block;}
-    @keyframes pcnSlideR{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
-    .pcn-panel-hdr{padding:14px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:white;z-index:1;}
-    .pcn-panel-title{font-size:15px;font-weight:800;color:#0f172a;}
-    .pcn-panel-close{background:#f1f5f9;border:none;border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:13px;}
-    .pcn-notif-item{padding:12px 16px;border-bottom:1px solid #f8fafc;display:flex;gap:10px;align-items:flex-start;cursor:pointer;}
-    .pcn-notif-item:hover{background:#f8fafc;}
-    .pcn-notif-item.unread{background:#f0fdf4;}
-    .pcn-notif-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
-    .pcn-notif-body{flex:1;min-width:0;}
-    .pcn-notif-text{font-size:13px;font-weight:600;color:#0f172a;line-height:1.4;}
-    .pcn-notif-time{font-size:11px;color:#94a3b8;margin-top:2px;}
-    .pcn-notif-dot{width:8px;height:8px;border-radius:50%;background:#2ECC71;flex-shrink:0;margin-top:4px;}
-    .pcn-empty{text-align:center;padding:40px 20px;color:#94a3b8;font-size:13px;}
-
     /* SIGN-IN BUTTON (guest) */
-    #pcn-signin{display:flex;align-items:center;gap:5px;background:linear-gradient(135deg,#2ECC71,#27AE60);border:none;border-radius:18px;padding:6px 12px;font-family:'DM Sans','Outfit',sans-serif;font-size:0.75rem;font-weight:700;color:white;cursor:pointer;white-space:nowrap;flex-shrink:0;box-shadow:0 2px 10px rgba(46,204,113,0.35);transition:opacity .15s;}
+    #pcn-signin{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#2ECC71,#27AE60);border:none;border-radius:18px;padding:6px 13px;font-family:'DM Sans','Outfit',sans-serif;font-size:0.78rem;font-weight:700;color:white;cursor:pointer;white-space:nowrap;flex-shrink:0;box-shadow:0 2px 10px rgba(46,204,113,0.35);transition:opacity .15s;}
     #pcn-signin:hover{opacity:.9;}
 
     /* BOTTOM NAV */
@@ -157,9 +81,6 @@
 
     /* HIDE OLD NAV ELEMENTS */
     .nav,.float-btn,.logout-btn-desktop{display:none!important;}
-
-    /* MODAL SHEET FIX — ensure bottom-sheet modals sit fully above the bottom nav */
-    .mo,.modal-overlay{bottom:var(--pcn-bot,62px)!important;top:0!important;}
   `;
   document.head.appendChild(S);
 
@@ -168,25 +89,41 @@
   fade.id = 'pcn-fade';
   document.body.appendChild(fade);
 
-  // Only Home routes through index.html SPA.
-  // Games, Players, Courts always go to their own standalone pages.
-  const SPA_TAB = { 'index.html': 'home' };
+  // Map each page to its SPA tab on index.html (avoids full reload)
+  const SPA_TAB = {
+    'index.html':        'home',
+    'findgame.html':     'games',
+    'findplayer.html':   'players',
+  };
 
   function goTo(href) {
     if (!href) return;
     const target = href.split('?')[0].split('/').pop();
-    // On index.html going home = switch tab
+    // If we're already on index.html and target has a SPA tab, switch tab instantly
     if (filename === 'index.html' && SPA_TAB[target] !== undefined) {
-      if (window.__pcnSetTab) { window.__pcnSetTab(SPA_TAB[target]); updateActive(SPA_TAB[target]); return; }
+      const tab = SPA_TAB[target];
+      if (window.__pcnSetTab) { window.__pcnSetTab(tab); updateActive(tab); return; }
     }
-    // Same page = do nothing
+    // If target is index.html and we're on a sub-page, navigate there with tab param
+    if (target === 'index.html' && filename !== 'index.html') {
+      fade.classList.add('go');
+      setTimeout(() => { window.location.href = 'index.html'; }, 160);
+      return;
+    }
+    // If target is a page that the SPA handles, go to index.html with ?tab=
+    if (SPA_TAB[target] !== undefined && filename !== 'index.html') {
+      const tab = SPA_TAB[target];
+      fade.classList.add('go');
+      setTimeout(() => { window.location.href = `index.html?tab=${tab}`; }, 160);
+      return;
+    }
     if (target === filename) return;
-    // Full navigation
     fade.classList.add('go');
     setTimeout(() => { window.location.href = href; }, 160);
   }
 
   function updateActive(tabId) {
+    // Map SPA tab names back to nav item IDs
     const tabToNav = { home:'home', courts:'courts', games:'games', players:'players', profile:'players' };
     const navId = tabToNav[tabId] || tabId;
     document.querySelectorAll('.pcn-ni').forEach(el => {
@@ -198,108 +135,27 @@
   const topBar = document.createElement('div');
   topBar.id = 'pcn-top';
 
-  // Logo
   const logoEl = document.createElement('div');
   logoEl.className = 'pcn-logo';
   logoEl.innerHTML = 'Pickle<span>Connect</span>';
   logoEl.addEventListener('click', () => goTo('index.html'));
 
-  // Page label
   const lblEl = document.createElement('div');
   lblEl.className = 'pcn-label';
   lblEl.textContent = meta.label;
 
-  // Spacer
-  const spacer = document.createElement('div');
-  spacer.className = 'pcn-spacer';
-
+  // Expose for SPA to call when tab changes
   const TAB_LABELS = { home:'Home', courts:'Courts', games:'Games', players:'Players', profile:'Profile', tournament:'Tournament' };
   window.__pcnOnTabChange = (tabId) => {
     lblEl.textContent = TAB_LABELS[tabId] || '';
     updateActive(tabId);
   };
 
-  // Icon buttons container
-  const iconsWrap = document.createElement('div');
-  iconsWrap.className = 'pcn-icons';
-
-  // ── Messages icon button ──
-  const msgBtn = document.createElement('div');
-  msgBtn.className = 'pcn-icon-btn';
-  msgBtn.title = 'Messages';
-  msgBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>`;
-  const msgBadge = document.createElement('div');
-  msgBadge.className = 'pcn-badge';
-  msgBadge.style.display = 'none';
-  msgBtn.appendChild(msgBadge);
-  msgBtn.addEventListener('click', () => {
-    // Try page-registered handlers first
-    if (window.__pcnOpenMessages) { window.__pcnOpenMessages(); return; }
-    if (window.__pcnOpenInbox) { window.__pcnOpenInbox(); return; }
-    // If already on findplayer.html, React may not have registered yet — retry after mount
-    if (filename === 'findplayer.html') {
-      setTimeout(() => { if (window.__pcnOpenInbox) window.__pcnOpenInbox(); }, 300);
-      return;
-    }
-    // Navigate to findplayer.html with ?inbox=1 so it auto-opens the inbox
-    fade.classList.add('go');
-    setTimeout(() => { window.location.href = 'findplayer.html?inbox=1'; }, 160);
-  });
-
-  // ── Notifications icon button ──
-  const notifBtn = document.createElement('div');
-  notifBtn.className = 'pcn-icon-btn';
-  notifBtn.title = 'Notifications';
-  notifBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>`;
-  const notifBadge = document.createElement('div');
-  notifBadge.className = 'pcn-badge';
-  notifBadge.style.display = 'none';
-  notifBtn.appendChild(notifBadge);
-
-  // ── Notification Panel ──
-  const notifPanel = document.createElement('div');
-  notifPanel.id = 'pcn-notif-panel';
-  notifPanel.innerHTML = `
-    <div class="pcn-panel-hdr">
-      <div class="pcn-panel-title">🔔 Notifications</div>
-      <button class="pcn-panel-close" id="pcn-notif-close">✕</button>
-    </div>
-    <div id="pcn-notif-list"><div class="pcn-empty">No notifications yet</div></div>
-  `;
-  document.body.appendChild(notifPanel);
-
-  let notifOpen = false;
-  notifBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    notifOpen = !notifOpen;
-    notifPanel.classList.toggle('open', notifOpen);
-    notifBtn.style.background = notifOpen ? 'rgba(255,255,255,0.18)' : '';
-    if (notifOpen) markNotifsRead();
-  });
-  document.getElementById('pcn-notif-close').addEventListener('click', () => {
-    notifOpen = false;
-    notifPanel.classList.remove('open');
-    notifBtn.style.background = '';
-  });
-  document.addEventListener('click', (e) => {
-    if (notifOpen && !notifPanel.contains(e.target) && !notifBtn.contains(e.target)) {
-      notifOpen = false;
-      notifPanel.classList.remove('open');
-      notifBtn.style.background = '';
-    }
-  });
-
-  // Profile pill wrapper
   const pillWrap = document.createElement('div');
   pillWrap.id = 'pcn-pill';
 
-  // Assemble top bar
   topBar.appendChild(logoEl);
   topBar.appendChild(lblEl);
-  topBar.appendChild(spacer);
-  iconsWrap.appendChild(msgBtn);
-  iconsWrap.appendChild(notifBtn);
-  topBar.appendChild(iconsWrap);
   topBar.appendChild(pillWrap);
   document.body.insertBefore(topBar, document.body.firstChild);
 
@@ -329,83 +185,12 @@
   setTimeout(killOld, 500);
   setTimeout(killOld, 1500);
 
-  /* ── Notification helpers ─────────────────────────────────────────── */
-  let _notifications = [];
-  let _lastNotifCount = 0;
-
-  function renderNotifs(notifs) {
-    const list = document.getElementById('pcn-notif-list');
-    if (!list) return;
-    if (!notifs || notifs.length === 0) {
-      list.innerHTML = '<div class="pcn-empty">No notifications yet</div>';
-      return;
-    }
-    list.innerHTML = notifs.slice(0, 30).map(n => {
-      const icons = { invite:'🏓', message:'💬', accept:'✅', decline:'❌', game:'🎮', player:'👥', general:'🔔' };
-      const ico = icons[n.type] || icons.general;
-      const bg = n.type === 'invite' ? '#ecfdf5' : n.type === 'message' ? '#eff6ff' : '#f9fafb';
-      return `<div class="pcn-notif-item${n.read?'':' unread'}" data-id="${n.id}" onclick="window.__pcnHandleNotif && window.__pcnHandleNotif('${n.id}','${n.type}','${n.ref||''}')">
-        <div class="pcn-notif-icon" style="background:${bg}">${ico}</div>
-        <div class="pcn-notif-body">
-          <div class="pcn-notif-text">${n.text}</div>
-          <div class="pcn-notif-time">${timeAgoStr(n.timestamp)}</div>
-        </div>
-        ${!n.read ? '<div class="pcn-notif-dot"></div>' : ''}
-      </div>`;
-    }).join('');
-  }
-
-  function timeAgoStr(t) {
-    if (!t) return '';
-    const d = Date.now() - t, m = Math.floor(d / 60000);
-    if (m < 1) return 'just now';
-    if (m < 60) return m + 'm ago';
-    const h = Math.floor(m / 60);
-    if (h < 24) return h + 'h ago';
-    return Math.floor(h / 24) + 'd ago';
-  }
-
-  function markNotifsRead() {
-    notifBadge.style.display = 'none';
-    // Mark in Firestore if user logged in
-    if (window._pcnUid && window._pcnDb) {
-      const db = window._pcnDb;
-      _notifications.filter(n => !n.read).forEach(n => {
-        db.collection('notifications').doc(n.id).update({ read: true }).catch(() => {});
-      });
-    }
-  }
-
-  function updateMsgBadge(count) {
-    if (count > 0) {
-      msgBadge.textContent = count > 9 ? '9+' : count;
-      msgBadge.style.display = 'flex';
-    } else {
-      msgBadge.style.display = 'none';
-    }
-  }
-
-  function updateNotifBadge(count) {
-    if (count > 0) {
-      notifBadge.textContent = count > 9 ? '9+' : count;
-      notifBadge.style.display = 'flex';
-    } else {
-      notifBadge.style.display = 'none';
-    }
-  }
-
-  // Expose globals
-  window.__pcnPlaySound = playSound;
-  window.__pcnUpdateMsgBadge = updateMsgBadge;
-  window.__pcnUpdateNotifBadge = updateNotifBadge;
-  window.__pcnRenderNotifs = renderNotifs;
-
   /* ── Profile pill builders ────────────────────────────────────────── */
   function guestPill() {
     pillWrap.innerHTML = '';
     const btn = document.createElement('button');
     btn.id = 'pcn-signin';
-    btn.innerHTML = '🔑 Sign In';
+    btn.textContent = '🔑 Sign In';
     btn.addEventListener('click', () => {
       if (window.__pcnOpenAuth) { window.__pcnOpenAuth(); return; }
       goTo('index.html');
@@ -416,6 +201,7 @@
   function userPill(displayName, email, photoURL, skill, city) {
     pillWrap.innerHTML = '';
 
+    // Pill button
     const btn = document.createElement('button');
     btn.className = 'pcn-pill-btn';
 
@@ -438,6 +224,7 @@
 
     btn.appendChild(av); btn.appendChild(nameEl); btn.appendChild(caret);
 
+    // Dropdown
     const dd = document.createElement('div');
     dd.id = 'pcn-dd';
 
@@ -454,6 +241,7 @@
       if (typeof window.__pcnOpenProfile === 'function') { window.__pcnOpenProfile(); return; }
       const b = document.querySelector('[data-action="edit-profile"]');
       if (b) { b.click(); return; }
+      // fallback: switch to profile tab if on index.html
       if (window.__pcnSetTab) window.__pcnSetTab('profile');
     });
     dd.appendChild(editBtn);
@@ -463,7 +251,7 @@
     soBtn.innerHTML = '↩ Sign Out';
     soBtn.addEventListener('click', async () => {
       closeDD();
-      try { if (window.firebase?.apps?.length) await window.firebase.auth().signOut(); } catch(e) {}
+      try { if (window.firebase?.apps?.length) await window.firebase.auth().signOut(); } catch(e){}
       goTo('index.html');
     });
     dd.appendChild(soBtn);
@@ -481,8 +269,8 @@
     document.addEventListener('click', closeDD);
   }
 
-  /* ── Watch Firebase Auth + listen for notifications/messages ─────── */
-  guestPill();
+  /* ── Watch Firebase Auth ──────────────────────────────────────────── */
+  guestPill(); // default while loading
 
   function watchAuth() {
     if (!window.firebase?.apps?.length) { setTimeout(watchAuth, 300); return; }
@@ -490,11 +278,7 @@
       const auth = window.firebase.auth();
       const db   = window.firebase.firestore?.();
       auth.onAuthStateChanged(async user => {
-        if (!user) { guestPill(); updateMsgBadge(0); updateNotifBadge(0); return; }
-
-        window._pcnUid = user.uid;
-        window._pcnDb  = db;
-
+        if (!user) { guestPill(); return; }
         let skill = '', city = '';
         if (db) {
           try {
@@ -503,37 +287,6 @@
           } catch(e) {}
         }
         userPill(user.displayName||'', user.email||'', user.photoURL||'', skill, city);
-
-        // ── Listen: unread messages ──
-        if (db) {
-          db.collection('conversations')
-            .where('participants', 'array-contains', user.uid)
-            .onSnapshot(snap => {
-              let unread = 0;
-              snap.docs.forEach(d => {
-                const x = d.data();
-                if (x.lastMessageBy !== user.uid && x.lastTimestamp > (x[`readBy_${user.uid}`] || 0)) unread++;
-              });
-              const prev = parseInt(msgBadge.textContent) || 0;
-              updateMsgBadge(unread);
-              if (unread > prev) playSound('message');
-              if (window.__pcnOnUnreadMsg) window.__pcnOnUnreadMsg(unread);
-            }, () => {});
-
-          // ── Listen: notifications ──
-          db.collection('notifications')
-            .where('toUid', '==', user.uid)
-            .orderBy('timestamp', 'desc')
-            .limit(30)
-            .onSnapshot(snap => {
-              _notifications = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-              renderNotifs(_notifications);
-              const unread = _notifications.filter(n => !n.read).length;
-              const prev = parseInt(notifBadge.textContent) || 0;
-              updateNotifBadge(unread);
-              if (unread > prev && !notifOpen) playSound('notification');
-            }, () => {});
-        }
       });
     } catch(e) { guestPill(); }
   }

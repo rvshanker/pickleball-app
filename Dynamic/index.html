@@ -26,12 +26,11 @@
   --nav-h:62px;
 }
 html,body,#root{height:100%;overflow:hidden;}
-/* Override nav.js body padding — index uses fixed app-shell positioning */
 body{padding-top:0!important;padding-bottom:0!important;}
 body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);font-size:15px;-webkit-text-size-adjust:100%;}
 
 /* Layout shell — sits between nav bars injected by nav.js */
-.app-shell{display:flex;flex-direction:column;position:fixed;top:var(--pcn-top,54px);left:0;right:0;bottom:62px;max-width:480px;margin:0 auto;background:var(--navy);}
+.app-shell{display:flex;flex-direction:column;position:fixed;top:54px;left:0;right:0;bottom:62px;max-width:480px;margin:0 auto;background:var(--navy);}
 .screen-body{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding-bottom:16px;}
 .screen-body::-webkit-scrollbar{display:none;}
 .top-bar{display:none!important;}
@@ -50,7 +49,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);f
 .badge-dot{position:absolute;top:3px;right:3px;min-width:16px;height:16px;border-radius:8px;background:#ef4444;color:white;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;border:1.5px solid var(--navy);}
 
 /* Modal overlay — z-index above nav.js (9900) */
-.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:var(--pcn-bot,62px);background:rgba(5,10,18,0.82);backdrop-filter:blur(8px);z-index:9950;display:flex;align-items:flex-end;justify-content:center;}
+.modal-overlay{position:fixed;inset:0;background:rgba(5,10,18,0.82);backdrop-filter:blur(8px);z-index:9950;display:flex;align-items:flex-end;justify-content:center;}
 .modal-sheet{background:var(--navy2);border-radius:24px 24px 0 0;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;padding:20px 20px 90px;animation:slideUp .28s ease;}
 .modal-handle{width:40px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 18px;}
 .modal-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:4px;}
@@ -183,7 +182,7 @@ textarea.fi{resize:vertical;min-height:60px;}
 </style>
 <script src="nav.js"></script>
 </head>
-<body>
+<body data-fixed-layout>
 <div id="root"></div>
 <script type="text/babel">
 const {useState,useEffect,useRef,useMemo} = React;
@@ -758,7 +757,9 @@ function PostForm({user,onClose,onPosted,editData}){
     if(!profile){alert('Profile not loaded.');return;}
     if(playTypes.length===0){alert('Select at least one play type.');return;}
     setSaving(true);
-    const data={uid:user.uid,name:profile.name,skill:profile.skill,city:profile.city||null,age:profile.age||null,gender:profile.gender||null,photoURL:profile.photoURL||null,purpose,playTypes,availability:avail,courtName:courtName.trim()||null,message:message.trim()||null,timestamp:Date.now(),status:'active'};
+    // Build data and strip ALL undefined values — Firestore rejects them
+    const _raw={uid:user.uid,name:profile.name||null,skill:profile.skill||null,city:profile.city||null,age:profile.age||null,gender:profile.gender||null,photoURL:profile.photoURL||null,purpose,playTypes,availability:avail,courtName:courtName.trim()||null,message:message.trim()||null,timestamp:Date.now(),status:'active'};
+    const data=Object.fromEntries(Object.entries(_raw).filter(([,v])=>v!==undefined));
     try{
       if(editData?.id)await db.collection('findPlayers').doc(editData.id).update(data);
       else await db.collection('findPlayers').add(data);
@@ -849,8 +850,6 @@ function App(){
   useEffect(()=>{window.__pcnSetTab=switchTab;},[]);
   useEffect(()=>{window.__pcnOpenAuth=()=>setShowAuth(true);return()=>{delete window.__pcnOpenAuth;};},[]);
   useEffect(()=>{window.__pcnOpenProfile=()=>setShowProfile(true);return()=>{delete window.__pcnOpenProfile;};},[]);
-  // Register inbox opener so nav.js message icon works on this page directly
-  useEffect(()=>{window.__pcnOpenInbox=()=>setShowInbox(true);return()=>{delete window.__pcnOpenInbox;};},[]);
 
   const[courts,setCourts]=useState([]);
   const[games,setGames]=useState([]);
@@ -900,13 +899,13 @@ function App(){
 
   useEffect(()=>{
     if(!fbOk||!user)return;
-    const u=db.collection('games').where('status','==','active').orderBy('createdAt','desc').onSnapshot(s=>{setGames(s.docs.map(d=>({id:d.id,...d.data()})));},e=>{if(e.code!=='permission-denied')console.error(e);});
+    const u=db.collection('games').where('status','==','active').onSnapshot(s=>{setGames(s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt||b.timestamp||0)-(a.createdAt||a.timestamp||0)));},e=>{if(e.code!=='permission-denied')console.error(e);});
     addUnsub(u);return()=>u();
   },[user?.uid]);
 
   useEffect(()=>{
     if(!fbOk)return;
-    const u=db.collection('findPlayers').where('status','==','active').orderBy('timestamp','desc').onSnapshot(s=>{setPosts(s.docs.map(d=>({id:d.id,...d.data()})));},e=>{if(e.code!=='permission-denied')console.error(e);});
+    const u=db.collection('findPlayers').where('status','==','active').onSnapshot(s=>{setPosts(s.docs.map(d=>({id:d.id,...d.data()})));},e=>{if(e.code!=='permission-denied')console.error(e);});
     return()=>u();
   },[]);
 
