@@ -1922,7 +1922,7 @@ function App(){
     </div>
   );
 
-  // ── New user profile setup
+  // ── New user profiles setup
   if(user&&profile===null)return(
     <div className="app-shell">
       <ProfileSetup user={user} profile={null} onSave={p=>setProfile({uid:user.uid,...p})} uLat={uLat} uLng={uLng}/>
