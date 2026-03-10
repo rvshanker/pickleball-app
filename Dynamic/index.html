@@ -635,6 +635,25 @@ function CourtPlayerRow({p,isNow}){
     );
 }
 
+/* ── FlashAnnouncement ── */
+function FlashAnnouncement({courtId,courtData,updateCourt}){
+    const[text,setText]=useState(courtData.flashAnnouncement||'');
+    const[saving,setSaving]=useState(false);
+    const save=async()=>{setSaving(true);await updateCourt('flashAnnouncement',text.trim());setSaving(false);};
+    const clear=async()=>{setText('');await updateCourt('flashAnnouncement','');};
+    return(
+        <div className="ct-card">
+            <div style={{fontSize:'0.7rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>📢 Flash Announcement</div>
+            {courtData.flashAnnouncement&&<div style={{background:'rgba(247,201,72,0.12)',border:'1px solid rgba(247,201,72,0.3)',borderRadius:8,padding:'7px 10px',marginBottom:8,fontSize:'0.75rem',color:'var(--accent)',fontWeight:600}}>📢 {courtData.flashAnnouncement}</div>}
+            <textarea className="fi" value={text} onChange={e=>setText(e.target.value)} placeholder="e.g. Court 3 closed for maintenance…" rows={2} style={{marginBottom:8}}/>
+            <div style={{display:'flex',gap:6}}>
+                <button className="btn btn-primary btn-sm" onClick={save} disabled={saving} style={{flex:1,opacity:saving?.6:1}}>{saving?'Saving…':'📢 Post'}</button>
+                {courtData.flashAnnouncement&&<button className="btn btn-danger btn-sm" onClick={clear}>✕ Clear</button>}
+            </div>
+        </div>
+    );
+}
+
 /* ── CourtDetailPage ── */
 function buildTimeOpts(){const o=[];const n=new Date();const s=new Date(n);s.setMinutes(0,0,0);s.setHours(s.getHours()+1);const e=new Date(n);e.setHours(23,0,0,0);const c=new Date(s);while(c<=e){o.push({label:c.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}),value:c.getTime()});c.setHours(c.getHours()+1);}return o;}
 
@@ -707,11 +726,6 @@ function CourtDetailPage({courtId,onBack}){
     const timeOpts=buildTimeOpts();
 
     return(<div className="fade-in" style={{paddingTop:8}}>
-        {/* Back button */}
-        <div style={{padding:'0 16px 8px',display:'flex',alignItems:'center',gap:8}}>
-            <button onClick={onBack} className="icon-btn" style={{position:'static'}}>←</button>
-        </div>
-
         {/* ── CARD 1: Court Name + Weather ── */}
         <div className="cd-section">
             <div className="cd-name-row">
@@ -724,20 +738,29 @@ function CourtDetailPage({courtId,onBack}){
                     <span className={'cd-crowd-badge '+(courtData.crowdLevel||'low')}>{courtData.crowdLevel==='high'?'Packed':courtData.crowdLevel==='medium'?'Busy':'Open'}</span>
                 </div>
             </div>
+            {courtData.flashAnnouncement&&<div style={{marginTop:8,background:'rgba(247,201,72,0.12)',border:'1px solid rgba(247,201,72,0.3)',borderRadius:8,padding:'6px 10px',fontSize:'0.72rem',color:'var(--accent)',fontWeight:600}}>📢 {courtData.flashAnnouncement}</div>}
 
             {/* Weather row */}
-            {weather&&<div className="cd-wx-row">
-                <div className="cd-wx-card">
-                    <div style={{fontSize:'1.5rem',lineHeight:1}}>{wxIcon(weather.temp,weather.wind)}</div>
-                    <div>
-                        <div style={{fontSize:'0.6rem',color:'var(--muted)',fontWeight:600}}>Current</div>
-                        <div style={{fontSize:'1.05rem',fontWeight:800}}>{weather.temp}°F</div>
+            {weather&&<div style={{marginTop:12}}>
+                <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:8,alignItems:'start'}}>
+                    {/* Current — compact */}
+                    <div className="cd-wx-card" style={{padding:'7px 10px',gap:7,minWidth:0}}>
+                        <div style={{fontSize:'1.2rem',lineHeight:1}}>{wxIcon(weather.temp,weather.wind)}</div>
+                        <div>
+                            <div style={{fontSize:'0.55rem',color:'var(--muted)',fontWeight:600}}>Now</div>
+                            <div style={{fontSize:'0.88rem',fontWeight:800,whiteSpace:'nowrap'}}>{weather.temp}°F</div>
+                            <div style={{fontSize:'0.55rem',color:'var(--muted)',whiteSpace:'nowrap'}}>💨 {weather.wind}mph</div>
+                        </div>
                     </div>
-                </div>
-                <div className="cd-wx-card">
-                    <div>
-                        <div style={{fontSize:'0.6rem',color:'var(--muted)',fontWeight:600}}>Daily High</div>
-                        <div style={{fontSize:'0.82rem',fontWeight:700}}>High <span style={{fontWeight:800,fontSize:'1.05rem'}}>{forecast.length>0?Math.max(...forecast.map(h=>h.temp)):weather.temp}°F</span></div>
+                    {/* Next 4 hrs */}
+                    <div style={{display:'flex',gap:5,overflow:'hidden'}}>
+                        {forecast.slice(0,4).map((h,i)=>(
+                            <div key={i} style={{flex:1,background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:'5px 4px',textAlign:'center',minWidth:0}}>
+                                <div style={{fontSize:'0.52rem',color:'var(--muted)',fontWeight:600,whiteSpace:'nowrap'}}>{h.dt.toLocaleTimeString([],{hour:'numeric'})}</div>
+                                <div style={{fontSize:'0.75rem',fontWeight:800,marginTop:2}}>{h.temp}°</div>
+                                <div style={{fontSize:'0.52rem',color:'var(--muted)',marginTop:1}}>💨{h.wind}</div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>}
@@ -856,6 +879,9 @@ function CourtDetailPage({courtId,onBack}){
                 <div className="ct-card"><div style={{fontSize:'0.7rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>📋 Condition</div><div className="ct-tog">{[['open','✅ Open'],['closed','🚫 Closed'],['wet','💧 Wet']].map(([v,l])=><button key={v} onClick={()=>updateCourt('condition',v)} className={(courtData.condition||'open')===v?(v==='closed'?'warn':'on'):''}>{l}</button>)}</div></div>
                 <div className="ct-card"><div style={{fontSize:'0.7rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>💡 Lights</div><div className="ct-tog"><button onClick={()=>updateCourt('lightsOn',true)} className={courtData.lightsOn?'on':''}>💡 ON</button><button onClick={()=>updateCourt('lightsOn',false)} className={!courtData.lightsOn?'off':''}>🌙 OFF</button></div></div>
                 <div className="ct-card"><div style={{fontSize:'0.7rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>🏟 Courts in Rotation</div><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{openOpts.map(n=><button key={n} onClick={()=>updateCourt('openCourts',n)} className={'dr-btn'+(open===n?' a':'')} style={{minWidth:38}}>{n}</button>)}</div></div>
+                <div className="ct-card"><div style={{fontSize:'0.7rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>🚻 Restrooms</div><div className="ct-tog"><button onClick={()=>updateCourt('restroom','open')} className={(courtData.restroom||'open')==='open'?'on':''}>✅ Open</button><button onClick={()=>updateCourt('restroom','closed')} className={courtData.restroom==='closed'?'warn':''}>🚫 Closed</button></div></div>
+                <div className="ct-card"><div style={{fontSize:'0.7rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>🅿️ Parking</div><div className="ct-tog"><button onClick={()=>updateCourt('parking','available')} className={(courtData.parking||'available')==='available'?'on':''}>✅ Available</button><button onClick={()=>updateCourt('parking','full')} className={courtData.parking==='full'?'warn':''}>🚗 Full</button></div></div>
+                <FlashAnnouncement courtId={courtId} courtData={courtData} updateCourt={updateCourt}/>
             </div>}
 
             {/* INFO TAB */}

@@ -84,8 +84,7 @@
     .pcn-logo span{color:var(--pcn-text);}
 
     /* PAGE LABEL */
-    .pcn-label{font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--pcn-muted);white-space:nowrap;display:none;}
-    @media(min-width:380px){.pcn-label{display:block;}}
+    .pcn-label{display:none!important;}
 
     /* SPACER */
     .pcn-spacer{flex:1;}
@@ -104,8 +103,8 @@
     .pcn-pill-btn:hover{background:rgba(255,255,255,0.13);}
     .pcn-pill-av{width:27px;height:27px;border-radius:50%;background:linear-gradient(135deg,#059669,#2ECC71);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;overflow:hidden;flex-shrink:0;}
     .pcn-pill-av img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
-    .pcn-pill-name{font-size:0.78rem;font-weight:700;color:var(--pcn-text);max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .pcn-pill-caret{width:0;height:0;border-left:3.5px solid transparent;border-right:3.5px solid transparent;border-top:4.5px solid var(--pcn-muted);transition:transform .2s;}
+    .pcn-pill-name{display:none;}
+    .pcn-pill-caret{display:none;}
     .pcn-pill-btn.open .pcn-pill-caret{transform:rotate(180deg);}
 
     /* PILL DROPDOWN */
