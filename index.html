@@ -1,286 +1,556 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PickleConnect – Find a Court</title>
-    <meta name="description" content="Find pickleball courts near you. Check in, see who's playing, and track court availability in real time.">
-    <meta name="keywords" content="pickleball courts near me, find pickleball courts, pickleball check in, pickleball players, outdoor pickleball, indoor pickleball, pickleball court finder, pickleball app, pickleball community, court availability">
-    <meta name="author" content="PickleConnect">
-    <meta name="robots" content="index, follow">
-    <meta name="language" content="English">
-    <meta name="revisit-after" content="7 days">
-    <!-- Open Graph -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://rvhanker.github.io/index.html">
-    <meta property="og:title" content="PickleConnect – Find Pickleball Courts Near You">
-    <meta property="og:description" content="Find nearby pickleball courts, check in to let others know you're playing, and see live player counts in real time.">
-    <meta property="og:image" content="https://rvhanker.github.io/og-image.png">
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://rvhanker.github.io/index.html">
-    <meta property="twitter:title" content="PickleConnect – Find Pickleball Courts Near You">
-    <meta property="twitter:description" content="Find nearby pickleball courts, check in to let others know you're playing, and see live player counts in real time.">
-    <meta property="twitter:image" content="https://rvhanker.github.io/og-image.png">
-    <link rel="canonical" href="https://rvhanker.github.io/index.html">
-    <meta name="theme-color" content="#059669">
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8VE2FTD711"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-8VE2FTD711');
-    </script>
-    <!-- Structured Data -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "PickleConnect",
-      "description": "Find pickleball courts near you, check in, and see who's playing in real time.",
-      "url": "https://rvhanker.github.io/",
-      "applicationCategory": "SportsApplication",
-      "operatingSystem": "Web Browser",
-      "offers": {"@type":"Offer","price":"0","priceCurrency":"USD"},
-      "keywords": "pickleball, courts, find courts, check in, players"
-    }
-    </script>
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="PickleConnect">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23059669'/><circle cx='50' cy='50' r='28' fill='white' opacity='0.15'/><ellipse cx='50' cy='50' rx='20' ry='20' fill='none' stroke='white' stroke-width='3'/><line x1='30' y1='50' x2='70' y2='50' stroke='white' stroke-width='3'/><line x1='50' y1='30' x2='50' y2='70' stroke='white' stroke-width='3'/><circle cx='50' cy='50' r='6' fill='white'/></svg>" type="image/svg+xml">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <style>
-        *{margin:0;padding:0;box-sizing:border-box;}
-        html{scroll-behavior:smooth;}
-        body{font-family:'Outfit',sans-serif;background:#f1f5f9;font-size:16px;-webkit-text-size-adjust:100%;}
-        .fd{font-family:'Barlow Condensed',sans-serif;}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PickleConnect</title>
+<meta name="theme-color" content="#0D1B2A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --green:#2ECC71;--green-dark:#27AE60;--green-dim:rgba(46,204,113,0.12);
+  --navy:#0D1B2A;--navy2:#142232;--card:#1A2B3C;--card2:#1F3347;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#F0F4F8;--muted:#7A9BB5;--muted2:rgba(122,155,181,0.5);
+  --accent:#F7C948;--blue:#5B9BF7;--red:#F75B5B;
+  --nav-h:62px;
+}
+html,body,#root{height:100%;overflow:hidden;}
+body{padding-top:0!important;padding-bottom:0!important;}
+body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);font-size:15px;-webkit-text-size-adjust:100%;}
 
-        /* Nav */
-        .nav{background:#0f172a;padding:13px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;}
+/* Layout shell — sits between nav bars injected by nav.js */
+.app-shell{display:flex;flex-direction:column;position:fixed;top:54px;left:0;right:0;bottom:62px;max-width:480px;margin:0 auto;background:var(--navy);}
+.screen-body{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding-bottom:16px;}
+.screen-body::-webkit-scrollbar{display:none;}
+.top-bar{display:none!important;}
+.bottom-nav{display:none!important;}
 
-        /* Page */
-        .pg{padding:16px;max-width:740px;width:100%;margin:0 auto;padding-bottom:16px;}
+/* Buttons */
+.btn{padding:11px 20px;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px;justify-content:center;}
+.btn-primary{background:linear-gradient(135deg,#2ECC71,#27AE60);color:white;box-shadow:0 4px 14px rgba(46,204,113,0.35);}
+.btn-primary:hover{opacity:.9;}
+.btn-ghost{background:transparent;color:var(--green);border:1.5px solid rgba(46,204,113,0.35);}
+.btn-ghost:hover{background:var(--green-dim);}
+.btn-danger{background:rgba(247,91,91,0.12);color:var(--red);border:1px solid rgba(247,91,91,0.2);}
+.btn-sm{padding:7px 14px;font-size:0.78rem;border-radius:10px;}
+.icon-btn{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.9rem;cursor:pointer;position:relative;flex-shrink:0;transition:background .15s;}
+.icon-btn:hover{background:var(--card2);}
+.badge-dot{position:absolute;top:3px;right:3px;min-width:16px;height:16px;border-radius:8px;background:#ef4444;color:white;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;border:1.5px solid var(--navy);}
 
-        /* Cards */
-        .card{background:white;border-radius:14px;padding:18px 20px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:13px;}
+/* Modal overlay — z-index above nav.js (9900) */
+.modal-overlay{position:fixed;inset:0;background:rgba(5,10,18,0.82);backdrop-filter:blur(8px);z-index:9950;display:flex;align-items:flex-end;justify-content:center;}
+.modal-sheet{background:var(--navy2);border-radius:24px 24px 0 0;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;padding:20px 20px 90px;animation:slideUp .28s ease;}
+.modal-handle{width:40px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 18px;}
+.modal-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:4px;}
 
-        /* Buttons */
-        .btn-g{background:linear-gradient(135deg,#059669,#10b981);color:white;border-radius:10px;padding:12px 22px;font-weight:700;font-size:15px;border:none;cursor:pointer;transition:all .2s;font-family:'Outfit',sans-serif;box-shadow:0 4px 12px rgba(5,150,105,.25);}
-        .btn-g:hover{background:linear-gradient(135deg,#047857,#059669);transform:translateY(-1px);}
-        .btn-g:active{transform:translateY(0);}
-        .btn-out{background:transparent;color:#059669;border:2px solid #059669;border-radius:10px;padding:10px 20px;font-weight:600;font-size:14px;cursor:pointer;transition:all .15s;font-family:'Outfit',sans-serif;}
-        .btn-out:hover{background:#059669;color:white;}
+/* Forms */
+.fi{width:100%;padding:11px 14px;background:var(--card2);border:1px solid var(--border2);border-radius:12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.9rem;outline:none;transition:border-color .15s;}
+.fi:focus{border-color:rgba(46,204,113,0.5);}
+.fi::placeholder{color:var(--muted2);}
+select.fi{-webkit-appearance:none;cursor:pointer;}
+textarea.fi{resize:vertical;min-height:60px;}
+.fl{display:block;font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+.fg{margin-bottom:14px;}
+.og{display:flex;gap:6px;flex-wrap:wrap;}
+.ob{padding:6px 13px;border-radius:10px;border:1px solid var(--border2);background:transparent;font-family:'DM Sans',sans-serif;font-size:0.78rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;}
+.ob.s{border-color:rgba(46,204,113,0.4);background:var(--green-dim);color:var(--green);}
 
-        /* Hero card (last visited) */
-        .hero-court{background:linear-gradient(135deg,#0f172a 0%,#1e3a2f 55%,#052e16 100%);border-radius:16px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden;}
-        .hero-court::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(5,150,105,.15);border-radius:50%;}
+/* Tags */
+.tag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;font-size:0.65rem;font-weight:600;white-space:nowrap;}
+.t-green{background:rgba(46,204,113,0.12);color:var(--green);}
+.t-amber{background:rgba(247,201,72,0.12);color:var(--accent);}
+.t-blue{background:rgba(91,155,247,0.12);color:var(--blue);}
+.t-muted{background:rgba(122,155,181,0.12);color:var(--muted);}
+.t-red{background:rgba(247,91,91,0.12);color:var(--red);}
 
-        /* Court list item */
-        .court-item{background:white;border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px;border:2px solid transparent;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:10px;}
-        .court-item:hover{border-color:#10b981;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1);}
-        .court-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#059669,#10b981);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
-        .court-icon.photo{background-size:cover;background-position:center;}
+/* Cards */
+.court-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s;}
+.court-card:hover{border-color:var(--border2);}
+.court-icon{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#3a7d44,#2ECC71);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
+.court-info{flex:1;min-width:0;}
+.court-info h4{font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.court-info p{font-size:0.68rem;color:var(--muted);margin-top:3px;}
+.court-badge{font-size:0.62rem;font-weight:700;padding:4px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+.badge-open{background:rgba(46,204,113,0.15);color:var(--green);}
+.badge-busy{background:rgba(247,201,72,0.15);color:var(--accent);}
+.badge-full{background:rgba(247,91,91,0.15);color:var(--red);}
 
-        /* Status dot */
-        .sdot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;}
-        .sdot.green{background:#10b981;}
-        .sdot.yellow{background:#f59e0b;}
-        .sdot.red{background:#ef4444;}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-        .sdot.live{animation:pulse 2s infinite;}
+/* Player card */
+.player-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;cursor:pointer;transition:border-color .15s;}
+.player-card.expanded{border-color:rgba(46,204,113,0.3);}
+.pc-row{display:flex;align-items:center;gap:12px;}
+.pc-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#1F3347,#2ECC71);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:white;flex-shrink:0;overflow:hidden;}
+.pc-info{flex:1;min-width:0;}
+.pc-name{font-weight:700;font-size:0.9rem;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.pc-sub{font-size:0.7rem;color:var(--muted);margin-top:2px;}
+.pc-skill{background:var(--green-dim);border:1px solid rgba(46,204,113,0.2);color:var(--green);font-size:0.65rem;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+.pc-expand{border-top:1px solid var(--border);margin-top:12px;padding-top:12px;}
 
-        /* Search */
-        .search-wrap{position:relative;margin-bottom:14px;}
-        .search-inp{width:100%;background:white;border:2px solid #e2e8f0;border-radius:12px;padding:12px 16px 12px 44px;font-size:15px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .15s;}
-        .search-inp:focus{border-color:#059669;}
-        .search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none;}
+/* Filter pills */
+.fp-label{font-size:0.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+.fp-pills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
+.fp-pill{padding:5px 11px;border-radius:8px;border:1.5px solid var(--border2);background:transparent;font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:600;cursor:pointer;color:var(--muted);}
+.fp-pill.s{background:var(--green-dim);color:var(--green);border-color:rgba(46,204,113,0.4);}
 
-        /* Distance badge */
-        .dist-badge{background:#f0fdf4;color:#059669;border:1px solid #a7f3d0;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;}
+/* Tab pills */
+.tab-pills{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-bottom:16px;padding-bottom:2px;}
+.tab-pills::-webkit-scrollbar{display:none;}
+.pill{padding:6px 14px;border-radius:20px;font-size:0.72rem;font-weight:600;white-space:nowrap;border:1px solid var(--border);color:var(--muted);background:var(--card);cursor:pointer;flex-shrink:0;transition:all .15s;}
+.pill.active{background:var(--green-dim);border-color:rgba(46,204,113,0.35);color:var(--green);}
 
-        /* Player count pill */
-        .player-pill{display:inline-flex;align-items:center;gap:4px;background:#f0fdf4;color:#059669;border-radius:8px;padding:3px 8px;font-size:12px;font-weight:700;}
-        .player-pill.busy{background:#fef3c7;color:#d97706;}
-        .player-pill.empty{background:#f1f5f9;color:#94a3b8;}
+/* Stats */
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px 8px;text-align:center;cursor:pointer;}
+.stat-num{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:var(--text);}
+.stat-num.hi{color:var(--green);}
+.stat-lbl{font-size:0.6rem;color:var(--muted);margin-top:2px;font-weight:600;}
 
-        /* Floating tournament button */
-        .float-btn{position:fixed;bottom:24px;right:20px;z-index:200;display:flex;align-items:center;gap:9px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;border:none;border-radius:50px;padding:13px 20px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 24px rgba(124,58,237,.4);transition:all .2s;}
-        .float-btn:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(124,58,237,.5);}
-        .float-btn:active{transform:translateY(0);}
-        .float-btn-label{display:flex;flex-direction:column;line-height:1.25;}
-        .float-btn-title{font-size:14px;font-weight:700;}
-        .float-btn-sub{font-size:10px;opacity:.85;font-weight:500;}
-        @media(max-width:480px){
-            .float-btn{padding:12px 16px;}
-            .float-btn-sub{display:none;}
-            .float-btn-title{font-size:13px;}
-        }
-        /* Add court modal */
-        .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:500;padding:0;}
-        .modal-sheet{background:white;border-radius:20px 20px 0 0;width:100%;max-width:740px;padding:24px 20px 32px;max-height:90vh;overflow-y:auto;}
-        .field{width:100%;padding:11px 14px;font-size:15px;border-radius:10px;border:2px solid #e2e8f0;font-family:'Outfit',sans-serif;outline:none;background:white;transition:border-color .15s;}
-        .field:focus{border-color:#059669;}
-        .flbl{font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;}
+/* Section title */
+.section-title{font-size:0.68rem;font-weight:700;letter-spacing:0.11em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
 
-        /* Amenity tags */
-        .amen-tag{display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;border:2px solid #e2e8f0;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;transition:all .15s;margin:3px;}
-        .amen-tag.on{background:#f0fdf4;border-color:#10b981;color:#059669;}
+/* Auth */
+.auth-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:32px 24px;text-align:center;}
+.auth-logo{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--green);margin-bottom:4px;}
+.google-btn{background:white;color:#333;border:none;border-radius:12px;padding:13px 24px;font-weight:700;font-size:0.95rem;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.25);display:flex;align-items:center;gap:10px;width:100%;max-width:320px;justify-content:center;}
 
-        /* Empty state */
-        .empty-state{text-align:center;padding:48px 20px;color:#94a3b8;}
+/* Profile */
+.profile-hero{background:linear-gradient(135deg,var(--navy2),var(--card));border-radius:20px;padding:20px;margin-bottom:16px;text-align:center;}
+.profile-avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#1F3347,#2ECC71);display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;color:white;margin:0 auto 12px;overflow:hidden;border:3px solid rgba(46,204,113,0.3);}
+.profile-avatar img{width:100%;height:100%;object-fit:cover;}
+.profile-name{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;}
+.settings-row{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:border-color .15s;}
+.settings-row:hover{border-color:var(--border2);}
+.settings-row-left{display:flex;align-items:center;gap:12px;}
 
-        /* Loading spinner */
-        @keyframes spin{to{transform:rotate(360deg)}}
-        .spin{animation:spin 1s linear infinite;display:inline-block;}
+/* Login prompt */
+.login-prompt-card{background:var(--card2);border:1px solid var(--border2);border-radius:20px;padding:24px;text-align:center;}
 
-        /* Section header */
-        .sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+/* Map */
+.map-box{border-radius:16px;overflow:hidden;height:140px;margin-bottom:16px;position:relative;background:#0f1f14;border:1px solid var(--border);}
+.map-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(46,204,113,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(46,204,113,0.05) 1px,transparent 1px);background-size:28px 28px;}
+.map-pin{position:absolute;font-size:1.3rem;}
+.map-label{position:absolute;bottom:10px;right:12px;font-size:0.62rem;color:var(--green);font-weight:700;}
 
-        @media(max-width:480px){
-            .search-inp{font-size:14px;}
-        }
-    </style>
+/* Chat */
+.chat-bubble{max-width:78%;padding:9px 13px;border-radius:14px;font-size:0.85rem;line-height:1.5;margin-bottom:5px;word-wrap:break-word;}
+.bubble-them{background:var(--card2);color:var(--text);border-bottom-left-radius:4px;}
+.bubble-me{background:linear-gradient(135deg,#2ECC71,#27AE60);color:white;border-bottom-right-radius:4px;}
+.bubble-time{font-size:0.6rem;opacity:.55;margin-top:2px;}
+
+/* FAB */
+.fab-wrap{position:fixed;bottom:62px;left:50%;transform:translateX(-50%);z-index:200;height:44px;display:flex;align-items:center;justify-content:center;pointer-events:none;width:200px;}
+.fab{pointer-events:all;background:linear-gradient(135deg,#2ECC71,#27AE60);color:#fff;font-family:'Syne',sans-serif;font-size:0.68rem;font-weight:800;letter-spacing:0.06em;padding:0 18px;height:42px;border-radius:24px;display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 4px 16px rgba(46,204,113,0.5);cursor:pointer;border:2px solid rgba(255,255,255,0.2);transition:transform .15s;}
+.fab.open{background:linear-gradient(135deg,#142232,#1A2B3C);}
+.fab-overlay{position:fixed;inset:0;background:rgba(5,10,15,0.88);backdrop-filter:blur(10px);z-index:9940;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding-bottom:calc(62px + 60px);animation:fadeIn .2s ease;}
+.fab-sheet{width:100%;max-width:480px;padding:0 20px 8px;}
+.fab-sheet-title{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;text-align:center;margin-bottom:4px;}
+.fab-sheet-sub{text-align:center;font-size:0.8rem;color:var(--muted);margin-bottom:22px;}
+.fab-option{background:var(--card);border:1px solid var(--border2);border-radius:18px;padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden;}
+.fab-option::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px;}
+.opt1::before{background:var(--green);}.opt2::before{background:var(--accent);}.opt3::before{background:var(--blue);}
+.opt-num{font-family:'Syne',sans-serif;font-size:1.7rem;font-weight:800;width:34px;text-align:center;flex-shrink:0;}
+.opt1 .opt-num{color:var(--green);}.opt2 .opt-num{color:var(--accent);}.opt3 .opt-num{color:var(--blue);}
+.opt-text h3{font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700;}
+.opt-text p{font-size:0.72rem;color:var(--muted);margin-top:2px;}
+.fab-cancel{text-align:center;margin-top:10px;color:var(--muted);font-size:0.8rem;font-weight:600;cursor:pointer;padding:8px;}
+
+/* Misc */
+.empty-state{text-align:center;padding:48px 20px;}
+.empty-icon{font-size:2.5rem;margin-bottom:10px;}
+.empty-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:6px;}
+.empty-sub{font-size:0.8rem;color:var(--muted);margin-bottom:18px;}
+.divider{height:1px;background:var(--border);margin:16px 0;}
+.px{padding:0 18px;}
+.logo{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--green);letter-spacing:-0.02em;}
+.logo span{color:var(--text);}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .2s ease;}
+
+/* Court Detail View */
+.cd-section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin:0 16px 12px;}
+.cd-name-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:4px;}
+.cd-badges{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+.cd-live{display:inline-flex;align-items:center;gap:4px;font-size:0.6rem;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.05em;}
+.cd-live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:fadeIn 1s infinite alternate;}
+.cd-crowd-badge{font-size:0.6rem;font-weight:700;padding:3px 8px;border-radius:8px;}
+.cd-crowd-badge.low{background:rgba(46,204,113,0.15);color:var(--green);}
+.cd-crowd-badge.medium{background:rgba(247,201,72,0.15);color:var(--accent);}
+.cd-crowd-badge.high{background:rgba(247,91,91,0.15);color:var(--red);}
+.cd-wx-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+.cd-wx-card{background:var(--navy);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;}
+.cd-glance-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.cd-glance-sub{font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;text-align:center;}
+.cd-glance-pills{display:flex;gap:6px;}
+.cd-g-pill{flex:1;background:var(--navy);border:1px solid var(--border);border-radius:10px;padding:6px 8px;text-align:center;}
+.cd-g-pill.lit{background:rgba(46,204,113,0.08);border-color:rgba(46,204,113,0.25);}
+.cd-g-lbl{font-size:0.5rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.cd-g-val{font-size:0.82rem;font-weight:800;color:var(--text);margin-top:1px;}
+.cd-tabs{display:flex;gap:3px;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:3px;margin:0 16px 11px;}
+.cd-tab{flex:1;padding:7px 3px;font-family:'DM Sans',sans-serif;font-size:0.7rem;font-weight:700;border:none;background:transparent;color:var(--muted);cursor:pointer;border-radius:8px;transition:all .15s;text-align:center;}
+.cd-tab.a{background:var(--green-dim);color:var(--green);}
+.cd-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:9px;}
+.cd-player{background:var(--navy2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:9px;margin-bottom:5px;}
+.cd-av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#1F3347,#2ECC71);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.7rem;flex-shrink:0;}
+.cd-timer{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:3px;}
+.cd-timer-fill{height:100%;background:linear-gradient(90deg,#2ECC71,#27AE60);border-radius:2px;transition:width 1s linear;}
+.cd-form{background:var(--card2);border:1px solid var(--border2);border-radius:14px;padding:14px;margin-bottom:10px;}
+.rt-btn{padding:5px 10px;border-radius:8px;border:1.5px solid var(--border2);background:transparent;font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:700;cursor:pointer;color:var(--muted);transition:all .15s;}
+.rt-btn.s{border-color:rgba(46,204,113,0.4);background:var(--green-dim);color:var(--green);}
+.dr-btn{padding:6px 10px;font-family:'DM Sans',sans-serif;font-size:0.7rem;font-weight:700;border:1.5px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;border-radius:8px;transition:all .15s;text-align:center;}
+.dr-btn.a{border-color:rgba(46,204,113,0.4);background:var(--green-dim);color:var(--green);}
+.wx-bar{display:flex;overflow-x:auto;scrollbar-width:none;background:var(--card);border:1px solid var(--border);border-radius:10px;}
+.wx-bar::-webkit-scrollbar{display:none;}
+.wx-h{display:flex;flex-direction:column;align-items:center;padding:5px 8px;min-width:52px;border-right:1px solid var(--border);flex-shrink:0;}
+.wx-h:last-child{border-right:none;}
+.wx-h.now{background:var(--green-dim);border-radius:7px;}
+.ct-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:12px 14px;margin-bottom:8px;}
+.ct-tog{display:flex;border:1px solid var(--border2);border-radius:9px;overflow:hidden;}
+.ct-tog button{flex:1;padding:8px 5px;font-family:'DM Sans',sans-serif;font-size:0.7rem;font-weight:700;border:none;cursor:pointer;transition:all .15s;color:var(--muted);background:transparent;}
+.ct-tog button.on{background:var(--green);color:white;}
+.ct-tog button.off{background:var(--card2);color:var(--text);}
+.ct-tog button.warn{background:var(--red);color:white;}
+.amen-dk{display:inline-flex;align-items:center;gap:3px;padding:5px 10px;border-radius:8px;border:1px solid var(--border2);background:transparent;font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;margin:2px;}
+.amen-dk.on{background:var(--green-dim);border-color:rgba(46,204,113,0.4);color:var(--green);}
+
+/* Calendar view */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px;}
+.cal-head{font-size:0.6rem;font-weight:700;text-transform:uppercase;color:var(--muted);text-align:center;padding:4px 0;}
+.cal-day{border-radius:8px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:all .15s;border:1.5px solid transparent;}
+.cal-day.other-month{opacity:.3;}
+.cal-day.today{border-color:rgba(46,204,113,0.6);}
+.cal-day.selected{background:var(--green);border-color:var(--green);}
+.cal-day.selected .cal-day-num{color:white!important;font-weight:800;}
+.cal-day.has-players{background:rgba(46,204,113,0.08);}
+.cal-day-num{font-size:0.72rem;font-weight:600;color:var(--text);line-height:1;}
+.cal-dot-row{display:flex;gap:2px;justify-content:center;margin-top:2px;min-height:5px;}
+.cal-dot{width:4px;height:4px;border-radius:50%;background:var(--green);}
+.cal-dot.more{background:var(--accent);}
+
+/* Hour slots */
+.hour-slot{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);}
+.hour-slot:last-child{border-bottom:none;}
+.hour-label{width:44px;font-size:0.62rem;font-weight:700;color:var(--muted);padding-top:3px;flex-shrink:0;text-align:right;}
+.hour-players{display:flex;flex-direction:column;gap:5px;flex:1;}
+.hour-player-chip{display:inline-flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:5px 8px;cursor:pointer;transition:border-color .15s;}
+.hour-player-chip:hover{border-color:rgba(46,204,113,0.4);}
+
+/* Week schedule picker */
+.week-picker{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:10px;}
+.wp-day{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.wp-day-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);}
+.wp-day-btn{width:100%;aspect-ratio:1;border-radius:8px;border:1.5px solid var(--border2);background:transparent;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .15s;}
+.wp-day-btn.sel{border-color:rgba(46,204,113,0.5);background:var(--green-dim);color:var(--green);}
+
+/* Share grid */
+.share-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;}
+.share-opt{padding:9px 8px;border-radius:10px;border:1.5px solid var(--border2);background:transparent;font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:700;cursor:pointer;color:var(--muted);display:flex;align-items:center;gap:5px;justify-content:center;transition:all .15s;}
+.share-opt.s{border-color:rgba(46,204,113,0.4);background:var(--green-dim);color:var(--green);}
+
+/* Player picker */
+.pp-list{max-height:160px;overflow-y:auto;border:1px solid var(--border2);border-radius:10px;}
+.pp-row{display:flex;align-items:center;gap:9px;padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;}
+.pp-row:last-child{border-bottom:none;}
+.pp-row.sel{background:var(--green-dim);}
+</style>
+<script src="nav.js"></script>
 </head>
-<body>
+<body data-fixed-layout>
 <div id="root"></div>
 <script type="text/babel">
-const {useState, useEffect, useRef, useCallback} = React;
+const {useState,useEffect,useRef,useMemo} = React;
 
-// ── Feedback Modal ────────────────────────────────────────────────────
-function FeedbackModal({onClose}) {
-    const [name, setName] = React.useState('');
-    const [email, setEmail] = React.useState('');
-    const [type, setType] = React.useState('general');
-    const [rating, setRating] = React.useState(0);
-    const [hoverRating, setHoverRating] = React.useState(0);
-    const [msg, setMsg] = React.useState('');
-    const [busy, setBusy] = React.useState(false);
-    const [done, setDone] = React.useState(false);
+/* Firebase */
+const FB={apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",authDomain:"pickleball-app-1bba7.firebaseapp.com",projectId:"pickleball-app-1bba7",storageBucket:"pickleball-app-1bba7.firebasestorage.app",messagingSenderId:"645604154338",appId:"1:645604154338:web:b92f87c2cd11d950b737bb"};
+let db=null,auth=null,fbOk=false;
+try{if(!firebase.apps.length)firebase.initializeApp(FB);db=firebase.firestore();auth=firebase.auth();fbOk=true;}
+catch(e){console.error('Firebase:',e);}
 
-    const submit = async () => {
-        if (!msg.trim()) { alert('Please enter a message.'); return; }
-        setBusy(true);
-        try {
-            if (fbOk && db) {
-                await db.collection('feedback').add({
-                    name: name.trim() || 'Anonymous', email: email.trim() || '', type, rating,
-                    message: msg.trim(), page: 'home', timestamp: Date.now(), createdAt: new Date().toISOString()
-                });
-            }
-        } catch(e) {}
-        setBusy(false);
-        setDone(true);
-        setTimeout(() => { setDone(false); onClose(); }, 2200);
-    };
-    const types = [['general','💬 General'],['bug','🐛 Bug'],['feature','💡 Feature'],['compliment','⭐ Compliment']];
-    return (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:16}}>
-            <div style={{background:'white',borderRadius:20,padding:28,maxWidth:460,width:'100%',boxShadow:'0 24px 64px rgba(0,0,0,.25)',maxHeight:'90vh',overflowY:'auto'}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
-                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:26,fontWeight:800,color:'#0f172a'}}>💬 SEND FEEDBACK</div>
-                    <button onClick={onClose} style={{background:'none',border:'none',fontSize:26,cursor:'pointer',color:'#94a3b8',lineHeight:1}}>×</button>
-                </div>
-                {done ? (
-                    <div style={{textAlign:'center',padding:'32px 0'}}>
-                        <div style={{fontSize:48,marginBottom:12}}>🎉</div>
-                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:18,fontWeight:700,color:'#059669'}}>Thanks for your feedback!</div>
-                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#64748b',marginTop:6}}>We really appreciate it.</div>
-                    </div>
-                ) : (
-                    <div style={{display:'flex',flexDirection:'column',gap:16}}>
-                        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-                            <div>
-                                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>Name (optional)</div>
-                                <input style={{width:'100%',padding:'10px 13px',fontSize:14,border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',outline:'none'}} value={name} onChange={e=>setName(e.target.value)} placeholder="Your name"/>
-                            </div>
-                            <div>
-                                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>Email (optional)</div>
-                                <input type="email" style={{width:'100%',padding:'10px 13px',fontSize:14,border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',outline:'none'}} value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@email.com"/>
-                            </div>
-                        </div>
-                        <div>
-                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Feedback Type</div>
-                            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                                {types.map(([v,l])=>(
-                                    <button key={v} onClick={()=>setType(v)} style={{padding:'8px 14px',border:'2px solid '+(type===v?'#059669':'#e2e8f0'),borderRadius:99,background:type===v?'#f0fdf4':'white',color:type===v?'#059669':'#64748b',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:600,cursor:'pointer'}}>
-                                        {l}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                        <div>
-                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Overall Rating</div>
-                            <div style={{display:'flex',gap:4}}>
-                                {[1,2,3,4,5].map(s=>(
-                                    <button key={s} onClick={()=>setRating(s)} onMouseEnter={()=>setHoverRating(s)} onMouseLeave={()=>setHoverRating(0)} style={{background:'none',border:'none',fontSize:28,cursor:'pointer',opacity:s<=(hoverRating||rating)?1:.3}}>⭐</button>
-                                ))}
-                            </div>
-                        </div>
-                        <div>
-                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>Message *</div>
-                            <textarea style={{width:'100%',padding:'10px 13px',fontSize:14,border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',outline:'none',resize:'vertical',minHeight:90}} value={msg} onChange={e=>setMsg(e.target.value)} placeholder="Tell us what's on your mind…"/>
-                        </div>
-                        <button onClick={submit} disabled={busy} style={{background:'linear-gradient(135deg,#059669,#10b981)',color:'white',border:'none',borderRadius:10,padding:'14px',fontFamily:'Outfit,sans-serif',fontSize:15,fontWeight:700,cursor:'pointer',width:'100%',boxShadow:'0 4px 12px rgba(5,150,105,.3)'}}>
-                            {busy ? '⏳ Sending…' : '📤 Send Feedback'}
-                        </button>
-                    </div>
-                )}
-            </div>
+/* Helpers */
+const haversine=(a,b,c,d)=>{const R=3958.8,dL=(c-a)*Math.PI/180,dN=(d-b)*Math.PI/180,x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dN/2)**2;return R*2*Math.asin(Math.sqrt(x));};
+const timeAgo=t=>{if(!t)return'';const d=Date.now()-t,m=Math.floor(d/60000);if(m<1)return'now';if(m<60)return m+'m';const h=Math.floor(m/60);if(h<24)return h+'h';return Math.floor(h/24)+'d';};
+const fmtTime=ts=>{if(!ts)return'';const[h,m]=ts.split(':').map(Number);return`${h%12||12}:${m.toString().padStart(2,'0')}${h>=12?'pm':'am'}`;};
+const cid=(a,b)=>[a,b].sort().join('__');
+
+const SKILLS=['2.0-2.5','2.5-3.0','3.0-3.5','3.5-4.0','4.0-4.5','4.5-5.0','5.0+'];
+const PURPOSES=[{id:'play',e:'🏓',l:'Looking to Play'},{id:'partner',e:'🤝',l:'Need a Partner'},{id:'drill',e:'🎯',l:'Drilling'}];
+const PTYPES=['Casual','Competitive','Tournament','Drilling'];
+const PT_E={Casual:'🎾',Competitive:'🔥',Tournament:'🏆',Drilling:'🎯'};
+const DAYS_SHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAYS_FULL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const SHARE_MODES=[{id:'public',icon:'🌍',label:'Everyone'},{id:'connections',icon:'👥',label:'Connections'},{id:'players',icon:'👤',label:'Select Players'},{id:'group',icon:'🏷️',label:'My Groups'}];
+function isPostAvailableOn(post,date){
+  if(!post)return false;
+  const av=post.availability,dow=date.getDay(),dateStr=date.toISOString().split('T')[0];
+  if(av==='Now'||av==='Today'){return dateStr===(post.availDate||new Date().toISOString().split('T')[0]);}
+  if(av==='This Week'){
+    const start=new Date(post.availDate||Date.now());start.setHours(0,0,0,0);
+    const end=new Date(start);end.setDate(end.getDate()+6);
+    const d2=new Date(date);d2.setHours(12,0,0,0);
+    return d2>=start&&d2<=end;
+  }
+  if(av==='Custom Schedule'){return(post.weekSchedule||[]).some(s=>s.day===dow);}
+  return false;
+}
+function getPostHours(post,date){
+  const dow=date.getDay();
+  if(post.availability==='Custom Schedule'){
+    const s=(post.weekSchedule||[]).find(x=>x.day===dow);
+    if(s)return{start:s.startTime||'00:00',end:s.endTime||'23:59'};
+  }
+  if(post.startTime&&post.endTime)return{start:post.startTime,end:post.endTime};
+  return{start:'00:00',end:'23:59'};
+}
+function timeToMins(t){const[h,m]=(t||'00:00').split(':').map(Number);return h*60+(m||0);}
+function sanitize(obj){const r={};for(const k in obj){const v=obj[k];if(v!==undefined)r[k]=v;}return r;}
+const GoogleSVG=()=><svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>;
+
+/* ── AuthScreen ── */
+function AuthScreen({onBack}){
+  const[mode,setMode]=useState('signin');
+  const[email,setEmail]=useState('');const[pass,setPass]=useState('');const[confirm,setConfirm]=useState('');
+  const[ld,setLd]=useState(false);const[err,setErr]=useState(null);
+  const iStyle={width:'100%',padding:'12px 14px',borderRadius:12,border:'1px solid rgba(255,255,255,0.15)',background:'rgba(255,255,255,0.08)',color:'#F0F4F8',fontFamily:'DM Sans',fontSize:'0.9rem',outline:'none'};
+  const googleAuth=async()=>{setLd(true);setErr(null);try{await auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider());}catch(e){if(e.code!=='auth/popup-closed-by-user')setErr(e.message);setLd(false);}};
+  const emailAuth=async()=>{
+    if(!email.trim()||!pass){setErr('Enter email and password.');return;}
+    if(mode==='signup'&&pass!==confirm){setErr('Passwords do not match.');return;}
+    if(mode==='signup'&&pass.length<6){setErr('Password must be 6+ characters.');return;}
+    setLd(true);setErr(null);
+    try{
+      if(mode==='signup')await auth.createUserWithEmailAndPassword(email.trim(),pass);
+      else await auth.signInWithEmailAndPassword(email.trim(),pass);
+      // onAuthStateChanged will fire setUser(u) which sets showAuth=false in App
+    }catch(e){
+      const msgs={'auth/email-already-in-use':'Email already registered. Sign in instead.','auth/user-not-found':'No account with that email.','auth/wrong-password':'Wrong password.','auth/invalid-credential':'Email or password incorrect.','auth/too-many-requests':'Too many attempts. Wait a moment.'};
+      setErr(msgs[e.code]||e.message);
+    }
+    setLd(false);
+  };
+  return(
+    <div className="auth-wrap">
+      {onBack&&<button onClick={onBack} style={{position:'absolute',top:16,left:16,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:10,padding:'6px 12px',color:'var(--muted)',cursor:'pointer',fontSize:'0.82rem',fontWeight:600}}>← Back</button>}
+      <div style={{fontSize:'3rem',marginBottom:10}}>🏓</div>
+      <div className="auth-logo">PickleConnect</div>
+      <div style={{fontSize:'0.85rem',color:'var(--muted)',marginBottom:24,maxWidth:300,lineHeight:1.6}}>{mode==='signup'?'Create a free account to message, post & join games.':'Welcome back!'}</div>
+      <div style={{display:'flex',background:'rgba(255,255,255,0.06)',borderRadius:12,padding:3,marginBottom:20,width:'100%',maxWidth:320}}>
+        {[['signin','Sign In'],['signup','Sign Up']].map(([k,l])=>(
+          <button key={k} onClick={()=>{setMode(k);setErr(null);setPass('');setConfirm('');}} style={{flex:1,padding:'9px',border:'none',borderRadius:10,fontFamily:'DM Sans',fontSize:'0.85rem',fontWeight:700,cursor:'pointer',background:mode===k?'rgba(46,204,113,0.2)':'transparent',color:mode===k?'var(--green)':'var(--muted)'}}>{l}</button>
+        ))}
+      </div>
+      {err&&<div style={{background:'rgba(247,91,91,0.12)',border:'1px solid rgba(247,91,91,0.3)',borderRadius:12,padding:'10px 14px',marginBottom:14,maxWidth:320,width:'100%',fontSize:'0.8rem',color:'#FF8A80',lineHeight:1.5}}>⚠️ {err}</div>}
+      <div style={{width:'100%',maxWidth:320,display:'flex',flexDirection:'column',gap:10}}>
+        <input value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="Email address" style={iStyle} onKeyDown={e=>e.key==='Enter'&&emailAuth()}/>
+        <input value={pass} onChange={e=>setPass(e.target.value)} type="password" placeholder="Password" style={iStyle} onKeyDown={e=>e.key==='Enter'&&emailAuth()}/>
+        {mode==='signup'&&<input value={confirm} onChange={e=>setConfirm(e.target.value)} type="password" placeholder="Confirm password" style={iStyle} onKeyDown={e=>e.key==='Enter'&&emailAuth()}/>}
+        <button onClick={emailAuth} disabled={ld} className="btn btn-primary" style={{width:'100%',opacity:ld?.6:1,marginTop:2}}>{ld?'Please wait…':mode==='signup'?'Create Account':'Sign In'}</button>
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:10,width:'100%',maxWidth:320,margin:'18px 0'}}>
+        <div style={{flex:1,height:1,background:'rgba(255,255,255,0.1)'}}/><span style={{fontSize:'0.72rem',color:'var(--muted)',fontWeight:600}}>OR</span><div style={{flex:1,height:1,background:'rgba(255,255,255,0.1)'}}/>
+      </div>
+      <button className="google-btn" onClick={googleAuth} disabled={ld}><GoogleSVG/>Continue with Google</button>
+      <div style={{fontSize:'0.7rem',color:'var(--muted2)',marginTop:16}}>Free · No spam</div>
+    </div>
+  );
+}
+
+/* ── ProfileSetup ── */
+function ProfileSetup({user,profile,onSave,onClose,uLat,uLng}){
+  const[name,setName]=useState(profile?.name||user?.displayName||'');
+  const[skill,setSkill]=useState(profile?.skill||'');
+  const[city,setCity]=useState(profile?.city||'');
+  const[age,setAge]=useState(profile?.age||'');
+  const[gender,setGender]=useState(profile?.gender||'');
+  const[saving,setSaving]=useState(false);
+  const save=async()=>{
+    if(!name.trim()){alert('Enter your name.');return;}
+    if(!skill){alert('Select skill level.');return;}
+    setSaving(true);
+    const data={name:name.trim(),skill,city:city.trim()||null,age:age||null,gender:gender||null,photoURL:user.photoURL||null,email:user.email||null,uid:user.uid,lat:uLat||null,lng:uLng||null,updatedAt:Date.now()};
+    try{await db.collection('profiles').doc(user.uid).set(data,{merge:true});onSave(data);}
+    catch(e){alert('Failed: '+e.message);}
+    setSaving(false);
+  };
+  return(
+    <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget&&onClose)onClose();}}>
+      <div className="modal-sheet">
+        <div className="modal-handle"/>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+          <div className="modal-title">{profile?'Edit Profile':'Set Up Profile'}</div>
+          {onClose&&<button onClick={onClose} className="icon-btn" style={{position:'static'}}>✕</button>}
         </div>
-    );
+        <div className="fg"><div className="fl">Display Name *</div><input className="fi" value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" maxLength={40}/></div>
+        <div className="fg"><div className="fl">Skill Level *</div><div className="og">{SKILLS.map(s=><button key={s} className={`ob ${skill===s?'s':''}`} onClick={()=>setSkill(s)} style={{fontSize:'0.72rem'}}>{s}</button>)}</div></div>
+        <div className="fg"><div className="fl">City / Area</div><input className="fi" value={city} onChange={e=>setCity(e.target.value)} placeholder="e.g. St. Louis, MO" maxLength={80}/></div>
+        <div style={{display:'flex',gap:10}}>
+          <div className="fg" style={{flex:1}}><div className="fl">Age</div><select className="fi" value={age} onChange={e=>setAge(e.target.value)}><option value="">—</option>{['18-25','26-35','36-45','46-55','56-65','65+'].map(a=><option key={a}>{a}</option>)}</select></div>
+          <div className="fg" style={{flex:1}}><div className="fl">Gender</div><select className="fi" value={gender} onChange={e=>setGender(e.target.value)}><option value="">—</option>{['Male','Female','Non-binary','Prefer not to say'].map(g=><option key={g}>{g}</option>)}</select></div>
+        </div>
+        <button className="btn btn-primary" onClick={save} disabled={saving} style={{width:'100%',marginTop:4,opacity:saving?.6:1}}>{saving?'Saving…':'Save Profile'}</button>
+      </div>
+    </div>
+  );
 }
 
-// ── Firebase ──────────────────────────────────────────────────────────
-const FB = {
-    apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
-    authDomain:"pickleball-app-1bba7.firebaseapp.com",
-    projectId:"pickleball-app-1bba7",
-    storageBucket:"pickleball-app-1bba7.firebasestorage.app",
-    messagingSenderId:"645604154338",
-    appId:"1:645604154338:web:b92f87c2cd11d950b737bb"
-};
-let db = null, fbOk = false;
-try {
-    if (!firebase.apps.length) firebase.initializeApp(FB);
-    db = firebase.firestore();
-    fbOk = true;
-} catch(e) { console.error('Firebase:', e); }
-
-// ── Geo helpers ───────────────────────────────────────────────────────
-function haversine(lat1, lon1, lat2, lon2) {
-    const R = 3958.8; // miles
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+/* ── ChatModal ── */
+function ChatModal({player,myUid,myName,onClose}){
+  const[msgs,setMsgs]=useState([]);const[inp,setInp]=useState('');const[sending,setSending]=useState(false);
+  const endRef=useRef(null);const c=cid(myUid,player.uid);
+  useEffect(()=>{if(!fbOk)return;const u=db.collection('chatMessages').where('convoId','==',c).orderBy('timestamp','asc').onSnapshot(s=>{setMsgs(s.docs.map(d=>({id:d.id,...d.data()})));setTimeout(()=>endRef.current?.scrollIntoView({behavior:'smooth'}),80);},e=>console.error(e));return()=>u();},[c]);
+  useEffect(()=>{if(fbOk&&msgs.length)db.collection('conversations').doc(c).update({[`readBy_${myUid}`]:Date.now()}).catch(()=>{});},[msgs.length]);
+  const send=async()=>{
+    if(!inp.trim()||sending)return;setSending(true);const now=Date.now(),txt=inp.trim();
+    try{
+      const ref=db.collection('conversations').doc(c);
+      const cd={participants:[myUid,player.uid].sort(),participantNames:{[myUid]:myName,[player.uid]:player.name},lastMessage:txt,lastMessageBy:myUid,lastTimestamp:now,[`readBy_${myUid}`]:now};
+      try{await ref.set({...cd,createdAt:now});}catch{await ref.update({lastMessage:txt,lastMessageBy:myUid,lastTimestamp:now,[`readBy_${myUid}`]:now});}
+      await db.collection('chatMessages').add({convoId:c,text:txt,senderUid:myUid,senderName:myName,timestamp:now});
+      setInp('');
+    }catch(e){alert('Send failed: '+e.message);}setSending(false);
+  };
+  return(
+    <div className="modal-overlay" style={{alignItems:'stretch',paddingTop:40}}>
+      <div style={{background:'var(--navy2)',borderRadius:'24px 24px 0 0',width:'100%',maxWidth:480,margin:'0 auto',display:'flex',flexDirection:'column',flex:1,animation:'slideUp .28s ease',overflow:'hidden'}}>
+        <div style={{padding:'14px 16px 12px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
+          <button onClick={onClose} className="icon-btn" style={{position:'static'}}>←</button>
+          <div className="pc-avatar" style={{width:34,height:34,fontSize:'0.85rem'}}>{player.photoURL?<img src={player.photoURL} referrerPolicy="no-referrer"/>:player.name?.[0]||'?'}</div>
+          <div style={{flex:1}}><div style={{fontWeight:700,fontSize:'0.9rem'}}>{player.name}</div><div style={{fontSize:'0.68rem',color:'var(--muted)'}}>{player.skill||'Player'}</div></div>
+        </div>
+        <div style={{flex:1,overflowY:'auto',padding:'12px 16px',display:'flex',flexDirection:'column',gap:2}}>
+          {msgs.length===0&&<div style={{textAlign:'center',padding:'40px 20px',color:'var(--muted)'}}>💬 Say hi to {player.name}!</div>}
+          {msgs.map(m=>(<div key={m.id} style={{display:'flex',flexDirection:'column',alignItems:m.senderUid===myUid?'flex-end':'flex-start'}}><div className={`chat-bubble ${m.senderUid===myUid?'bubble-me':'bubble-them'}`}>{m.text}<div className="bubble-time">{timeAgo(m.timestamp)}</div></div></div>))}
+          <div ref={endRef}/>
+        </div>
+        <div style={{padding:'10px 14px',borderTop:'1px solid var(--border)',display:'flex',gap:8,alignItems:'flex-end',flexShrink:0,background:'var(--navy2)'}}>
+          <textarea value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}} placeholder="Message…" rows={1} className="fi" style={{flex:1,resize:'none',maxHeight:80}}/>
+          <button className="btn btn-primary btn-sm" onClick={send} disabled={sending||!inp.trim()} style={{opacity:(sending||!inp.trim())?.4:1,flexShrink:0}}>Send</button>
+        </div>
+      </div>
+    </div>
+  );
 }
-function fmtDist(miles) {
-    if (miles < 0.1) return 'Nearby';
-    if (miles < 10) return miles.toFixed(1) + ' mi';
-    return Math.round(miles) + ' mi';
+
+/* ── Inbox ── */
+function Inbox({onClose,onOpen,myUid,allPlayers}){
+  const[cs,setCs]=useState([]);const[ld,setLd]=useState(true);
+  useEffect(()=>{if(!fbOk){setLd(false);return;}const u=db.collection('conversations').where('participants','array-contains',myUid).orderBy('lastTimestamp','desc').onSnapshot(s=>{setCs(s.docs.map(d=>({id:d.id,...d.data()})));setLd(false);},()=>setLd(false));return()=>u();},[]);
+  const info=cv=>{const ouid=cv.participants.find(p=>p!==myUid);const nm=cv.participantNames?.[ouid]||'Player';const rt=cv[`readBy_${myUid}`]||0;return{ouid,nm,ur:cv.lastMessageBy!==myUid&&cv.lastTimestamp>rt};};
+  return(
+    <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal-sheet">
+        <div className="modal-handle"/>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+          <div className="modal-title">💬 Messages</div>
+          <button onClick={onClose} className="icon-btn" style={{position:'static'}}>✕</button>
+        </div>
+        {ld?<div style={{textAlign:'center',padding:32,color:'var(--muted)'}}>Loading…</div>
+        :cs.length===0?<div className="empty-state"><div className="empty-icon">💬</div><div className="empty-title">No messages yet</div></div>
+        :cs.map(cv=>{const{nm,ur}=info(cv);return(
+          <div key={cv.id} onClick={()=>{const{ouid,nm}=info(cv);const mp=allPlayers?.find(p=>p.uid===ouid);onOpen(mp||{uid:ouid,name:nm});onClose();}} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',background:ur?'rgba(46,204,113,0.06)':'var(--card)',border:`1px solid ${ur?'rgba(46,204,113,0.25)':'var(--border)'}`,borderRadius:14,marginBottom:8,cursor:'pointer'}}>
+            <div className="pc-avatar" style={{width:38,height:38,fontSize:'0.95rem',flexShrink:0}}>{nm[0]?.toUpperCase()}</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{display:'flex',alignItems:'center',gap:6}}><span style={{fontWeight:ur?700:600,fontSize:'0.88rem'}}>{nm}</span>{ur&&<div style={{width:7,height:7,borderRadius:'50%',background:'var(--green)',flexShrink:0}}/>}</div>
+              <div style={{fontSize:'0.72rem',color:ur?'var(--text)':'var(--muted)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{cv.lastMessageBy===myUid?'You: ':''}{cv.lastMessage}</div>
+            </div>
+            <div style={{fontSize:'0.65rem',color:'var(--muted)',flexShrink:0}}>{timeAgo(cv.lastTimestamp)}</div>
+          </div>
+        );})}
+      </div>
+    </div>
+  );
 }
 
-// ── Amenity definitions ───────────────────────────────────────────────
+/* ── LoginPrompt ── */
+function LoginPrompt({player,onClose,onGoAuth}){
+  return(
+    <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal-sheet">
+        <div className="modal-handle"/>
+        <div className="login-prompt-card">
+          <div style={{fontSize:'2.5rem',marginBottom:10}}>💬</div>
+          <div className="modal-title" style={{marginBottom:6}}>Sign in to Continue</div>
+          <div style={{fontSize:'0.82rem',color:'var(--muted)',marginBottom:18,lineHeight:1.5}}>Create a free account to message players, post availability, and join games.</div>
+          <button className="btn btn-primary" onClick={onGoAuth} style={{width:'100%',marginBottom:10}}>🏓 Sign In / Create Account</button>
+          <button className="btn btn-ghost" onClick={onClose} style={{width:'100%'}}>Maybe Later</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── MsgBtn ── */
+function MsgBtn({player,user,onChat,onNeedLogin,ghost=false,sm=false}){
+  if(!player?.uid)return null;if(user?.uid===player.uid)return null;
+  return<button onClick={e=>{e.stopPropagation();user?onChat(player):onNeedLogin(player);}} className={`btn ${ghost?'btn-ghost':'btn-primary'} ${sm?'btn-sm':''}`}>💬 {user?'Message':'Message (Sign In)'}</button>;
+}
+
+/* ── HomeTab ── */
+/* openCourt moved to App */
+
+function HomeTab({user,profile,courts,players,games,uLat,uLng,onChat,onNeedLogin,onSetTab,onOpenCourt}){
+  const nearbyCourts=useMemo(()=>{if(!uLat||!courts.length)return courts.slice(0,3);return[...courts].sort((a,b)=>{const da=a.lat?haversine(uLat,uLng,a.lat,a.lng):999;const db2=b.lat?haversine(uLat,uLng,b.lat,b.lng):999;return da-db2;}).slice(0,3);},[courts,uLat,uLng]);
+  const openCourtsCount=courts.filter(c=>c.status!=='closed'&&c.status!=='maintenance').length;
+  const todayGames=games.filter(g=>g.date===new Date().toISOString().split('T')[0]).length;
+  const crowdLabel=c=>{const l=c.crowdLevel;return l==='high'?'Packed':l==='medium'?'Busy':'Open';};
+  const crowdBadge=c=>{const l=c.crowdLevel;return l==='high'?'badge-full':l==='medium'?'badge-busy':'badge-open';};
+  const getDist=c=>uLat&&c.lat?haversine(uLat,uLng,c.lat,c.lng):null;
+  return(
+    <div className="px fade-in">
+      <div style={{paddingTop:6,marginBottom:4,fontSize:'0.68rem',fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--muted)'}}>Overview</div>
+      <div className="stats-row">
+        <div className="stat-card" onClick={()=>onSetTab('courts')}><div className={`stat-num ${openCourtsCount>0?'hi':''}`}>{openCourtsCount}</div><div className="stat-lbl">Open Courts</div></div>
+        <div className="stat-card" onClick={()=>onSetTab('players')}><div className="stat-num">{players.length}</div><div className="stat-lbl">Registered</div></div>
+        <div className="stat-card" onClick={()=>onSetTab('games')}><div className="stat-num">{todayGames}</div><div className="stat-lbl">Games Today</div></div>
+      </div>
+      <div className="section-title">Nearby Courts</div>
+      {nearbyCourts.length===0&&<div style={{color:'var(--muted)',fontSize:'0.82rem',marginBottom:16}}>No courts found.</div>}
+      {nearbyCourts.map(c=>{const dist=getDist(c);return(
+        <div key={c.id} className="court-card" onClick={()=>onOpenCourt?onOpenCourt(c):null}>
+          <div className="court-icon">🏟</div>
+          <div className="court-info"><h4>{c.name}</h4><p>{dist!=null?`${dist<1?dist.toFixed(1):Math.round(dist)} mi · `:''}{c.numberOfCourts||'?'} courts</p></div>
+          <div className={`court-badge ${crowdBadge(c)}`}>{crowdLabel(c)} ›</div>
+        </div>
+      );})}
+      {players.length>0&&<>
+        <div className="divider"/>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+          <div className="section-title" style={{marginBottom:0}}>Nearby Players</div>
+          <button onClick={()=>onSetTab('players')} style={{background:'none',border:'none',color:'var(--green)',fontSize:'0.75rem',fontWeight:700,cursor:'pointer'}}>See All →</button>
+        </div>
+        {players.slice(0,4).map(g=>(
+          <div key={g.uid} className="court-card" style={{cursor:'default'}}>
+            <div className="pc-avatar" style={{width:42,height:42,fontSize:'1rem',flexShrink:0,borderRadius:'50%'}}>{g.photoURL?<img src={g.photoURL} referrerPolicy="no-referrer" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/>:g.name?.[0]||'?'}</div>
+            <div className="court-info"><h4>{g.name}</h4><p>{g.skill||'No skill set'}{g._dist!=null&&g._dist<999?` · ${g._dist<1?g._dist.toFixed(1):Math.round(g._dist)} mi`:''}{g.city?` · ${g.city}`:''}</p></div>
+            <MsgBtn player={g} user={user} onChat={onChat} onNeedLogin={onNeedLogin} ghost sm/>
+          </div>
+        ))}
+      </>}
+    </div>
+  );
+}
+
+/* ── AMENITIES ── */
 const AMENITIES = [
-    {key:'restrooms',label:'🚻 Restrooms'},
-    {key:'parking',label:'🅿️ Parking'},
-    {key:'lights',label:'💡 Lights'},
-    {key:'water',label:'💧 Water'},
-    {key:'benches',label:'🪑 Benches'},
-    {key:'shade',label:'⛱️ Shade'},
-    {key:'indoor',label:'🏢 Indoor'},
-    {key:'pro_shop',label:'🛒 Pro Shop'},
+    {key:'restrooms',label:'🚻 Restrooms'},{key:'parking',label:'🅿️ Parking'},
+    {key:'lights',label:'💡 Lights'},{key:'water',label:'💧 Water'},
+    {key:'benches',label:'🪑 Benches'},{key:'shade',label:'⛱️ Shade'},
+    {key:'indoor',label:'🏢 Indoor'},{key:'pro_shop',label:'🛒 Pro Shop'},
 ];
 
-// ── Add Court Modal ───────────────────────────────────────────────────
+/* ── AddCourtModal ── */
 function AddCourtModal({onClose, onAdded}) {
     const [name, setName] = useState('');
     const [address, setAddress] = useState('');
@@ -288,471 +558,1406 @@ function AddCourtModal({onClose, onAdded}) {
     const [amenities, setAmenities] = useState([]);
     const [rules, setRules] = useState('');
     const [saving, setSaving] = useState(false);
-    const [locating, setLocating] = useState(false);
     const [lat, setLat] = useState(null);
     const [lng, setLng] = useState(null);
-
+    const [locating, setLocating] = useState(false);
     const toggleAmenity = (key) => setAmenities(a => a.includes(key) ? a.filter(x=>x!==key) : [...a, key]);
-
     const geolocate = () => {
         setLocating(true);
         navigator.geolocation.getCurrentPosition(pos => {
-            setLat(pos.coords.latitude);
-            setLng(pos.coords.longitude);
-            setLocating(false);
-        }, () => {
-            alert('Could not get location. Please enter address manually.');
-            setLocating(false);
-        });
+            setLat(pos.coords.latitude); setLng(pos.coords.longitude); setLocating(false);
+        }, () => { alert('Could not get location.'); setLocating(false); });
     };
-
-    // Simple geocode via nominatim
     const geocodeAddress = async (addr) => {
         try {
-            const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`);
+            const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(addr)+'&limit=1');
             const d = await r.json();
             if (d.length) return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
         } catch(e) {}
         return null;
     };
-
     const save = async () => {
         if (!name.trim()) { alert('Please enter a court name.'); return; }
         if (!address.trim()) { alert('Please enter an address.'); return; }
         setSaving(true);
-        let finalLat = lat, finalLng = lng;
-        if (!finalLat || !finalLng) {
-            const geo = await geocodeAddress(address);
-            if (geo) {
-                finalLat = geo.lat;
-                finalLng = geo.lng;
-            } else {
-                // Warn user — don't silently store 0,0 which breaks distance sorting
-                setSaving(false);
-                alert('⚠️ Could not find coordinates for this address. Distances may show incorrectly.\n\nTip: Use the 📍 button to capture your GPS location, or enter a more specific address (include city and state).');
-                finalLat = 0;
-                finalLng = 0;
-            }
-        }
-        const court = {
-            name: name.trim(),
-            address: address.trim(),
-            lat: finalLat,
-            lng: finalLng,
-            numberOfCourts: numCourts,
-            amenities,
-            courtRules: rules.trim(),
-            openCourts: numCourts,
-            crowdLevel: 'low',
-            condition: 'open',
-            createdAt: Date.now(),
-        };
-        try {
-            if (fbOk && db) {
-                const ref = await db.collection('courts').add(court);
-                court.id = ref.id;
-                onAdded(court);
-            } else {
-                alert('Database not available. Please try again.');
-            }
-        } catch(e) {
-            alert('Failed to save court: ' + e.message);
-        }
+        let fLat = lat, fLng = lng;
+        if (!fLat || !fLng) { const geo = await geocodeAddress(address); if (geo) { fLat=geo.lat; fLng=geo.lng; } else { fLat=0; fLng=0; } }
+        const court = { name:name.trim(), address:address.trim(), lat:fLat, lng:fLng, numberOfCourts:numCourts, amenities, courtRules:rules.trim(), openCourts:numCourts, crowdLevel:'low', condition:'open', createdAt:Date.now() };
+        try { if(fbOk&&db){ const ref=await db.collection('courts').add(court); court.id=ref.id; onAdded(court); } else alert('Database not available.');
+        } catch(e) { alert('Failed: '+e.message); }
         setSaving(false);
     };
-
     return (
-        <div className="modal-bg" onClick={e => { if(e.target.className === 'modal-bg') onClose(); }}>
+        <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
             <div className="modal-sheet">
-                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
-                    <div className="fd" style={{fontSize:26,fontWeight:800,color:'#0f172a'}}>ADD A COURT</div>
-                    <button onClick={onClose} style={{background:'none',border:'none',fontSize:26,cursor:'pointer',color:'#94a3b8',lineHeight:1}}>×</button>
+                <div className="modal-handle"/>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+                    <div className="modal-title">➕ Add a Court</div>
+                    <button onClick={onClose} className="icon-btn" style={{position:'static'}}>✕</button>
                 </div>
-
-                <div style={{marginBottom:14}}>
-                    <span className="flbl">Court / Park Name *</span>
-                    <input className="field" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Dardenne Prairie Athletic Complex"/>
-                </div>
-
-                <div style={{marginBottom:14}}>
-                    <span className="flbl">Address *</span>
+                <div className="fg"><div className="fl">Court / Park Name *</div><input className="fi" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Dardenne Prairie Athletic Complex"/></div>
+                <div className="fg"><div className="fl">Address *</div>
                     <div style={{display:'flex',gap:8}}>
-                        <input className="field" value={address} onChange={e=>setAddress(e.target.value)} placeholder="Full street address, city, state" style={{flex:1}}/>
-                        <button onClick={geolocate} style={{background:'#f0fdf4',border:'2px solid #10b981',borderRadius:10,padding:'0 14px',cursor:'pointer',fontSize:18,flexShrink:0}} title="Use my location">
-                            {locating ? <span className="spin">⏳</span> : '📍'}
-                        </button>
+                        <input className="fi" value={address} onChange={e=>setAddress(e.target.value)} placeholder="Full street address, city, state" style={{flex:1}}/>
+                        <button onClick={geolocate} className="icon-btn" style={{width:42,height:42,borderRadius:12}} title="Use my location">{locating?'⏳':'📍'}</button>
                     </div>
-                    {lat && <div style={{fontSize:12,color:'#059669',marginTop:4}}>📍 Location captured ({lat.toFixed(4)}, {lng.toFixed(4)})</div>}
+                    {lat && <div style={{fontSize:'0.7rem',color:'var(--green)',marginTop:4}}>📍 Location captured ({lat.toFixed(4)}, {lng.toFixed(4)})</div>}
                 </div>
-
-                <div style={{marginBottom:14}}>
-                    <span className="flbl">Number of Courts</span>
-                    <div style={{display:'flex',alignItems:'center',gap:12}}>
-                        <button onClick={()=>setNumCourts(n=>Math.max(1,n-1))} style={{width:38,height:38,background:'#f1f5f9',border:'2px solid #e2e8f0',borderRadius:9,fontSize:20,cursor:'pointer',fontWeight:700}}>−</button>
-                        <span style={{fontSize:24,fontWeight:800,fontFamily:'Barlow Condensed,sans-serif',color:'#0f172a',minWidth:32,textAlign:'center'}}>{numCourts}</span>
-                        <button onClick={()=>setNumCourts(n=>Math.min(30,n+1))} style={{width:38,height:38,background:' linear-gradient(135deg,#059669,#10b981)',border:'none',borderRadius:9,fontSize:20,cursor:'pointer',fontWeight:700,color:'white'}}>+</button>
+                <div className="fg"><div className="fl">Number of Courts</div>
+                    <div style={{display:'flex',alignItems:'center',gap:10}}>
+                        <button onClick={()=>setNumCourts(n=>Math.max(1,n-1))} className="icon-btn" style={{width:36,height:36,fontSize:'1rem'}}>−</button>
+                        <span style={{fontSize:'1.3rem',fontWeight:800,fontFamily:'Syne',minWidth:28,textAlign:'center'}}>{numCourts}</span>
+                        <button onClick={()=>setNumCourts(n=>Math.min(30,n+1))} style={{width:36,height:36,borderRadius:'50%',background:'var(--green)',border:'none',color:'white',fontSize:'1rem',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
                     </div>
                 </div>
-
-                <div style={{marginBottom:14}}>
-                    <span className="flbl">Amenities</span>
-                    <div style={{display:'flex',flexWrap:'wrap',gap:2}}>
-                        {AMENITIES.map(a => (
-                            <button key={a.key} className={`amen-tag ${amenities.includes(a.key)?'on':''}`} onClick={()=>toggleAmenity(a.key)}>{a.label}</button>
-                        ))}
+                <div className="fg"><div className="fl">Amenities</div>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
+                        {AMENITIES.map(a=><button key={a.key} className={'amen-dk'+(amenities.includes(a.key)?' on':'')} onClick={()=>toggleAmenity(a.key)}>{a.label}</button>)}
                     </div>
                 </div>
-
-                <div style={{marginBottom:22}}>
-                    <span className="flbl">Court Rules / Notes (optional)</span>
-                    <textarea className="field" value={rules} onChange={e=>setRules(e.target.value)} placeholder="e.g. Open daily 6am–10pm. Bring your own balls. First come first served." rows={3} style={{resize:'vertical'}}/>
-                </div>
-
-                <button className="btn-g" onClick={save} disabled={saving} style={{width:'100%',padding:14,fontSize:16}}>
-                    {saving ? '⏳ Saving…' : '➕ Add Court'}
-                </button>
+                <div className="fg"><div className="fl">Rules / Notes (optional)</div><textarea className="fi" value={rules} onChange={e=>setRules(e.target.value)} placeholder="e.g. Open daily 6am–10pm" rows={2}/></div>
+                <button className="btn btn-primary" onClick={save} disabled={saving} style={{width:'100%',opacity:saving?.6:1}}>{saving?'⏳ Saving…':'➕ Add Court'}</button>
             </div>
         </div>
     );
 }
 
-// ── Court Card ────────────────────────────────────────────────────────
-function CourtCard({court, userLat, userLng, isHero}) {
-    const [checkinCount, setCheckinCount] = useState(null);
+/* ── CourtsTab (Enhanced) ── */
+function CourtsTab({courts,uLat,uLng,onOpenCourt}){
+  const[view,setView]=useState('list');const[search,setSearch]=useState('');
+  const[showAdd,setShowAdd]=useState(false);
+  const sorted=useMemo(()=>{let l=[...courts];if(search.trim()){const q=search.toLowerCase();l=l.filter(c=>c.name?.toLowerCase().includes(q)||c.address?.toLowerCase().includes(q));}if(uLat)l.sort((a,b)=>{const da=a.lat?haversine(uLat,uLng,a.lat,a.lng):999;const db2=b.lat?haversine(uLat,uLng,b.lat,b.lng):999;return da-db2;});return l;},[courts,uLat,uLng,search]);
+  const crowdBadge=c=>{const l=c.crowdLevel;return l==='high'?'badge-full':l==='medium'?'badge-busy':'badge-open';};
+  const crowdLabel=c=>{const l=c.crowdLevel;return l==='high'?'Packed':l==='medium'?'Busy':'Open';};
+  const getDist=c=>uLat&&c.lat?haversine(uLat,uLng,c.lat,c.lng):null;
+  return(
+    <div className="px fade-in">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:4,marginBottom:12}}>
+        <div className="section-title" style={{marginBottom:0}}>Find Courts</div>
+        <button className="btn btn-primary btn-sm" onClick={()=>setShowAdd(true)}>+ Add Court</button>
+      </div>
+      <div style={{position:'relative',marginBottom:12}}><span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}}>🔍</span><input className="fi" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search courts…" style={{paddingLeft:36}}/></div>
+      <div className="tab-pills">{[['list','📋 List'],['map','🗺 Map']].map(([k,l])=><div key={k} className={`pill ${view===k?'active':''}`} onClick={()=>setView(k)}>{l}</div>)}</div>
+      {view==='map'&&<div className="map-box"><div className="map-grid"/>{sorted.slice(0,4).map((c,i)=>{const p=[{top:30,left:50},{top:55,left:140},{top:22,left:210},{top:75,left:85}][i]||{top:40+i*20,left:60+i*30};return<div key={c.id} className="map-pin" style={{top:p.top,left:p.left}}>📍</div>;})} <div className="map-label">{sorted.length} courts</div></div>}
+      {sorted.length===0&&<div className="empty-state"><div className="empty-icon">🏟</div><div className="empty-title">No courts found</div><div className="empty-sub">{search?'Try a different search':'Be the first to add your local courts!'}</div>{!search&&<button className="btn btn-primary" onClick={()=>setShowAdd(true)} style={{marginTop:8}}>+ Add Court</button>}</div>}
+      {sorted.map(c=>{const dist=getDist(c);return(
+        <div key={c.id} className="court-card" onClick={()=>onOpenCourt(c)}>
+          <div className="court-icon">🏟</div>
+          <div className="court-info"><h4>{c.name}</h4><p>{dist!=null?`${dist<1?dist.toFixed(1):Math.round(dist)} mi · `:''}{c.numberOfCourts||'?'} courts{c.openCourts!=null?` · ${c.openCourts} open`:''}</p></div>
+          <div className={`court-badge ${crowdBadge(c)}`}>{crowdLabel(c)} ›</div>
+        </div>
+      );})}
+      {/* Tournament link */}
+      <div style={{background:'linear-gradient(135deg,#2a1350,#4c1d95)',border:'1px solid rgba(124,58,237,0.3)',borderRadius:16,padding:'14px 16px',display:'flex',alignItems:'center',gap:12,marginTop:8,cursor:'pointer'}} onClick={()=>window.open('tournament.html','_blank')}>
+        <div style={{width:40,height:40,background:'rgba(255,255,255,.1)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.2rem',flexShrink:0}}>🏆</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontFamily:'Syne',fontSize:'0.88rem',fontWeight:800,color:'white'}}>Tournament Generator</div>
+          <div style={{fontSize:'0.68rem',color:'rgba(233,213,255,0.7)',marginTop:1}}>Round-robin brackets & live scoring</div>
+        </div>
+        <span style={{color:'rgba(233,213,255,0.5)'}}>›</span>
+      </div>
+      {showAdd&&<AddCourtModal onClose={()=>setShowAdd(false)} onAdded={(c)=>{setShowAdd(false);onOpenCourt(c);}}/>}
+    </div>
+  );
+}
 
-    useEffect(() => {
-        if (!fbOk || !db || !court.id) return;
-        // Count active check-ins in this court's subcollection
-        const unsub = db.collection('courts').doc(court.id).collection('checkins')
-            .where('status', '==', 'active')
-            .onSnapshot(snap => setCheckinCount(snap.size), () => setCheckinCount(0));
-        return () => unsub();
-    }, [court.id]);
+/* ── Court Detail Sub-Components ── */
+const COURT_RATINGS=[{key:'under3',label:'<3.0'},{key:'3to35',label:'3.0–3.5'},{key:'35to4',label:'3.5–4.0'},{key:'over4',label:'4.0+'},{key:'5plus',label:'5.0+'}];
+const COURT_DURATIONS=[{label:'1 hr',value:60},{label:'2 hr',value:120},{label:'3 hr',value:180},{label:'4 hr',value:240},{label:'All Day',value:480}];
+const courtRatingInfo=key=>COURT_RATINGS.find(r=>r.key===key);
+function courtHeadcount(players){return players.reduce((s,p)=>s+1+(p.guests||0),0);}
+const wxIcon=(temp,wind)=>wind>20?'🌬️':temp<32?'🥶':temp<50?'🧥':temp>88?'☀️':'⛅';
 
-    const dist = (userLat && userLng && court.lat && court.lng)
-        ? haversine(userLat, userLng, court.lat, court.lng) : null;
+function CourtPlayTimer({checkInTime,durationMins}){
+    const[remaining,setRemaining]=useState(0);
+    useEffect(()=>{const calc=()=>setRemaining(Math.max(0,checkInTime+durationMins*60000-Date.now()));calc();const t=setInterval(calc,10000);return()=>clearInterval(t);},[checkInTime,durationMins]);
+    if(remaining<=0)return<span style={{fontSize:'0.62rem',color:'var(--red)',fontWeight:700}}>⏰ Time's up!</span>;
+    const mins=Math.ceil(remaining/60000),hrs=Math.floor(mins/60),m=mins%60;
+    const pct=Math.max(0,(remaining/(durationMins*60000))*100);
+    return(<div style={{minWidth:70}}><span style={{fontSize:'0.62rem',color:'var(--green)',fontWeight:700}}>⏱ {hrs>0?hrs+'h ':''}{m}m left</span><div className="cd-timer"><div className="cd-timer-fill" style={{width:pct+'%'}}/></div></div>);
+}
 
-    const pillClass = checkinCount === null ? 'empty' : checkinCount === 0 ? 'empty' : checkinCount > 8 ? 'busy' : '';
-
-    const open = court.openCourts !== undefined ? court.openCourts : court.numberOfCourts;
-    const total = court.numberOfCourts || 4;
-
-    const goToCourt = () => {
-        localStorage.setItem('lastCourtId', court.id);
-        localStorage.setItem('lastCourtName', court.name);
-        window.location.href = `court.html?id=${court.id}`;
-    };
-
-    if (isHero) {
-        return (
-            <div className="hero-court" onClick={goToCourt} style={{cursor:'pointer'}}>
-                <div style={{position:'relative',zIndex:1}}>
-                    <div style={{fontSize:11,fontWeight:700,color:'#6ee7b7',textTransform:'uppercase',letterSpacing:.8,marginBottom:6}}>
-                        📍 Last Visited
-                    </div>
-                    <div className="fd" style={{fontSize:26,fontWeight:800,color:'white',marginBottom:4,lineHeight:1.1}}>{court.name}</div>
-                    <div style={{fontSize:13,color:'#94a3b8',marginBottom:14}}>{court.address}</div>
-                    <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:16}}>
-                        <div style={{background:'rgba(255,255,255,.1)',borderRadius:8,padding:'7px 11px',fontSize:13,color:'white',fontWeight:600,display:'flex',flexDirection:'column',gap:4}}>
-                            <div style={{fontSize:10,color:'#6ee7b7',fontWeight:700,textTransform:'uppercase',letterSpacing:.5}}>Courts in Rotation</div>
-                            <div style={{display:'flex',alignItems:'center',gap:6}}>
-                                <div style={{display:'flex',gap:2}}>
-                                    {Array.from({length:Math.min(total,8)}).map((_,i)=>(
-                                        <div key={i} style={{width:10,height:10,borderRadius:2,background:i<open?'#10b981':'rgba(255,255,255,.2)'}}/>
-                                    ))}
-                                </div>
-                                <span style={{fontSize:12}}>{open}/{total}</span>
-                            </div>
-                        </div>
-                        {checkinCount !== null && (
-                            <div style={{background:'rgba(16,185,129,.2)',borderRadius:8,padding:'5px 11px',fontSize:13,color:'#6ee7b7',fontWeight:600}}>
-                                👥 {checkinCount} playing
-                            </div>
-                        )}
-                        {dist !== null && (
-                            <div style={{background:'rgba(255,255,255,.08)',borderRadius:8,padding:'5px 11px',fontSize:13,color:'#94a3b8',fontWeight:600}}>
-                                📏 {fmtDist(dist)}
-                            </div>
-                        )}
-                    </div>
-                    <button className="btn-g" style={{fontSize:15,padding:'11px 28px'}} onClick={e=>{e.stopPropagation();goToCourt();}}>
-                        Check In →
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="court-item" onClick={goToCourt}>
-            <div className="court-icon">🏟️</div>
+function CourtPlayerRow({p,isNow}){
+    const ri=courtRatingInfo(p.rating);const nowMs=Date.now();
+    const eff=isNow||p.status==='now'||(p.status==='later'&&p.arrivalTime&&nowMs>=p.arrivalTime);
+    const arrLabel=p.status==='later'&&p.arrivalTime&&!eff?new Date(p.arrivalTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):null;
+    const guests=p.guests||0;
+    return(
+        <div className="cd-player">
+            <div className="cd-av">{(p.userName||'?')[0].toUpperCase()}</div>
             <div style={{flex:1,minWidth:0}}>
-                <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:3}}>
-                    <div style={{fontWeight:700,fontSize:15,color:'#0f172a',flex:1,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{court.name}</div>
-                    {dist !== null && <span className="dist-badge" style={{flexShrink:0}}>{fmtDist(dist)}</span>}
+                <div style={{fontWeight:700,fontSize:'0.78rem',display:'flex',alignItems:'center',gap:5,flexWrap:'wrap'}}>
+                    {p.userName}{guests>0&&<span className="tag t-blue" style={{fontSize:'0.55rem'}}>+{guests}</span>}
+                    {ri&&<span className="tag t-green" style={{fontSize:'0.55rem'}}>{ri.label}</span>}
                 </div>
-                <div style={{fontSize:13,color:'#64748b',marginBottom:5,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'100%'}}>{court.address}</div>
-                <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
-                    <span className={`player-pill ${pillClass}`}>
-                        👥 {checkinCount === null ? '…' : checkinCount} playing
-                    </span>
-                    <span style={{fontSize:12,color:'#94a3b8'}}>🏟️ {open}/{total}</span>
-                    {court.condition && court.condition !== 'open' && (
-                        <span style={{fontSize:12,color:'#d97706'}}>⚠️ {court.condition}</span>
-                    )}
+                <div style={{fontSize:'0.65rem',color:'var(--muted)',display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                    <span>{eff?'🎾 Playing':arrLabel?'⏰ '+arrLabel:'👀 Watching'}</span>
+                    {eff&&p.duration&&<CourtPlayTimer checkInTime={p.timestamp} durationMins={p.duration}/>}
                 </div>
+                {p.comment&&<div style={{fontSize:'0.65rem',color:'var(--green)',fontStyle:'italic',marginTop:2,background:'var(--green-dim)',borderRadius:6,padding:'2px 6px',display:'inline-block'}}>💬 {p.comment}</div>}
             </div>
-            <div style={{display:'flex',alignItems:'center',flexShrink:0,paddingLeft:4}}>
-                <span style={{color:'#cbd5e1',fontSize:18}}>›</span>
+            <div style={{fontSize:'0.6rem',color:'var(--muted2)',flexShrink:0}}>{new Date(p.timestamp).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}</div>
+        </div>
+    );
+}
+
+/* ── FlashAnnouncement ── */
+function FlashAnnouncement({courtId,courtData,updateCourt}){
+    const[text,setText]=useState(courtData.flashAnnouncement||'');
+    const[saving,setSaving]=useState(false);
+    const save=async()=>{setSaving(true);await updateCourt('flashAnnouncement',text.trim());setSaving(false);};
+    const clear=async()=>{setText('');await updateCourt('flashAnnouncement','');};
+    return(
+        <div className="ct-card">
+            <div style={{fontSize:'0.7rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>📢 Flash Announcement</div>
+            {courtData.flashAnnouncement&&<div style={{background:'rgba(247,201,72,0.12)',border:'1px solid rgba(247,201,72,0.3)',borderRadius:8,padding:'7px 10px',marginBottom:8,fontSize:'0.75rem',color:'var(--accent)',fontWeight:600}}>📢 {courtData.flashAnnouncement}</div>}
+            <textarea className="fi" value={text} onChange={e=>setText(e.target.value)} placeholder="e.g. Court 3 closed for maintenance…" rows={2} style={{marginBottom:8}}/>
+            <div style={{display:'flex',gap:6}}>
+                <button className="btn btn-primary btn-sm" onClick={save} disabled={saving} style={{flex:1,opacity:saving?.6:1}}>{saving?'Saving…':'📢 Post'}</button>
+                {courtData.flashAnnouncement&&<button className="btn btn-danger btn-sm" onClick={clear}>✕ Clear</button>}
             </div>
         </div>
     );
 }
 
-// ── Main App ──────────────────────────────────────────────────────────
-function App() {
-    const [courts, setCourts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [userLat, setUserLat] = useState(() => {
-        const v = localStorage.getItem('pickleUserLat');
-        return v ? parseFloat(v) : null;
-    });
-    const [userLng, setUserLng] = useState(() => {
-        const v = localStorage.getItem('pickleUserLng');
-        return v ? parseFloat(v) : null;
-    });
-    // 'unknown' | 'denied' | 'granted' | 'unavailable'
-    const [locStatus, setLocStatus] = useState('unknown');
-    const [search, setSearch] = useState('');
-    const [showAdd, setShowAdd] = useState(false);
-    const [showFB, setShowFB] = useState(false);
-    const [lastCourt, setLastCourt] = useState(null);
+/* ── CourtDetailPage ── */
+function buildTimeOpts(){const o=[];const n=new Date();const s=new Date(n);s.setMinutes(0,0,0);s.setHours(s.getHours()+1);const e=new Date(n);e.setHours(23,0,0,0);const c=new Date(s);while(c<=e){o.push({label:c.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}),value:c.getTime()});c.setHours(c.getHours()+1);}return o;}
 
-    // Load last visited court info
-    useEffect(() => {
-        const lastId = localStorage.getItem('lastCourtId');
-        const lastName = localStorage.getItem('lastCourtName');
-        if (lastId && lastName) {
-            setLastCourt({ id: lastId, name: lastName, _stub: true });
-            // Fetch full details
-            if (fbOk && db) {
-                db.collection('courts').doc(lastId).get().then(doc => {
-                    if (doc.exists) setLastCourt({ id: doc.id, ...doc.data() });
-                }).catch(() => {});
-            }
-        }
-    }, []);
+function EditCourtModal({court,onClose,onSaved}){
+  const[name,setName]=useState(court.name||'');const[address,setAddress]=useState(court.address||'');
+  const[numCourts,setNumCourts]=useState(court.numberOfCourts||4);
+  const[amenities,setAmenities]=useState(court.amenities||[]);
+  const[rules,setRules]=useState(court.courtRules||'');const[saving,setSaving]=useState(false);
+  const toggleAm=k=>setAmenities(a=>a.includes(k)?a.filter(x=>x!==k):[...a,k]);
+  const save=async()=>{if(!name.trim()){alert('Court name required.');return;}setSaving(true);
+    try{await db.collection('courts').doc(court.id).update({name:name.trim(),address:address.trim(),numberOfCourts:numCourts,amenities,courtRules:rules.trim()});onSaved({...court,name:name.trim(),address:address.trim(),numberOfCourts:numCourts,amenities,courtRules:rules.trim()});}
+    catch(e){alert('Save failed: '+e.message);}setSaving(false);};
+  return(<div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+    <div className="modal-sheet"><div className="modal-handle"/>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+        <div className="modal-title">✏️ Edit Court</div>
+        <button onClick={onClose} className="icon-btn" style={{position:'static'}}>✕</button>
+      </div>
+      <div className="fg"><div className="fl">Court Name *</div><input className="fi" value={name} onChange={e=>setName(e.target.value)}/></div>
+      <div className="fg"><div className="fl">Address</div><input className="fi" value={address} onChange={e=>setAddress(e.target.value)} placeholder="Full address"/></div>
+      <div className="fg"><div className="fl">Number of Courts</div>
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <button onClick={()=>setNumCourts(n=>Math.max(1,n-1))} className="icon-btn" style={{width:34,height:34,fontSize:'0.95rem'}}>−</button>
+          <span style={{fontSize:'1.1rem',fontWeight:800,fontFamily:'Syne',minWidth:28,textAlign:'center'}}>{numCourts}</span>
+          <button onClick={()=>setNumCourts(n=>Math.min(30,n+1))} style={{width:34,height:34,borderRadius:'50%',background:'var(--green)',border:'none',color:'white',fontSize:'0.95rem',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
+        </div>
+      </div>
+      <div className="fg"><div className="fl">Amenities</div>
+        <div style={{display:'flex',flexWrap:'wrap',gap:3}}>{AMENITIES.map(a=><button key={a.key} className={'amen-dk'+(amenities.includes(a.key)?' on':'')} onClick={()=>toggleAm(a.key)}>{a.label}</button>)}</div>
+      </div>
+      <div className="fg"><div className="fl">Rules / Notes</div><textarea className="fi" value={rules} onChange={e=>setRules(e.target.value)} placeholder="e.g. Open daily 6am–10pm" rows={2}/></div>
+      <button className="btn btn-primary" onClick={save} disabled={saving} style={{width:'100%',opacity:saving?.6:1}}>{saving?'Saving…':'💾 Save Changes'}</button>
+    </div>
+  </div>);
+}
 
-    // Get user location — checks Permissions API first to know actual state
-    useEffect(() => {
-        if (!navigator.geolocation) { setLocStatus('unavailable'); return; }
-        const tryGet = () => {
-            navigator.geolocation.getCurrentPosition(
-                pos => {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
-                    setUserLat(lat); setUserLng(lng);
-                    setLocStatus('granted');
-                    localStorage.setItem('pickleUserLat', lat);
-                    localStorage.setItem('pickleUserLng', lng);
-                },
-                err => {
-                    // PERMISSION_DENIED = 1
-                    if (err.code === 1) {
-                        setLocStatus('denied');
-                    } else {
-                        setLocStatus('unavailable');
-                    }
-                },
-                { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
-            );
-        };
-        // Use Permissions API where available to check state without triggering prompt
-        if (navigator.permissions) {
-            navigator.permissions.query({ name: 'geolocation' }).then(result => {
-                if (result.state === 'denied') {
-                    setLocStatus('denied');
-                } else {
-                    tryGet(); // 'granted' or 'prompt' — try to get
-                    result.onchange = () => {
-                        if (result.state === 'granted') tryGet();
-                        else if (result.state === 'denied') setLocStatus('denied');
-                    };
-                }
-            }).catch(() => tryGet());
-        } else {
-            tryGet();
-        }
-    }, []);
+function CourtDetailPage({courtId,onBack}){
+    const[courtData,setCourtData]=useState(null);const[checkIns,setCheckIns]=useState([]);
+    const[loading,setLoading]=useState(true);const[tab,setTab]=useState('now');
+    const[showForm,setShowForm]=useState(false);const[showLater,setShowLater]=useState(false);
+    const[arrivalTime,setArrivalTime]=useState('');
+    const[userName,setUserName]=useState('');
+    const[userRating,setUserRating]=useState('');const[duration,setDuration]=useState(120);
+    const[guestCount,setGuestCount]=useState(0);const[comment,setComment]=useState('');
+    const[weather,setWeather]=useState(null);const[forecast,setForecast]=useState([]);
+    const[showEdit,setShowEdit]=useState(false);
+    const checkInsRef=useRef([]);
+    const[deviceId]=useState(()=>{let id=localStorage.getItem('pickleDeviceId');if(!id){id='dev_'+Math.random().toString(36).slice(2,11);localStorage.setItem('pickleDeviceId',id);}return id;});
+    useEffect(()=>{const n=localStorage.getItem('pickleCourtUserName');const r=localStorage.getItem('pickleCourtRating');if(n)setUserName(n);if(r)setUserRating(r);},[]);
+    useEffect(()=>{if(!courtId||!fbOk){setLoading(false);return;}const u=db.collection('courts').doc(courtId).onSnapshot(d=>{if(d.exists)setCourtData({id:d.id,...d.data()});else setCourtData(null);setLoading(false);},()=>setLoading(false));return()=>u();},[courtId]);
+    useEffect(()=>{if(!courtId||!fbOk)return;const u=db.collection('courts').doc(courtId).collection('checkins').onSnapshot(snap=>{const now=Date.now(),cut=now-24*3600000;snap.docs.forEach(d=>{if(d.data().status==='checked-out')d.ref.delete().catch(()=>{});});const list=snap.docs.map(d=>({id:d.id,...d.data()})).filter(c=>c.status!=='checked-out'&&c.timestamp>cut).sort((a,b)=>(a.arrivalTime||a.timestamp)-(b.arrivalTime||b.timestamp));checkInsRef.current=list;setCheckIns(list);},e=>console.warn('CI:',e.message));return()=>u();},[courtId]);
+    useEffect(()=>{if(!courtId||!fbOk)return;const tick=async()=>{const now=Date.now(),list=checkInsRef.current;for(const c of list){const st=c.status==='active'?c.timestamp:c.arrivalTime;if(c.status==='active'&&c.duration&&st&&now>st+c.duration*60000){await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).delete().catch(()=>{});}if(c.status==='later'&&c.arrivalTime&&now>=c.arrivalTime){await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).update({status:'active',timestamp:now}).catch(()=>{});}}};tick();const t=setInterval(tick,15000);return()=>clearInterval(t);},[courtId]);
+    useEffect(()=>{if(!courtData?.lat||!courtData?.lng)return;const fx=async(la,ln)=>{try{const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+la+'&longitude='+ln+'&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1');const d=await r.json();setWeather({temp:Math.round(d.current.temperature_2m),wind:Math.round(d.current.wind_speed_10m)});const now=new Date();setForecast(d.hourly.time.map((t,i)=>({dt:new Date(t),temp:Math.round(d.hourly.temperature_2m[i]),wind:Math.round(d.hourly.wind_speed_10m[i])})).filter(h=>h.dt>=now&&h.dt.getDate()===now.getDate()).slice(0,10));}catch(e){}};fx(courtData.lat,courtData.lng);},[courtData?.lat,courtData?.lng]);
+    const updateCourt=async(field,value)=>{if(!fbOk||!courtId)return;await db.collection('courts').doc(courtId).update({[field]:value}).catch(console.error);};
+    const deleteMyCheckIns=async()=>{const snap=await db.collection('courts').doc(courtId).collection('checkins').get();await Promise.all(snap.docs.filter(d=>d.data().deviceId===deviceId).map(d=>d.ref.delete()));};
+    const submitCheckIn=async(status,atTime)=>{if(!fbOk||!userName.trim()){alert(!userName.trim()?'Enter your name':'DB error');return;}try{await deleteMyCheckIns();const ciStatus=status==='now'?'active':'later';await db.collection('courts').doc(courtId).collection('checkins').add({userName,deviceId,rating:userRating||null,status:ciStatus,guests:guestCount,duration,comment:comment.trim()||'',arrivalTime:atTime||Date.now(),timestamp:Date.now()});localStorage.setItem('pickleCourtUserName',userName);localStorage.setItem('pickleCourtRating',userRating);setShowForm(false);setShowLater(false);setArrivalTime('');setGuestCount(0);setComment('');}catch(e){alert('Check-in failed: '+e.message);}};
+    const handleCheckOut=async()=>{await deleteMyCheckIns();};
 
-    // Load all courts
-    useEffect(() => {
-        if (!fbOk || !db) { setLoading(false); return; }
-        const unsub = db.collection('courts').orderBy('createdAt', 'desc').onSnapshot(snap => {
-            const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            setCourts(list);
-            setLoading(false);
-        }, err => {
-            console.error('Courts load:', err);
-            setLoading(false);
-        });
-        return () => unsub();
-    }, []);
+    if(loading)return<div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:200}}><div style={{textAlign:'center'}}><div style={{fontSize:'2rem',marginBottom:8}}>🏟</div><div style={{fontSize:'0.82rem',color:'var(--muted)'}}>Loading court…</div></div></div>;
+    if(!courtData)return<div className="px fade-in" style={{paddingTop:40,textAlign:'center'}}><div style={{fontSize:'2.5rem',marginBottom:10}}>🏟</div><div className="modal-title" style={{marginBottom:8}}>Court not found</div><button className="btn btn-ghost" onClick={onBack}>← Back</button></div>;
 
-    // Sort courts by distance if we have location
-    const sortedCourts = [...courts].sort((a, b) => {
-        if (!userLat || !userLng) return 0;
-        const da = (a.lat && a.lng) ? haversine(userLat, userLng, a.lat, a.lng) : 9999;
-        const db2 = (b.lat && b.lng) ? haversine(userLat, userLng, b.lat, b.lng) : 9999;
-        return da - db2;
-    });
+    const nowMs=Date.now();const myCheckIn=checkIns.find(c=>c.deviceId===deviceId);
+    const nowPlayers=checkIns.filter(c=>c.status==='active'||(c.status==='later'&&c.arrivalTime&&nowMs>=c.arrivalTime));
+    const laterPlayers=checkIns.filter(c=>c.status==='later'&&(!c.arrivalTime||nowMs<c.arrivalTime));
+    const nowTotal=courtHeadcount(nowPlayers),laterTotal=courtHeadcount(laterPlayers);
+    const total=courtData.numberOfCourts||4;const open=courtData.openCourts!==undefined?courtData.openCourts:total;
+    const openOpts=Array.from({length:total+1},(_,i)=>i);
+    const crowdColor=courtData.crowdLevel==='low'?'g':courtData.crowdLevel==='medium'?'y':'r';
+    const condMap={closed:{e:'🚫',l:'Closed',c:'r'},wet:{e:'💧',l:'Wet',c:'y'},hot:{e:'🥵',l:'Hot',c:'y'},windy:{e:'🌬️',l:'Windy',c:'y'}};
+    const timeOpts=buildTimeOpts();
 
-    const filtered = sortedCourts.filter(c =>
-        !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.address.toLowerCase().includes(search.toLowerCase())
-    );
-
-    // Courts to show in list (exclude the last-visited one from list if hero is shown)
-    const [showAll, setShowAll] = React.useState(false);
-    const baseList = lastCourt
-        ? filtered.filter(c => c.id !== lastCourt.id)
-        : filtered;
-    const listCourts = search ? baseList : (showAll ? baseList : baseList.slice(0, 10));
-
-    const handleAdded = (court) => {
-        setShowAdd(false);
-        localStorage.setItem('lastCourtId', court.id);
-        localStorage.setItem('lastCourtName', court.name);
-        window.location.href = `court.html?id=${court.id}`;
-    };
-
-    return (
-        <div style={{minHeight:'100vh',background:'#f1f5f9',display:'flex',flexDirection:'column'}}>
-            {/* Nav */}
-            <div className="nav">
-                <div className="fd" style={{fontSize:24,fontWeight:800,flex:1}}>
-                    <span style={{color:'white'}}>PICKLE</span><span style={{color:'#34d399'}}>CONNECT</span>
+    return(<div className="fade-in" style={{paddingTop:8}}>
+        {/* ── CARD 1: Court Name + Weather ── */}
+        <div className="cd-section">
+            <div className="cd-name-row">
+                <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:'0.95rem',fontWeight:700,lineHeight:1.25,marginBottom:4}}>{courtData.name}</div>
+                    <div style={{fontSize:'0.68rem',color:'var(--muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>📍 {courtData.address||'No address'}</div>
                 </div>
-                <div style={{width:8,height:8,borderRadius:'50%',background:'#10b981',animation:'pulse 2s infinite',flexShrink:0}}/>
-                <span style={{fontSize:12,color:'#6ee7b7',fontWeight:600}}>Live</span>
+                <div className="cd-badges">
+                    <span className="cd-live"><span className="cd-live-dot"/>LIVE</span>
+                    <span className={'cd-crowd-badge '+(courtData.crowdLevel||'low')}>{courtData.crowdLevel==='high'?'Packed':courtData.crowdLevel==='medium'?'Busy':'Open'}</span>
+                </div>
             </div>
+            {courtData.flashAnnouncement&&<div style={{marginTop:8,background:'rgba(247,201,72,0.12)',border:'1px solid rgba(247,201,72,0.3)',borderRadius:8,padding:'6px 10px',fontSize:'0.72rem',color:'var(--accent)',fontWeight:600}}>📢 {courtData.flashAnnouncement}</div>}
 
-            <div className="pg">
-                {/* Hero — last visited court */}
-                {lastCourt && (
-                    <CourtCard court={lastCourt} userLat={userLat} userLng={userLng} isHero={true}/>
-                )}
-
-                {/* Section header */}
-                <div className="sec-hdr">
-                    <div className="fd" style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>
-                        {userLat ? '📍 NEARBY COURTS' : '🏟️ ALL COURTS'}
+            {/* Weather row */}
+            {weather&&<div style={{marginTop:12}}>
+                <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:8,alignItems:'start'}}>
+                    {/* Current — compact */}
+                    <div className="cd-wx-card" style={{padding:'7px 10px',gap:7,minWidth:0}}>
+                        <div style={{fontSize:'1.2rem',lineHeight:1}}>{wxIcon(weather.temp,weather.wind)}</div>
+                        <div>
+                            <div style={{fontSize:'0.55rem',color:'var(--muted)',fontWeight:600}}>Now</div>
+                            <div style={{fontSize:'0.88rem',fontWeight:800,whiteSpace:'nowrap'}}>{weather.temp}°F</div>
+                            <div style={{fontSize:'0.55rem',color:'var(--muted)',whiteSpace:'nowrap'}}>💨 {weather.wind}mph</div>
+                        </div>
                     </div>
-                    <button className="btn-g" onClick={()=>setShowAdd(true)} style={{padding:'8px 16px',fontSize:13}}>
-                        + Add Court
-                    </button>
-                </div>
-
-                {/* Location prompt — shown only if no location at all */}
-                {!userLat && locStatus !== 'unknown' && (
-                    <div style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:12,padding:'12px 14px',marginBottom:12}}>
-                        <div style={{display:'flex',alignItems:'flex-start',gap:10}}>
-                            <span style={{fontSize:20,flexShrink:0,marginTop:1}}>📍</span>
-                            <div style={{flex:1,fontFamily:'Outfit,sans-serif',fontSize:13,color:'#92400e',lineHeight:1.5}}>
-                                {locStatus === 'denied' ? (
-                                    <div>
-                                        <strong>Location blocked.</strong> To see distances, enable location for this site in your browser settings:
-                                        <div style={{marginTop:6,display:'flex',flexDirection:'column',gap:3}}>
-                                            <span>• <strong>Chrome/Android:</strong> tap the 🔒 lock icon → Site settings → Location → Allow</span>
-                                            <span>• <strong>Safari/iOS:</strong> Settings → Safari → Location → Allow</span>
-                                            <span>• <strong>Firefox:</strong> tap 🔒 → Permissions → Location → Allow</span>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <strong>Enable location</strong>
-                                )}
+                    {/* Next 4 hrs */}
+                    <div style={{display:'flex',gap:5,overflow:'hidden'}}>
+                        {forecast.slice(0,4).map((h,i)=>(
+                            <div key={i} style={{flex:1,background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:'5px 4px',textAlign:'center',minWidth:0}}>
+                                <div style={{fontSize:'0.52rem',color:'var(--muted)',fontWeight:600,whiteSpace:'nowrap'}}>{h.dt.toLocaleTimeString([],{hour:'numeric'})}</div>
+                                <div style={{fontSize:'0.75rem',fontWeight:800,marginTop:2}}>{h.temp}°</div>
+                                <div style={{fontSize:'0.52rem',color:'var(--muted)',marginTop:1}}>💨{h.wind}</div>
                             </div>
-                            <button onClick={()=>window.location.reload()} style={{background:'#f59e0b',color:'white',border:'none',borderRadius:8,padding:'7px 12px',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',flexShrink:0,whiteSpace:'nowrap',marginTop:0}}>
-                                {locStatus === 'denied' ? 'Reload ↺' : 'Enable →'}
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Search */}
-                <div className="search-wrap">
-                    <span className="search-icon">🔍</span>
-                    <input
-                        className="search-inp"
-                        value={search}
-                        onChange={e=>setSearch(e.target.value)}
-                        placeholder="Search by name or city…"
-                    />
-                </div>
-
-                {/* Court list */}
-                {loading ? (
-                    <div style={{textAlign:'center',padding:'48px 0',color:'#94a3b8'}}>
-                        <span className="spin" style={{fontSize:28}}>⚡</span>
-                        <div style={{marginTop:10,fontSize:14}}>Loading courts…</div>
-                    </div>
-                ) : listCourts.length === 0 && !lastCourt ? (
-                    <div className="empty-state">
-                        <div style={{fontSize:48,marginBottom:12}}>🏟️</div>
-                        <div style={{fontSize:18,fontWeight:700,color:'#374151',marginBottom:6}}>
-                            {search ? 'No courts found' : 'No courts yet'}
-                        </div>
-                        <div style={{fontSize:14,marginBottom:20}}>
-                            {search ? 'Try a different search term' : 'Be the first to add your local courts!'}
-                        </div>
-                        {!search && <button className="btn-g" onClick={()=>setShowAdd(true)}>+ Add a Court</button>}
-                    </div>
-                ) : (
-                    <>
-                        {listCourts.map(court => (
-                            <CourtCard key={court.id} court={court} userLat={userLat} userLng={userLng}/>
                         ))}
-                        {!search && !showAll && baseList.length > 10 && (
-                            <button onClick={()=>setShowAll(true)} style={{width:'100%',padding:'12px',background:'white',border:'2px solid #e2e8f0',borderRadius:12,fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:600,color:'#059669',cursor:'pointer',marginTop:4}}>
-                                Show all {baseList.length} courts ↓
-                            </button>
-                        )}
-                        {listCourts.length === 0 && lastCourt && (
-                            <div className="empty-state">
-                                <div style={{fontSize:14}}>No other courts found nearby.</div>
+                    </div>
+                </div>
+            </div>}
+        </div>
+
+        {/* ── CARD 2: At a Glance ── */}
+        <div className="cd-section">
+            <div style={{fontSize:'0.78rem',fontWeight:700,marginBottom:10}}>📊 At a Glance</div>
+            <div className="cd-glance-grid">
+                <div>
+                    <div className="cd-glance-sub">Activity</div>
+                    <div className="cd-glance-pills">
+                        <div className={'cd-g-pill'+(nowTotal>0?' lit':'')}>
+                            <div className="cd-g-lbl">👥 Playing</div>
+                            <div className="cd-g-val">{nowTotal}</div>
+                        </div>
+                        <div className={'cd-g-pill'+(laterTotal>0?' lit':'')}>
+                            <div className="cd-g-lbl">⏰ Coming</div>
+                            <div className="cd-g-val">{laterTotal}</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div className="cd-glance-sub">Court Status</div>
+                    <div className="cd-glance-pills">
+                        <div className={'cd-g-pill'+(courtData.lightsOn?' lit':'')}>
+                            <div className="cd-g-lbl">{courtData.lightsOn?'💡':'🌙'} Lights</div>
+                            <div className="cd-g-val">{courtData.lightsOn?'ON':'OFF'}</div>
+                        </div>
+                        <div className={'cd-g-pill'+(open>0?' lit':'')}>
+                            <div className="cd-g-lbl">⚙️ Rotation</div>
+                            <div className="cd-g-val">{open}/{total}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {/* ── TABS ── */}
+        <div className="cd-tabs">
+            <button className={'cd-tab'+(tab==='now'?' a':'')} onClick={()=>setTab('now')}>👥 Who's Here</button>
+            <button className={'cd-tab'+(tab==='schedule'?' a':'')} onClick={()=>setTab('schedule')}>📅 Schedule</button>
+            <button className={'cd-tab'+(tab==='controls'?' a':'')} onClick={()=>setTab('controls')}>⚙️ Controls</button>
+            <button className={'cd-tab'+(tab==='info'?' a':'')} onClick={()=>setTab('info')}>ℹ️ Info</button>
+        </div>
+
+        {/* ── TAB CONTENT ── */}
+        <div style={{padding:'0 16px'}}>
+            {/* NOW TAB */}
+            {tab==='now'&&<div className="cd-card">
+                <div style={{fontSize:'0.78rem',fontWeight:700,marginBottom:10}}>👥 Who's Here?</div>
+                {myCheckIn?(
+                    <div style={{background:'var(--green-dim)',border:'1px solid rgba(46,204,113,0.3)',borderRadius:12,padding:'10px 14px',marginBottom:10}}>
+                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+                            <div>
+                                <div style={{fontSize:'0.75rem',fontWeight:700,color:'var(--green)'}}>✅ Checked in as {myCheckIn.userName}</div>
+                                <div style={{fontSize:'0.65rem',color:'var(--green)',opacity:0.8}}>
+                                    {(myCheckIn.status==='active'||(myCheckIn.status==='later'&&myCheckIn.arrivalTime&&nowMs>=myCheckIn.arrivalTime))?'🎾 Playing now':'⏰ Arriving '+new Date(myCheckIn.arrivalTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
+                                </div>
+                            </div>
+                            <button className="btn btn-danger btn-sm" onClick={handleCheckOut}>Check Out</button>
+                        </div>
+                    </div>
+                ):(!showForm?(
+                    <div style={{background:'rgba(255,255,255,.03)',border:'1px dashed var(--border2)',borderRadius:12,padding:'18px 16px',textAlign:'center',marginBottom:10}}>
+                        <div style={{fontSize:'0.82rem',color:'var(--muted)',marginBottom:12}}>Let others know you're here!</div>
+                        <button className="btn btn-primary" onClick={()=>setShowForm(true)}>🏟 CHECK IN</button>
+                    </div>
+                ):(
+                    <div className="cd-form">
+                        <div className="fg"><div className="fl">Your Name *</div><input className="fi" value={userName} onChange={e=>setUserName(e.target.value)} placeholder="Enter your name…"/></div>
+                        <div className="fg"><div className="fl">Skill Level</div><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{COURT_RATINGS.map(r=><button key={r.key} className={'rt-btn'+(userRating===r.key?' s':'')} onClick={()=>setUserRating(r.key)}>{r.label}</button>)}</div></div>
+                        <div className="fg"><div className="fl">How Long?</div><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{COURT_DURATIONS.map(d=><button key={d.value} className={'dr-btn'+(duration===d.value?' a':'')} onClick={()=>setDuration(d.value)}>{d.label}</button>)}</div></div>
+                        <div className="fg"><div className="fl">Guests</div>
+                            <div style={{display:'flex',alignItems:'center',gap:8}}>
+                                <button onClick={()=>setGuestCount(Math.max(0,guestCount-1))} className="icon-btn" style={{width:30,height:30,fontSize:'0.85rem'}}>−</button>
+                                <span style={{fontSize:'1rem',fontWeight:800,minWidth:22,textAlign:'center'}}>{guestCount}</span>
+                                <button onClick={()=>setGuestCount(Math.min(20,guestCount+1))} style={{width:30,height:30,borderRadius:'50%',background:'var(--green)',border:'none',color:'white',fontSize:'0.85rem',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
+                            </div>
+                        </div>
+                        <div className="fg"><div className="fl">Comment <span style={{fontWeight:500,textTransform:'none',letterSpacing:0,color:'var(--muted2)'}}>optional</span></div><input className="fi" value={comment} onChange={e=>setComment(e.target.value)} placeholder="e.g. looking for a 3rd or 4th…" maxLength={120}/></div>
+                        {!showLater?(
+                            <div style={{display:'flex',gap:7}}>
+                                <button className="btn btn-primary" onClick={()=>submitCheckIn('now',null)} disabled={!userName.trim()} style={{flex:1,opacity:userName.trim()?1:.5}}>👥 Playing Now</button>
+                                <button className="btn btn-ghost btn-sm" onClick={()=>setShowLater(true)} disabled={!userName.trim()} style={{opacity:userName.trim()?1:.5}}>⏰ Later</button>
+                                <button onClick={()=>{setShowForm(false);setShowLater(false);}} style={{background:'none',border:'none',color:'var(--muted)',cursor:'pointer',fontSize:'0.78rem',padding:'0 6px'}}>Cancel</button>
+                            </div>
+                        ):(
+                            <div>
+                                <div className="fg"><div className="fl">Arrival Time</div>
+                                    <select className="fi" value={arrivalTime} onChange={e=>setArrivalTime(e.target.value)}>
+                                        <option value="">Select time…</option>
+                                        {timeOpts.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+                                    </select>
+                                </div>
+                                <div style={{display:'flex',gap:7}}>
+                                    <button className="btn btn-primary" onClick={()=>{if(!arrivalTime){alert('Select a time');return;}submitCheckIn('later',parseInt(arrivalTime));}} disabled={!userName.trim()||!arrivalTime} style={{flex:1,opacity:(userName.trim()&&arrivalTime)?1:.5}}>✓ Confirm</button>
+                                    <button onClick={()=>setShowLater(false)} style={{background:'none',border:'none',color:'var(--muted)',cursor:'pointer',fontSize:'0.78rem',padding:'0 8px'}}>Back</button>
+                                </div>
                             </div>
                         )}
-                    </>
-                )}
-                {/* Tournament Generator Card — inside pg, respects max-width */}
-                <div style={{background:'linear-gradient(135deg,#4c1d95 0%,#7c3aed 50%,#a855f7 100%)',borderRadius:14,padding:'16px 18px',display:'flex',alignItems:'center',gap:14,marginTop:4}}>
-                    <div style={{width:44,height:44,background:'rgba(255,255,255,.15)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,flexShrink:0}}>🏆</div>
-                    <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:18,fontWeight:800,color:'white',letterSpacing:.3}}>TOURNAMENT GENERATOR</div>
-                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,color:'#e9d5ff',marginTop:1}}>Round-robin brackets & live scoring</div>
                     </div>
-                    <a href="tournament.html" style={{background:'white',color:'#7c3aed',padding:'9px 16px',borderRadius:9,fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:800,textDecoration:'none',whiteSpace:'nowrap',boxShadow:'0 4px 12px rgba(0,0,0,.2)',flexShrink:0}}>Open →</a>
-                </div>
-            </div>
+                ))}
+                {nowPlayers.length>0?nowPlayers.map(p=><CourtPlayerRow key={p.id} p={p} isNow={true}/>):<div style={{textAlign:'center',padding:'16px 0',color:'var(--muted)',fontSize:'0.8rem'}}>No one here yet — be the first! 🎾</div>}
+            </div>}
 
-            {/* Footer */}
-            <div>
-                <div style={{textAlign:'center',padding:'16px 16px 24px',fontSize:12,color:'#94a3b8',borderTop:'1px solid #e2e8f0',background:'white',marginTop:4}}>
-                    <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:12,flexWrap:'wrap'}}>
-                        <span>© 2025 PickleConnect. All rights reserved.</span>
-                        <span>·</span>
-                        <button onClick={()=>setShowFB(true)} style={{background:'none',border:'none',color:'#059669',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',padding:0}}>💬 Feedback</button>
-                    </div>
-                </div>
-            </div>
+            {/* SCHEDULE TAB */}
+            {tab==='schedule'&&<div className="cd-card">
+                <div style={{fontSize:'0.78rem',fontWeight:700,marginBottom:10}}>📅 Coming Soon ({laterTotal})</div>
+                {laterPlayers.length===0?<div style={{textAlign:'center',padding:'16px 0',color:'var(--muted)',fontSize:'0.8rem'}}>Nobody scheduled yet.</div>:laterPlayers.map(p=><CourtPlayerRow key={p.id} p={p} isNow={false}/>)}
+            </div>}
 
-            {/* Add court modal */}
-            {showAdd && <AddCourtModal onClose={()=>setShowAdd(false)} onAdded={handleAdded}/>}
-            {showFB && <FeedbackModal onClose={()=>setShowFB(false)}/>}
+            {/* CONTROLS TAB */}
+            {tab==='controls'&&<div>
+                <div className="ct-card"><div style={{fontSize:'0.7rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>🟢 Crowd Level</div><div className="ct-tog">{[['low','Light'],['medium','Busy'],['high','Packed']].map(([v,l])=><button key={v} onClick={()=>updateCourt('crowdLevel',v)} className={courtData.crowdLevel===v?'on':''}>{l}</button>)}</div></div>
+                <div className="ct-card"><div style={{fontSize:'0.7rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>📋 Condition</div><div className="ct-tog">{[['open','✅ Open'],['closed','🚫 Closed'],['wet','💧 Wet']].map(([v,l])=><button key={v} onClick={()=>updateCourt('condition',v)} className={(courtData.condition||'open')===v?(v==='closed'?'warn':'on'):''}>{l}</button>)}</div></div>
+                <div className="ct-card"><div style={{fontSize:'0.7rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>💡 Lights</div><div className="ct-tog"><button onClick={()=>updateCourt('lightsOn',true)} className={courtData.lightsOn?'on':''}>💡 ON</button><button onClick={()=>updateCourt('lightsOn',false)} className={!courtData.lightsOn?'off':''}>🌙 OFF</button></div></div>
+                <div className="ct-card"><div style={{fontSize:'0.7rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>🏟 Courts in Rotation</div><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{openOpts.map(n=><button key={n} onClick={()=>updateCourt('openCourts',n)} className={'dr-btn'+(open===n?' a':'')} style={{minWidth:38}}>{n}</button>)}</div></div>
+                <div className="ct-card"><div style={{fontSize:'0.7rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>🚻 Restrooms</div><div className="ct-tog"><button onClick={()=>updateCourt('restroom','open')} className={(courtData.restroom||'open')==='open'?'on':''}>✅ Open</button><button onClick={()=>updateCourt('restroom','closed')} className={courtData.restroom==='closed'?'warn':''}>🚫 Closed</button></div></div>
+                <div className="ct-card"><div style={{fontSize:'0.7rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>🅿️ Parking</div><div className="ct-tog"><button onClick={()=>updateCourt('parking','available')} className={(courtData.parking||'available')==='available'?'on':''}>✅ Available</button><button onClick={()=>updateCourt('parking','full')} className={courtData.parking==='full'?'warn':''}>🚗 Full</button></div></div>
+                <FlashAnnouncement courtId={courtId} courtData={courtData} updateCourt={updateCourt}/>
+            </div>}
+
+            {/* INFO TAB */}
+            {tab==='info'&&<div className="cd-card">
+                <div style={{fontSize:'0.68rem',fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--muted)',marginBottom:14}}>ℹ️ Court Info</div>
+                <div style={{marginBottom:14}}>
+                    <div className="fl">Location</div>
+                    <div style={{fontSize:'0.82rem',fontWeight:600}}>{courtData.name}</div>
+                    <div style={{fontSize:'0.72rem',color:'var(--muted)',marginTop:2}}>{courtData.address}</div>
+                    {courtData.address&&<a href={'https://maps.google.com/?q='+encodeURIComponent(courtData.address)} target="_blank" rel="noopener noreferrer" style={{display:'inline-block',marginTop:5,color:'var(--green)',fontSize:'0.7rem',fontWeight:600,textDecoration:'none'}}>🗺️ Open in Google Maps →</a>}
+                </div>
+                <div style={{marginBottom:14}}>
+                    <div className="fl">Courts</div>
+                    <div style={{fontSize:'0.88rem',fontWeight:700}}>{total} courts</div>
+                </div>
+                {courtData.amenities?.length>0&&<div style={{marginBottom:14}}>
+                    <div className="fl">Amenities</div>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:4}}>{courtData.amenities.map(k=>{const a=AMENITIES.find(x=>x.key===k);return a?<span key={k} className="tag t-green">{a.label}</span>:null;})}</div>
+                </div>}
+                {courtData.courtRules&&<div style={{marginBottom:14}}>
+                    <div className="fl">Rules & Notes</div>
+                    <div style={{background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:10,fontSize:'0.75rem',lineHeight:1.5,whiteSpace:'pre-wrap'}}>{courtData.courtRules}</div>
+                </div>}
+                <button className="btn btn-ghost" onClick={()=>setShowEdit(true)} style={{width:'100%'}}>✏️ Edit Court Info</button>
+            </div>}
         </div>
-    );
+        {showEdit&&<EditCourtModal court={courtData} onClose={()=>setShowEdit(false)} onSaved={c=>{setCourtData(c);setShowEdit(false);}}/>}
+    </div>);
 }
 
-ReactDOM.render(<App/>, document.getElementById('root'));
+
+
+/* ── GamesTab ── */
+function GamesTab({user,profile,games,onNeedLogin}){
+  const[tab,setTab]=useState('upcoming');
+  const[showForm,setShowForm]=useState(false);
+  const[editGame,setEditGame]=useState(null);
+  const[expanded,setExpanded]=useState(null);
+  const today=new Date().toISOString().split('T')[0];
+
+  const filtered=useMemo(()=>{
+    let g=[...games];
+    // Hide private games (unless organizer or invited/joined)
+    g=g.filter(x=>!x.isPrivate||x.organizerUid===user?.uid||(x.players||[]).some(p=>p.uid===user?.uid));
+    if(tab==='mine')g=g.filter(x=>x.organizerUid===user?.uid||(x.players||[]).some(p=>p.uid===user?.uid));
+    else g=g.filter(x=>!x.date||x.date>=today);
+    return g.sort((a,b)=>(a.date||'')+(a.time||'')>(b.date||'')+(b.time||'')?1:-1);
+  },[games,tab,user,today]);
+
+  const su=g=>(g.players||[]).reduce((s,p)=>s+1+(p.guests||0),0);
+
+  const joinGame=async(game)=>{
+    if(!user||!profile){onNeedLogin(null);return;}
+    if(su(game)>=(game.spots||4)){alert('Game is full!');return;}
+    if((game.players||[]).some(p=>p.uid===user.uid)){alert('Already joined.');return;}
+    try{await db.collection('games').doc(game.id).update({players:[...(game.players||[]),{uid:user.uid,name:profile.name,photoURL:profile.photoURL||null,guests:0,joinedAt:Date.now()}]});}
+    catch(e){alert(e.message);}
+  };
+  const leaveGame=async(game)=>{
+    if(!confirm('Leave this game?'))return;
+    try{await db.collection('games').doc(game.id).update({players:(game.players||[]).filter(p=>p.uid!==user.uid)});}
+    catch(e){alert(e.message);}
+  };
+  const cancelGame=async(id)=>{
+    if(!confirm('Cancel and delete this game?'))return;
+    try{await db.collection('games').doc(id).delete();}
+    catch(e){alert(e.message);}
+  };
+
+  return(
+    <div className="px fade-in">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:4,marginBottom:12}}>
+        <div className="section-title" style={{marginBottom:0}}>Games</div>
+        <button className="btn btn-primary btn-sm" onClick={()=>{if(!user){onNeedLogin(null);return;}setEditGame(null);setShowForm(true);}}>🎮 Create</button>
+      </div>
+      <div className="tab-pills">{[['upcoming','Upcoming'],['mine','My Games']].map(([k,l])=><div key={k} className={`pill ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</div>)}</div>
+      {filtered.length===0&&<div className="empty-state"><div className="empty-icon">🎮</div><div className="empty-title">No games yet</div><div className="empty-sub">Create one!</div></div>}
+      {filtered.map(g=>{
+        const used=su(g),total=g.spots||4,full=used>=total;
+        const amIn=(g.players||[]).some(p=>p.uid===user?.uid);
+        const isMine=g.organizerUid===user?.uid;
+        const isExp=expanded===g.id;
+        // build slot array
+        const slots=[];
+        (g.players||[]).forEach(p=>{slots.push({...p,isPlayer:true});for(let i=0;i<(p.guests||0);i++)slots.push({...p,isGuest:true});});
+        for(let i=slots.length;i<total;i++)slots.push(null);
+        const wd=g.date?new Date(g.date+'T12:00:00').toLocaleDateString('en',{weekday:'short'}):'?';
+        const dd=g.date?parseInt(g.date.split('-')[2]):'?';
+        return(
+          <div key={g.id} style={{background:'var(--card)',border:`1px solid ${isExp?'rgba(46,204,113,0.3)':'var(--border)'}`,borderRadius:16,marginBottom:10,overflow:'hidden'}}>
+            {/* Collapsed header */}
+            <div style={{padding:'12px 14px',cursor:'pointer',display:'flex',alignItems:'flex-start',gap:10}} onClick={()=>setExpanded(isExp?null:g.id)}>
+              <div style={{background:'var(--navy)',border:'1px solid var(--border2)',borderRadius:10,padding:'4px 8px',textAlign:'center',minWidth:42,flexShrink:0}}>
+                <div style={{fontSize:'0.55rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase'}}>{wd}</div>
+                <div style={{fontSize:'1.1rem',fontWeight:800,lineHeight:1}}>{dd}</div>
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:700,fontSize:'0.88rem',marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{g.title||`Game @ ${g.court}`}</div>
+                <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
+                  {g.time&&<span className="tag t-green">⏰ {fmtTime(g.time)}</span>}
+                  {full?<span className="tag t-amber">Full</span>:<span className="tag t-green">{total-used}/{total} open</span>}
+                  {amIn&&<span className="tag t-green" style={{background:'rgba(46,204,113,0.2)'}}>✓ In</span>}
+                </div>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2.5" style={{flexShrink:0,marginTop:4,transition:'transform .2s',transform:isExp?'rotate(180deg)':'none'}}><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+            {/* Expanded */}
+            {isExp&&<div style={{borderTop:'1px solid var(--border)',padding:'10px 14px 12px'}}>
+              <div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:8,display:'flex',gap:8,flexWrap:'wrap'}}>
+                {g.court&&<span>📍 {g.court}</span>}
+                {g.skill&&g.skill!=='Any'&&<span>🎯 {g.skill}</span>}
+                <span>by {isMine?'you':g.organizerName||'organizer'}</span>
+              </div>
+              {/* Roster grid */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:10}}>
+                {slots.map((p,i)=>p?(
+                  <div key={i} style={{background:'var(--navy)',border:`1px solid ${p.uid===user?.uid?'var(--green)':'var(--border)'}`,borderRadius:10,padding:'7px 10px',display:'flex',alignItems:'center',gap:7}}>
+                    <div style={{width:26,height:26,borderRadius:'50%',background:'var(--green-dim)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.75rem',fontWeight:700,color:'var(--green)',flexShrink:0,overflow:'hidden'}}>
+                      {p.photoURL&&!p.isGuest?<img src={p.photoURL} referrerPolicy="no-referrer" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/>:p.isGuest?'👤':p.name?.[0]||'?'}
+                    </div>
+                    <div style={{minWidth:0}}>
+                      <div style={{fontSize:'0.72rem',fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.isGuest?`${p.name}'s guest`:p.name}{p.uid===user?.uid&&!p.isGuest?' ✅':''}</div>
+                      {!p.isGuest&&p.skill&&<div style={{fontSize:'0.6rem',color:'var(--muted)'}}>{p.skill}</div>}
+                    </div>
+                  </div>
+                ):(
+                  <div key={i} style={{background:'rgba(255,255,255,.03)',border:'1px dashed var(--border)',borderRadius:10,padding:'7px 10px',display:'flex',alignItems:'center',gap:7,cursor:full?'default':'pointer',opacity:.6}} onClick={full?null:()=>joinGame(g)}>
+                    <div style={{width:26,height:26,borderRadius:'50%',background:'var(--border)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>+</div>
+                    <div style={{fontSize:'0.72rem',color:'var(--muted)'}}>{full?'Full':'Tap to join'}</div>
+                  </div>
+                ))}
+              </div>
+              {g.note&&<div style={{fontSize:'0.75rem',color:'var(--muted)',marginBottom:10,fontStyle:'italic'}}>💬 {g.note}</div>}
+              {/* Action buttons */}
+              <div style={{display:'flex',gap:7,flexWrap:'wrap'}}>
+                {!amIn&&!full&&<button className="btn btn-primary btn-sm" onClick={()=>joinGame(g)}>🏓 Join</button>}
+                {amIn&&!isMine&&<button className="btn btn-ghost btn-sm" onClick={()=>leaveGame(g)} style={{color:'var(--red)',borderColor:'rgba(247,91,91,0.35)'}}>Leave</button>}
+                {isMine&&<button className="btn btn-ghost btn-sm" onClick={e=>{e.stopPropagation();setEditGame(g);setShowForm(true);}}>✏️ Edit</button>}
+                {isMine&&<button className="btn btn-ghost btn-sm" onClick={e=>{e.stopPropagation();cancelGame(g.id);}} style={{color:'var(--red)',borderColor:'rgba(247,91,91,0.35)'}}>🗑 Delete</button>}
+                {amIn&&<span className="tag t-green" style={{marginLeft:'auto',alignSelf:'center'}}>✓ You're in</span>}
+              </div>
+            </div>}
+          </div>
+        );
+      })}
+      {showForm&&user&&profile&&<GameForm user={user} profile={profile} editData={editGame} onClose={()=>{setShowForm(false);setEditGame(null);}} onSaved={()=>{setShowForm(false);setEditGame(null);}}/>}
+    </div>
+  );
+}
+
+/* ── GameForm ── */
+function GameForm({user,profile,onClose,onSaved,editData}){
+  const today=new Date().toISOString().split('T')[0];
+  const[title,setTitle]=useState(editData?.title||'');
+  const[date,setDate]=useState(editData?.date||today);
+  const[time,setTime]=useState(editData?.time||'16:00');
+  const[timeEnd,setTimeEnd]=useState(editData?.timeEnd||'18:00');
+  const[court,setCourt]=useState(editData?.court||'');
+  const[skill,setSkill]=useState(editData?.skill||'Any');
+  const[spots,setSpots]=useState(editData?.spots||4);
+  const[note,setNote]=useState(editData?.note||'');
+  const[saving,setSaving]=useState(false);
+  const save=async()=>{
+    if(!court.trim()){alert('Enter court name.');return;}
+    setSaving(true);
+    const data={title:title.trim()||`Game @ ${court.trim()}`,date,time,timeEnd,court:court.trim(),skill,spots:Number(spots),note:note.trim(),organizerUid:user.uid,organizerName:profile.name,organizerPhoto:profile.photoURL||null,status:'active'};
+    if(!editData?.id)data.players=[{uid:user.uid,name:profile.name,photoURL:profile.photoURL||null,skill:profile.skill||'Any',guests:0,joinedAt:Date.now()}];
+    if(!editData?.id)data.createdAt=Date.now();
+    try{
+      if(editData?.id)await db.collection('games').doc(editData.id).update(data);
+      else await db.collection('games').add(data);
+      onSaved();
+    }catch(e){alert('Failed: '+e.message);}
+    setSaving(false);
+  };
+  return(
+    <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal-sheet">
+        <div className="modal-handle"/>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+          <div className="modal-title">🎮 {editData?'Edit Game':'Create Game'}</div>
+          <button onClick={onClose} className="icon-btn" style={{position:'static'}}>✕</button>
+        </div>
+        <div className="fg"><div className="fl">Game Title (optional)</div><input className="fi" value={title} onChange={e=>setTitle(e.target.value)} placeholder={`Game @ ${court||'Court Name'}`} maxLength={60}/></div>
+        <div style={{display:'flex',gap:10}}>
+          <div className="fg" style={{flex:1}}><div className="fl">Date *</div><input type="date" className="fi" value={date} min={today} onChange={e=>setDate(e.target.value)}/></div>
+        </div>
+        <div style={{display:'flex',gap:10}}>
+          <div className="fg" style={{flex:1}}><div className="fl">Start</div><input type="time" className="fi" value={time} onChange={e=>setTime(e.target.value)}/></div>
+          <div className="fg" style={{flex:1}}><div className="fl">End</div><input type="time" className="fi" value={timeEnd} onChange={e=>setTimeEnd(e.target.value)}/></div>
+        </div>
+        <div className="fg"><div className="fl">Court *</div><input className="fi" value={court} onChange={e=>setCourt(e.target.value)} placeholder="e.g. Willmore Park" maxLength={80}/></div>
+        <div style={{display:'flex',gap:10}}>
+          <div className="fg" style={{flex:1}}><div className="fl">Skill Level</div><select className="fi" value={skill} onChange={e=>setSkill(e.target.value)}><option>Any</option>{SKILLS.map(s=><option key={s}>{s}</option>)}</select></div>
+          <div className="fg" style={{flex:1}}><div className="fl">Spots</div><select className="fi" value={spots} onChange={e=>setSpots(e.target.value)}>{[2,4,6,8,10,12].map(n=><option key={n} value={n}>{n} players</option>)}</select></div>
+        </div>
+        <div className="fg"><div className="fl">Note</div><textarea className="fi" value={note} onChange={e=>setNote(e.target.value)} placeholder="Any notes for players…" maxLength={200} rows={2}/></div>
+        <button className="btn btn-primary" onClick={save} disabled={saving} style={{width:'100%',opacity:saving?.6:1}}>{saving?'Saving…':editData?'Save Changes':'Create Game'}</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── WeekSchedulePicker ── */
+function WeekSchedulePicker({schedule,onChange}){
+  const toggle=day=>{
+    const e=schedule.find(s=>s.day===day);
+    if(e)onChange(schedule.filter(s=>s.day!==day));
+    else onChange([...schedule,{day,startTime:'08:00',endTime:'11:00'}]);
+  };
+  const setTime=(day,field,val)=>onChange(schedule.map(s=>s.day===day?{...s,[field]:val}:s));
+  return(<div>
+    <div className="week-picker">
+      {DAYS_SHORT.map((d,i)=>{
+        const sel=schedule.find(s=>s.day===i);
+        return(<div key={i} className="wp-day">
+          <div className="wp-day-label">{d}</div>
+          <button className={`wp-day-btn${sel?' sel':''}`} onClick={()=>toggle(i)}>{d[0]}</button>
+        </div>);
+      })}
+    </div>
+    {[...schedule].sort((a,b)=>a.day-b.day).map(s=>(
+      <div key={s.day} style={{background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:'8px 12px',marginBottom:6}}>
+        <div style={{fontSize:'0.72rem',fontWeight:700,color:'var(--green)',marginBottom:6}}>{DAYS_FULL[s.day]}</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+          <div><div style={{fontSize:'0.6rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',marginBottom:3}}>From</div><input type="time" className="fi" style={{fontSize:'0.8rem',padding:'7px 10px'}} value={s.startTime} onChange={e=>setTime(s.day,'startTime',e.target.value)}/></div>
+          <div><div style={{fontSize:'0.6rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',marginBottom:3}}>To</div><input type="time" className="fi" style={{fontSize:'0.8rem',padding:'7px 10px'}} value={s.endTime} onChange={e=>setTime(s.day,'endTime',e.target.value)}/></div>
+        </div>
+      </div>
+    ))}
+  </div>);
+}
+
+/* ── PlayerPicker ── */
+function PlayerPicker({myUid,onSelect,selected,subtitle}){
+  const[players,setPlayers]=useState([]);const[ld,setLd]=useState(true);const[srch,setSrch]=useState('');
+  useEffect(()=>{
+    if(!fbOk){setLd(false);return;}
+    db.collection('profiles').get()
+      .then(snap=>{setPlayers(snap.docs.filter(d=>d.id!==myUid).map(d=>({uid:d.id,...d.data()})).filter(p=>p.name));setLd(false);})
+      .catch(()=>setLd(false));
+  },[]);
+  const filtered=srch.trim()?players.filter(p=>[p.name,p.city,p.skill].some(v=>(v||'').toLowerCase().includes(srch.toLowerCase()))):players;
+  const toggle=p=>{
+    const sel=selected.some(s=>s.uid===p.uid);
+    onSelect(sel?selected.filter(s=>s.uid!==p.uid):[...selected,{uid:p.uid,name:p.name,photoURL:p.photoURL||null,skill:p.skill||''}]);
+  };
+  return(<div>
+    {subtitle&&<div style={{fontSize:'0.7rem',color:'var(--muted)',marginBottom:6}}>{subtitle}</div>}
+    <div style={{position:'relative',marginBottom:8}}><span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',pointerEvents:'none',fontSize:'0.8rem'}}>🔍</span><input className="fi" style={{paddingLeft:32,fontSize:'0.82rem'}} value={srch} onChange={e=>setSrch(e.target.value)} placeholder="Search players…"/></div>
+    {selected.length>0&&<div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:8}}>{selected.map(s=><div key={s.uid} style={{display:'inline-flex',alignItems:'center',gap:4,background:'var(--green-dim)',border:'1px solid rgba(46,204,113,0.3)',borderRadius:20,padding:'3px 8px 3px 5px',fontSize:'0.68rem',fontWeight:600,color:'var(--green)'}}><div style={{width:16,height:16,borderRadius:'50%',background:'var(--green)',color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.5rem',fontWeight:800}}>{(s.name||'?')[0].toUpperCase()}</div>{s.name.split(' ')[0]}<button onClick={()=>onSelect(selected.filter(x=>x.uid!==s.uid))} style={{background:'none',border:'none',cursor:'pointer',color:'var(--green)',fontSize:'0.9rem',lineHeight:1,padding:0}}>×</button></div>)}</div>}
+    <div className="pp-list">
+      {ld?<div style={{padding:12,textAlign:'center',fontSize:'0.72rem',color:'var(--muted)'}}>Loading...</div>
+      :filtered.length===0?<div style={{padding:12,textAlign:'center',fontSize:'0.72rem',color:'var(--muted)'}}>No players found</div>
+      :filtered.slice(0,40).map(p=>{const isSel=selected.some(s=>s.uid===p.uid);return(
+        <div key={p.uid} className={`pp-row${isSel?' sel':''}`} onClick={()=>toggle(p)}>
+          <div className="pc-avatar" style={{width:28,height:28,fontSize:'0.72rem',flexShrink:0}}>{(p.name||'?')[0].toUpperCase()}</div>
+          <div style={{flex:1,minWidth:0}}><div style={{fontSize:'0.78rem',fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.name}</div><div style={{fontSize:'0.65rem',color:'var(--muted)'}}>{p.skill||''}{p.city?' · '+p.city:''}</div></div>
+          {isSel&&<span style={{color:'var(--green)',fontSize:'0.9rem',flexShrink:0}}>✓</span>}
+        </div>
+      );})}
+    </div>
+  </div>);
+}
+
+/* ── GroupManager ── */
+function GroupManager({myUid,selectedGroupId,onSelectGroup}){
+  const[groups,setGroups]=useState([]);const[ld,setLd]=useState(true);
+  const[showCreate,setShowCreate]=useState(false);const[newName,setNN]=useState('');
+  const[newMembers,setNM]=useState([]);const[saving,setSaving]=useState(false);
+  const load=()=>{
+    if(!fbOk){setLd(false);return;}
+    db.collection('playerGroups').where('ownerUid','==',myUid).get()
+      .then(snap=>{setGroups(snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)));setLd(false);})
+      .catch(()=>setLd(false));
+  };
+  useEffect(()=>load(),[]);
+  const create=async()=>{
+    if(!newName.trim()){alert('Enter a group name.');return;}
+    if(newMembers.length===0){alert('Select at least one player.');return;}
+    setSaving(true);
+    try{await db.collection('playerGroups').add({ownerUid:myUid,name:newName.trim(),members:newMembers,createdAt:Date.now()});setNN('');setNM([]);setShowCreate(false);load();}
+    catch(e){alert('Failed: '+e.message);}setSaving(false);
+  };
+  const del=async id=>{if(!confirm('Delete this group?'))return;try{await db.collection('playerGroups').doc(id).delete();load();}catch(e){alert(e.message);}};
+  if(showCreate)return(<div>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+      <div style={{fontSize:'0.82rem',fontWeight:800}}>New Group</div>
+      <button onClick={()=>setShowCreate(false)} className="btn btn-ghost btn-sm">Cancel</button>
+    </div>
+    <input className="fi" style={{marginBottom:10,fontSize:'0.82rem'}} value={newName} onChange={e=>setNN(e.target.value)} placeholder="e.g. Tuesday Crew" maxLength={50}/>
+    <PlayerPicker myUid={myUid} selected={newMembers} onSelect={setNM} subtitle="Select players to add."/>
+    <button className="btn btn-primary" onClick={create} disabled={saving} style={{width:'100%',marginTop:10,opacity:saving?.6:1}}>{saving?'Saving…':'Create Group'}</button>
+  </div>);
+  return(<div>
+    {ld?<div style={{fontSize:'0.72rem',color:'var(--muted)',padding:'6px 0'}}>Loading…</div>
+    :groups.length===0?<div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:8}}>No groups yet.</div>
+    :groups.map(g=>(<div key={g.id} onClick={()=>onSelectGroup(selectedGroupId===g.id?null:g)} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 12px',borderRadius:10,border:'1.5px solid '+(selectedGroupId===g.id?'rgba(46,204,113,0.5)':'var(--border2)'),background:selectedGroupId===g.id?'var(--green-dim)':'var(--card2)',cursor:'pointer',marginBottom:6,transition:'all .15s'}}>
+      <span>🏷️</span>
+      <div style={{flex:1,minWidth:0}}><div style={{fontSize:'0.82rem',fontWeight:700}}>{g.name}</div><div style={{fontSize:'0.65rem',color:'var(--muted)'}}>{g.members?.length||0} members</div></div>
+      {selectedGroupId===g.id&&<span style={{color:'var(--green)'}}>✓</span>}
+      <button onClick={e=>{e.stopPropagation();del(g.id);}} style={{background:'rgba(247,91,91,0.1)',border:'1px solid rgba(247,91,91,0.2)',borderRadius:6,padding:'3px 8px',fontSize:'0.65rem',color:'var(--red)',cursor:'pointer',fontFamily:'DM Sans',fontWeight:600}}>Delete</button>
+    </div>))}
+    <button onClick={()=>setShowCreate(true)} style={{width:'100%',padding:'9px',border:'1.5px dashed var(--border2)',borderRadius:10,background:'transparent',fontSize:'0.78rem',fontWeight:600,color:'var(--green)',cursor:'pointer',fontFamily:'DM Sans',marginTop:4}}>+ Create New Group</button>
+  </div>);
+}
+
+/* ── CalendarView ── */
+function CalendarView({posts,user,onChat,onNeedLogin}){
+  const today=new Date();today.setHours(0,0,0,0);
+  const[viewYear,setVY]=useState(today.getFullYear());
+  const[viewMonth,setVM]=useState(today.getMonth());
+  const[selected,setSelected]=useState(null); // Date object
+
+  // Filter visible posts (share mode)
+  const visiblePosts=useMemo(()=>posts.filter(p=>{
+    if(!p.shareMode||p.shareMode==='public')return true;
+    if(!user)return false;
+    if(p.uid===user.uid)return true;
+    if(p.shareMode==='players'||p.shareMode==='group')return(p.sharePlayerIds||[]).includes(user.uid);
+    return false;
+  }),[posts,user]);
+
+  // Build calendar days for current month view (always 6 rows)
+  const calDays=useMemo(()=>{
+    const first=new Date(viewYear,viewMonth,1);
+    const startDow=first.getDay(); // 0=Sun
+    const days=[];
+    for(let i=0;i<42;i++){
+      const d=new Date(viewYear,viewMonth,1-startDow+i);
+      days.push(d);
+    }
+    return days;
+  },[viewYear,viewMonth]);
+
+  // For each calendar day, which posts cover it?
+  const dayPostsMap=useMemo(()=>{
+    const map={};
+    calDays.forEach(d=>{
+      const key=d.toISOString().split('T')[0];
+      map[key]=visiblePosts.filter(p=>isPostAvailableOn(p,d));
+    });
+    return map;
+  },[calDays,visiblePosts]);
+
+  // Selected day players, grouped by hour slot
+  const selectedDayData=useMemo(()=>{
+    if(!selected)return null;
+    const key=selected.toISOString().split('T')[0];
+    const dayPosts=dayPostsMap[key]||[];
+    // Build unique players (group posts by uid)
+    const playerMap={};
+    dayPosts.forEach(p=>{
+      if(!playerMap[p.uid])playerMap[p.uid]={uid:p.uid,name:p.name,skill:p.skill,photoURL:p.photoURL,city:p.city,posts:[]};
+      playerMap[p.uid].posts.push(p);
+    });
+    const players=Object.values(playerMap);
+    // Build hour buckets: 6am–10pm
+    const hours=[];
+    for(let h=6;h<=22;h++){
+      const hMin=h*60,hMax=(h+1)*60;
+      const inSlot=players.filter(player=>
+        player.posts.some(p=>{
+          const{start,end}=getPostHours(p,selected);
+          const s=timeToMins(start),e=timeToMins(end);
+          // post covers this hour if its window overlaps [hMin,hMax)
+          return s<hMax&&e>hMin;
+        })
+      );
+      if(inSlot.length>0)hours.push({h,label:`${h%12||12}${h<12?'am':'pm'}`,players:inSlot});
+    }
+    return{players,hours,date:selected};
+  },[selected,dayPostsMap]);
+
+  const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const prevMonth=()=>{if(viewMonth===0){setVM(11);setVY(y=>y-1);}else setVM(m=>m-1);};
+  const nextMonth=()=>{if(viewMonth===11){setVM(0);setVY(y=>y+1);}else setVM(m=>m+1);};
+
+  const fmt12=h=>`${h%12||12}:00${h<12?'am':'pm'}`;
+
+  return(<div>
+    {/* Month nav */}
+    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10,padding:'0 2px'}}>
+      <button onClick={prevMonth} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:9,width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'var(--text)',fontSize:'1rem'}}>‹</button>
+      <div style={{fontFamily:'Syne',fontWeight:800,fontSize:'0.95rem'}}>{monthNames[viewMonth]} {viewYear}</div>
+      <button onClick={nextMonth} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:9,width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'var(--text)',fontSize:'1rem'}}>›</button>
+    </div>
+
+    {/* Day headers */}
+    <div className="cal-grid" style={{marginBottom:4}}>
+      {DAYS_SHORT.map(d=><div key={d} className="cal-head">{d}</div>)}
+    </div>
+
+    {/* Calendar grid */}
+    <div className="cal-grid" style={{marginBottom:14}}>
+      {calDays.map((d,i)=>{
+        const key=d.toISOString().split('T')[0];
+        const dayPosts=dayPostsMap[key]||[];
+        const isThisMonth=d.getMonth()===viewMonth;
+        const isToday=d.getTime()===today.getTime();
+        const isSel=selected&&d.toISOString().split('T')[0]===selected.toISOString().split('T')[0];
+        const dotCount=Math.min(dayPosts.length,3);
+        return(
+          <div key={i} className={`cal-day${!isThisMonth?' other-month':''}${isToday?' today':''}${isSel?' selected':''}${dayPosts.length>0&&!isSel?' has-players':''}`}
+            onClick={()=>setSelected(isSel?null:new Date(d))}>
+            <div className="cal-day-num" style={isSel?{color:'white'}:{color:isThisMonth?'var(--text)':'var(--muted)'}}>{d.getDate()}</div>
+            {isThisMonth&&<div className="cal-dot-row">
+              {Array.from({length:dotCount}).map((_,j)=><div key={j} className={`cal-dot${j===2&&dayPosts.length>3?' more':''}`}/>)}
+            </div>}
+          </div>
+        );
+      })}
+    </div>
+
+    {/* Selected day detail */}
+    {selectedDayData&&(
+      <div style={{animation:'fadeIn .15s'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+          <div style={{fontFamily:'Syne',fontWeight:800,fontSize:'0.88rem'}}>
+            {selectedDayData.date.toLocaleDateString('en',{weekday:'short',month:'short',day:'numeric'})}
+          </div>
+          <div style={{fontSize:'0.7rem',color:'var(--muted)'}}>{selectedDayData.players.length} player{selectedDayData.players.length!==1?'s':''} available</div>
+        </div>
+
+        {selectedDayData.players.length===0&&(
+          <div style={{textAlign:'center',padding:'24px 16px',color:'var(--muted)',fontSize:'0.82rem'}}>No players posted availability for this day.</div>
+        )}
+
+        {/* Hour-grouped slots */}
+        {selectedDayData.hours.length>0&&(
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:'10px 14px',marginBottom:10}}>
+            <div style={{fontSize:'0.62rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>By Time Slot</div>
+            {selectedDayData.hours.map(slot=>(
+              <div key={slot.h} className="hour-slot">
+                <div className="hour-label">{slot.label}</div>
+                <div className="hour-players">
+                  {slot.players.map(pl=>(
+                    <div key={pl.uid} className="hour-player-chip" onClick={()=>user?onChat(pl):onNeedLogin(pl)}>
+                      <div className="pc-avatar" style={{width:26,height:26,fontSize:'0.7rem',flexShrink:0}}>{pl.photoURL?<img src={pl.photoURL} referrerPolicy="no-referrer" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/>:(pl.name||'?')[0]}</div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:'0.75rem',fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{pl.name}{user&&pl.uid===user.uid&&<span style={{fontSize:'0.55rem',marginLeft:4,color:'var(--green)',fontWeight:700}}>YOU</span>}</div>
+                        <div style={{fontSize:'0.6rem',color:'var(--muted)'}}>{pl.skill||''}</div>
+                      </div>
+                      {user&&pl.uid!==user.uid&&<span style={{fontSize:'0.65rem',color:'var(--green)',fontWeight:700,flexShrink:0}}>💬</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* All players this day (if any not in a slot) */}
+        {selectedDayData.hours.length===0&&selectedDayData.players.length>0&&(
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:'10px 14px'}}>
+            <div style={{fontSize:'0.62rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>Available Players</div>
+            {selectedDayData.players.map(pl=>(
+              <div key={pl.uid} className="hour-player-chip" style={{marginBottom:6,width:'100%'}} onClick={()=>user?onChat(pl):onNeedLogin(pl)}>
+                <div className="pc-avatar" style={{width:28,height:28,fontSize:'0.72rem',flexShrink:0}}>{pl.photoURL?<img src={pl.photoURL} referrerPolicy="no-referrer" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/>:(pl.name||'?')[0]}</div>
+                <div style={{flex:1}}><div style={{fontSize:'0.78rem',fontWeight:700}}>{pl.name}</div><div style={{fontSize:'0.62rem',color:'var(--muted)'}}>{pl.skill||''}{pl.city?' · '+pl.city:''}</div></div>
+                {user&&pl.uid!==user.uid&&<span style={{fontSize:'0.65rem',color:'var(--green)',fontWeight:700}}>💬</span>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
+  </div>);
+}
+
+/* ── PlayersTab ── */
+function PlayersTab({user,posts,players,onChat,onNeedLogin,uLat,uLng}){
+  const[search,setSearch]=useState('');
+  const[tab,setTab]=useState('all');
+  const[expanded,setExpanded]=useState(null);
+  const[showPost,setShowPost]=useState(false);
+  const[editPost,setEditPost]=useState(null);
+  const[showF,setShowF]=useState(false);
+  const[fSkill,setFS]=useState('');const[fType,setFT]=useState('');const[fGender,setFG]=useState('');const[fPurpose,setFP]=useState('');const[fDist,setFD]=useState('');
+  const fCount=[fSkill,fType,fGender,fPurpose,fDist].filter(Boolean).length;
+  const clearF=()=>{setFS('');setFT('');setFG('');setFP('');setFD('');};
+
+  const grouped=useMemo(()=>{
+    let fp=[...posts];
+    fp=fp.filter(p=>{
+      if(!p.shareMode||p.shareMode==='public')return true;
+      if(!user)return false;
+      if(p.uid===user.uid)return true;
+      if(p.shareMode==='connections')return false;
+      if(p.shareMode==='players'||p.shareMode==='group')return(p.sharePlayerIds||[]).includes(user.uid);
+      return false;
+    });
+    if(tab==='now')fp=fp.filter(p=>p.availability==='Now'||p.availability==='Today');
+    if(tab==='nearby'&&uLat)fp=fp.filter(p=>p.lat&&haversine(uLat,uLng,p.lat,p.lng)<=25);
+    if(search.trim()){const q=search.toLowerCase();fp=fp.filter(p=>[p.name,p.city,p.skill,p.message,p.courtName].some(v=>(v||'').toLowerCase().includes(q)));}
+    if(fSkill)fp=fp.filter(p=>p.skill===fSkill);
+    if(fType)fp=fp.filter(p=>p.playTypes?.includes(fType));
+    if(fGender)fp=fp.filter(p=>p.gender===fGender);
+    if(fPurpose)fp=fp.filter(p=>p.purpose===fPurpose);
+    if(fDist&&uLat)fp=fp.filter(p=>p.lat&&haversine(uLat,uLng,p.lat,p.lng)<=parseInt(fDist));
+    const map={};
+    fp.forEach(p=>{
+      if(!map[p.uid])map[p.uid]={uid:p.uid,name:p.name,skill:p.skill,city:p.city,age:p.age,gender:p.gender,duprId:p.duprId,photoURL:p.photoURL,lat:p.lat,lng:p.lng,posts:[]};
+      map[p.uid].posts.push(p);
+      if(p.timestamp>(map[p.uid]._ts||0)){map[p.uid]._ts=p.timestamp;Object.assign(map[p.uid],{name:p.name,skill:p.skill,city:p.city,photoURL:p.photoURL,duprId:p.duprId});}
+    });
+    let arr=Object.values(map);
+    arr.sort((a,b)=>{
+      if(user&&a.uid===user.uid)return -1;if(user&&b.uid===user.uid)return 1;
+      if(tab==='nearby'&&uLat&&a.lat&&b.lat)return haversine(uLat,uLng,a.lat,a.lng)-haversine(uLat,uLng,b.lat,b.lng);
+      return(b._ts||0)-(a._ts||0);
+    });
+    return arr;
+  },[posts,tab,search,fSkill,fType,fGender,fPurpose,fDist,user,uLat,uLng]);
+
+  const removePost=async(id)=>{
+    if(!confirm('Remove this post?'))return;
+    try{await db.collection('findPlayers').doc(id).update({status:'removed'});}
+    catch(e){alert(e.message);}
+  };
+
+  const fmtPostTime=p=>{
+    if(p.startTime&&p.endTime){const fmt=t=>{const[h,m]=t.split(':').map(Number);return`${h%12||12}:${String(m).padStart(2,'0')}${h>=12?'pm':'am'}`};return`${fmt(p.startTime)}–${fmt(p.endTime)}`;}
+    return null;
+  };
+
+  return(
+    <div className="px fade-in">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:4,marginBottom:12}}>
+        <div className="section-title" style={{marginBottom:0}}>Find Players</div>
+        <button className="btn btn-primary btn-sm" onClick={()=>{if(!user){onNeedLogin(null);return;}setEditPost(null);setShowPost(true);}}>📢 Post</button>
+      </div>
+
+      {/* Tabs */}
+      <div className="tab-pills">
+        {[['all','🏓 All'],['now','⚡ Now'],['calendar','📅 Calendar'],['nearby','📍 Nearby']].map(([k,l])=>(
+          <div key={k} className={`pill ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</div>
+        ))}
+      </div>
+
+      {/* Calendar tab */}
+      {tab==='calendar'&&<CalendarView posts={posts} user={user} onChat={onChat} onNeedLogin={onNeedLogin}/>}
+
+      {/* List tabs */}
+      {tab!=='calendar'&&<>
+        {/* Search + Filter */}
+        <div style={{display:'flex',gap:8,marginBottom:10,alignItems:'center'}}>
+          <div style={{position:'relative',flex:1}}><span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}}>🔍</span><input className="fi" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search players…" style={{paddingLeft:36}}/></div>
+          <button onClick={()=>setShowF(!showF)} style={{padding:'10px 14px',border:`1.5px solid ${showF||fCount?'var(--green)':'var(--border2)'}`,borderRadius:12,background:showF||fCount?'var(--green-dim)':'transparent',color:showF||fCount?'var(--green)':'var(--muted)',fontFamily:'DM Sans',fontSize:'0.78rem',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
+            ⚙ Filter{fCount>0?` (${fCount})`:''}
+          </button>
+        </div>
+
+        {showF&&<div style={{background:'var(--card)',border:'1px solid var(--border2)',borderRadius:14,padding:'12px 14px',marginBottom:12,animation:'fadeIn .15s'}}>
+          <div style={{marginBottom:10}}><div className="fp-label">Skill Level</div><div className="fp-pills"><button className={`fp-pill ${!fSkill?'s':''}`} onClick={()=>setFS('')}>All</button>{SKILLS.map(s=><button key={s} className={`fp-pill ${fSkill===s?'s':''}`} onClick={()=>setFS(fSkill===s?'':s)}>{s}</button>)}</div></div>
+          <div style={{marginBottom:10}}><div className="fp-label">Play Type</div><div className="fp-pills"><button className={`fp-pill ${!fType?'s':''}`} onClick={()=>setFT('')}>All</button>{PTYPES.map(t=><button key={t} className={`fp-pill ${fType===t?'s':''}`} onClick={()=>setFT(fType===t?'':t)}>{PT_E[t]} {t}</button>)}</div></div>
+          <div style={{marginBottom:10}}><div className="fp-label">Looking For</div><div className="fp-pills"><button className={`fp-pill ${!fPurpose?'s':''}`} onClick={()=>setFP('')}>All</button>{PURPOSES.map(p=><button key={p.id} className={`fp-pill ${fPurpose===p.id?'s':''}`} onClick={()=>setFP(fPurpose===p.id?'':p.id)}>{p.e} {p.l}</button>)}</div></div>
+          <div style={{marginBottom:uLat?10:0}}><div className="fp-label">Gender</div><div className="fp-pills"><button className={`fp-pill ${!fGender?'s':''}`} onClick={()=>setFG('')}>Any</button>{['Male','Female','Non-binary'].map(g=><button key={g} className={`fp-pill ${fGender===g?'s':''}`} onClick={()=>setFG(fGender===g?'':g)}>{g}</button>)}</div></div>
+          {uLat&&<div><div className="fp-label">Distance</div><div className="fp-pills"><button className={`fp-pill ${!fDist?'s':''}`} onClick={()=>setFD('')}>Any</button>{['5','10','25','50'].map(d=><button key={d} className={`fp-pill ${fDist===d?'s':''}`} onClick={()=>setFD(fDist===d?'':d)}>Within {d} mi</button>)}</div></div>}
+          {fCount>0&&<button onClick={clearF} style={{marginTop:8,background:'none',border:'none',color:'var(--red)',fontSize:'0.72rem',fontWeight:600,cursor:'pointer'}}>✕ Clear all</button>}
+        </div>}
+
+        <div style={{fontSize:'0.7rem',color:'var(--muted)',marginBottom:10}}>{grouped.length} player{grouped.length!==1?'s':''}</div>
+        {grouped.length===0&&<div className="empty-state"><div className="empty-icon">👥</div><div className="empty-title">No players found</div><div className="empty-sub">{search||fCount?'Try different filters':'Be the first to post!'}</div></div>}
+        {grouped.map(g=>{
+          const mine=user&&g.uid===user.uid;
+          const dist=uLat&&g.lat?haversine(uLat,uLng,g.lat,g.lng):null;
+          const latestPost=g.posts[0];
+          const pu=latestPost?PURPOSES.find(p=>p.id===latestPost.purpose):null;
+          const isExp=expanded===g.uid;
+          return(
+            <div key={g.uid} className={`player-card ${isExp?'expanded':''}`} onClick={()=>setExpanded(isExp?null:g.uid)} style={mine?{borderColor:'rgba(46,204,113,0.3)'}:{}}>
+              <div className="pc-row">
+                <div className="pc-avatar">{g.photoURL?<img src={g.photoURL} referrerPolicy="no-referrer" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/>:g.name?.[0]||'?'}</div>
+                <div className="pc-info">
+                  <div className="pc-name">
+                    {g.name}
+                    {mine&&<span style={{fontSize:'0.6rem',fontWeight:700,background:'var(--green-dim)',color:'var(--green)',padding:'2px 5px',borderRadius:4}}>YOU</span>}
+                    {g.posts.length>1&&<span style={{fontSize:'0.6rem',fontWeight:700,background:'var(--green)',color:'white',padding:'2px 6px',borderRadius:8}}>{g.posts.length}</span>}
+                  </div>
+                  <div className="pc-sub">{g.city||'No location'}{dist!=null?` · ${dist<1?dist.toFixed(1):Math.round(dist)} mi`:''}{g.age?` · ${g.age}`:''}{g.gender?` · ${g.gender}`:''}</div>
+                  {latestPost&&!isExp&&<div style={{display:'flex',gap:4,flexWrap:'wrap',marginTop:3}}>
+                    {pu&&<span className="tag t-green">{pu.e} {pu.l}</span>}
+                    <span className="tag t-amber">{latestPost.availability}</span>
+                    {fmtPostTime(latestPost)&&<span className="tag t-blue">🕐 {fmtPostTime(latestPost)}</span>}
+                  </div>}
+                </div>
+                <div className="pc-skill">{g.skill||'NR'}</div>
+              </div>
+              {isExp&&(
+                <div className="pc-expand" onClick={e=>e.stopPropagation()}>
+                  <div style={{display:'flex',gap:14,padding:'6px 0 10px',borderBottom:'1px solid var(--border)',marginBottom:10,flexWrap:'wrap'}}>
+                    {g.age&&<div style={{fontSize:'0.7rem'}}><span style={{color:'var(--muted)',fontWeight:700,textTransform:'uppercase',fontSize:'0.6rem'}}>Age </span><span style={{fontWeight:600}}>{g.age}</span></div>}
+                    {g.gender&&<div style={{fontSize:'0.7rem'}}><span style={{color:'var(--muted)',fontWeight:700,textTransform:'uppercase',fontSize:'0.6rem'}}>Gender </span><span style={{fontWeight:600}}>{g.gender}</span></div>}
+                    {g.city&&<div style={{fontSize:'0.7rem'}}><span style={{color:'var(--muted)',fontWeight:700,textTransform:'uppercase',fontSize:'0.6rem'}}>City </span><span style={{fontWeight:600}}>{g.city}</span></div>}
+                    {g.duprId&&<a href={`https://mydupr.com/dashboard/players/${g.duprId}`} target="_blank" style={{fontSize:'0.7rem',color:'var(--green)',fontWeight:700,textDecoration:'none'}}>DUPR: {g.duprId}</a>}
+                  </div>
+                  {g.posts.length>1&&<div style={{fontSize:'0.62rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>{g.posts.length} Active Posts</div>}
+                  {g.posts.map(p=>{
+                    const pu2=PURPOSES.find(x=>x.id===p.purpose);
+                    const isMyPost=user&&p.uid===user.uid;
+                    return(
+                      <div key={p.id} style={{background:'var(--navy2)',border:'1px solid var(--border)',borderRadius:12,padding:'10px 12px',marginBottom:8}}>
+                        <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:6,flexWrap:'wrap'}}>
+                          <span className="tag t-green">{pu2?.e} {pu2?.l||'Play'}</span>
+                          {p.playTypes?.map(t=><span key={t} className="tag t-muted">{PT_E[t]||''} {t}</span>)}
+                          <span className="tag t-amber">{p.availability}</span>
+                          {fmtPostTime(p)&&<span className="tag t-blue">🕐 {fmtPostTime(p)}</span>}
+                          {p.shareMode&&p.shareMode!=='public'&&<span className="tag t-blue">🔒 {p.shareMode==='connections'?'Connections':p.shareMode==='group'?'Group':'Private'}</span>}
+                          {isMyPost&&<div style={{marginLeft:'auto',display:'flex',gap:5}}>
+                            <button onClick={()=>{setEditPost(p);setShowPost(true);}} style={{padding:'3px 9px',fontSize:'0.65rem',fontWeight:700,border:'1px solid var(--border2)',borderRadius:6,background:'transparent',color:'var(--green)',cursor:'pointer'}}>✏️ Edit</button>
+                            <button onClick={()=>removePost(p.id)} style={{padding:'3px 9px',fontSize:'0.65rem',fontWeight:700,border:'1px solid rgba(247,91,91,0.3)',borderRadius:6,background:'transparent',color:'var(--red)',cursor:'pointer'}}>🗑</button>
+                          </div>}
+                        </div>
+                        {/* Custom Schedule day grid */}
+                        {p.availability==='Custom Schedule'&&p.weekSchedule?.length>0&&(
+                          <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:3,marginBottom:8}}>
+                            {DAYS_SHORT.map((d,i)=>{
+                              const s=p.weekSchedule.find(x=>x.day===i);
+                              return(<div key={i} style={{textAlign:'center'}}>
+                                <div style={{fontSize:'0.5rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',marginBottom:2}}>{d}</div>
+                                <div style={{borderRadius:5,padding:'3px 1px',fontSize:'0.55rem',fontWeight:700,background:s?'var(--green-dim)':'transparent',border:`1px solid ${s?'rgba(46,204,113,0.3)':'var(--border)'}`,color:s?'var(--green)':'var(--muted2)'}}>{s?'✓':'–'}</div>
+                                {s&&<div style={{fontSize:'0.45rem',color:'var(--muted)',marginTop:1,lineHeight:1.2}}>{fmtTime(s.startTime)}</div>}
+                              </div>);
+                            })}
+                          </div>
+                        )}
+                        {p.availDate&&(p.availability==='Today'||p.availability==='This Week')&&<div style={{fontSize:'0.7rem',color:'var(--muted)',marginBottom:4}}>📅 {p.availDate}{p.availTime?' at '+fmtTime(p.availTime):''}</div>}
+                        {p.courtName&&<div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:4}}>📍 {p.courtName}</div>}
+                        {p.message&&<div style={{fontSize:'0.78rem',fontStyle:'italic',marginBottom:4}}>"{p.message}"</div>}
+                        <div style={{fontSize:'0.62rem',color:'var(--muted2)'}}>{timeAgo(p.timestamp)} ago</div>
+                      </div>
+                    );
+                  })}
+                  <div style={{display:'flex',gap:8,paddingTop:4,flexWrap:'wrap'}}>
+                    {!mine&&<MsgBtn player={g} user={user} onChat={onChat} onNeedLogin={onNeedLogin}/>}
+                    {mine&&<button className="btn btn-ghost btn-sm" onClick={()=>{setEditPost(null);setShowPost(true);}}>+ New Post</button>}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </>}
+
+      {showPost&&user&&<PostForm user={user} editData={editPost} onClose={()=>{setShowPost(false);setEditPost(null);}} onPosted={()=>{setShowPost(false);setEditPost(null);}} uLat={uLat} uLng={uLng}/>}
+    </div>
+  );
+}
+
+/* ── PostForm ── */
+function PostForm({user,onClose,onPosted,editData,uLat,uLng}){
+  const[purpose,setPurpose]=useState(editData?.purpose||'play');
+  const[playTypes,setPT]=useState(editData?.playTypes||[]);
+  const[avail,setAv]=useState(editData?.availability||'Today');
+  const[availDate,setAD]=useState(editData?.availDate||new Date().toISOString().split('T')[0]);
+  const[startTime,setStart]=useState(editData?.startTime||'08:00');
+  const[endTime,setEnd]=useState(editData?.endTime||'10:00');
+  const[weekSchedule,setWS]=useState(editData?.weekSchedule||[]);
+  const[courtName,setCourt]=useState(editData?.courtName||'');
+  const[message,setMsg]=useState(editData?.message||'');
+  const[partnerGender,setPG]=useState(editData?.partnerGender||'');
+  const[shareMode,setShare]=useState(editData?.shareMode||'public');
+  const[sharePlayers,setSP]=useState([]);
+  const[shareGroup,setSG]=useState(null);
+  const[saving,setSaving]=useState(false);
+  const[profile,setProfile]=useState(null);
+  const today=new Date().toISOString().split('T')[0];
+
+  useEffect(()=>{if(fbOk&&user)db.collection('profiles').doc(user.uid).get().then(d=>{if(d.exists)setProfile({uid:user.uid,...d.data()});});},[user]);
+  const togglePT=t=>setPT(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t]);
+
+  const shareModeDesc={
+    public:'Visible to all PickleConnect players.',
+    connections:"Only shown to people you've chatted with before.",
+    players:sharePlayers.length>0?`Shown to ${sharePlayers.length} selected player${sharePlayers.length!==1?'s':''}.`:'Choose specific players below.',
+    group:shareGroup?`Members of "${shareGroup.name}" only.`:'Select or create a group below.',
+  };
+
+  const save=async()=>{
+    if(!profile){alert('Profile not loaded.');return;}
+    if(playTypes.length===0){alert('Select at least one play type.');return;}
+    if(avail==='Custom Schedule'&&weekSchedule.length===0){alert('Select at least one day for your schedule.');return;}
+    if(shareMode==='players'&&sharePlayers.length===0){alert('Select at least one player to share with.');return;}
+    if(shareMode==='group'&&!shareGroup){alert('Select a group to share with.');return;}
+    setSaving(true);
+    const sharePlayerIds=
+      shareMode==='players'?sharePlayers.map(p=>p.uid).filter(Boolean):
+      shareMode==='group'?(shareGroup.members||[]).map(m=>m.uid||m).filter(Boolean):[];
+    const _raw={
+      uid:user.uid,name:profile.name||null,skill:profile.skill||null,
+      city:profile.city||null,age:profile.age||null,gender:profile.gender||null,
+      duprId:profile.duprId||null,photoURL:profile.photoURL||null,
+      purpose,playTypes,availability:avail,
+      availDate:avail!=='Custom Schedule'?(availDate||null):null,
+      startTime:avail!=='Custom Schedule'?(startTime||null):null,
+      endTime:avail!=='Custom Schedule'?(endTime||null):null,
+      weekSchedule:avail==='Custom Schedule'?weekSchedule:[],
+      courtName:courtName.trim()||null,message:message.trim()||null,
+      partnerGender:purpose==='partner'?(partnerGender||null):null,
+      shareMode,sharePlayerIds,
+      shareGroupName:shareMode==='group'?(shareGroup?.name||null):null,
+      lat:uLat||null,lng:uLng||null,
+      timestamp:Date.now(),status:'active'
+    };
+    const data=Object.fromEntries(Object.entries(_raw).filter(([,v])=>v!==undefined));
+    try{
+      if(editData?.id)await db.collection('findPlayers').doc(editData.id).update(data);
+      else await db.collection('findPlayers').add(data);
+      onPosted();
+    }catch(e){alert('Failed: '+e.message);}
+    setSaving(false);
+  };
+
+  return(
+    <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal-sheet">
+        <div className="modal-handle"/>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+          <div className="modal-title">📢 {editData?'Edit Post':'Post Availability'}</div>
+          <button onClick={onClose} className="icon-btn" style={{position:'static'}}>✕</button>
+        </div>
+        <div style={{fontSize:'0.75rem',color:'var(--muted)',marginBottom:12}}>Let others know when you're available to play.</div>
+
+        {profile&&<div style={{display:'flex',alignItems:'center',gap:10,padding:10,background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,marginBottom:14}}>
+          <div className="pc-avatar" style={{width:32,height:32,fontSize:'0.82rem'}}>{profile.photoURL?<img src={profile.photoURL} referrerPolicy="no-referrer" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/>:(profile.name||'?')[0]}</div>
+          <div><div style={{fontSize:'0.82rem',fontWeight:700}}>{profile.name}</div><div style={{fontSize:'0.68rem',color:'var(--muted)'}}>{profile.skill}{profile.gender?' · '+profile.gender:''}{profile.city?' · '+profile.city:''}</div></div>
+        </div>}
+
+        <div className="fg"><div className="fl">Looking for *</div>
+          <div className="og">{PURPOSES.map(p=><button key={p.id} className={`ob ${purpose===p.id?'s':''}`} onClick={()=>setPurpose(p.id)} style={{fontSize:'0.78rem'}}>{p.e} {p.l}</button>)}</div>
+        </div>
+
+        {purpose==='partner'&&<div className="fg"><div className="fl">Partner Gender Preference</div>
+          <div className="og">
+            <button className={`ob ${partnerGender===''?'s':''}`} onClick={()=>setPG('')} style={{fontSize:'0.78rem'}}>Any</button>
+            {['Male','Female','Non-binary'].map(g=><button key={g} className={`ob ${partnerGender===g?'s':''}`} onClick={()=>setPG(partnerGender===g?'':g)} style={{fontSize:'0.78rem'}}>{g}</button>)}
+          </div>
+        </div>}
+
+        <div className="fg"><div className="fl">Play Type *</div>
+          <div className="og">{PTYPES.map(t=><button key={t} className={`ob ${playTypes.includes(t)?'s':''}`} onClick={()=>togglePT(t)} style={{fontSize:'0.78rem'}}>{PT_E[t]} {t}</button>)}</div>
+        </div>
+
+        {/* When */}
+        <div className="fg"><div className="fl">When</div>
+          <div className="og" style={{marginBottom:10}}>
+            {['Today','This Week','Custom Schedule'].map(a=>(
+              <button key={a} className={`ob ${avail===a?'s':''}`} onClick={()=>setAv(a)} style={{fontSize:'0.78rem'}}>
+                {a==='Today'?'📅':a==='This Week'?'🗓️':'📆'} {a}
+              </button>
+            ))}
+          </div>
+          {(avail==='Today'||avail==='This Week')&&<>
+            <div className="fg" style={{marginBottom:8}}>
+              <div className="fl">Date</div>
+              <input type="date" className="fi" value={availDate} onChange={e=>setAD(e.target.value)} min={today} style={{fontSize:'0.85rem'}}/>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              <div><div className="fl">From</div><input type="time" className="fi" value={startTime} onChange={e=>setStart(e.target.value)} style={{fontSize:'0.85rem'}}/></div>
+              <div><div className="fl">To</div><input type="time" className="fi" value={endTime} onChange={e=>setEnd(e.target.value)} style={{fontSize:'0.85rem'}}/></div>
+            </div>
+          </>}
+          {avail==='Custom Schedule'&&<div style={{marginTop:8}}>
+            <div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:8}}>🔁 Repeats every week. Tap days you're available and set times.</div>
+            <WeekSchedulePicker schedule={weekSchedule} onChange={setWS}/>
+          </div>}
+        </div>
+
+        <div className="fg"><div className="fl">Court (optional)</div>
+          <input className="fi" value={courtName} onChange={e=>setCourt(e.target.value)} placeholder="e.g. Heritage Park Courts" maxLength={100}/>
+        </div>
+
+        <div className="fg"><div className="fl">Message</div>
+          <textarea className="fi" value={message} onChange={e=>setMsg(e.target.value)} placeholder={purpose==='partner'?'Looking for 3.5+ doubles partner…':'Available for games, message me!'} maxLength={300} rows={2}/>
+        </div>
+
+        {/* Share Availability To */}
+        <div className="fg"><div className="fl">Share Availability To</div>
+          <div className="share-grid">
+            {SHARE_MODES.map(m=>(
+              <button key={m.id} onClick={()=>setShare(m.id)} className={`share-opt ${shareMode===m.id?'s':''}`}>
+                {m.icon} {m.label}
+              </button>
+            ))}
+          </div>
+          <div style={{fontSize:'0.68rem',color:'var(--muted)',marginBottom:shareMode==='players'||shareMode==='group'?10:0}}>{shareModeDesc[shareMode]}</div>
+          {shareMode==='players'&&<div style={{background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:12}}>
+            <PlayerPicker myUid={user.uid} selected={sharePlayers} onSelect={setSP} subtitle="Only selected players will see this post."/>
+          </div>}
+          {shareMode==='group'&&<div style={{background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:12}}>
+            <GroupManager myUid={user.uid} selectedGroupId={shareGroup?.id||null} onSelectGroup={g=>setSG(g)}/>
+          </div>}
+        </div>
+
+        <button className="btn btn-primary" onClick={save} disabled={saving} style={{width:'100%',opacity:saving?.6:1}}>{saving?'Saving…':editData?'Save Changes':'📢 Post Availability'}</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── ProfileTab ── */
+function ProfileTab({user,profile,onEditProfile,onSignOut,onGoAuth,unread,onInbox}){
+  if(!user)return(
+    <div className="px fade-in" style={{paddingTop:40}}>
+      <div className="login-prompt-card" style={{textAlign:'center'}}>
+        <div style={{fontSize:'3rem',marginBottom:12}}>🏓</div>
+        <div className="modal-title" style={{marginBottom:8}}>Join PickleConnect</div>
+        <div style={{fontSize:'0.82rem',color:'var(--muted)',marginBottom:20,lineHeight:1.5}}>Sign in to message players, post availability, and join games.</div>
+        <button className="btn btn-primary" onClick={onGoAuth} style={{width:'100%'}}>Sign In / Create Account</button>
+      </div>
+    </div>
+  );
+  return(
+    <div className="px fade-in">
+      <div className="profile-hero">
+        <div className="profile-avatar">{profile?.photoURL||user.photoURL?<img src={profile?.photoURL||user.photoURL} referrerPolicy="no-referrer" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/>:(profile?.name||user.displayName||'?')[0]}</div>
+        <div className="profile-name">{profile?.name||user.displayName||'Player'}</div>
+        <div style={{fontSize:'0.78rem',color:'var(--muted)',marginTop:3}}>{profile?.skill&&`${profile.skill} · `}{profile?.city||user.email}</div>
+        <button className="btn btn-ghost btn-sm" onClick={onEditProfile} style={{marginTop:12}}>✏️ Edit Profile</button>
+      </div>
+      <div className="settings-row" onClick={onInbox}>
+        <div className="settings-row-left"><div style={{fontSize:'1.1rem'}}>💬</div><div><div style={{fontSize:'0.88rem',fontWeight:600}}>Messages</div><div style={{fontSize:'0.7rem',color:'var(--muted)'}}>Your private conversations</div></div></div>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>{unread>0&&<div style={{background:'var(--red)',color:'white',borderRadius:10,padding:'2px 7px',fontSize:'0.72rem',fontWeight:700}}>{unread}</div>}<span style={{color:'var(--muted)'}}>›</span></div>
+      </div>
+      <div className="settings-row" onClick={onEditProfile}>
+        <div className="settings-row-left"><div style={{fontSize:'1.1rem'}}>✏️</div><div><div style={{fontSize:'0.88rem',fontWeight:600}}>Edit Profile</div><div style={{fontSize:'0.7rem',color:'var(--muted)'}}>Name, skill, location</div></div></div>
+        <span style={{color:'var(--muted)'}}>›</span>
+      </div>
+      <div className="settings-row" onClick={onSignOut} style={{borderColor:'rgba(247,91,91,0.15)'}}>
+        <div className="settings-row-left"><div style={{fontSize:'1.1rem'}}>↩</div><div><div style={{fontSize:'0.88rem',fontWeight:600,color:'var(--red)'}}>Sign Out</div></div></div>
+      </div>
+    </div>
+  );
+}
+
+/* ── FabSheet ── */
+function FabSheet({onClose,onStartGame,onAvailable,onQueue}){
+  return(
+    <div className="fab-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="fab-sheet">
+        <div className="fab-sheet-title">How do you want to play?</div>
+        <div className="fab-sheet-sub">Pick your vibe for today</div>
+        <div className="fab-option opt1" onClick={onStartGame}><div className="opt-num">1</div><div className="opt-text"><h3>Start a Game</h3><p>Create a game & invite others</p></div><div style={{marginLeft:'auto',color:'var(--muted)'}}>›</div></div>
+        <div className="fab-option opt2" onClick={onAvailable}><div className="opt-num">2</div><div className="opt-text"><h3>I'm Available</h3><p>Post so players can find you</p></div><div style={{marginLeft:'auto',color:'var(--muted)'}}>›</div></div>
+        <div className="fab-option opt3" onClick={onQueue}><div className="opt-num">3</div><div className="opt-text"><h3>Join Court Queue</h3><p>Get in line at a nearby court</p></div><div style={{marginLeft:'auto',color:'var(--muted)'}}>›</div></div>
+        <div className="fab-cancel" onClick={onClose}>✕  Cancel</div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   ROOT APP
+════════════════════════════════════════ */
+function App(){
+  const[user,setUser]=useState(undefined);
+  const[profile,setProfile]=useState(undefined);
+  const[tab,setTab]=useState(()=>new URLSearchParams(window.location.search).get('tab')||'home');
+  const[courtId,setCourtId]=useState(null);
+  const switchTab=t=>{setTab(t);setCourtId(null);setShowFab(false);if(window.__pcnOnTabChange)window.__pcnOnTabChange(t);};
+
+  // Expose hooks for nav.js
+  const openCourt=c=>{setCourtId(c.id);setTab('court-detail');if(window.__pcnOnTabChange)window.__pcnOnTabChange('courts');};
+  useEffect(()=>{window.__pcnSetTab=switchTab;},[]);
+  useEffect(()=>{window.__pcnOpenAuth=()=>setShowAuth(true);return()=>{delete window.__pcnOpenAuth;};},[]);
+  useEffect(()=>{window.__pcnOpenProfile=()=>setShowProfile(true);return()=>{delete window.__pcnOpenProfile;};},[]);
+  useEffect(()=>{window.__pcnOpenInbox=()=>setShowInbox(true);if(new URLSearchParams(window.location.search).get('inbox')==='1'){setTimeout(()=>setShowInbox(true),250);}return()=>{delete window.__pcnOpenInbox;};},[]);
+
+  const[courts,setCourts]=useState([]);
+  const[games,setGames]=useState([]);
+  const[posts,setPosts]=useState([]);
+  const[uLat,setULat]=useState(null);const[uLng,setULng]=useState(null);
+  const[unread,setUnread]=useState(0);
+  const[chatP,setChatP]=useState(null);
+  const[showInbox,setShowInbox]=useState(false);
+  const[showProfile,setShowProfile]=useState(false);
+  const[showFab,setShowFab]=useState(false);
+  const[showAuth,setShowAuth]=useState(false);
+  const[loginPromptPlayer,setLoginPromptPlayer]=useState(undefined);
+
+  const unsubs=useRef([]);
+  const addUnsub=fn=>{unsubs.current.push(fn);return fn;};
+  const clearUnsubs=()=>{unsubs.current.forEach(fn=>{try{fn();}catch(e){}});unsubs.current=[];};
+
+  // ── AUTH STATE — automatically dismisses auth screen when user signs in
+  useEffect(()=>{
+    if(!auth)return;
+    auth.getRedirectResult().catch(()=>{});
+    return auth.onAuthStateChanged(u=>{
+      setUser(u||null);
+      if(u){
+        // User just signed in — close auth screen
+        setShowAuth(false);
+      }else{
+        clearUnsubs();
+        setProfile(null);
+      }
+    });
+  },[]);
+
+  useEffect(()=>{
+    if(!user)return;
+    if(!fbOk){setProfile(null);return;}
+    const u=db.collection('profiles').doc(user.uid).onSnapshot(d=>{setProfile(d.exists?{uid:user.uid,...d.data()}:null);},()=>setProfile(null));
+    addUnsub(u);return()=>u();
+  },[user?.uid]);
+
+  useEffect(()=>{navigator.geolocation?.getCurrentPosition(p=>{setULat(p.coords.latitude);setULng(p.coords.longitude);},()=>{},{timeout:8000});},[]);
+
+  useEffect(()=>{
+    if(!fbOk)return;
+    const u=db.collection('courts').orderBy('createdAt','desc').onSnapshot(s=>{setCourts(s.docs.map(d=>({id:d.id,...d.data()})));},e=>{if(e.code!=='permission-denied')console.error(e);});
+    return()=>u();
+  },[]);
+
+  useEffect(()=>{
+    if(!fbOk||!user)return;
+    const u=db.collection('games').where('status','==','active').onSnapshot(s=>{setGames(s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt||b.timestamp||0)-(a.createdAt||a.timestamp||0)));},e=>{if(e.code!=='permission-denied')console.error(e);});
+    addUnsub(u);return()=>u();
+  },[user?.uid]);
+
+  useEffect(()=>{
+    if(!fbOk)return;
+    const u=db.collection('findPlayers').where('status','==','active').onSnapshot(s=>{setPosts(s.docs.map(d=>({id:d.id,...d.data()})));},e=>{if(e.code!=='permission-denied')console.error(e);});
+    return()=>u();
+  },[]);
+
+  // Fetch ALL registered profiles for Available Players & Inbox lookup
+  const[allProfiles,setAllProfiles]=useState([]);
+  useEffect(()=>{
+    if(!fbOk)return;
+    const u=db.collection('profiles').onSnapshot(s=>{setAllProfiles(s.docs.map(d=>({uid:d.id,...d.data()})));},e=>{if(e.code!=='permission-denied')console.error(e);});
+    return()=>u();
+  },[]);
+
+  useEffect(()=>{
+    if(!fbOk||!user)return;
+    const u=db.collection('conversations').where('participants','array-contains',user.uid).onSnapshot(s=>{let c=0;s.docs.forEach(d=>{const x=d.data();if(x.lastMessageBy!==user.uid&&x.lastTimestamp>(x[`readBy_${user.uid}`]||0))c++;});setUnread(c);},e=>{if(e.code!=='permission-denied')console.error(e);setUnread(0);});
+    addUnsub(u);return()=>u();
+  },[user?.uid]);
+
+  // All registered users sorted by nearest (for Available Players display)
+  const allPlayers=useMemo(()=>{
+    let arr=allProfiles.filter(p=>p.uid!==user?.uid&&p.name);
+    if(uLat){
+      arr=arr.map(p=>{const d=p.lat?haversine(uLat,uLng,p.lat,p.lng):999;return{...p,_dist:d};});
+      arr.sort((a,b)=>a._dist-b._dist);
+    }
+    return arr;
+  },[allProfiles,user?.uid,uLat,uLng]);
+
+  const handleNeedLogin=player=>setLoginPromptPlayer(player===undefined?null:player);
+  const handleGoAuth=()=>{setLoginPromptPlayer(undefined);setShowAuth(true);};
+  const handleSignOut=async()=>{if(window.confirm('Sign out?')){clearUnsubs();await auth.signOut();switchTab('home');}};
+  const handleFabStartGame=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}switchTab('games');};
+  const handleFabAvailable=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}switchTab('players');};
+  const handleFabQueue=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}switchTab('courts');};
+
+  // ── Loading
+  if(user===undefined)return(
+    <div className="app-shell" style={{alignItems:'center',justifyContent:'center'}}>
+      <div style={{fontSize:'2.5rem',marginBottom:10}}>🏓</div>
+      <div style={{fontSize:'0.82rem',color:'var(--muted)'}}>Loading…</div>
+    </div>
+  );
+
+  // ── Auth screen (full page, inside app-shell so nav.js bars still show)
+  if(showAuth)return(
+    <div className="app-shell" style={{overflowY:'auto'}}>
+      <AuthScreen onBack={()=>setShowAuth(false)}/>
+    </div>
+  );
+
+  // ── New user profile setup
+  if(user&&profile===null)return(
+    <div className="app-shell">
+      <ProfileSetup user={user} profile={null} onSave={p=>setProfile({uid:user.uid,...p})} uLat={uLat} uLng={uLng}/>
+    </div>
+  );
+
+  return(
+    <div className="app-shell">
+      <div className="screen-body">
+        {tab==='home'&&<HomeTab user={user} profile={profile} courts={courts} players={allPlayers} games={games} uLat={uLat} uLng={uLng} onChat={setChatP} onNeedLogin={handleNeedLogin} onSetTab={switchTab} onOpenCourt={openCourt}/>}
+        {tab==='courts'&&<CourtsTab courts={courts} uLat={uLat} uLng={uLng} onOpenCourt={openCourt}/>}
+        {tab==='court-detail'&&<CourtDetailPage courtId={courtId} onBack={()=>switchTab('courts')}/>}
+        {tab==='games'&&<GamesTab user={user} profile={profile} games={games} onNeedLogin={handleNeedLogin}/>}
+        {tab==='players'&&<PlayersTab user={user} posts={posts} players={allPlayers} onChat={setChatP} onNeedLogin={handleNeedLogin} uLat={uLat} uLng={uLng}/>}
+        {tab==='profile'&&<ProfileTab user={user} profile={profile} unread={unread} onEditProfile={()=>setShowProfile(true)} onSignOut={handleSignOut} onGoAuth={handleGoAuth} onInbox={()=>setShowInbox(true)}/>}
+      </div>
+
+      {/* FAB — only on home */}
+      {tab==='home'&&<div className="fab-wrap">
+        <div className={`fab ${showFab?'open':''}`} onClick={()=>setShowFab(!showFab)}>
+          {showFab?'✕ Close':'🏓 I WANT TO PLAY'}
+        </div>
+      </div>}
+
+      {showFab&&<FabSheet onClose={()=>setShowFab(false)} onStartGame={handleFabStartGame} onAvailable={handleFabAvailable} onQueue={handleFabQueue}/>}
+      {loginPromptPlayer!==undefined&&<LoginPrompt player={loginPromptPlayer} onClose={()=>setLoginPromptPlayer(undefined)} onGoAuth={handleGoAuth}/>}
+      {chatP&&user&&profile&&<ChatModal player={chatP} myUid={user.uid} myName={profile.name} onClose={()=>setChatP(null)}/>}
+      {showInbox&&user&&<Inbox onClose={()=>setShowInbox(false)} onOpen={p=>{setChatP(p);setShowInbox(false);}} myUid={user.uid} allPlayers={allPlayers}/>}
+      {showProfile&&user&&<ProfileSetup user={user} profile={profile} onSave={p=>{setProfile({uid:user.uid,...p});setShowProfile(false);}} onClose={()=>setShowProfile(false)} uLat={uLat} uLng={uLng}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
+<script src="nav.js"></script>
 </body>
 </html>
