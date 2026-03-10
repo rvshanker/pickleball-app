@@ -168,26 +168,42 @@
   fade.id = 'pcn-fade';
   document.body.appendChild(fade);
 
-  // Only Home routes through index.html SPA.
-  // Games, Players, Courts always go to their own standalone pages.
-  const SPA_TAB = { 'index.html': 'home' };
+  // All internal pages route through the SPA — no more full page reloads
+  const SPA_TAB = {
+    'index.html': 'home',
+    'court-main.html': 'courts',
+    'findgame.html': 'games',
+    'findplayer.html': 'players',
+  };
 
   function goTo(href) {
     if (!href) return;
     const target = href.split('?')[0].split('/').pop();
-    // On index.html going home = switch tab
-    if (filename === 'index.html' && SPA_TAB[target] !== undefined) {
-      if (window.__pcnSetTab) { window.__pcnSetTab(SPA_TAB[target]); updateActive(SPA_TAB[target]); return; }
+
+    // Tournament opens externally (standalone tool)
+    if (target === 'tournament.html') {
+      window.open(href, '_blank');
+      return;
     }
+
+    // All internal pages route through SPA tab switching
+    const tabId = SPA_TAB[target];
+    if (tabId !== undefined && window.__pcnSetTab) {
+      window.__pcnSetTab(tabId);
+      updateActive(tabId);
+      return;
+    }
+
     // Same page = do nothing
     if (target === filename) return;
-    // Full navigation
+
+    // Fallback: full navigation (shouldn't happen in normal SPA flow)
     fade.classList.add('go');
     setTimeout(() => { window.location.href = href; }, 160);
   }
 
   function updateActive(tabId) {
-    const tabToNav = { home:'home', courts:'courts', games:'games', players:'players', profile:'players' };
+    const tabToNav = { home:'home', courts:'courts', 'court-detail':'courts', games:'games', players:'players', profile:'players', tournament:'tournament' };
     const navId = tabToNav[tabId] || tabId;
     document.querySelectorAll('.pcn-ni').forEach(el => {
       el.classList.toggle('active', el.dataset.id === navId);

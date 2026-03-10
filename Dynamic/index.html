@@ -179,6 +179,43 @@ textarea.fi{resize:vertical;min-height:60px;}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 .fade-in{animation:fadeIn .2s ease;}
+
+/* Court Detail View */
+.cd-header{background:linear-gradient(135deg,var(--navy2),#0a1f1a);padding:14px 18px 12px;border-radius:0 0 18px 18px;margin-bottom:10px;}
+.cd-status-bar{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;margin-top:8px;}
+.cd-status-bar::-webkit-scrollbar{display:none;}
+.cd-pill{display:flex;align-items:center;gap:5px;background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:5px 9px;white-space:nowrap;flex-shrink:0;}
+.cd-pill.g{border-color:rgba(46,204,113,0.3);background:rgba(46,204,113,0.08);}
+.cd-pill.y{border-color:rgba(247,201,72,0.3);background:rgba(247,201,72,0.08);}
+.cd-pill.r{border-color:rgba(247,91,91,0.3);background:rgba(247,91,91,0.08);}
+.cd-pill-lbl{font-size:0.55rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+.cd-pill-val{font-size:0.78rem;font-weight:800;color:var(--text);}
+.cd-tabs{display:flex;gap:3px;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:3px;margin-bottom:11px;}
+.cd-tab{flex:1;padding:6px 3px;font-family:'DM Sans',sans-serif;font-size:0.68rem;font-weight:700;border:none;background:transparent;color:var(--muted);cursor:pointer;border-radius:8px;transition:all .15s;text-align:center;}
+.cd-tab.a{background:var(--green-dim);color:var(--green);}
+.cd-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px 15px;margin-bottom:9px;}
+.cd-player{background:var(--navy2);border:1px solid var(--border);border-radius:10px;padding:7px 11px;display:flex;align-items:center;gap:9px;margin-bottom:5px;}
+.cd-av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#1F3347,#2ECC71);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.7rem;flex-shrink:0;}
+.cd-timer{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:3px;}
+.cd-timer-fill{height:100%;background:linear-gradient(90deg,#2ECC71,#27AE60);border-radius:2px;transition:width 1s linear;}
+.cd-form{background:var(--card2);border:1px solid var(--border2);border-radius:14px;padding:13px;margin-bottom:10px;}
+.rt-btn{padding:4px 9px;border-radius:8px;border:1.5px solid var(--border2);background:transparent;font-family:'DM Sans',sans-serif;font-size:0.7rem;font-weight:700;cursor:pointer;color:var(--muted);transition:all .15s;}
+.rt-btn.s{border-color:rgba(46,204,113,0.4);background:var(--green-dim);color:var(--green);}
+.dr-btn{padding:6px 8px;font-family:'DM Sans',sans-serif;font-size:0.68rem;font-weight:700;border:1.5px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;border-radius:8px;transition:all .15s;text-align:center;}
+.dr-btn.a{border-color:rgba(46,204,113,0.4);background:var(--green-dim);color:var(--green);}
+.wx-bar{display:flex;overflow-x:auto;scrollbar-width:none;background:var(--card);border:1px solid var(--border);border-radius:10px;}
+.wx-bar::-webkit-scrollbar{display:none;}
+.wx-h{display:flex;flex-direction:column;align-items:center;padding:5px 8px;min-width:52px;border-right:1px solid var(--border);flex-shrink:0;}
+.wx-h:last-child{border-right:none;}
+.wx-h.now{background:var(--green-dim);border-radius:7px;}
+.ct-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:11px 13px;margin-bottom:7px;}
+.ct-tog{display:flex;border:1px solid var(--border2);border-radius:9px;overflow:hidden;}
+.ct-tog button{flex:1;padding:7px 5px;font-family:'DM Sans',sans-serif;font-size:0.68rem;font-weight:700;border:none;cursor:pointer;transition:all .15s;color:var(--muted);background:transparent;}
+.ct-tog button.on{background:var(--green);color:white;}
+.ct-tog button.off{background:var(--card2);color:var(--text);}
+.ct-tog button.warn{background:var(--red);color:white;}
+.amen-dk{display:inline-flex;align-items:center;gap:3px;padding:5px 10px;border-radius:8px;border:1px solid var(--border2);background:transparent;font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;margin:2px;}
+.amen-dk.on{background:var(--green-dim);border-color:rgba(46,204,113,0.4);color:var(--green);}
 </style>
 <script src="nav.js"></script>
 </head>
@@ -386,9 +423,9 @@ function MsgBtn({player,user,onChat,onNeedLogin,ghost=false,sm=false}){
 }
 
 /* ── HomeTab ── */
-const openCourt=c=>window.location.href=`court.html?id=${c.id}`;
+/* openCourt moved to App */
 
-function HomeTab({user,profile,courts,players,games,uLat,uLng,onChat,onNeedLogin,onSetTab}){
+function HomeTab({user,profile,courts,players,games,uLat,uLng,onChat,onNeedLogin,onSetTab,onOpenCourt}){
   const nearbyCourts=useMemo(()=>{if(!uLat||!courts.length)return courts.slice(0,3);return[...courts].sort((a,b)=>{const da=a.lat?haversine(uLat,uLng,a.lat,a.lng):999;const db2=b.lat?haversine(uLat,uLng,b.lat,b.lng):999;return da-db2;}).slice(0,3);},[courts,uLat,uLng]);
   const openCourtsCount=courts.filter(c=>c.status!=='closed'&&c.status!=='maintenance').length;
   const todayGames=games.filter(g=>g.date===new Date().toISOString().split('T')[0]).length;
@@ -406,7 +443,7 @@ function HomeTab({user,profile,courts,players,games,uLat,uLng,onChat,onNeedLogin
       <div className="section-title">Nearby Courts</div>
       {nearbyCourts.length===0&&<div style={{color:'var(--muted)',fontSize:'0.82rem',marginBottom:16}}>No courts found.</div>}
       {nearbyCourts.map(c=>{const dist=getDist(c);return(
-        <div key={c.id} className="court-card" onClick={()=>openCourt(c)}>
+        <div key={c.id} className="court-card" onClick={()=>onOpenCourt?onOpenCourt(c):null}>
           <div className="court-icon">🏟</div>
           <div className="court-info"><h4>{c.name}</h4><p>{dist!=null?`${dist<1?dist.toFixed(1):Math.round(dist)} mi · `:''}{c.numberOfCourts||'?'} courts</p></div>
           <div className={`court-badge ${crowdBadge(c)}`}>{crowdLabel(c)} ›</div>
@@ -430,30 +467,272 @@ function HomeTab({user,profile,courts,players,games,uLat,uLng,onChat,onNeedLogin
   );
 }
 
-/* ── CourtsTab ── */
-function CourtsTab({courts,uLat,uLng}){
+/* ── AMENITIES ── */
+const AMENITIES = [
+    {key:'restrooms',label:'🚻 Restrooms'},{key:'parking',label:'🅿️ Parking'},
+    {key:'lights',label:'💡 Lights'},{key:'water',label:'💧 Water'},
+    {key:'benches',label:'🪑 Benches'},{key:'shade',label:'⛱️ Shade'},
+    {key:'indoor',label:'🏢 Indoor'},{key:'pro_shop',label:'🛒 Pro Shop'},
+];
+
+/* ── AddCourtModal ── */
+function AddCourtModal({onClose, onAdded}) {
+    const [name, setName] = useState('');
+    const [address, setAddress] = useState('');
+    const [numCourts, setNumCourts] = useState(4);
+    const [amenities, setAmenities] = useState([]);
+    const [rules, setRules] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [lat, setLat] = useState(null);
+    const [lng, setLng] = useState(null);
+    const [locating, setLocating] = useState(false);
+    const toggleAmenity = (key) => setAmenities(a => a.includes(key) ? a.filter(x=>x!==key) : [...a, key]);
+    const geolocate = () => {
+        setLocating(true);
+        navigator.geolocation.getCurrentPosition(pos => {
+            setLat(pos.coords.latitude); setLng(pos.coords.longitude); setLocating(false);
+        }, () => { alert('Could not get location.'); setLocating(false); });
+    };
+    const geocodeAddress = async (addr) => {
+        try {
+            const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(addr)+'&limit=1');
+            const d = await r.json();
+            if (d.length) return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
+        } catch(e) {}
+        return null;
+    };
+    const save = async () => {
+        if (!name.trim()) { alert('Please enter a court name.'); return; }
+        if (!address.trim()) { alert('Please enter an address.'); return; }
+        setSaving(true);
+        let fLat = lat, fLng = lng;
+        if (!fLat || !fLng) { const geo = await geocodeAddress(address); if (geo) { fLat=geo.lat; fLng=geo.lng; } else { fLat=0; fLng=0; } }
+        const court = { name:name.trim(), address:address.trim(), lat:fLat, lng:fLng, numberOfCourts:numCourts, amenities, courtRules:rules.trim(), openCourts:numCourts, crowdLevel:'low', condition:'open', createdAt:Date.now() };
+        try { if(fbOk&&db){ const ref=await db.collection('courts').add(court); court.id=ref.id; onAdded(court); } else alert('Database not available.');
+        } catch(e) { alert('Failed: '+e.message); }
+        setSaving(false);
+    };
+    return (
+        <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+            <div className="modal-sheet">
+                <div className="modal-handle"/>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+                    <div className="modal-title">➕ Add a Court</div>
+                    <button onClick={onClose} className="icon-btn" style={{position:'static'}}>✕</button>
+                </div>
+                <div className="fg"><div className="fl">Court / Park Name *</div><input className="fi" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Dardenne Prairie Athletic Complex"/></div>
+                <div className="fg"><div className="fl">Address *</div>
+                    <div style={{display:'flex',gap:8}}>
+                        <input className="fi" value={address} onChange={e=>setAddress(e.target.value)} placeholder="Full street address, city, state" style={{flex:1}}/>
+                        <button onClick={geolocate} className="icon-btn" style={{width:42,height:42,borderRadius:12}} title="Use my location">{locating?'⏳':'📍'}</button>
+                    </div>
+                    {lat && <div style={{fontSize:'0.7rem',color:'var(--green)',marginTop:4}}>📍 Location captured ({lat.toFixed(4)}, {lng.toFixed(4)})</div>}
+                </div>
+                <div className="fg"><div className="fl">Number of Courts</div>
+                    <div style={{display:'flex',alignItems:'center',gap:10}}>
+                        <button onClick={()=>setNumCourts(n=>Math.max(1,n-1))} className="icon-btn" style={{width:36,height:36,fontSize:'1rem'}}>−</button>
+                        <span style={{fontSize:'1.3rem',fontWeight:800,fontFamily:'Syne',minWidth:28,textAlign:'center'}}>{numCourts}</span>
+                        <button onClick={()=>setNumCourts(n=>Math.min(30,n+1))} style={{width:36,height:36,borderRadius:'50%',background:'var(--green)',border:'none',color:'white',fontSize:'1rem',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
+                    </div>
+                </div>
+                <div className="fg"><div className="fl">Amenities</div>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
+                        {AMENITIES.map(a=><button key={a.key} className={'amen-dk'+(amenities.includes(a.key)?' on':'')} onClick={()=>toggleAmenity(a.key)}>{a.label}</button>)}
+                    </div>
+                </div>
+                <div className="fg"><div className="fl">Rules / Notes (optional)</div><textarea className="fi" value={rules} onChange={e=>setRules(e.target.value)} placeholder="e.g. Open daily 6am–10pm" rows={2}/></div>
+                <button className="btn btn-primary" onClick={save} disabled={saving} style={{width:'100%',opacity:saving?.6:1}}>{saving?'⏳ Saving…':'➕ Add Court'}</button>
+            </div>
+        </div>
+    );
+}
+
+/* ── CourtsTab (Enhanced) ── */
+function CourtsTab({courts,uLat,uLng,onOpenCourt}){
   const[view,setView]=useState('list');const[search,setSearch]=useState('');
+  const[showAdd,setShowAdd]=useState(false);
   const sorted=useMemo(()=>{let l=[...courts];if(search.trim()){const q=search.toLowerCase();l=l.filter(c=>c.name?.toLowerCase().includes(q)||c.address?.toLowerCase().includes(q));}if(uLat)l.sort((a,b)=>{const da=a.lat?haversine(uLat,uLng,a.lat,a.lng):999;const db2=b.lat?haversine(uLat,uLng,b.lat,b.lng):999;return da-db2;});return l;},[courts,uLat,uLng,search]);
   const crowdBadge=c=>{const l=c.crowdLevel;return l==='high'?'badge-full':l==='medium'?'badge-busy':'badge-open';};
   const crowdLabel=c=>{const l=c.crowdLevel;return l==='high'?'Packed':l==='medium'?'Busy':'Open';};
   const getDist=c=>uLat&&c.lat?haversine(uLat,uLng,c.lat,c.lng):null;
   return(
     <div className="px fade-in">
-      <div className="section-title" style={{paddingTop:4}}>Find Courts</div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:4,marginBottom:12}}>
+        <div className="section-title" style={{marginBottom:0}}>Find Courts</div>
+        <button className="btn btn-primary btn-sm" onClick={()=>setShowAdd(true)}>+ Add Court</button>
+      </div>
       <div style={{position:'relative',marginBottom:12}}><span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}}>🔍</span><input className="fi" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search courts…" style={{paddingLeft:36}}/></div>
       <div className="tab-pills">{[['list','📋 List'],['map','🗺 Map']].map(([k,l])=><div key={k} className={`pill ${view===k?'active':''}`} onClick={()=>setView(k)}>{l}</div>)}</div>
       {view==='map'&&<div className="map-box"><div className="map-grid"/>{sorted.slice(0,4).map((c,i)=>{const p=[{top:30,left:50},{top:55,left:140},{top:22,left:210},{top:75,left:85}][i]||{top:40+i*20,left:60+i*30};return<div key={c.id} className="map-pin" style={{top:p.top,left:p.left}}>📍</div>;})} <div className="map-label">{sorted.length} courts</div></div>}
-      {sorted.length===0&&<div className="empty-state"><div className="empty-icon">🏟</div><div className="empty-title">No courts found</div></div>}
+      {sorted.length===0&&<div className="empty-state"><div className="empty-icon">🏟</div><div className="empty-title">No courts found</div><div className="empty-sub">{search?'Try a different search':'Be the first to add your local courts!'}</div>{!search&&<button className="btn btn-primary" onClick={()=>setShowAdd(true)} style={{marginTop:8}}>+ Add Court</button>}</div>}
       {sorted.map(c=>{const dist=getDist(c);return(
-        <div key={c.id} className="court-card" onClick={()=>openCourt(c)}>
+        <div key={c.id} className="court-card" onClick={()=>onOpenCourt(c)}>
           <div className="court-icon">🏟</div>
           <div className="court-info"><h4>{c.name}</h4><p>{dist!=null?`${dist<1?dist.toFixed(1):Math.round(dist)} mi · `:''}{c.numberOfCourts||'?'} courts{c.openCourts!=null?` · ${c.openCourts} open`:''}</p></div>
           <div className={`court-badge ${crowdBadge(c)}`}>{crowdLabel(c)} ›</div>
         </div>
       );})}
+      {/* Tournament link */}
+      <div style={{background:'linear-gradient(135deg,#2a1350,#4c1d95)',border:'1px solid rgba(124,58,237,0.3)',borderRadius:16,padding:'14px 16px',display:'flex',alignItems:'center',gap:12,marginTop:8,cursor:'pointer'}} onClick={()=>window.open('tournament.html','_blank')}>
+        <div style={{width:40,height:40,background:'rgba(255,255,255,.1)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.2rem',flexShrink:0}}>🏆</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontFamily:'Syne',fontSize:'0.88rem',fontWeight:800,color:'white'}}>Tournament Generator</div>
+          <div style={{fontSize:'0.68rem',color:'rgba(233,213,255,0.7)',marginTop:1}}>Round-robin brackets & live scoring</div>
+        </div>
+        <span style={{color:'rgba(233,213,255,0.5)'}}>›</span>
+      </div>
+      {showAdd&&<AddCourtModal onClose={()=>setShowAdd(false)} onAdded={(c)=>{setShowAdd(false);onOpenCourt(c);}}/>}
     </div>
   );
 }
+
+/* ── Court Detail Sub-Components ── */
+const COURT_RATINGS=[{key:'under3',label:'<3.0'},{key:'3to35',label:'3.0–3.5'},{key:'35to4',label:'3.5–4.0'},{key:'over4',label:'4.0+'},{key:'5plus',label:'5.0+'}];
+const COURT_DURATIONS=[{label:'1 hr',value:60},{label:'2 hr',value:120},{label:'3 hr',value:180},{label:'4 hr',value:240},{label:'All Day',value:480}];
+const courtRatingInfo=key=>COURT_RATINGS.find(r=>r.key===key);
+function courtHeadcount(players){return players.reduce((s,p)=>s+1+(p.guests||0),0);}
+const wxIcon=(temp,wind)=>wind>20?'🌬️':temp<32?'🥶':temp<50?'🧥':temp>88?'☀️':'⛅';
+
+function CourtPlayTimer({checkInTime,durationMins}){
+    const[remaining,setRemaining]=useState(0);
+    useEffect(()=>{const calc=()=>setRemaining(Math.max(0,checkInTime+durationMins*60000-Date.now()));calc();const t=setInterval(calc,10000);return()=>clearInterval(t);},[checkInTime,durationMins]);
+    if(remaining<=0)return<span style={{fontSize:'0.62rem',color:'var(--red)',fontWeight:700}}>⏰ Time's up!</span>;
+    const mins=Math.ceil(remaining/60000),hrs=Math.floor(mins/60),m=mins%60;
+    const pct=Math.max(0,(remaining/(durationMins*60000))*100);
+    return(<div style={{minWidth:70}}><span style={{fontSize:'0.62rem',color:'var(--green)',fontWeight:700}}>⏱ {hrs>0?hrs+'h ':''}{m}m left</span><div className="cd-timer"><div className="cd-timer-fill" style={{width:pct+'%'}}/></div></div>);
+}
+
+function CourtPlayerRow({p,isNow}){
+    const ri=courtRatingInfo(p.rating);const nowMs=Date.now();
+    const eff=isNow||p.status==='now'||(p.status==='later'&&p.arrivalTime&&nowMs>=p.arrivalTime);
+    const arrLabel=p.status==='later'&&p.arrivalTime&&!eff?new Date(p.arrivalTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):null;
+    const guests=p.guests||0;
+    return(
+        <div className="cd-player">
+            <div className="cd-av">{(p.userName||'?')[0].toUpperCase()}</div>
+            <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:700,fontSize:'0.78rem',display:'flex',alignItems:'center',gap:5,flexWrap:'wrap'}}>
+                    {p.userName}{guests>0&&<span className="tag t-blue" style={{fontSize:'0.55rem'}}>+{guests}</span>}
+                    {ri&&<span className="tag t-green" style={{fontSize:'0.55rem'}}>{ri.label}</span>}
+                </div>
+                <div style={{fontSize:'0.65rem',color:'var(--muted)',display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                    <span>{eff?'🎾 Playing':arrLabel?'⏰ '+arrLabel:'👀 Watching'}</span>
+                    {eff&&p.duration&&<CourtPlayTimer checkInTime={p.timestamp} durationMins={p.duration}/>}
+                </div>
+                {p.comment&&<div style={{fontSize:'0.65rem',color:'var(--green)',fontStyle:'italic',marginTop:2,background:'var(--green-dim)',borderRadius:6,padding:'2px 6px',display:'inline-block'}}>💬 {p.comment}</div>}
+            </div>
+            <div style={{fontSize:'0.6rem',color:'var(--muted2)',flexShrink:0}}>{new Date(p.timestamp).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}</div>
+        </div>
+    );
+}
+
+/* ── CourtDetailPage ── */
+function CourtDetailPage({courtId,onBack}){
+    const[courtData,setCourtData]=useState(null);const[checkIns,setCheckIns]=useState([]);
+    const[loading,setLoading]=useState(true);const[tab,setTab]=useState('now');
+    const[showForm,setShowForm]=useState(false);const[userName,setUserName]=useState('');
+    const[userRating,setUserRating]=useState('');const[duration,setDuration]=useState(120);
+    const[guestCount,setGuestCount]=useState(0);const[comment,setComment]=useState('');
+    const[weather,setWeather]=useState(null);const[forecast,setForecast]=useState([]);
+    const checkInsRef=useRef([]);
+    const[deviceId]=useState(()=>{let id=localStorage.getItem('pickleDeviceId');if(!id){id='dev_'+Math.random().toString(36).slice(2,11);localStorage.setItem('pickleDeviceId',id);}return id;});
+    useEffect(()=>{const n=localStorage.getItem('pickleCourtUserName');const r=localStorage.getItem('pickleCourtRating');if(n)setUserName(n);if(r)setUserRating(r);},[]);
+    useEffect(()=>{if(!courtId||!fbOk){setLoading(false);return;}const u=db.collection('courts').doc(courtId).onSnapshot(d=>{if(d.exists)setCourtData({id:d.id,...d.data()});else setCourtData(null);setLoading(false);},()=>setLoading(false));return()=>u();},[courtId]);
+    useEffect(()=>{if(!courtId||!fbOk)return;const u=db.collection('courts').doc(courtId).collection('checkins').onSnapshot(snap=>{const now=Date.now(),cut=now-24*3600000;snap.docs.forEach(d=>{if(d.data().status==='checked-out')d.ref.delete().catch(()=>{});});const list=snap.docs.map(d=>({id:d.id,...d.data()})).filter(c=>c.status!=='checked-out'&&c.timestamp>cut).sort((a,b)=>(a.arrivalTime||a.timestamp)-(b.arrivalTime||b.timestamp));checkInsRef.current=list;setCheckIns(list);},e=>console.warn('CI:',e.message));return()=>u();},[courtId]);
+    useEffect(()=>{if(!courtId||!fbOk)return;const tick=async()=>{const now=Date.now(),list=checkInsRef.current;for(const c of list){const st=c.status==='active'?c.timestamp:c.arrivalTime;if(c.status==='active'&&c.duration&&st&&now>st+c.duration*60000){await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).delete().catch(()=>{});}if(c.status==='later'&&c.arrivalTime&&now>=c.arrivalTime){await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).update({status:'active',timestamp:now}).catch(()=>{});}}};tick();const t=setInterval(tick,15000);return()=>clearInterval(t);},[courtId]);
+    useEffect(()=>{if(!courtData?.lat||!courtData?.lng)return;const fx=async(la,ln)=>{try{const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+la+'&longitude='+ln+'&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1');const d=await r.json();setWeather({temp:Math.round(d.current.temperature_2m),wind:Math.round(d.current.wind_speed_10m)});const now=new Date();setForecast(d.hourly.time.map((t,i)=>({dt:new Date(t),temp:Math.round(d.hourly.temperature_2m[i]),wind:Math.round(d.hourly.wind_speed_10m[i])})).filter(h=>h.dt>=now&&h.dt.getDate()===now.getDate()).slice(0,10));}catch(e){}};fx(courtData.lat,courtData.lng);},[courtData?.lat,courtData?.lng]);
+    const updateCourt=async(field,value)=>{if(!fbOk||!courtId)return;await db.collection('courts').doc(courtId).update({[field]:value}).catch(console.error);};
+    const deleteMyCheckIns=async()=>{const snap=await db.collection('courts').doc(courtId).collection('checkins').get();await Promise.all(snap.docs.filter(d=>d.data().deviceId===deviceId).map(d=>d.ref.delete()));};
+    const submitCheckIn=async(status)=>{if(!fbOk||!userName.trim()){alert(!userName.trim()?'Enter your name':'DB error');return;}try{await deleteMyCheckIns();await db.collection('courts').doc(courtId).collection('checkins').add({userName,deviceId,rating:userRating||null,status:status==='now'?'active':'later',guests:guestCount,duration,comment:comment.trim()||'',arrivalTime:Date.now(),timestamp:Date.now()});localStorage.setItem('pickleCourtUserName',userName);localStorage.setItem('pickleCourtRating',userRating);setShowForm(false);setGuestCount(0);setComment('');}catch(e){alert('Check-in failed: '+e.message);}};
+    const handleCheckOut=async()=>{await deleteMyCheckIns();};
+
+    if(loading)return<div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:200}}><div style={{textAlign:'center'}}><div style={{fontSize:'2rem',marginBottom:8}}>🏟</div><div style={{fontSize:'0.82rem',color:'var(--muted)'}}>Loading court…</div></div></div>;
+    if(!courtData)return<div className="px fade-in" style={{paddingTop:40,textAlign:'center'}}><div style={{fontSize:'2.5rem',marginBottom:10}}>🏟</div><div className="modal-title" style={{marginBottom:8}}>Court not found</div><button className="btn btn-ghost" onClick={onBack}>← Back</button></div>;
+
+    const nowMs=Date.now();const myCheckIn=checkIns.find(c=>c.deviceId===deviceId);
+    const nowPlayers=checkIns.filter(c=>c.status==='active'||(c.status==='later'&&c.arrivalTime&&nowMs>=c.arrivalTime));
+    const laterPlayers=checkIns.filter(c=>c.status==='later'&&(!c.arrivalTime||nowMs<c.arrivalTime));
+    const nowTotal=courtHeadcount(nowPlayers),laterTotal=courtHeadcount(laterPlayers);
+    const total=courtData.numberOfCourts||4;const open=courtData.openCourts!==undefined?courtData.openCourts:total;
+    const openOpts=Array.from({length:total+1},(_,i)=>i);
+    const crowdColor=courtData.crowdLevel==='low'?'g':courtData.crowdLevel==='medium'?'y':'r';
+    const condMap={closed:{e:'🚫',l:'Closed',c:'r'},wet:{e:'💧',l:'Wet',c:'y'},hot:{e:'🥵',l:'Hot',c:'y'},windy:{e:'🌬️',l:'Windy',c:'y'}};
+
+    return(<div className="fade-in">
+        <div className="cd-header">
+            <div style={{display:'flex',alignItems:'flex-start',gap:10}}>
+                <button onClick={onBack} className="icon-btn" style={{position:'static',flexShrink:0,marginTop:2}}>←</button>
+                <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontFamily:'Syne',fontSize:'1.05rem',fontWeight:800}}>{courtData.name}</div>
+                    <div style={{fontSize:'0.68rem',color:'var(--muted)',marginTop:2,display:'flex',alignItems:'center',gap:4}}>
+                        <span style={{width:6,height:6,borderRadius:'50%',background:'var(--green)',display:'inline-block'}}/>
+                        Live{courtData.address?<> · <a href={'https://maps.google.com/?q='+encodeURIComponent(courtData.address)} target="_blank" rel="noopener noreferrer" style={{color:'var(--green)',textDecoration:'none',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>📍 {courtData.address}</a></>:''}
+                    </div>
+                </div>
+                {weather&&<div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,padding:'4px 8px',textAlign:'center',flexShrink:0}}>
+                    <div style={{fontSize:'0.95rem'}}>{wxIcon(weather.temp,weather.wind)}</div>
+                    <div style={{fontSize:'0.72rem',fontWeight:800}}>{weather.temp}°</div>
+                    <div style={{fontSize:'0.55rem',color:'var(--muted)'}}>💨{weather.wind}</div>
+                </div>}
+            </div>
+            {forecast.length>0&&<div className="wx-bar" style={{marginTop:8}}>{forecast.map((h,i)=><div key={i} className={'wx-h'+(i===0?' now':'')}>
+                <div style={{fontSize:'0.55rem',fontWeight:700,color:'var(--green)'}}>{i===0?'Now':h.dt.toLocaleTimeString([],{hour:'numeric'})}</div>
+                <div style={{fontSize:'0.78rem'}}>{wxIcon(h.temp,h.wind)}</div>
+                <div style={{fontSize:'0.72rem',fontWeight:800}}>{h.temp}°</div>
+                <div style={{fontSize:'0.55rem',color:'var(--muted)'}}>💨{h.wind}</div>
+            </div>)}</div>}
+            <div className="cd-status-bar">
+                <div className={'cd-pill'+(nowTotal>0?' g':'')}><span>👥</span><div><div className="cd-pill-lbl">Playing</div><div className="cd-pill-val">{nowTotal}</div></div></div>
+                <div className={'cd-pill'+(laterTotal>0?' g':'')}><span>⏰</span><div><div className="cd-pill-lbl">Coming</div><div className="cd-pill-val">{laterTotal}</div></div></div>
+                {courtData.condition&&courtData.condition!=='open'&&condMap[courtData.condition]&&<div className={'cd-pill '+condMap[courtData.condition].c}><span>{condMap[courtData.condition].e}</span><div><div className="cd-pill-lbl">Court</div><div className="cd-pill-val">{condMap[courtData.condition].l}</div></div></div>}
+                <div className={'cd-pill '+crowdColor}><span>{courtData.crowdLevel==='low'?'🟢':courtData.crowdLevel==='medium'?'🟡':'🔴'}</span><div><div className="cd-pill-lbl">Crowd</div><div className="cd-pill-val">{courtData.crowdLevel==='low'?'Light':courtData.crowdLevel==='medium'?'Busy':'Packed'}</div></div></div>
+                <div className="cd-pill"><span>{courtData.lightsOn?'💡':'🌙'}</span><div><div className="cd-pill-lbl">Lights</div><div className="cd-pill-val">{courtData.lightsOn?'ON':'OFF'}</div></div></div>
+                <div className={'cd-pill'+(open>0?' g':' r')}><div><div className="cd-pill-lbl">Rotation</div><div className="cd-pill-val">{open}/{total}</div></div></div>
+            </div>
+        </div>
+        <div className="px">
+            <div className="cd-tabs">
+                <button className={'cd-tab'+(tab==='now'?' a':'')} onClick={()=>setTab('now')}>👥 Now ({nowTotal})</button>
+                <button className={'cd-tab'+(tab==='schedule'?' a':'')} onClick={()=>setTab('schedule')}>📅 ({laterTotal})</button>
+                <button className={'cd-tab'+(tab==='controls'?' a':'')} onClick={()=>setTab('controls')}>⚙️</button>
+                <button className={'cd-tab'+(tab==='info'?' a':'')} onClick={()=>setTab('info')}>ℹ️</button>
+            </div>
+            {tab==='now'&&<div className="cd-card">
+                <div style={{fontFamily:'Syne',fontSize:'0.95rem',fontWeight:800,marginBottom:10}}>👥 Who's Here?</div>
+                {myCheckIn?(<div style={{background:'var(--green-dim)',border:'1px solid rgba(46,204,113,0.3)',borderRadius:12,padding:'10px 13px',marginBottom:10}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}><div><div style={{fontSize:'0.78rem',fontWeight:700,color:'var(--green)'}}>✅ Checked in as {myCheckIn.userName}</div><div style={{fontSize:'0.68rem',color:'var(--green)',opacity:0.8}}>{myCheckIn.status==='active'?'🎾 Playing':'⏰ Arriving'}</div></div><button className="btn btn-danger btn-sm" onClick={handleCheckOut}>Check Out</button></div></div>
+                ):(!showForm?(<div style={{background:'rgba(255,255,255,.03)',border:'1px dashed var(--border2)',borderRadius:12,padding:16,textAlign:'center',marginBottom:10}}><div style={{fontSize:'0.82rem',color:'var(--muted)',marginBottom:10}}>Let others know you're here!</div><button className="btn btn-primary" onClick={()=>setShowForm(true)}>🏟 Check In</button></div>
+                ):(<div className="cd-form">
+                    <div className="fg"><div className="fl">Your Name *</div><input className="fi" value={userName} onChange={e=>setUserName(e.target.value)} placeholder="Enter your name…"/></div>
+                    <div className="fg"><div className="fl">Skill Level</div><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{COURT_RATINGS.map(r=><button key={r.key} className={'rt-btn'+(userRating===r.key?' s':'')} onClick={()=>setUserRating(r.key)}>{r.label}</button>)}</div></div>
+                    <div className="fg"><div className="fl">How Long?</div><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{COURT_DURATIONS.map(d=><button key={d.value} className={'dr-btn'+(duration===d.value?' a':'')} onClick={()=>setDuration(d.value)}>{d.label}</button>)}</div></div>
+                    <div className="fg"><div className="fl">Guests</div><div style={{display:'flex',alignItems:'center',gap:8}}><button onClick={()=>setGuestCount(Math.max(0,guestCount-1))} className="icon-btn" style={{width:32,height:32,fontSize:'0.9rem'}}>−</button><span style={{fontSize:'1.1rem',fontWeight:800,fontFamily:'Syne',minWidth:24,textAlign:'center'}}>{guestCount}</span><button onClick={()=>setGuestCount(Math.min(20,guestCount+1))} style={{width:32,height:32,borderRadius:'50%',background:'var(--green)',border:'none',color:'white',fontSize:'0.9rem',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>+</button></div></div>
+                    <div className="fg"><div className="fl">Comment</div><input className="fi" value={comment} onChange={e=>setComment(e.target.value)} placeholder="e.g. looking for a 3rd…" maxLength={120}/></div>
+                    <div style={{display:'flex',gap:7}}><button className="btn btn-primary" onClick={()=>submitCheckIn('now')} disabled={!userName.trim()} style={{flex:1,opacity:userName.trim()?1:.5}}>👥 Playing Now</button><button className="btn btn-ghost btn-sm" onClick={()=>setShowForm(false)}>Cancel</button></div>
+                </div>))}
+                {nowPlayers.length>0?nowPlayers.map(p=><CourtPlayerRow key={p.id} p={p} isNow={true}/>):<div style={{textAlign:'center',padding:'20px 0',color:'var(--muted)',fontSize:'0.82rem'}}>No one here yet — be the first! 🎾</div>}
+            </div>}
+            {tab==='schedule'&&<div className="cd-card">
+                <div style={{fontFamily:'Syne',fontSize:'0.95rem',fontWeight:800,marginBottom:10}}>📅 Coming Soon ({laterTotal})</div>
+                {laterPlayers.length===0?<div style={{textAlign:'center',padding:'20px 0',color:'var(--muted)',fontSize:'0.82rem'}}>Nobody scheduled yet.</div>:laterPlayers.map(p=><CourtPlayerRow key={p.id} p={p} isNow={false}/>)}
+            </div>}
+            {tab==='controls'&&<div>
+                <div className="ct-card"><div style={{fontSize:'0.72rem',fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>🟢 Crowd Level</div><div className="ct-tog">{[['low','Light'],['medium','Busy'],['high','Packed']].map(([v,l])=><button key={v} onClick={()=>updateCourt('crowdLevel',v)} className={courtData.crowdLevel===v?'on':''}>{l}</button>)}</div></div>
+                <div className="ct-card"><div style={{fontSize:'0.72rem',fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>📋 Condition</div><div className="ct-tog">{[['open','✅ Open'],['closed','🚫 Closed'],['wet','💧 Wet']].map(([v,l])=><button key={v} onClick={()=>updateCourt('condition',v)} className={(courtData.condition||'open')===v?(v==='closed'?'warn':'on'):''}>{l}</button>)}</div></div>
+                <div className="ct-card"><div style={{fontSize:'0.72rem',fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>💡 Lights</div><div className="ct-tog"><button onClick={()=>updateCourt('lightsOn',true)} className={courtData.lightsOn?'on':''}>💡 ON</button><button onClick={()=>updateCourt('lightsOn',false)} className={!courtData.lightsOn?'off':''}>🌙 OFF</button></div></div>
+                <div className="ct-card"><div style={{fontSize:'0.72rem',fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>🏟 Courts in Rotation</div><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{openOpts.map(n=><button key={n} onClick={()=>updateCourt('openCourts',n)} className={'dr-btn'+(open===n?' a':'')} style={{minWidth:38}}>{n}</button>)}</div></div>
+            </div>}
+            {tab==='info'&&<div className="cd-card">
+                <div style={{fontFamily:'Syne',fontSize:'0.95rem',fontWeight:800,marginBottom:12}}>ℹ️ Court Info</div>
+                <div style={{marginBottom:12}}><div className="fl">Location</div><div style={{fontSize:'0.88rem',fontWeight:600}}>{courtData.name}</div><div style={{fontSize:'0.75rem',color:'var(--muted)'}}>{courtData.address}</div>{courtData.address&&<a href={'https://maps.google.com/?q='+encodeURIComponent(courtData.address)} target="_blank" rel="noopener noreferrer" style={{display:'inline-block',marginTop:6,color:'var(--green)',fontSize:'0.72rem',fontWeight:600,textDecoration:'none'}}>🗺️ Open in Google Maps →</a>}</div>
+                <div style={{marginBottom:12}}><div className="fl">Courts</div><div style={{fontSize:'1.2rem',fontWeight:800,fontFamily:'Syne'}}>{total} courts</div></div>
+                {courtData.amenities?.length>0&&<div style={{marginBottom:12}}><div className="fl">Amenities</div><div style={{display:'flex',flexWrap:'wrap',gap:4}}>{courtData.amenities.map(k=>{const a=AMENITIES.find(x=>x.key===k);return a?<span key={k} className="tag t-green">{a.label}</span>:null;})}</div></div>}
+                {courtData.courtRules&&<div><div className="fl">Rules & Notes</div><div style={{background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:10,fontSize:'0.78rem',lineHeight:1.5,whiteSpace:'pre-wrap'}}>{courtData.courtRules}</div></div>}
+            </div>}
+        </div>
+    </div>);
+}
+
+
 
 /* ── GamesTab ── */
 function GamesTab({user,profile,games,onNeedLogin}){
@@ -854,9 +1133,11 @@ function App(){
   const[user,setUser]=useState(undefined);
   const[profile,setProfile]=useState(undefined);
   const[tab,setTab]=useState(()=>new URLSearchParams(window.location.search).get('tab')||'home');
-  const switchTab=t=>{setTab(t);if(window.__pcnOnTabChange)window.__pcnOnTabChange(t);};
+  const[courtId,setCourtId]=useState(null);
+  const switchTab=t=>{setTab(t);setCourtId(null);if(window.__pcnOnTabChange)window.__pcnOnTabChange(t);};
 
   // Expose hooks for nav.js
+  const openCourt=c=>{setCourtId(c.id);setTab('court-detail');if(window.__pcnOnTabChange)window.__pcnOnTabChange('courts');};
   useEffect(()=>{window.__pcnSetTab=switchTab;},[]);
   useEffect(()=>{window.__pcnOpenAuth=()=>setShowAuth(true);return()=>{delete window.__pcnOpenAuth;};},[]);
   useEffect(()=>{window.__pcnOpenProfile=()=>setShowProfile(true);return()=>{delete window.__pcnOpenProfile;};},[]);
@@ -977,8 +1258,9 @@ function App(){
   return(
     <div className="app-shell">
       <div className="screen-body">
-        {tab==='home'&&<HomeTab user={user} profile={profile} courts={courts} players={allPlayers} games={games} uLat={uLat} uLng={uLng} onChat={setChatP} onNeedLogin={handleNeedLogin} onSetTab={switchTab}/>}
-        {tab==='courts'&&<CourtsTab courts={courts} uLat={uLat} uLng={uLng}/>}
+        {tab==='home'&&<HomeTab user={user} profile={profile} courts={courts} players={allPlayers} games={games} uLat={uLat} uLng={uLng} onChat={setChatP} onNeedLogin={handleNeedLogin} onSetTab={switchTab} onOpenCourt={openCourt}/>}
+        {tab==='courts'&&<CourtsTab courts={courts} uLat={uLat} uLng={uLng} onOpenCourt={openCourt}/>}
+        {tab==='court-detail'&&<CourtDetailPage courtId={courtId} onBack={()=>switchTab('courts')}/>}
         {tab==='games'&&<GamesTab user={user} profile={profile} games={games} onNeedLogin={handleNeedLogin}/>}
         {tab==='players'&&<PlayersTab user={user} posts={posts} players={allPlayers} onChat={setChatP} onNeedLogin={handleNeedLogin}/>}
         {tab==='profile'&&<ProfileTab user={user} profile={profile} unread={unread} onEditProfile={()=>setShowProfile(true)} onSignOut={handleSignOut} onGoAuth={handleGoAuth} onInbox={()=>setShowInbox(true)}/>}
