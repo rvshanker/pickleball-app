@@ -181,36 +181,45 @@ textarea.fi{resize:vertical;min-height:60px;}
 .fade-in{animation:fadeIn .2s ease;}
 
 /* Court Detail View */
-.cd-header{background:linear-gradient(135deg,var(--navy2),#0a1f1a);padding:14px 18px 12px;border-radius:0 0 18px 18px;margin-bottom:10px;}
-.cd-status-bar{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;margin-top:8px;}
-.cd-status-bar::-webkit-scrollbar{display:none;}
-.cd-pill{display:flex;align-items:center;gap:5px;background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:5px 9px;white-space:nowrap;flex-shrink:0;}
-.cd-pill.g{border-color:rgba(46,204,113,0.3);background:rgba(46,204,113,0.08);}
-.cd-pill.y{border-color:rgba(247,201,72,0.3);background:rgba(247,201,72,0.08);}
-.cd-pill.r{border-color:rgba(247,91,91,0.3);background:rgba(247,91,91,0.08);}
-.cd-pill-lbl{font-size:0.55rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
-.cd-pill-val{font-size:0.78rem;font-weight:800;color:var(--text);}
-.cd-tabs{display:flex;gap:3px;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:3px;margin-bottom:11px;}
-.cd-tab{flex:1;padding:6px 3px;font-family:'DM Sans',sans-serif;font-size:0.68rem;font-weight:700;border:none;background:transparent;color:var(--muted);cursor:pointer;border-radius:8px;transition:all .15s;text-align:center;}
+.cd-section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin:0 16px 12px;}
+.cd-name-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:4px;}
+.cd-badges{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+.cd-live{display:inline-flex;align-items:center;gap:4px;font-size:0.6rem;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.05em;}
+.cd-live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:fadeIn 1s infinite alternate;}
+.cd-crowd-badge{font-size:0.6rem;font-weight:700;padding:3px 8px;border-radius:8px;}
+.cd-crowd-badge.low{background:rgba(46,204,113,0.15);color:var(--green);}
+.cd-crowd-badge.medium{background:rgba(247,201,72,0.15);color:var(--accent);}
+.cd-crowd-badge.high{background:rgba(247,91,91,0.15);color:var(--red);}
+.cd-wx-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+.cd-wx-card{background:var(--navy);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;}
+.cd-glance-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.cd-glance-sub{font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;text-align:center;}
+.cd-glance-pills{display:flex;gap:6px;}
+.cd-g-pill{flex:1;background:var(--navy);border:1px solid var(--border);border-radius:10px;padding:6px 8px;text-align:center;}
+.cd-g-pill.lit{background:rgba(46,204,113,0.08);border-color:rgba(46,204,113,0.25);}
+.cd-g-lbl{font-size:0.5rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.cd-g-val{font-size:0.82rem;font-weight:800;color:var(--text);margin-top:1px;}
+.cd-tabs{display:flex;gap:3px;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:3px;margin:0 16px 11px;}
+.cd-tab{flex:1;padding:7px 3px;font-family:'DM Sans',sans-serif;font-size:0.7rem;font-weight:700;border:none;background:transparent;color:var(--muted);cursor:pointer;border-radius:8px;transition:all .15s;text-align:center;}
 .cd-tab.a{background:var(--green-dim);color:var(--green);}
-.cd-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px 15px;margin-bottom:9px;}
-.cd-player{background:var(--navy2);border:1px solid var(--border);border-radius:10px;padding:7px 11px;display:flex;align-items:center;gap:9px;margin-bottom:5px;}
+.cd-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:9px;}
+.cd-player{background:var(--navy2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:9px;margin-bottom:5px;}
 .cd-av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#1F3347,#2ECC71);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.7rem;flex-shrink:0;}
 .cd-timer{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:3px;}
 .cd-timer-fill{height:100%;background:linear-gradient(90deg,#2ECC71,#27AE60);border-radius:2px;transition:width 1s linear;}
-.cd-form{background:var(--card2);border:1px solid var(--border2);border-radius:14px;padding:13px;margin-bottom:10px;}
-.rt-btn{padding:4px 9px;border-radius:8px;border:1.5px solid var(--border2);background:transparent;font-family:'DM Sans',sans-serif;font-size:0.7rem;font-weight:700;cursor:pointer;color:var(--muted);transition:all .15s;}
+.cd-form{background:var(--card2);border:1px solid var(--border2);border-radius:14px;padding:14px;margin-bottom:10px;}
+.rt-btn{padding:5px 10px;border-radius:8px;border:1.5px solid var(--border2);background:transparent;font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:700;cursor:pointer;color:var(--muted);transition:all .15s;}
 .rt-btn.s{border-color:rgba(46,204,113,0.4);background:var(--green-dim);color:var(--green);}
-.dr-btn{padding:6px 8px;font-family:'DM Sans',sans-serif;font-size:0.68rem;font-weight:700;border:1.5px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;border-radius:8px;transition:all .15s;text-align:center;}
+.dr-btn{padding:6px 10px;font-family:'DM Sans',sans-serif;font-size:0.7rem;font-weight:700;border:1.5px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;border-radius:8px;transition:all .15s;text-align:center;}
 .dr-btn.a{border-color:rgba(46,204,113,0.4);background:var(--green-dim);color:var(--green);}
 .wx-bar{display:flex;overflow-x:auto;scrollbar-width:none;background:var(--card);border:1px solid var(--border);border-radius:10px;}
 .wx-bar::-webkit-scrollbar{display:none;}
 .wx-h{display:flex;flex-direction:column;align-items:center;padding:5px 8px;min-width:52px;border-right:1px solid var(--border);flex-shrink:0;}
 .wx-h:last-child{border-right:none;}
 .wx-h.now{background:var(--green-dim);border-radius:7px;}
-.ct-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:11px 13px;margin-bottom:7px;}
+.ct-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:12px 14px;margin-bottom:8px;}
 .ct-tog{display:flex;border:1px solid var(--border2);border-radius:9px;overflow:hidden;}
-.ct-tog button{flex:1;padding:7px 5px;font-family:'DM Sans',sans-serif;font-size:0.68rem;font-weight:700;border:none;cursor:pointer;transition:all .15s;color:var(--muted);background:transparent;}
+.ct-tog button{flex:1;padding:8px 5px;font-family:'DM Sans',sans-serif;font-size:0.7rem;font-weight:700;border:none;cursor:pointer;transition:all .15s;color:var(--muted);background:transparent;}
 .ct-tog button.on{background:var(--green);color:white;}
 .ct-tog button.off{background:var(--card2);color:var(--text);}
 .ct-tog button.warn{background:var(--red);color:white;}
@@ -697,60 +706,91 @@ function CourtDetailPage({courtId,onBack}){
     const condMap={closed:{e:'🚫',l:'Closed',c:'r'},wet:{e:'💧',l:'Wet',c:'y'},hot:{e:'🥵',l:'Hot',c:'y'},windy:{e:'🌬️',l:'Windy',c:'y'}};
     const timeOpts=buildTimeOpts();
 
-    return(<div className="fade-in">
-        {/* ── HEADER ── */}
-        <div className="cd-header">
-            <div style={{display:'flex',alignItems:'flex-start',gap:10,marginBottom:6}}>
-                <button onClick={onBack} className="icon-btn" style={{position:'static',flexShrink:0,marginTop:2}}>←</button>
+    return(<div className="fade-in" style={{paddingTop:8}}>
+        {/* Back button */}
+        <div style={{padding:'0 16px 8px',display:'flex',alignItems:'center',gap:8}}>
+            <button onClick={onBack} className="icon-btn" style={{position:'static'}}>←</button>
+        </div>
+
+        {/* ── CARD 1: Court Name + Weather ── */}
+        <div className="cd-section">
+            <div className="cd-name-row">
                 <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontFamily:'Syne',fontSize:'1.05rem',fontWeight:800,lineHeight:1.2}}>{courtData.name}</div>
-                    <div style={{fontSize:'0.65rem',color:'var(--muted)',marginTop:3,display:'flex',alignItems:'center',gap:4}}>
-                        <span style={{width:5,height:5,borderRadius:'50%',background:'var(--green)',display:'inline-block'}}/>
-                        <span>Live</span>
-                        {courtData.address&&<span>·</span>}
-                        {courtData.address&&<a href={'https://maps.google.com/?q='+encodeURIComponent(courtData.address)} target="_blank" rel="noopener noreferrer" style={{color:'var(--green)',textDecoration:'none',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>📍 {courtData.address}</a>}
-                    </div>
+                    <div style={{fontSize:'0.95rem',fontWeight:700,lineHeight:1.25,marginBottom:4}}>{courtData.name}</div>
+                    <div style={{fontSize:'0.68rem',color:'var(--muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>📍 {courtData.address||'No address'}</div>
                 </div>
-                {weather&&<div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,padding:'4px 8px',textAlign:'center',flexShrink:0}}>
-                    <div style={{fontSize:'0.9rem'}}>{wxIcon(weather.temp,weather.wind)}</div>
-                    <div style={{fontSize:'0.72rem',fontWeight:800}}>{weather.temp}°</div>
-                    <div style={{fontSize:'0.5rem',color:'var(--muted)'}}>💨{weather.wind}</div>
-                </div>}
+                <div className="cd-badges">
+                    <span className="cd-live"><span className="cd-live-dot"/>LIVE</span>
+                    <span className={'cd-crowd-badge '+(courtData.crowdLevel||'low')}>{courtData.crowdLevel==='high'?'Packed':courtData.crowdLevel==='medium'?'Busy':'Open'}</span>
+                </div>
             </div>
 
-            {/* Forecast strip */}
-            {forecast.length>0&&<div className="wx-bar" style={{marginBottom:8}}>{forecast.map((h,i)=><div key={i} className={'wx-h'+(i===0?' now':'')}>
-                <div style={{fontSize:'0.5rem',fontWeight:700,color:'var(--green)'}}>{i===0?'Now':h.dt.toLocaleTimeString([],{hour:'numeric'})}</div>
-                <div style={{fontSize:'0.72rem'}}>{wxIcon(h.temp,h.wind)}</div>
-                <div style={{fontSize:'0.68rem',fontWeight:800}}>{h.temp}°</div>
-                <div style={{fontSize:'0.5rem',color:'var(--muted)'}}>💨{h.wind}</div>
-            </div>)}</div>}
+            {/* Weather row */}
+            {weather&&<div className="cd-wx-row">
+                <div className="cd-wx-card">
+                    <div style={{fontSize:'1.5rem',lineHeight:1}}>{wxIcon(weather.temp,weather.wind)}</div>
+                    <div>
+                        <div style={{fontSize:'0.6rem',color:'var(--muted)',fontWeight:600}}>Current</div>
+                        <div style={{fontSize:'1.05rem',fontWeight:800}}>{weather.temp}°F</div>
+                    </div>
+                </div>
+                <div className="cd-wx-card">
+                    <div>
+                        <div style={{fontSize:'0.6rem',color:'var(--muted)',fontWeight:600}}>Daily High</div>
+                        <div style={{fontSize:'0.82rem',fontWeight:700}}>High <span style={{fontWeight:800,fontSize:'1.05rem'}}>{forecast.length>0?Math.max(...forecast.map(h=>h.temp)):weather.temp}°F</span></div>
+                    </div>
+                </div>
+            </div>}
+        </div>
 
-            {/* Status pills */}
-            <div className="cd-status-bar">
-                <div className={'cd-pill'+(nowTotal>0?' g':'')}><span style={{fontSize:'0.75rem'}}>👥</span><div><div className="cd-pill-lbl">Playing</div><div className="cd-pill-val">{nowTotal}</div></div></div>
-                <div className={'cd-pill'+(laterTotal>0?' g':'')}><span style={{fontSize:'0.75rem'}}>⏰</span><div><div className="cd-pill-lbl">Coming</div><div className="cd-pill-val">{laterTotal}</div></div></div>
-                {courtData.condition&&courtData.condition!=='open'&&condMap[courtData.condition]&&<div className={'cd-pill '+condMap[courtData.condition].c}><span style={{fontSize:'0.75rem'}}>{condMap[courtData.condition].e}</span><div><div className="cd-pill-lbl">Court</div><div className="cd-pill-val">{condMap[courtData.condition].l}</div></div></div>}
-                <div className={'cd-pill '+crowdColor}><span style={{fontSize:'0.75rem'}}>{courtData.crowdLevel==='low'?'🟢':courtData.crowdLevel==='medium'?'🟡':'🔴'}</span><div><div className="cd-pill-lbl">Crowd</div><div className="cd-pill-val">{courtData.crowdLevel==='low'?'Light':courtData.crowdLevel==='medium'?'Busy':'Packed'}</div></div></div>
-                <div className="cd-pill"><span style={{fontSize:'0.75rem'}}>{courtData.lightsOn?'💡':'🌙'}</span><div><div className="cd-pill-lbl">Lights</div><div className="cd-pill-val">{courtData.lightsOn?'ON':'OFF'}</div></div></div>
-                <div className={'cd-pill'+(open>0?' g':' r')}><div><div className="cd-pill-lbl">Rotation</div><div className="cd-pill-val">{open}/{total}</div></div></div>
+        {/* ── CARD 2: At a Glance ── */}
+        <div className="cd-section">
+            <div style={{fontSize:'0.78rem',fontWeight:700,marginBottom:10}}>📊 At a Glance</div>
+            <div className="cd-glance-grid">
+                <div>
+                    <div className="cd-glance-sub">Activity</div>
+                    <div className="cd-glance-pills">
+                        <div className={'cd-g-pill'+(nowTotal>0?' lit':'')}>
+                            <div className="cd-g-lbl">👥 Playing</div>
+                            <div className="cd-g-val">{nowTotal}</div>
+                        </div>
+                        <div className={'cd-g-pill'+(laterTotal>0?' lit':'')}>
+                            <div className="cd-g-lbl">⏰ Coming</div>
+                            <div className="cd-g-val">{laterTotal}</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div className="cd-glance-sub">Court Status</div>
+                    <div className="cd-glance-pills">
+                        <div className={'cd-g-pill'+(courtData.lightsOn?' lit':'')}>
+                            <div className="cd-g-lbl">{courtData.lightsOn?'💡':'🌙'} Lights</div>
+                            <div className="cd-g-val">{courtData.lightsOn?'ON':'OFF'}</div>
+                        </div>
+                        <div className={'cd-g-pill'+(open>0?' lit':'')}>
+                            <div className="cd-g-lbl">⚙️ Rotation</div>
+                            <div className="cd-g-val">{open}/{total}</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        {/* ── BODY ── */}
-        <div className="px">
-            <div className="cd-tabs">
-                <button className={'cd-tab'+(tab==='now'?' a':'')} onClick={()=>setTab('now')}>👥 Now ({nowTotal})</button>
-                <button className={'cd-tab'+(tab==='schedule'?' a':'')} onClick={()=>setTab('schedule')}>📅 ({laterTotal})</button>
-                <button className={'cd-tab'+(tab==='controls'?' a':'')} onClick={()=>setTab('controls')}>⚙️</button>
-                <button className={'cd-tab'+(tab==='info'?' a':'')} onClick={()=>setTab('info')}>ℹ️</button>
-            </div>
+        {/* ── TABS ── */}
+        <div className="cd-tabs">
+            <button className={'cd-tab'+(tab==='now'?' a':'')} onClick={()=>setTab('now')}>👥 Who's Here</button>
+            <button className={'cd-tab'+(tab==='schedule'?' a':'')} onClick={()=>setTab('schedule')}>📅 Schedule</button>
+            <button className={'cd-tab'+(tab==='controls'?' a':'')} onClick={()=>setTab('controls')}>⚙️ Controls</button>
+            <button className={'cd-tab'+(tab==='info'?' a':'')} onClick={()=>setTab('info')}>ℹ️ Info</button>
+        </div>
 
+        {/* ── TAB CONTENT ── */}
+        <div style={{padding:'0 16px'}}>
             {/* NOW TAB */}
             {tab==='now'&&<div className="cd-card">
                 <div style={{fontSize:'0.78rem',fontWeight:700,marginBottom:10}}>👥 Who's Here?</div>
                 {myCheckIn?(
-                    <div style={{background:'var(--green-dim)',border:'1px solid rgba(46,204,113,0.3)',borderRadius:12,padding:'10px 13px',marginBottom:10}}>
+                    <div style={{background:'var(--green-dim)',border:'1px solid rgba(46,204,113,0.3)',borderRadius:12,padding:'10px 14px',marginBottom:10}}>
                         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
                             <div>
                                 <div style={{fontSize:'0.75rem',fontWeight:700,color:'var(--green)'}}>✅ Checked in as {myCheckIn.userName}</div>
@@ -762,9 +802,9 @@ function CourtDetailPage({courtId,onBack}){
                         </div>
                     </div>
                 ):(!showForm?(
-                    <div style={{background:'rgba(255,255,255,.03)',border:'1px dashed var(--border2)',borderRadius:12,padding:16,textAlign:'center',marginBottom:10}}>
-                        <div style={{fontSize:'0.8rem',color:'var(--muted)',marginBottom:10}}>Let others know you're here!</div>
-                        <button className="btn btn-primary" onClick={()=>setShowForm(true)}>🏟 Check In</button>
+                    <div style={{background:'rgba(255,255,255,.03)',border:'1px dashed var(--border2)',borderRadius:12,padding:'18px 16px',textAlign:'center',marginBottom:10}}>
+                        <div style={{fontSize:'0.82rem',color:'var(--muted)',marginBottom:12}}>Let others know you're here!</div>
+                        <button className="btn btn-primary" onClick={()=>setShowForm(true)}>🏟 CHECK IN</button>
                     </div>
                 ):(
                     <div className="cd-form">
@@ -779,8 +819,6 @@ function CourtDetailPage({courtId,onBack}){
                             </div>
                         </div>
                         <div className="fg"><div className="fl">Comment <span style={{fontWeight:500,textTransform:'none',letterSpacing:0,color:'var(--muted2)'}}>optional</span></div><input className="fi" value={comment} onChange={e=>setComment(e.target.value)} placeholder="e.g. looking for a 3rd or 4th…" maxLength={120}/></div>
-
-                        {/* Check-in buttons: Playing Now + Later */}
                         {!showLater?(
                             <div style={{display:'flex',gap:7}}>
                                 <button className="btn btn-primary" onClick={()=>submitCheckIn('now',null)} disabled={!userName.trim()} style={{flex:1,opacity:userName.trim()?1:.5}}>👥 Playing Now</button>
@@ -803,49 +841,44 @@ function CourtDetailPage({courtId,onBack}){
                         )}
                     </div>
                 ))}
-                {nowPlayers.length>0?nowPlayers.map(p=><CourtPlayerRow key={p.id} p={p} isNow={true}/>):<div style={{textAlign:'center',padding:'18px 0',color:'var(--muted)',fontSize:'0.8rem'}}>No one here yet — be the first! 🎾</div>}
+                {nowPlayers.length>0?nowPlayers.map(p=><CourtPlayerRow key={p.id} p={p} isNow={true}/>):<div style={{textAlign:'center',padding:'16px 0',color:'var(--muted)',fontSize:'0.8rem'}}>No one here yet — be the first! 🎾</div>}
             </div>}
 
             {/* SCHEDULE TAB */}
             {tab==='schedule'&&<div className="cd-card">
                 <div style={{fontSize:'0.78rem',fontWeight:700,marginBottom:10}}>📅 Coming Soon ({laterTotal})</div>
-                {laterPlayers.length===0?<div style={{textAlign:'center',padding:'18px 0',color:'var(--muted)',fontSize:'0.8rem'}}>Nobody scheduled yet.</div>:laterPlayers.map(p=><CourtPlayerRow key={p.id} p={p} isNow={false}/>)}
+                {laterPlayers.length===0?<div style={{textAlign:'center',padding:'16px 0',color:'var(--muted)',fontSize:'0.8rem'}}>Nobody scheduled yet.</div>:laterPlayers.map(p=><CourtPlayerRow key={p.id} p={p} isNow={false}/>)}
             </div>}
 
             {/* CONTROLS TAB */}
             {tab==='controls'&&<div>
-                <div className="ct-card"><div style={{fontSize:'0.68rem',fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>🟢 Crowd Level</div><div className="ct-tog">{[['low','Light'],['medium','Busy'],['high','Packed']].map(([v,l])=><button key={v} onClick={()=>updateCourt('crowdLevel',v)} className={courtData.crowdLevel===v?'on':''}>{l}</button>)}</div></div>
-                <div className="ct-card"><div style={{fontSize:'0.68rem',fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>📋 Condition</div><div className="ct-tog">{[['open','✅ Open'],['closed','🚫 Closed'],['wet','💧 Wet']].map(([v,l])=><button key={v} onClick={()=>updateCourt('condition',v)} className={(courtData.condition||'open')===v?(v==='closed'?'warn':'on'):''}>{l}</button>)}</div></div>
-                <div className="ct-card"><div style={{fontSize:'0.68rem',fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>💡 Lights</div><div className="ct-tog"><button onClick={()=>updateCourt('lightsOn',true)} className={courtData.lightsOn?'on':''}>💡 ON</button><button onClick={()=>updateCourt('lightsOn',false)} className={!courtData.lightsOn?'off':''}>🌙 OFF</button></div></div>
-                <div className="ct-card"><div style={{fontSize:'0.68rem',fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>🏟 Courts in Rotation</div><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{openOpts.map(n=><button key={n} onClick={()=>updateCourt('openCourts',n)} className={'dr-btn'+(open===n?' a':'')} style={{minWidth:38}}>{n}</button>)}</div></div>
+                <div className="ct-card"><div style={{fontSize:'0.7rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>🟢 Crowd Level</div><div className="ct-tog">{[['low','Light'],['medium','Busy'],['high','Packed']].map(([v,l])=><button key={v} onClick={()=>updateCourt('crowdLevel',v)} className={courtData.crowdLevel===v?'on':''}>{l}</button>)}</div></div>
+                <div className="ct-card"><div style={{fontSize:'0.7rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>📋 Condition</div><div className="ct-tog">{[['open','✅ Open'],['closed','🚫 Closed'],['wet','💧 Wet']].map(([v,l])=><button key={v} onClick={()=>updateCourt('condition',v)} className={(courtData.condition||'open')===v?(v==='closed'?'warn':'on'):''}>{l}</button>)}</div></div>
+                <div className="ct-card"><div style={{fontSize:'0.7rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>💡 Lights</div><div className="ct-tog"><button onClick={()=>updateCourt('lightsOn',true)} className={courtData.lightsOn?'on':''}>💡 ON</button><button onClick={()=>updateCourt('lightsOn',false)} className={!courtData.lightsOn?'off':''}>🌙 OFF</button></div></div>
+                <div className="ct-card"><div style={{fontSize:'0.7rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>🏟 Courts in Rotation</div><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{openOpts.map(n=><button key={n} onClick={()=>updateCourt('openCourts',n)} className={'dr-btn'+(open===n?' a':'')} style={{minWidth:38}}>{n}</button>)}</div></div>
             </div>}
 
             {/* INFO TAB */}
             {tab==='info'&&<div className="cd-card">
                 <div style={{fontSize:'0.68rem',fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--muted)',marginBottom:14}}>ℹ️ Court Info</div>
-
                 <div style={{marginBottom:14}}>
                     <div className="fl">Location</div>
                     <div style={{fontSize:'0.82rem',fontWeight:600}}>{courtData.name}</div>
                     <div style={{fontSize:'0.72rem',color:'var(--muted)',marginTop:2}}>{courtData.address}</div>
                     {courtData.address&&<a href={'https://maps.google.com/?q='+encodeURIComponent(courtData.address)} target="_blank" rel="noopener noreferrer" style={{display:'inline-block',marginTop:5,color:'var(--green)',fontSize:'0.7rem',fontWeight:600,textDecoration:'none'}}>🗺️ Open in Google Maps →</a>}
                 </div>
-
                 <div style={{marginBottom:14}}>
                     <div className="fl">Courts</div>
                     <div style={{fontSize:'0.88rem',fontWeight:700}}>{total} courts</div>
                 </div>
-
                 {courtData.amenities?.length>0&&<div style={{marginBottom:14}}>
                     <div className="fl">Amenities</div>
                     <div style={{display:'flex',flexWrap:'wrap',gap:4}}>{courtData.amenities.map(k=>{const a=AMENITIES.find(x=>x.key===k);return a?<span key={k} className="tag t-green">{a.label}</span>:null;})}</div>
                 </div>}
-
                 {courtData.courtRules&&<div style={{marginBottom:14}}>
                     <div className="fl">Rules & Notes</div>
                     <div style={{background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:10,fontSize:'0.75rem',lineHeight:1.5,whiteSpace:'pre-wrap'}}>{courtData.courtRules}</div>
                 </div>}
-
                 <button className="btn btn-ghost" onClick={()=>setShowEdit(true)} style={{width:'100%'}}>✏️ Edit Court Info</button>
             </div>}
         </div>
@@ -1255,7 +1288,7 @@ function App(){
   const[profile,setProfile]=useState(undefined);
   const[tab,setTab]=useState(()=>new URLSearchParams(window.location.search).get('tab')||'home');
   const[courtId,setCourtId]=useState(null);
-  const switchTab=t=>{setTab(t);setCourtId(null);if(window.__pcnOnTabChange)window.__pcnOnTabChange(t);};
+  const switchTab=t=>{setTab(t);setCourtId(null);setShowFab(false);if(window.__pcnOnTabChange)window.__pcnOnTabChange(t);};
 
   // Expose hooks for nav.js
   const openCourt=c=>{setCourtId(c.id);setTab('court-detail');if(window.__pcnOnTabChange)window.__pcnOnTabChange('courts');};
@@ -1387,12 +1420,12 @@ function App(){
         {tab==='profile'&&<ProfileTab user={user} profile={profile} unread={unread} onEditProfile={()=>setShowProfile(true)} onSignOut={handleSignOut} onGoAuth={handleGoAuth} onInbox={()=>setShowInbox(true)}/>}
       </div>
 
-      {/* FAB */}
-      <div className="fab-wrap">
+      {/* FAB — only on home */}
+      {tab==='home'&&<div className="fab-wrap">
         <div className={`fab ${showFab?'open':''}`} onClick={()=>setShowFab(!showFab)}>
           {showFab?'✕ Close':'🏓 I WANT TO PLAY'}
         </div>
-      </div>
+      </div>}
 
       {showFab&&<FabSheet onClose={()=>setShowFab(false)} onStartGame={handleFabStartGame} onAvailable={handleFabAvailable} onQueue={handleFabQueue}/>}
       {loginPromptPlayer!==undefined&&<LoginPrompt player={loginPromptPlayer} onClose={()=>setLoginPromptPlayer(undefined)} onGoAuth={handleGoAuth}/>}
