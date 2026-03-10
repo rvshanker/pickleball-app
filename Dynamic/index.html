@@ -627,13 +627,51 @@ function CourtPlayerRow({p,isNow}){
 }
 
 /* ── CourtDetailPage ── */
+function buildTimeOpts(){const o=[];const n=new Date();const s=new Date(n);s.setMinutes(0,0,0);s.setHours(s.getHours()+1);const e=new Date(n);e.setHours(23,0,0,0);const c=new Date(s);while(c<=e){o.push({label:c.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}),value:c.getTime()});c.setHours(c.getHours()+1);}return o;}
+
+function EditCourtModal({court,onClose,onSaved}){
+  const[name,setName]=useState(court.name||'');const[address,setAddress]=useState(court.address||'');
+  const[numCourts,setNumCourts]=useState(court.numberOfCourts||4);
+  const[amenities,setAmenities]=useState(court.amenities||[]);
+  const[rules,setRules]=useState(court.courtRules||'');const[saving,setSaving]=useState(false);
+  const toggleAm=k=>setAmenities(a=>a.includes(k)?a.filter(x=>x!==k):[...a,k]);
+  const save=async()=>{if(!name.trim()){alert('Court name required.');return;}setSaving(true);
+    try{await db.collection('courts').doc(court.id).update({name:name.trim(),address:address.trim(),numberOfCourts:numCourts,amenities,courtRules:rules.trim()});onSaved({...court,name:name.trim(),address:address.trim(),numberOfCourts:numCourts,amenities,courtRules:rules.trim()});}
+    catch(e){alert('Save failed: '+e.message);}setSaving(false);};
+  return(<div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+    <div className="modal-sheet"><div className="modal-handle"/>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+        <div className="modal-title">✏️ Edit Court</div>
+        <button onClick={onClose} className="icon-btn" style={{position:'static'}}>✕</button>
+      </div>
+      <div className="fg"><div className="fl">Court Name *</div><input className="fi" value={name} onChange={e=>setName(e.target.value)}/></div>
+      <div className="fg"><div className="fl">Address</div><input className="fi" value={address} onChange={e=>setAddress(e.target.value)} placeholder="Full address"/></div>
+      <div className="fg"><div className="fl">Number of Courts</div>
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <button onClick={()=>setNumCourts(n=>Math.max(1,n-1))} className="icon-btn" style={{width:34,height:34,fontSize:'0.95rem'}}>−</button>
+          <span style={{fontSize:'1.1rem',fontWeight:800,fontFamily:'Syne',minWidth:28,textAlign:'center'}}>{numCourts}</span>
+          <button onClick={()=>setNumCourts(n=>Math.min(30,n+1))} style={{width:34,height:34,borderRadius:'50%',background:'var(--green)',border:'none',color:'white',fontSize:'0.95rem',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
+        </div>
+      </div>
+      <div className="fg"><div className="fl">Amenities</div>
+        <div style={{display:'flex',flexWrap:'wrap',gap:3}}>{AMENITIES.map(a=><button key={a.key} className={'amen-dk'+(amenities.includes(a.key)?' on':'')} onClick={()=>toggleAm(a.key)}>{a.label}</button>)}</div>
+      </div>
+      <div className="fg"><div className="fl">Rules / Notes</div><textarea className="fi" value={rules} onChange={e=>setRules(e.target.value)} placeholder="e.g. Open daily 6am–10pm" rows={2}/></div>
+      <button className="btn btn-primary" onClick={save} disabled={saving} style={{width:'100%',opacity:saving?.6:1}}>{saving?'Saving…':'💾 Save Changes'}</button>
+    </div>
+  </div>);
+}
+
 function CourtDetailPage({courtId,onBack}){
     const[courtData,setCourtData]=useState(null);const[checkIns,setCheckIns]=useState([]);
     const[loading,setLoading]=useState(true);const[tab,setTab]=useState('now');
-    const[showForm,setShowForm]=useState(false);const[userName,setUserName]=useState('');
+    const[showForm,setShowForm]=useState(false);const[showLater,setShowLater]=useState(false);
+    const[arrivalTime,setArrivalTime]=useState('');
+    const[userName,setUserName]=useState('');
     const[userRating,setUserRating]=useState('');const[duration,setDuration]=useState(120);
     const[guestCount,setGuestCount]=useState(0);const[comment,setComment]=useState('');
     const[weather,setWeather]=useState(null);const[forecast,setForecast]=useState([]);
+    const[showEdit,setShowEdit]=useState(false);
     const checkInsRef=useRef([]);
     const[deviceId]=useState(()=>{let id=localStorage.getItem('pickleDeviceId');if(!id){id='dev_'+Math.random().toString(36).slice(2,11);localStorage.setItem('pickleDeviceId',id);}return id;});
     useEffect(()=>{const n=localStorage.getItem('pickleCourtUserName');const r=localStorage.getItem('pickleCourtRating');if(n)setUserName(n);if(r)setUserRating(r);},[]);
@@ -643,7 +681,7 @@ function CourtDetailPage({courtId,onBack}){
     useEffect(()=>{if(!courtData?.lat||!courtData?.lng)return;const fx=async(la,ln)=>{try{const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+la+'&longitude='+ln+'&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1');const d=await r.json();setWeather({temp:Math.round(d.current.temperature_2m),wind:Math.round(d.current.wind_speed_10m)});const now=new Date();setForecast(d.hourly.time.map((t,i)=>({dt:new Date(t),temp:Math.round(d.hourly.temperature_2m[i]),wind:Math.round(d.hourly.wind_speed_10m[i])})).filter(h=>h.dt>=now&&h.dt.getDate()===now.getDate()).slice(0,10));}catch(e){}};fx(courtData.lat,courtData.lng);},[courtData?.lat,courtData?.lng]);
     const updateCourt=async(field,value)=>{if(!fbOk||!courtId)return;await db.collection('courts').doc(courtId).update({[field]:value}).catch(console.error);};
     const deleteMyCheckIns=async()=>{const snap=await db.collection('courts').doc(courtId).collection('checkins').get();await Promise.all(snap.docs.filter(d=>d.data().deviceId===deviceId).map(d=>d.ref.delete()));};
-    const submitCheckIn=async(status)=>{if(!fbOk||!userName.trim()){alert(!userName.trim()?'Enter your name':'DB error');return;}try{await deleteMyCheckIns();await db.collection('courts').doc(courtId).collection('checkins').add({userName,deviceId,rating:userRating||null,status:status==='now'?'active':'later',guests:guestCount,duration,comment:comment.trim()||'',arrivalTime:Date.now(),timestamp:Date.now()});localStorage.setItem('pickleCourtUserName',userName);localStorage.setItem('pickleCourtRating',userRating);setShowForm(false);setGuestCount(0);setComment('');}catch(e){alert('Check-in failed: '+e.message);}};
+    const submitCheckIn=async(status,atTime)=>{if(!fbOk||!userName.trim()){alert(!userName.trim()?'Enter your name':'DB error');return;}try{await deleteMyCheckIns();const ciStatus=status==='now'?'active':'later';await db.collection('courts').doc(courtId).collection('checkins').add({userName,deviceId,rating:userRating||null,status:ciStatus,guests:guestCount,duration,comment:comment.trim()||'',arrivalTime:atTime||Date.now(),timestamp:Date.now()});localStorage.setItem('pickleCourtUserName',userName);localStorage.setItem('pickleCourtRating',userRating);setShowForm(false);setShowLater(false);setArrivalTime('');setGuestCount(0);setComment('');}catch(e){alert('Check-in failed: '+e.message);}};
     const handleCheckOut=async()=>{await deleteMyCheckIns();};
 
     if(loading)return<div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:200}}><div style={{textAlign:'center'}}><div style={{fontSize:'2rem',marginBottom:8}}>🏟</div><div style={{fontSize:'0.82rem',color:'var(--muted)'}}>Loading court…</div></div></div>;
@@ -657,39 +695,49 @@ function CourtDetailPage({courtId,onBack}){
     const openOpts=Array.from({length:total+1},(_,i)=>i);
     const crowdColor=courtData.crowdLevel==='low'?'g':courtData.crowdLevel==='medium'?'y':'r';
     const condMap={closed:{e:'🚫',l:'Closed',c:'r'},wet:{e:'💧',l:'Wet',c:'y'},hot:{e:'🥵',l:'Hot',c:'y'},windy:{e:'🌬️',l:'Windy',c:'y'}};
+    const timeOpts=buildTimeOpts();
 
     return(<div className="fade-in">
+        {/* ── HEADER ── */}
         <div className="cd-header">
-            <div style={{display:'flex',alignItems:'flex-start',gap:10}}>
+            <div style={{display:'flex',alignItems:'flex-start',gap:10,marginBottom:6}}>
                 <button onClick={onBack} className="icon-btn" style={{position:'static',flexShrink:0,marginTop:2}}>←</button>
                 <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontFamily:'Syne',fontSize:'1.05rem',fontWeight:800}}>{courtData.name}</div>
-                    <div style={{fontSize:'0.68rem',color:'var(--muted)',marginTop:2,display:'flex',alignItems:'center',gap:4}}>
-                        <span style={{width:6,height:6,borderRadius:'50%',background:'var(--green)',display:'inline-block'}}/>
-                        Live{courtData.address?<> · <a href={'https://maps.google.com/?q='+encodeURIComponent(courtData.address)} target="_blank" rel="noopener noreferrer" style={{color:'var(--green)',textDecoration:'none',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>📍 {courtData.address}</a></>:''}
+                    <div style={{fontFamily:'Syne',fontSize:'1.05rem',fontWeight:800,lineHeight:1.2}}>{courtData.name}</div>
+                    <div style={{fontSize:'0.65rem',color:'var(--muted)',marginTop:3,display:'flex',alignItems:'center',gap:4}}>
+                        <span style={{width:5,height:5,borderRadius:'50%',background:'var(--green)',display:'inline-block'}}/>
+                        <span>Live</span>
+                        {courtData.address&&<span>·</span>}
+                        {courtData.address&&<a href={'https://maps.google.com/?q='+encodeURIComponent(courtData.address)} target="_blank" rel="noopener noreferrer" style={{color:'var(--green)',textDecoration:'none',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>📍 {courtData.address}</a>}
                     </div>
                 </div>
                 {weather&&<div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,padding:'4px 8px',textAlign:'center',flexShrink:0}}>
-                    <div style={{fontSize:'0.95rem'}}>{wxIcon(weather.temp,weather.wind)}</div>
+                    <div style={{fontSize:'0.9rem'}}>{wxIcon(weather.temp,weather.wind)}</div>
                     <div style={{fontSize:'0.72rem',fontWeight:800}}>{weather.temp}°</div>
-                    <div style={{fontSize:'0.55rem',color:'var(--muted)'}}>💨{weather.wind}</div>
+                    <div style={{fontSize:'0.5rem',color:'var(--muted)'}}>💨{weather.wind}</div>
                 </div>}
             </div>
-            {forecast.length>0&&<div className="wx-bar" style={{marginTop:8}}>{forecast.map((h,i)=><div key={i} className={'wx-h'+(i===0?' now':'')}>
-                <div style={{fontSize:'0.55rem',fontWeight:700,color:'var(--green)'}}>{i===0?'Now':h.dt.toLocaleTimeString([],{hour:'numeric'})}</div>
-                <div style={{fontSize:'0.78rem'}}>{wxIcon(h.temp,h.wind)}</div>
-                <div style={{fontSize:'0.72rem',fontWeight:800}}>{h.temp}°</div>
-                <div style={{fontSize:'0.55rem',color:'var(--muted)'}}>💨{h.wind}</div>
+
+            {/* Forecast strip */}
+            {forecast.length>0&&<div className="wx-bar" style={{marginBottom:8}}>{forecast.map((h,i)=><div key={i} className={'wx-h'+(i===0?' now':'')}>
+                <div style={{fontSize:'0.5rem',fontWeight:700,color:'var(--green)'}}>{i===0?'Now':h.dt.toLocaleTimeString([],{hour:'numeric'})}</div>
+                <div style={{fontSize:'0.72rem'}}>{wxIcon(h.temp,h.wind)}</div>
+                <div style={{fontSize:'0.68rem',fontWeight:800}}>{h.temp}°</div>
+                <div style={{fontSize:'0.5rem',color:'var(--muted)'}}>💨{h.wind}</div>
             </div>)}</div>}
+
+            {/* Status pills */}
             <div className="cd-status-bar">
-                <div className={'cd-pill'+(nowTotal>0?' g':'')}><span>👥</span><div><div className="cd-pill-lbl">Playing</div><div className="cd-pill-val">{nowTotal}</div></div></div>
-                <div className={'cd-pill'+(laterTotal>0?' g':'')}><span>⏰</span><div><div className="cd-pill-lbl">Coming</div><div className="cd-pill-val">{laterTotal}</div></div></div>
-                {courtData.condition&&courtData.condition!=='open'&&condMap[courtData.condition]&&<div className={'cd-pill '+condMap[courtData.condition].c}><span>{condMap[courtData.condition].e}</span><div><div className="cd-pill-lbl">Court</div><div className="cd-pill-val">{condMap[courtData.condition].l}</div></div></div>}
-                <div className={'cd-pill '+crowdColor}><span>{courtData.crowdLevel==='low'?'🟢':courtData.crowdLevel==='medium'?'🟡':'🔴'}</span><div><div className="cd-pill-lbl">Crowd</div><div className="cd-pill-val">{courtData.crowdLevel==='low'?'Light':courtData.crowdLevel==='medium'?'Busy':'Packed'}</div></div></div>
-                <div className="cd-pill"><span>{courtData.lightsOn?'💡':'🌙'}</span><div><div className="cd-pill-lbl">Lights</div><div className="cd-pill-val">{courtData.lightsOn?'ON':'OFF'}</div></div></div>
+                <div className={'cd-pill'+(nowTotal>0?' g':'')}><span style={{fontSize:'0.75rem'}}>👥</span><div><div className="cd-pill-lbl">Playing</div><div className="cd-pill-val">{nowTotal}</div></div></div>
+                <div className={'cd-pill'+(laterTotal>0?' g':'')}><span style={{fontSize:'0.75rem'}}>⏰</span><div><div className="cd-pill-lbl">Coming</div><div className="cd-pill-val">{laterTotal}</div></div></div>
+                {courtData.condition&&courtData.condition!=='open'&&condMap[courtData.condition]&&<div className={'cd-pill '+condMap[courtData.condition].c}><span style={{fontSize:'0.75rem'}}>{condMap[courtData.condition].e}</span><div><div className="cd-pill-lbl">Court</div><div className="cd-pill-val">{condMap[courtData.condition].l}</div></div></div>}
+                <div className={'cd-pill '+crowdColor}><span style={{fontSize:'0.75rem'}}>{courtData.crowdLevel==='low'?'🟢':courtData.crowdLevel==='medium'?'🟡':'🔴'}</span><div><div className="cd-pill-lbl">Crowd</div><div className="cd-pill-val">{courtData.crowdLevel==='low'?'Light':courtData.crowdLevel==='medium'?'Busy':'Packed'}</div></div></div>
+                <div className="cd-pill"><span style={{fontSize:'0.75rem'}}>{courtData.lightsOn?'💡':'🌙'}</span><div><div className="cd-pill-lbl">Lights</div><div className="cd-pill-val">{courtData.lightsOn?'ON':'OFF'}</div></div></div>
                 <div className={'cd-pill'+(open>0?' g':' r')}><div><div className="cd-pill-lbl">Rotation</div><div className="cd-pill-val">{open}/{total}</div></div></div>
             </div>
         </div>
+
+        {/* ── BODY ── */}
         <div className="px">
             <div className="cd-tabs">
                 <button className={'cd-tab'+(tab==='now'?' a':'')} onClick={()=>setTab('now')}>👥 Now ({nowTotal})</button>
@@ -697,38 +745,111 @@ function CourtDetailPage({courtId,onBack}){
                 <button className={'cd-tab'+(tab==='controls'?' a':'')} onClick={()=>setTab('controls')}>⚙️</button>
                 <button className={'cd-tab'+(tab==='info'?' a':'')} onClick={()=>setTab('info')}>ℹ️</button>
             </div>
+
+            {/* NOW TAB */}
             {tab==='now'&&<div className="cd-card">
-                <div style={{fontFamily:'Syne',fontSize:'0.95rem',fontWeight:800,marginBottom:10}}>👥 Who's Here?</div>
-                {myCheckIn?(<div style={{background:'var(--green-dim)',border:'1px solid rgba(46,204,113,0.3)',borderRadius:12,padding:'10px 13px',marginBottom:10}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}><div><div style={{fontSize:'0.78rem',fontWeight:700,color:'var(--green)'}}>✅ Checked in as {myCheckIn.userName}</div><div style={{fontSize:'0.68rem',color:'var(--green)',opacity:0.8}}>{myCheckIn.status==='active'?'🎾 Playing':'⏰ Arriving'}</div></div><button className="btn btn-danger btn-sm" onClick={handleCheckOut}>Check Out</button></div></div>
-                ):(!showForm?(<div style={{background:'rgba(255,255,255,.03)',border:'1px dashed var(--border2)',borderRadius:12,padding:16,textAlign:'center',marginBottom:10}}><div style={{fontSize:'0.82rem',color:'var(--muted)',marginBottom:10}}>Let others know you're here!</div><button className="btn btn-primary" onClick={()=>setShowForm(true)}>🏟 Check In</button></div>
-                ):(<div className="cd-form">
-                    <div className="fg"><div className="fl">Your Name *</div><input className="fi" value={userName} onChange={e=>setUserName(e.target.value)} placeholder="Enter your name…"/></div>
-                    <div className="fg"><div className="fl">Skill Level</div><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{COURT_RATINGS.map(r=><button key={r.key} className={'rt-btn'+(userRating===r.key?' s':'')} onClick={()=>setUserRating(r.key)}>{r.label}</button>)}</div></div>
-                    <div className="fg"><div className="fl">How Long?</div><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{COURT_DURATIONS.map(d=><button key={d.value} className={'dr-btn'+(duration===d.value?' a':'')} onClick={()=>setDuration(d.value)}>{d.label}</button>)}</div></div>
-                    <div className="fg"><div className="fl">Guests</div><div style={{display:'flex',alignItems:'center',gap:8}}><button onClick={()=>setGuestCount(Math.max(0,guestCount-1))} className="icon-btn" style={{width:32,height:32,fontSize:'0.9rem'}}>−</button><span style={{fontSize:'1.1rem',fontWeight:800,fontFamily:'Syne',minWidth:24,textAlign:'center'}}>{guestCount}</span><button onClick={()=>setGuestCount(Math.min(20,guestCount+1))} style={{width:32,height:32,borderRadius:'50%',background:'var(--green)',border:'none',color:'white',fontSize:'0.9rem',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>+</button></div></div>
-                    <div className="fg"><div className="fl">Comment</div><input className="fi" value={comment} onChange={e=>setComment(e.target.value)} placeholder="e.g. looking for a 3rd…" maxLength={120}/></div>
-                    <div style={{display:'flex',gap:7}}><button className="btn btn-primary" onClick={()=>submitCheckIn('now')} disabled={!userName.trim()} style={{flex:1,opacity:userName.trim()?1:.5}}>👥 Playing Now</button><button className="btn btn-ghost btn-sm" onClick={()=>setShowForm(false)}>Cancel</button></div>
-                </div>))}
-                {nowPlayers.length>0?nowPlayers.map(p=><CourtPlayerRow key={p.id} p={p} isNow={true}/>):<div style={{textAlign:'center',padding:'20px 0',color:'var(--muted)',fontSize:'0.82rem'}}>No one here yet — be the first! 🎾</div>}
+                <div style={{fontSize:'0.78rem',fontWeight:700,marginBottom:10}}>👥 Who's Here?</div>
+                {myCheckIn?(
+                    <div style={{background:'var(--green-dim)',border:'1px solid rgba(46,204,113,0.3)',borderRadius:12,padding:'10px 13px',marginBottom:10}}>
+                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+                            <div>
+                                <div style={{fontSize:'0.75rem',fontWeight:700,color:'var(--green)'}}>✅ Checked in as {myCheckIn.userName}</div>
+                                <div style={{fontSize:'0.65rem',color:'var(--green)',opacity:0.8}}>
+                                    {(myCheckIn.status==='active'||(myCheckIn.status==='later'&&myCheckIn.arrivalTime&&nowMs>=myCheckIn.arrivalTime))?'🎾 Playing now':'⏰ Arriving '+new Date(myCheckIn.arrivalTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
+                                </div>
+                            </div>
+                            <button className="btn btn-danger btn-sm" onClick={handleCheckOut}>Check Out</button>
+                        </div>
+                    </div>
+                ):(!showForm?(
+                    <div style={{background:'rgba(255,255,255,.03)',border:'1px dashed var(--border2)',borderRadius:12,padding:16,textAlign:'center',marginBottom:10}}>
+                        <div style={{fontSize:'0.8rem',color:'var(--muted)',marginBottom:10}}>Let others know you're here!</div>
+                        <button className="btn btn-primary" onClick={()=>setShowForm(true)}>🏟 Check In</button>
+                    </div>
+                ):(
+                    <div className="cd-form">
+                        <div className="fg"><div className="fl">Your Name *</div><input className="fi" value={userName} onChange={e=>setUserName(e.target.value)} placeholder="Enter your name…"/></div>
+                        <div className="fg"><div className="fl">Skill Level</div><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{COURT_RATINGS.map(r=><button key={r.key} className={'rt-btn'+(userRating===r.key?' s':'')} onClick={()=>setUserRating(r.key)}>{r.label}</button>)}</div></div>
+                        <div className="fg"><div className="fl">How Long?</div><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{COURT_DURATIONS.map(d=><button key={d.value} className={'dr-btn'+(duration===d.value?' a':'')} onClick={()=>setDuration(d.value)}>{d.label}</button>)}</div></div>
+                        <div className="fg"><div className="fl">Guests</div>
+                            <div style={{display:'flex',alignItems:'center',gap:8}}>
+                                <button onClick={()=>setGuestCount(Math.max(0,guestCount-1))} className="icon-btn" style={{width:30,height:30,fontSize:'0.85rem'}}>−</button>
+                                <span style={{fontSize:'1rem',fontWeight:800,minWidth:22,textAlign:'center'}}>{guestCount}</span>
+                                <button onClick={()=>setGuestCount(Math.min(20,guestCount+1))} style={{width:30,height:30,borderRadius:'50%',background:'var(--green)',border:'none',color:'white',fontSize:'0.85rem',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
+                            </div>
+                        </div>
+                        <div className="fg"><div className="fl">Comment <span style={{fontWeight:500,textTransform:'none',letterSpacing:0,color:'var(--muted2)'}}>optional</span></div><input className="fi" value={comment} onChange={e=>setComment(e.target.value)} placeholder="e.g. looking for a 3rd or 4th…" maxLength={120}/></div>
+
+                        {/* Check-in buttons: Playing Now + Later */}
+                        {!showLater?(
+                            <div style={{display:'flex',gap:7}}>
+                                <button className="btn btn-primary" onClick={()=>submitCheckIn('now',null)} disabled={!userName.trim()} style={{flex:1,opacity:userName.trim()?1:.5}}>👥 Playing Now</button>
+                                <button className="btn btn-ghost btn-sm" onClick={()=>setShowLater(true)} disabled={!userName.trim()} style={{opacity:userName.trim()?1:.5}}>⏰ Later</button>
+                                <button onClick={()=>{setShowForm(false);setShowLater(false);}} style={{background:'none',border:'none',color:'var(--muted)',cursor:'pointer',fontSize:'0.78rem',padding:'0 6px'}}>Cancel</button>
+                            </div>
+                        ):(
+                            <div>
+                                <div className="fg"><div className="fl">Arrival Time</div>
+                                    <select className="fi" value={arrivalTime} onChange={e=>setArrivalTime(e.target.value)}>
+                                        <option value="">Select time…</option>
+                                        {timeOpts.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+                                    </select>
+                                </div>
+                                <div style={{display:'flex',gap:7}}>
+                                    <button className="btn btn-primary" onClick={()=>{if(!arrivalTime){alert('Select a time');return;}submitCheckIn('later',parseInt(arrivalTime));}} disabled={!userName.trim()||!arrivalTime} style={{flex:1,opacity:(userName.trim()&&arrivalTime)?1:.5}}>✓ Confirm</button>
+                                    <button onClick={()=>setShowLater(false)} style={{background:'none',border:'none',color:'var(--muted)',cursor:'pointer',fontSize:'0.78rem',padding:'0 8px'}}>Back</button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ))}
+                {nowPlayers.length>0?nowPlayers.map(p=><CourtPlayerRow key={p.id} p={p} isNow={true}/>):<div style={{textAlign:'center',padding:'18px 0',color:'var(--muted)',fontSize:'0.8rem'}}>No one here yet — be the first! 🎾</div>}
             </div>}
+
+            {/* SCHEDULE TAB */}
             {tab==='schedule'&&<div className="cd-card">
-                <div style={{fontFamily:'Syne',fontSize:'0.95rem',fontWeight:800,marginBottom:10}}>📅 Coming Soon ({laterTotal})</div>
-                {laterPlayers.length===0?<div style={{textAlign:'center',padding:'20px 0',color:'var(--muted)',fontSize:'0.82rem'}}>Nobody scheduled yet.</div>:laterPlayers.map(p=><CourtPlayerRow key={p.id} p={p} isNow={false}/>)}
+                <div style={{fontSize:'0.78rem',fontWeight:700,marginBottom:10}}>📅 Coming Soon ({laterTotal})</div>
+                {laterPlayers.length===0?<div style={{textAlign:'center',padding:'18px 0',color:'var(--muted)',fontSize:'0.8rem'}}>Nobody scheduled yet.</div>:laterPlayers.map(p=><CourtPlayerRow key={p.id} p={p} isNow={false}/>)}
             </div>}
+
+            {/* CONTROLS TAB */}
             {tab==='controls'&&<div>
-                <div className="ct-card"><div style={{fontSize:'0.72rem',fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>🟢 Crowd Level</div><div className="ct-tog">{[['low','Light'],['medium','Busy'],['high','Packed']].map(([v,l])=><button key={v} onClick={()=>updateCourt('crowdLevel',v)} className={courtData.crowdLevel===v?'on':''}>{l}</button>)}</div></div>
-                <div className="ct-card"><div style={{fontSize:'0.72rem',fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>📋 Condition</div><div className="ct-tog">{[['open','✅ Open'],['closed','🚫 Closed'],['wet','💧 Wet']].map(([v,l])=><button key={v} onClick={()=>updateCourt('condition',v)} className={(courtData.condition||'open')===v?(v==='closed'?'warn':'on'):''}>{l}</button>)}</div></div>
-                <div className="ct-card"><div style={{fontSize:'0.72rem',fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>💡 Lights</div><div className="ct-tog"><button onClick={()=>updateCourt('lightsOn',true)} className={courtData.lightsOn?'on':''}>💡 ON</button><button onClick={()=>updateCourt('lightsOn',false)} className={!courtData.lightsOn?'off':''}>🌙 OFF</button></div></div>
-                <div className="ct-card"><div style={{fontSize:'0.72rem',fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>🏟 Courts in Rotation</div><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{openOpts.map(n=><button key={n} onClick={()=>updateCourt('openCourts',n)} className={'dr-btn'+(open===n?' a':'')} style={{minWidth:38}}>{n}</button>)}</div></div>
+                <div className="ct-card"><div style={{fontSize:'0.68rem',fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>🟢 Crowd Level</div><div className="ct-tog">{[['low','Light'],['medium','Busy'],['high','Packed']].map(([v,l])=><button key={v} onClick={()=>updateCourt('crowdLevel',v)} className={courtData.crowdLevel===v?'on':''}>{l}</button>)}</div></div>
+                <div className="ct-card"><div style={{fontSize:'0.68rem',fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>📋 Condition</div><div className="ct-tog">{[['open','✅ Open'],['closed','🚫 Closed'],['wet','💧 Wet']].map(([v,l])=><button key={v} onClick={()=>updateCourt('condition',v)} className={(courtData.condition||'open')===v?(v==='closed'?'warn':'on'):''}>{l}</button>)}</div></div>
+                <div className="ct-card"><div style={{fontSize:'0.68rem',fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>💡 Lights</div><div className="ct-tog"><button onClick={()=>updateCourt('lightsOn',true)} className={courtData.lightsOn?'on':''}>💡 ON</button><button onClick={()=>updateCourt('lightsOn',false)} className={!courtData.lightsOn?'off':''}>🌙 OFF</button></div></div>
+                <div className="ct-card"><div style={{fontSize:'0.68rem',fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>🏟 Courts in Rotation</div><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{openOpts.map(n=><button key={n} onClick={()=>updateCourt('openCourts',n)} className={'dr-btn'+(open===n?' a':'')} style={{minWidth:38}}>{n}</button>)}</div></div>
             </div>}
+
+            {/* INFO TAB */}
             {tab==='info'&&<div className="cd-card">
-                <div style={{fontFamily:'Syne',fontSize:'0.95rem',fontWeight:800,marginBottom:12}}>ℹ️ Court Info</div>
-                <div style={{marginBottom:12}}><div className="fl">Location</div><div style={{fontSize:'0.88rem',fontWeight:600}}>{courtData.name}</div><div style={{fontSize:'0.75rem',color:'var(--muted)'}}>{courtData.address}</div>{courtData.address&&<a href={'https://maps.google.com/?q='+encodeURIComponent(courtData.address)} target="_blank" rel="noopener noreferrer" style={{display:'inline-block',marginTop:6,color:'var(--green)',fontSize:'0.72rem',fontWeight:600,textDecoration:'none'}}>🗺️ Open in Google Maps →</a>}</div>
-                <div style={{marginBottom:12}}><div className="fl">Courts</div><div style={{fontSize:'1.2rem',fontWeight:800,fontFamily:'Syne'}}>{total} courts</div></div>
-                {courtData.amenities?.length>0&&<div style={{marginBottom:12}}><div className="fl">Amenities</div><div style={{display:'flex',flexWrap:'wrap',gap:4}}>{courtData.amenities.map(k=>{const a=AMENITIES.find(x=>x.key===k);return a?<span key={k} className="tag t-green">{a.label}</span>:null;})}</div></div>}
-                {courtData.courtRules&&<div><div className="fl">Rules & Notes</div><div style={{background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:10,fontSize:'0.78rem',lineHeight:1.5,whiteSpace:'pre-wrap'}}>{courtData.courtRules}</div></div>}
+                <div style={{fontSize:'0.68rem',fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--muted)',marginBottom:14}}>ℹ️ Court Info</div>
+
+                <div style={{marginBottom:14}}>
+                    <div className="fl">Location</div>
+                    <div style={{fontSize:'0.82rem',fontWeight:600}}>{courtData.name}</div>
+                    <div style={{fontSize:'0.72rem',color:'var(--muted)',marginTop:2}}>{courtData.address}</div>
+                    {courtData.address&&<a href={'https://maps.google.com/?q='+encodeURIComponent(courtData.address)} target="_blank" rel="noopener noreferrer" style={{display:'inline-block',marginTop:5,color:'var(--green)',fontSize:'0.7rem',fontWeight:600,textDecoration:'none'}}>🗺️ Open in Google Maps →</a>}
+                </div>
+
+                <div style={{marginBottom:14}}>
+                    <div className="fl">Courts</div>
+                    <div style={{fontSize:'0.88rem',fontWeight:700}}>{total} courts</div>
+                </div>
+
+                {courtData.amenities?.length>0&&<div style={{marginBottom:14}}>
+                    <div className="fl">Amenities</div>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:4}}>{courtData.amenities.map(k=>{const a=AMENITIES.find(x=>x.key===k);return a?<span key={k} className="tag t-green">{a.label}</span>:null;})}</div>
+                </div>}
+
+                {courtData.courtRules&&<div style={{marginBottom:14}}>
+                    <div className="fl">Rules & Notes</div>
+                    <div style={{background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:10,fontSize:'0.75rem',lineHeight:1.5,whiteSpace:'pre-wrap'}}>{courtData.courtRules}</div>
+                </div>}
+
+                <button className="btn btn-ghost" onClick={()=>setShowEdit(true)} style={{width:'100%'}}>✏️ Edit Court Info</button>
             </div>}
         </div>
+        {showEdit&&<EditCourtModal court={courtData} onClose={()=>setShowEdit(false)} onSaved={c=>{setCourtData(c);setShowEdit(false);}}/>}
     </div>);
 }
 
