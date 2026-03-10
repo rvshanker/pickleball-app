@@ -225,6 +225,35 @@ textarea.fi{resize:vertical;min-height:60px;}
 .ct-tog button.warn{background:var(--red);color:white;}
 .amen-dk{display:inline-flex;align-items:center;gap:3px;padding:5px 10px;border-radius:8px;border:1px solid var(--border2);background:transparent;font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;margin:2px;}
 .amen-dk.on{background:var(--green-dim);border-color:rgba(46,204,113,0.4);color:var(--green);}
+
+/* Week schedule picker */
+.week-picker{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:10px;}
+.wp-day{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.wp-day-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);}
+.wp-day-btn{width:100%;aspect-ratio:1;border-radius:8px;border:1.5px solid var(--border2);background:transparent;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .15s;}
+.wp-day-btn.sel{border-color:rgba(46,204,113,0.4);background:var(--green-dim);color:var(--green);}
+.wp-time-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;}
+
+/* Week grid display on card */
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin:6px 0 8px;}
+.wd-col{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.wd-label{font-size:8px;font-weight:700;text-transform:uppercase;color:var(--muted);}
+.wd-pill{width:100%;padding:4px 1px;border-radius:6px;font-size:8px;font-weight:700;text-align:center;border:1.5px solid transparent;}
+.wd-pill.avail{background:var(--green-dim);color:var(--green);border-color:rgba(46,204,113,0.3);}
+.wd-pill.empty{background:rgba(255,255,255,0.03);color:var(--muted2);}
+.wd-time{font-size:7px;color:var(--muted);text-align:center;line-height:1.2;}
+
+/* Share mode grid */
+.share-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;}
+.share-opt{padding:9px 8px;border-radius:10px;border:1.5px solid var(--border2);background:transparent;font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:700;cursor:pointer;color:var(--muted);display:flex;align-items:center;gap:5px;justify-content:center;transition:all .15s;}
+.share-opt.s{border-color:rgba(46,204,113,0.4);background:var(--green-dim);color:var(--green);}
+
+/* Player picker inside modal */
+.pp-list{max-height:160px;overflow-y:auto;border:1px solid var(--border2);border-radius:10px;}
+.pp-row{display:flex;align-items:center;gap:9px;padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;}
+.pp-row:last-child{border-bottom:none;}
+.pp-row.sel{background:var(--green-dim);}
+.pp-row:hover{background:var(--card2);}
 </style>
 <script src="nav.js"></script>
 </head>
@@ -248,8 +277,14 @@ const cid=(a,b)=>[a,b].sort().join('__');
 const SKILLS=['2.0-2.5','2.5-3.0','3.0-3.5','3.5-4.0','4.0-4.5','4.5-5.0','5.0+'];
 const PURPOSES=[{id:'play',e:'🏓',l:'Looking to Play'},{id:'partner',e:'🤝',l:'Need a Partner'},{id:'drill',e:'🎯',l:'Drilling'},{id:'group',e:'👥',l:'Open Play'}];
 const PTYPES=['Casual','Competitive','Tournament','Drilling'];
-const AVAIL=['Now','Today','This Week','Flexible'];
+const AVAIL=['Now','Today','This Week','Custom Schedule'];
 const PT_E={Casual:'🎾',Competitive:'🔥',Tournament:'🏆',Drilling:'🎯'};
+const AV_ICO={'Now':'⚡','Today':'📅','This Week':'🗓️','Custom Schedule':'📆'};
+const AV_CLS={'Now':'t-green','Today':'t-amber','This Week':'t-amber','Custom Schedule':'t-blue'};
+const PU_TAG={play:'t-green',partner:'t-blue',drill:'t-muted',group:'t-amber'};
+const DAYS_SHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAYS_FULL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const SHARE_MODES=[{id:'public',icon:'🌍',label:'Everyone'},{id:'connections',icon:'👥',label:'Connections'},{id:'players',icon:'👤',label:'Select Players'},{id:'group',icon:'🏷️',label:'My Groups'}];
 const GoogleSVG=()=><svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>;
 
 /* ── AuthScreen ── */
@@ -1085,42 +1120,182 @@ function GameForm({user,profile,onClose,onSaved,editData}){
   );
 }
 
+/* ── cleanOldPosts ── */
+async function cleanOldPosts(uid){
+  if(!fbOk||!uid)return;
+  const cutoff=Date.now()-7*24*60*60*1000;
+  try{
+    const snap=await db.collection('findPlayers').where('uid','==',uid).where('timestamp','<',cutoff).get();
+    const batch=db.batch();
+    snap.docs.forEach(d=>batch.update(d.ref,{status:'expired'}));
+    if(!snap.empty)await batch.commit();
+  }catch(e){}
+}
+
+/* ── WeekSchedulePicker ── */
+function WeekSchedulePicker({schedule,onChange}){
+  const toggle=day=>{
+    const exists=schedule.find(s=>s.day===day);
+    if(exists)onChange(schedule.filter(s=>s.day!==day));
+    else onChange([...schedule,{day,startTime:'08:00',endTime:'11:00'}]);
+  };
+  const setTime=(day,field,val)=>onChange(schedule.map(s=>s.day===day?{...s,[field]:val}:s));
+  return(<div>
+    <div className="week-picker">
+      {DAYS_SHORT.map((d,i)=>{
+        const sel=schedule.find(s=>s.day===i);
+        return(<div key={i} className="wp-day">
+          <div className="wp-day-label">{d}</div>
+          <button className={`wp-day-btn${sel?' sel':''}`} onClick={()=>toggle(i)}>{d[0]}</button>
+        </div>);
+      })}
+    </div>
+    {schedule.sort((a,b)=>a.day-b.day).map(s=>(
+      <div key={s.day} style={{background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:'8px 12px',marginBottom:6}}>
+        <div style={{fontSize:'0.72rem',fontWeight:700,color:'var(--green)',marginBottom:6}}>{DAYS_FULL[s.day]}</div>
+        <div className="wp-time-row">
+          <div><div style={{fontSize:'0.6rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',marginBottom:3}}>From</div><input type="time" className="fi" style={{fontSize:'0.8rem',padding:'7px 10px'}} value={s.startTime} onChange={e=>setTime(s.day,'startTime',e.target.value)}/></div>
+          <div><div style={{fontSize:'0.6rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',marginBottom:3}}>To</div><input type="time" className="fi" style={{fontSize:'0.8rem',padding:'7px 10px'}} value={s.endTime} onChange={e=>setTime(s.day,'endTime',e.target.value)}/></div>
+        </div>
+      </div>
+    ))}
+  </div>);
+}
+
+/* ── PlayerPicker ── */
+function PlayerPicker({myUid,onSelect,selected,subtitle}){
+  const[players,setPlayers]=useState([]);const[ld,setLd]=useState(true);const[search,setSearch]=useState('');
+  useEffect(()=>{
+    if(!fbOk){setLd(false);return;}
+    db.collection('profiles').get()
+      .then(snap=>{setPlayers(snap.docs.filter(d=>d.id!==myUid).map(d=>({uid:d.id,...d.data()})).filter(p=>p.name));setLd(false);})
+      .catch(()=>setLd(false));
+  },[]);
+  const filtered=search.trim()?players.filter(p=>[p.name,p.city,p.skill].some(v=>(v||'').toLowerCase().includes(search.toLowerCase()))):players;
+  const toggle=p=>{
+    const sel=selected.some(s=>s.uid===p.uid);
+    onSelect(sel?selected.filter(s=>s.uid!==p.uid):[...selected,{uid:p.uid,name:p.name,photoURL:p.photoURL||null,skill:p.skill||''}]);
+  };
+  return(<div>
+    {subtitle&&<div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:8}}>{subtitle}</div>}
+    <div style={{position:'relative',marginBottom:8}}>
+      <span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',pointerEvents:'none',fontSize:'0.8rem'}}>🔍</span>
+      <input className="fi" style={{paddingLeft:32,fontSize:'0.82rem'}} value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search players…"/>
+    </div>
+    {selected.length>0&&<div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:8}}>
+      {selected.map(s=><div key={s.uid} style={{display:'inline-flex',alignItems:'center',gap:4,background:'var(--green-dim)',border:'1px solid rgba(46,204,113,0.3)',borderRadius:20,padding:'3px 8px 3px 5px',fontSize:'0.68rem',fontWeight:600,color:'var(--green)'}}>
+        <div style={{width:16,height:16,borderRadius:'50%',background:'var(--green)',color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.5rem',fontWeight:800,flexShrink:0}}>{(s.name||'?')[0].toUpperCase()}</div>
+        {s.name.split(' ')[0]}
+        <button onClick={()=>onSelect(selected.filter(x=>x.uid!==s.uid))} style={{background:'none',border:'none',cursor:'pointer',color:'var(--green)',fontSize:'0.9rem',lineHeight:1,padding:0}}>×</button>
+      </div>)}
+    </div>}
+    <div className="pp-list">
+      {ld?<div style={{padding:12,textAlign:'center',fontSize:'0.72rem',color:'var(--muted)'}}>Loading...</div>
+      :filtered.length===0?<div style={{padding:12,textAlign:'center',fontSize:'0.72rem',color:'var(--muted)'}}>No players found</div>
+      :filtered.slice(0,40).map(p=>{const isSel=selected.some(s=>s.uid===p.uid);return(
+        <div key={p.uid} className={`pp-row${isSel?' sel':''}`} onClick={()=>toggle(p)}>
+          <div className="pc-avatar" style={{width:28,height:28,fontSize:'0.72rem',flexShrink:0}}>{(p.name||'?')[0].toUpperCase()}</div>
+          <div style={{flex:1,minWidth:0}}><div style={{fontSize:'0.78rem',fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.name}</div><div style={{fontSize:'0.65rem',color:'var(--muted)'}}>{p.skill||''}{p.city?' · '+p.city:''}</div></div>
+          {isSel&&<span style={{color:'var(--green)',fontSize:'0.9rem',flexShrink:0}}>✓</span>}
+        </div>
+      );})}
+    </div>
+  </div>);
+}
+
+/* ── GroupManager ── */
+function GroupManager({myUid,selectedGroupId,onSelectGroup}){
+  const[groups,setGroups]=useState([]);const[ld,setLd]=useState(true);
+  const[showCreate,setShowCreate]=useState(false);const[newName,setNN]=useState('');
+  const[newMembers,setNM]=useState([]);const[saving,setSaving]=useState(false);
+  const load=()=>{
+    if(!fbOk){setLd(false);return;}
+    db.collection('playerGroups').where('ownerUid','==',myUid).get()
+      .then(snap=>{setGroups(snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)));setLd(false);})
+      .catch(()=>setLd(false));
+  };
+  useEffect(()=>load(),[]);
+  const create=async()=>{
+    if(!newName.trim()){alert('Enter a group name.');return;}
+    if(newMembers.length===0){alert('Select at least one player.');return;}
+    setSaving(true);
+    try{await db.collection('playerGroups').add({ownerUid:myUid,name:newName.trim(),members:newMembers,createdAt:Date.now()});setNN('');setNM([]);setShowCreate(false);load();}
+    catch(e){alert('Failed: '+e.message);}
+    setSaving(false);
+  };
+  const del=async id=>{
+    if(!confirm('Delete this group?'))return;
+    try{await db.collection('playerGroups').doc(id).delete();load();}catch(e){alert(e.message);}
+  };
+  if(showCreate)return(<div>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+      <div style={{fontSize:'0.82rem',fontWeight:800}}>New Group</div>
+      <button onClick={()=>setShowCreate(false)} className="btn btn-ghost btn-sm">Cancel</button>
+    </div>
+    <input className="fi" style={{marginBottom:10,fontSize:'0.82rem'}} value={newName} onChange={e=>setNN(e.target.value)} placeholder="Group name (e.g. Tuesday Crew)" maxLength={50}/>
+    <PlayerPicker myUid={myUid} selected={newMembers} onSelect={setNM} subtitle="Select players to add to this group."/>
+    <button className="btn btn-primary" onClick={create} disabled={saving} style={{width:'100%',marginTop:10,opacity:saving?.6:1}}>{saving?'Saving…':'Create Group'}</button>
+  </div>);
+  return(<div>
+    {ld?<div style={{fontSize:'0.72rem',color:'var(--muted)',padding:'6px 0'}}>Loading groups…</div>
+    :groups.length===0?<div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:8}}>No groups yet.</div>
+    :groups.map(g=>(<div key={g.id} onClick={()=>onSelectGroup(selectedGroupId===g.id?null:g)} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 12px',borderRadius:10,border:'1.5px solid '+(selectedGroupId===g.id?'rgba(46,204,113,0.5)':'var(--border2)'),background:selectedGroupId===g.id?'var(--green-dim)':'var(--card2)',cursor:'pointer',marginBottom:6,transition:'all .15s'}}>
+      <span style={{fontSize:'1.1rem'}}>🏷️</span>
+      <div style={{flex:1,minWidth:0}}><div style={{fontSize:'0.82rem',fontWeight:700}}>{g.name}</div><div style={{fontSize:'0.65rem',color:'var(--muted)'}}>{g.members?.length||0} members</div></div>
+      {selectedGroupId===g.id&&<span style={{color:'var(--green)'}}>✓</span>}
+      <button onClick={e=>{e.stopPropagation();del(g.id);}} style={{background:'rgba(247,91,91,0.1)',border:'1px solid rgba(247,91,91,0.2)',borderRadius:6,padding:'3px 8px',fontSize:'0.65rem',color:'var(--red)',cursor:'pointer',fontFamily:'DM Sans',fontWeight:600}}>Delete</button>
+    </div>))}
+    <button onClick={()=>setShowCreate(true)} style={{width:'100%',padding:'9px',border:'1.5px dashed var(--border2)',borderRadius:10,background:'transparent',fontSize:'0.78rem',fontWeight:600,color:'var(--green)',cursor:'pointer',fontFamily:'DM Sans',marginTop:4}}>+ Create New Group</button>
+  </div>);
+}
+
 /* ── PlayersTab ── */
-function PlayersTab({user,posts,players,onChat,onNeedLogin}){
+function PlayersTab({user,posts,players,onChat,onNeedLogin,uLat,uLng}){
   const[search,setSearch]=useState('');
   const[tab,setTab]=useState('all');
   const[expanded,setExpanded]=useState(null);
   const[showPost,setShowPost]=useState(false);
   const[editPost,setEditPost]=useState(null);
   const[showF,setShowF]=useState(false);
-  const[fSkill,setFS]=useState('');const[fType,setFT]=useState('');const[fGender,setFG]=useState('');const[fPurpose,setFP]=useState('');
-  const fCount=[fSkill,fType,fGender,fPurpose].filter(Boolean).length;
-  const clearF=()=>{setFS('');setFT('');setFG('');setFP('');};
+  const[fSkill,setFS]=useState('');const[fType,setFT]=useState('');const[fGender,setFG]=useState('');
+  const[fPurpose,setFP]=useState('');const[fDist,setFD]=useState('');
+  const fCount=[fSkill,fType,fGender,fPurpose,fDist].filter(Boolean).length;
+  const clearF=()=>{setFS('');setFT('');setFG('');setFP('');setFD('');};
 
   const grouped=useMemo(()=>{
     let fp=[...posts];
-    // Apply share mode filter — only public posts visible to everyone
     fp=fp.filter(p=>{
       if(!p.shareMode||p.shareMode==='public')return true;
       if(!user)return false;
       if(p.uid===user.uid)return true;
+      if(p.shareMode==='connections')return false;
       if(p.shareMode==='players'||p.shareMode==='group')return(p.sharePlayerIds||[]).includes(user.uid);
       return false;
     });
     if(tab==='now')fp=fp.filter(p=>p.availability==='Now'||p.availability==='Today');
-    if(search.trim()){const q=search.toLowerCase();fp=fp.filter(p=>[p.name,p.city,p.skill,p.message].some(v=>(v||'').toLowerCase().includes(q)));}
+    else if(tab==='partner')fp=fp.filter(p=>p.purpose==='partner');
+    else if(tab==='nearby'&&uLat)fp=fp.filter(p=>p.lat&&haversine(uLat,uLng,p.lat,p.lng)<=25);
+    if(search.trim()){const q=search.toLowerCase();fp=fp.filter(p=>[p.name,p.city,p.skill,p.message,p.courtName].some(v=>(v||'').toLowerCase().includes(q)));}
     if(fSkill)fp=fp.filter(p=>p.skill===fSkill);
     if(fType)fp=fp.filter(p=>p.playTypes?.includes(fType));
     if(fGender)fp=fp.filter(p=>p.gender===fGender);
     if(fPurpose)fp=fp.filter(p=>p.purpose===fPurpose);
+    if(fDist&&uLat)fp=fp.filter(p=>p.lat&&haversine(uLat,uLng,p.lat,p.lng)<=parseInt(fDist));
     const map={};
     fp.forEach(p=>{
-      if(!map[p.uid])map[p.uid]={uid:p.uid,name:p.name,skill:p.skill,city:p.city,age:p.age,gender:p.gender,photoURL:p.photoURL,posts:[]};
+      if(!map[p.uid])map[p.uid]={uid:p.uid,name:p.name,skill:p.skill,city:p.city,age:p.age,gender:p.gender,duprId:p.duprId,photoURL:p.photoURL,lat:p.lat,lng:p.lng,posts:[]};
       map[p.uid].posts.push(p);
-      if(p.timestamp>(map[p.uid]._ts||0)){map[p.uid]._ts=p.timestamp;Object.assign(map[p.uid],{name:p.name,skill:p.skill,city:p.city,photoURL:p.photoURL});}
+      if(p.timestamp>(map[p.uid]._ts||0)){map[p.uid]._ts=p.timestamp;Object.assign(map[p.uid],{name:p.name,skill:p.skill,city:p.city,photoURL:p.photoURL,duprId:p.duprId});}
     });
-    return Object.values(map).sort((a,b)=>(b._ts||0)-(a._ts||0));
-  },[posts,tab,search,fSkill,fType,fGender,fPurpose,user]);
+    let arr=Object.values(map);
+    arr.sort((a,b)=>{
+      if(user&&a.uid===user.uid)return -1;
+      if(user&&b.uid===user.uid)return 1;
+      if(tab==='nearby'&&uLat&&a.lat&&b.lat)return haversine(uLat,uLng,a.lat,a.lng)-haversine(uLat,uLng,b.lat,b.lng);
+      return(b._ts||0)-(a._ts||0);
+    });
+    return arr;
+  },[posts,tab,search,fSkill,fType,fGender,fPurpose,fDist,user,uLat,uLng]);
 
   const removePost=async(id)=>{
     if(!confirm('Remove this post?'))return;
@@ -1136,7 +1311,7 @@ function PlayersTab({user,posts,players,onChat,onNeedLogin}){
       </div>
 
       {/* Search + Filter row */}
-      <div style={{display:'flex',gap:8,marginBottom:12,alignItems:'center'}}>
+      <div style={{display:'flex',gap:8,marginBottom:10,alignItems:'center'}}>
         <div style={{position:'relative',flex:1}}><span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}}>🔍</span><input className="fi" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search players…" style={{paddingLeft:36}}/></div>
         <button onClick={()=>setShowF(!showF)} style={{padding:'10px 14px',border:`1.5px solid ${showF||fCount?'var(--green)':'var(--border2)'}`,borderRadius:12,background:showF||fCount?'var(--green-dim)':'transparent',color:showF||fCount?'var(--green)':'var(--muted)',fontFamily:'DM Sans',fontSize:'0.78rem',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
           ⚙ Filter{fCount>0?` (${fCount})`:''}
@@ -1145,89 +1320,162 @@ function PlayersTab({user,posts,players,onChat,onNeedLogin}){
 
       {/* Filter panel */}
       {showF&&<div style={{background:'var(--card)',border:'1px solid var(--border2)',borderRadius:14,padding:'12px 14px',marginBottom:12,animation:'fadeIn .15s'}}>
-        <div style={{marginBottom:10}}>
-          <div className="fp-label">Skill Level</div>
-          <div className="fp-pills"><button className={`fp-pill ${!fSkill?'s':''}`} onClick={()=>setFS('')}>All</button>{SKILLS.map(s=><button key={s} className={`fp-pill ${fSkill===s?'s':''}`} onClick={()=>setFS(fSkill===s?'':s)}>{s}</button>)}</div>
-        </div>
-        <div style={{marginBottom:10}}>
-          <div className="fp-label">Play Type</div>
-          <div className="fp-pills"><button className={`fp-pill ${!fType?'s':''}`} onClick={()=>setFT('')}>All</button>{PTYPES.map(t=><button key={t} className={`fp-pill ${fType===t?'s':''}`} onClick={()=>setFT(fType===t?'':t)}>{PT_E[t]} {t}</button>)}</div>
-        </div>
-        <div style={{marginBottom:10}}>
-          <div className="fp-label">Looking For</div>
-          <div className="fp-pills"><button className={`fp-pill ${!fPurpose?'s':''}`} onClick={()=>setFP('')}>All</button>{PURPOSES.map(p=><button key={p.id} className={`fp-pill ${fPurpose===p.id?'s':''}`} onClick={()=>setFP(fPurpose===p.id?'':p.id)}>{p.e} {p.l}</button>)}</div>
-        </div>
-        <div>
-          <div className="fp-label">Gender</div>
-          <div className="fp-pills"><button className={`fp-pill ${!fGender?'s':''}`} onClick={()=>setFG('')}>All</button>{['Male','Female','Non-binary'].map(g=><button key={g} className={`fp-pill ${fGender===g?'s':''}`} onClick={()=>setFG(fGender===g?'':g)}>{g}</button>)}</div>
-        </div>
-        {fCount>0&&<button onClick={clearF} style={{marginTop:8,background:'none',border:'none',color:'var(--red)',fontSize:'0.75rem',fontWeight:600,cursor:'pointer'}}>✕ Clear all filters</button>}
+        <div style={{marginBottom:10}}><div className="fp-label">Skill Level</div><div className="fp-pills"><button className={`fp-pill ${!fSkill?'s':''}`} onClick={()=>setFS('')}>All</button>{SKILLS.map(s=><button key={s} className={`fp-pill ${fSkill===s?'s':''}`} onClick={()=>setFS(fSkill===s?'':s)}>{s}</button>)}</div></div>
+        <div style={{marginBottom:10}}><div className="fp-label">Play Type</div><div className="fp-pills"><button className={`fp-pill ${!fType?'s':''}`} onClick={()=>setFT('')}>All</button>{PTYPES.map(t=><button key={t} className={`fp-pill ${fType===t?'s':''}`} onClick={()=>setFT(fType===t?'':t)}>{PT_E[t]} {t}</button>)}</div></div>
+        <div style={{marginBottom:10}}><div className="fp-label">Looking For</div><div className="fp-pills"><button className={`fp-pill ${!fPurpose?'s':''}`} onClick={()=>setFP('')}>All</button>{PURPOSES.map(p=><button key={p.id} className={`fp-pill ${fPurpose===p.id?'s':''}`} onClick={()=>setFP(fPurpose===p.id?'':p.id)}>{p.e} {p.l}</button>)}</div></div>
+        <div style={{marginBottom:10}}><div className="fp-label">Gender</div><div className="fp-pills"><button className={`fp-pill ${!fGender?'s':''}`} onClick={()=>setFG('')}>Any</button>{['Male','Female','Non-binary'].map(g=><button key={g} className={`fp-pill ${fGender===g?'s':''}`} onClick={()=>setFG(fGender===g?'':g)}>{g}</button>)}</div></div>
+        {uLat&&<div style={{marginBottom:10}}><div className="fp-label">Distance</div><div className="fp-pills"><button className={`fp-pill ${!fDist?'s':''}`} onClick={()=>setFD('')}>Any</button>{['5','10','25','50'].map(d=><button key={d} className={`fp-pill ${fDist===d?'s':''}`} onClick={()=>setFD(fDist===d?'':d)}>Within {d} mi</button>)}</div></div>}
+        {fCount>0&&<button onClick={clearF} style={{marginTop:4,background:'none',border:'none',color:'var(--red)',fontSize:'0.72rem',fontWeight:600,cursor:'pointer'}}>✕ Clear all filters</button>}
       </div>}
 
-      <div className="tab-pills">{[['all','🏓 All'],['now','⚡ Available Now']].map(([k,l])=><div key={k} className={`pill ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</div>)}</div>
+      {/* Tabs */}
+      <div className="tab-pills">{[['all','🏓 All'],['now','⚡ Now'],['partner','🤝 Partner'],['nearby','📍 Nearby']].map(([k,l])=><div key={k} className={`pill ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</div>)}</div>
       <div style={{fontSize:'0.7rem',color:'var(--muted)',marginBottom:10}}>{grouped.length} player{grouped.length!==1?'s':''}</div>
 
       {grouped.length===0&&<div className="empty-state"><div className="empty-icon">👥</div><div className="empty-title">No players found</div><div className="empty-sub">{search||fCount?'Try different filters':'Be the first to post!'}</div></div>}
-      {grouped.map(g=>(
-        <div key={g.uid} className={`player-card ${expanded===g.uid?'expanded':''}`} onClick={()=>setExpanded(expanded===g.uid?null:g.uid)}>
-          <div className="pc-row">
-            <div className="pc-avatar">{g.photoURL?<img src={g.photoURL} referrerPolicy="no-referrer" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/>:g.name?.[0]||'?'}</div>
-            <div className="pc-info">
-              <div className="pc-name">{g.name}{user&&g.uid===user.uid&&<span style={{fontSize:'0.6rem',fontWeight:700,background:'var(--green-dim)',color:'var(--green)',padding:'2px 6px',borderRadius:4}}>YOU</span>}</div>
-              <div className="pc-sub">{g.city||'No location'}{g.age?` · ${g.age}`:''}{g.gender?` · ${g.gender}`:''}</div>
+      {grouped.map(g=>{
+        const mine=user&&g.uid===user.uid;
+        const dist=uLat&&g.lat?haversine(uLat,uLng,g.lat,g.lng):null;
+        const latestPost=g.posts[0];
+        const pu=latestPost?PURPOSES.find(p=>p.id===latestPost.purpose):null;
+        const isExp=expanded===g.uid;
+        return(
+          <div key={g.uid} className={`player-card ${isExp?'expanded':''}`} onClick={()=>setExpanded(isExp?null:g.uid)} style={mine?{borderColor:'rgba(46,204,113,0.3)'}:{}}>
+            <div className="pc-row">
+              <div className="pc-avatar">{g.photoURL?<img src={g.photoURL} referrerPolicy="no-referrer" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/>:g.name?.[0]||'?'}</div>
+              <div className="pc-info">
+                <div className="pc-name">
+                  {g.name}
+                  {mine&&<span style={{fontSize:'0.6rem',fontWeight:700,background:'var(--green-dim)',color:'var(--green)',padding:'2px 6px',borderRadius:4}}>YOU</span>}
+                  {g.posts.length>1&&<span style={{fontSize:'0.6rem',fontWeight:700,background:'var(--green)',color:'white',padding:'2px 6px',borderRadius:8}}>{g.posts.length}</span>}
+                </div>
+                <div className="pc-sub">{g.city||'No location'}{dist!=null&&` · ${dist<1?dist.toFixed(1):Math.round(dist)} mi`}{g.age?` · ${g.age}`:''}{g.gender?` · ${g.gender}`:''}</div>
+                {latestPost&&!isExp&&<div style={{display:'flex',gap:4,flexWrap:'wrap',marginTop:3}}>
+                  {pu&&<span className={`tag ${PU_TAG[latestPost.purpose]||'t-green'}`}>{pu.e} {pu.l}</span>}
+                  <span className={`tag ${AV_CLS[latestPost.availability]||'t-muted'}`}>{AV_ICO[latestPost.availability]||''} {latestPost.availability}</span>
+                </div>}
+              </div>
+              <div className="pc-skill">{g.skill||'NR'}</div>
             </div>
-            <div className="pc-skill">{g.skill||'NR'}</div>
-          </div>
-          {expanded===g.uid&&(
-            <div className="pc-expand" onClick={e=>e.stopPropagation()}>
-              {g.posts.map(p=>{
-                const pu=PURPOSES.find(x=>x.id===p.purpose);
-                const isMyPost=user&&p.uid===user.uid;
-                return(
-                  <div key={p.id} style={{background:'var(--navy2)',border:'1px solid var(--border)',borderRadius:12,padding:'10px 12px',marginBottom:8}}>
-                    <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6,flexWrap:'wrap'}}>
-                      <span className="tag t-green">{pu?.e} {pu?.l||'Play'}</span>
-                      {p.playTypes?.map(t=><span key={t} className="tag t-muted">{PT_E[t]||''} {t}</span>)}
-                      <span className="tag t-amber">{p.availability}</span>
-                      {isMyPost&&<div style={{marginLeft:'auto',display:'flex',gap:5}}>
-                        <button onClick={()=>{setEditPost(p);setShowPost(true);}} style={{padding:'3px 9px',fontSize:'0.68rem',fontWeight:700,border:'1px solid var(--border2)',borderRadius:6,background:'transparent',color:'var(--green)',cursor:'pointer'}}>✏️ Edit</button>
-                        <button onClick={()=>removePost(p.id)} style={{padding:'3px 9px',fontSize:'0.68rem',fontWeight:700,border:'1px solid rgba(247,91,91,0.3)',borderRadius:6,background:'transparent',color:'var(--red)',cursor:'pointer'}}>🗑</button>
-                      </div>}
+            {isExp&&(
+              <div className="pc-expand" onClick={e=>e.stopPropagation()}>
+                {/* Player profile summary */}
+                <div style={{display:'flex',gap:14,padding:'6px 0 10px',borderBottom:'1px solid var(--border)',marginBottom:10,flexWrap:'wrap'}}>
+                  {g.age&&<div style={{fontSize:'0.7rem'}}><span style={{color:'var(--muted)',fontWeight:700,textTransform:'uppercase',fontSize:'0.6rem'}}>Age </span><span style={{fontWeight:600}}>{g.age}</span></div>}
+                  {g.gender&&<div style={{fontSize:'0.7rem'}}><span style={{color:'var(--muted)',fontWeight:700,textTransform:'uppercase',fontSize:'0.6rem'}}>Gender </span><span style={{fontWeight:600}}>{g.gender}</span></div>}
+                  {g.city&&<div style={{fontSize:'0.7rem'}}><span style={{color:'var(--muted)',fontWeight:700,textTransform:'uppercase',fontSize:'0.6rem'}}>City </span><span style={{fontWeight:600}}>{g.city}</span></div>}
+                  {g.duprId&&<a href={`https://mydupr.com/dashboard/players/${g.duprId}`} target="_blank" style={{fontSize:'0.7rem',color:'var(--green)',fontWeight:700,textDecoration:'none'}}>DUPR: {g.duprId}</a>}
+                </div>
+                {/* Posts */}
+                {g.posts.length>1&&<div style={{fontSize:'0.62rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>{g.posts.length} Active Posts</div>}
+                {g.posts.map(p=>{
+                  const pu2=PURPOSES.find(x=>x.id===p.purpose);
+                  const isMyPost=user&&p.uid===user.uid;
+                  return(
+                    <div key={p.id} style={{background:'var(--navy2)',border:'1px solid var(--border)',borderRadius:12,padding:'10px 12px',marginBottom:8}}>
+                      <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:6,flexWrap:'wrap'}}>
+                        <span className={`tag ${PU_TAG[p.purpose]||'t-green'}`}>{pu2?.e} {pu2?.l||'Play'}</span>
+                        {p.playTypes?.map(t=><span key={t} className="tag t-muted">{PT_E[t]||''} {t}</span>)}
+                        <span className={`tag ${AV_CLS[p.availability]||'t-muted'}`}>{AV_ICO[p.availability]||''} {p.availability}</span>
+                        {p.shareMode&&p.shareMode!=='public'&&<span className="tag t-blue">🔒 {p.shareMode==='connections'?'Connections':p.shareMode==='group'?'Group':'Private'}</span>}
+                        {isMyPost&&<div style={{marginLeft:'auto',display:'flex',gap:5}}>
+                          <button onClick={()=>{setEditPost(p);setShowPost(true);}} style={{padding:'3px 9px',fontSize:'0.65rem',fontWeight:700,border:'1px solid var(--border2)',borderRadius:6,background:'transparent',color:'var(--green)',cursor:'pointer'}}>✏️ Edit</button>
+                          <button onClick={()=>removePost(p.id)} style={{padding:'3px 9px',fontSize:'0.65rem',fontWeight:700,border:'1px solid rgba(247,91,91,0.3)',borderRadius:6,background:'transparent',color:'var(--red)',cursor:'pointer'}}>🗑</button>
+                        </div>}
+                      </div>
+                      {/* Week schedule display */}
+                      {p.availability==='Custom Schedule'&&p.weekSchedule?.length>0&&(
+                        <div className="week-grid">
+                          {DAYS_SHORT.map((d,i)=>{
+                            const s=p.weekSchedule.find(x=>x.day===i);
+                            return(<div key={i} className="wd-col">
+                              <div className="wd-label">{d}</div>
+                              <div className={`wd-pill ${s?'avail':'empty'}`}>{s?'✓':'–'}</div>
+                              {s&&<div className="wd-time">{fmtTime(s.startTime)}</div>}
+                            </div>);
+                          })}
+                        </div>
+                      )}
+                      {/* Date/time for Today/This Week */}
+                      {(p.availability==='Today'||p.availability==='This Week')&&p.availDate&&(
+                        <div style={{fontSize:'0.7rem',color:'var(--muted)',marginBottom:4}}>📅 {p.availDate}{p.availTime?' at '+fmtTime(p.availTime):''}</div>
+                      )}
+                      {p.partnerGender&&<div style={{fontSize:'0.7rem',color:'var(--muted)',marginBottom:4}}>Preferred partner: {p.partnerGender}</div>}
+                      {p.courtName&&<div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:4}}>📍 {p.courtName}</div>}
+                      {p.message&&<div style={{fontSize:'0.78rem',color:'var(--text)',fontStyle:'italic',marginBottom:4}}>"{p.message}"</div>}
+                      <div style={{fontSize:'0.62rem',color:'var(--muted2)'}}>{timeAgo(p.timestamp)} ago</div>
                     </div>
-                    {p.courtName&&<div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:4}}>📍 {p.courtName}</div>}
-                    {p.message&&<div style={{fontSize:'0.78rem',color:'var(--text)',fontStyle:'italic',marginBottom:4}}>"{p.message}"</div>}
-                    <div style={{fontSize:'0.65rem',color:'var(--muted2)'}}>{timeAgo(p.timestamp)} ago</div>
-                  </div>
-                );
-              })}
-              {user?.uid!==g.uid&&<MsgBtn player={g} user={user} onChat={onChat} onNeedLogin={onNeedLogin}/>}
-              {user?.uid===g.uid&&<button className="btn btn-ghost btn-sm" onClick={()=>{setEditPost(null);setShowPost(true);}} style={{marginTop:4}}>+ New Post</button>}
-            </div>
-          )}
-        </div>
-      ))}
-      {showPost&&user&&<PostForm user={user} editData={editPost} onClose={()=>{setShowPost(false);setEditPost(null);}} onPosted={()=>{setShowPost(false);setEditPost(null);}}/>}
+                  );
+                })}
+                <div style={{display:'flex',gap:8,paddingTop:4,flexWrap:'wrap'}}>
+                  {!mine&&<MsgBtn player={g} user={user} onChat={onChat} onNeedLogin={onNeedLogin}/>}
+                  {mine&&<button className="btn btn-ghost btn-sm" onClick={()=>{setEditPost(null);setShowPost(true);}} style={{marginTop:4}}>+ New Post</button>}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {showPost&&user&&<PostForm user={user} editData={editPost} onClose={()=>{setShowPost(false);setEditPost(null);}} onPosted={()=>{setShowPost(false);setEditPost(null);}} uLat={uLat} uLng={uLng}/>}
     </div>
   );
 }
 
 /* ── PostForm ── */
-function PostForm({user,onClose,onPosted,editData}){
+function PostForm({user,onClose,onPosted,editData,uLat,uLng}){
   const[purpose,setPurpose]=useState(editData?.purpose||'play');
   const[playTypes,setPT]=useState(editData?.playTypes||[]);
-  const[avail,setAv]=useState(editData?.availability||'Flexible');
+  const[avail,setAv]=useState(editData?.availability||'Now');
+  const[availDate,setAD]=useState(editData?.availDate||'');
+  const[availTime,setAT]=useState(editData?.availTime||'');
+  const[weekSchedule,setWS]=useState(editData?.weekSchedule||[]);
   const[courtName,setCourt]=useState(editData?.courtName||'');
   const[message,setMsg]=useState(editData?.message||'');
+  const[partnerGender,setPG]=useState(editData?.partnerGender||'');
+  const[shareMode,setShare]=useState(editData?.shareMode||'public');
+  const[sharePlayers,setSP]=useState([]);
+  const[shareGroup,setSG]=useState(null);
   const[saving,setSaving]=useState(false);
   const[profile,setProfile]=useState(null);
+  const today=new Date().toISOString().split('T')[0];
+
   useEffect(()=>{if(fbOk&&user)db.collection('profiles').doc(user.uid).get().then(d=>{if(d.exists)setProfile({uid:user.uid,...d.data()});});},[user]);
   const togglePT=t=>setPT(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t]);
+
+  const shareModeDesc={
+    public:'Visible to all PickleConnect players.',
+    connections:"Only shown to people you've chatted with before.",
+    players:sharePlayers.length>0?`Only shown to ${sharePlayers.length} selected player${sharePlayers.length!==1?'s':''}.`:'Choose specific players below.',
+    group:shareGroup?`Members of "${shareGroup.name}" only.`:'Select or create a group below.',
+  };
+
   const save=async()=>{
     if(!profile){alert('Profile not loaded.');return;}
     if(playTypes.length===0){alert('Select at least one play type.');return;}
+    if(avail==='Custom Schedule'&&weekSchedule.length===0){alert('Select at least one day for your schedule.');return;}
+    if(shareMode==='players'&&sharePlayers.length===0){alert('Select at least one player to share with.');return;}
+    if(shareMode==='group'&&!shareGroup){alert('Select a group to share with.');return;}
     setSaving(true);
-    // Build data and strip ALL undefined values — Firestore rejects them
-    const _raw={uid:user.uid,name:profile.name||null,skill:profile.skill||null,city:profile.city||null,age:profile.age||null,gender:profile.gender||null,photoURL:profile.photoURL||null,purpose,playTypes,availability:avail,courtName:courtName.trim()||null,message:message.trim()||null,timestamp:Date.now(),status:'active'};
+
+    const sharePlayerIds=
+      shareMode==='players'?sharePlayers.map(p=>p.uid).filter(Boolean):
+      shareMode==='group'?(shareGroup.members||[]).map(m=>m.uid||m).filter(Boolean):[];
+
+    const _raw={
+      uid:user.uid,name:profile.name||null,skill:profile.skill||null,
+      city:profile.city||null,age:profile.age||null,gender:profile.gender||null,
+      duprId:profile.duprId||null,photoURL:profile.photoURL||null,
+      purpose,playTypes,availability:avail,
+      availDate:(avail==='Today'||avail==='This Week')?(availDate||null):null,
+      availTime:avail==='Today'&&availTime?availTime:null,
+      weekSchedule:avail==='Custom Schedule'?weekSchedule:[],
+      courtName:courtName.trim()||null,message:message.trim()||null,
+      partnerGender:purpose==='partner'?(partnerGender||null):null,
+      shareMode,sharePlayerIds,
+      shareGroupName:shareMode==='group'?(shareGroup?.name||null):null,
+      lat:uLat||null,lng:uLng||null,
+      timestamp:Date.now(),status:'active'
+    };
     const data=Object.fromEntries(Object.entries(_raw).filter(([,v])=>v!==undefined));
     try{
       if(editData?.id)await db.collection('findPlayers').doc(editData.id).update(data);
@@ -1236,20 +1484,82 @@ function PostForm({user,onClose,onPosted,editData}){
     }catch(e){alert('Failed: '+e.message);}
     setSaving(false);
   };
+
   return(
     <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div className="modal-sheet">
         <div className="modal-handle"/>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
           <div className="modal-title">📢 {editData?'Edit Post':'Post Availability'}</div>
           <button onClick={onClose} className="icon-btn" style={{position:'static'}}>✕</button>
         </div>
-        <div className="fg"><div className="fl">Looking for *</div><div className="og">{PURPOSES.map(p=><button key={p.id} className={`ob ${purpose===p.id?'s':''}`} onClick={()=>setPurpose(p.id)} style={{fontSize:'0.78rem'}}>{p.e} {p.l}</button>)}</div></div>
-        <div className="fg"><div className="fl">Play Type *</div><div className="og">{PTYPES.map(t=><button key={t} className={`ob ${playTypes.includes(t)?'s':''}`} onClick={()=>togglePT(t)} style={{fontSize:'0.78rem'}}>{PT_E[t]} {t}</button>)}</div></div>
-        <div className="fg"><div className="fl">When</div><div className="og">{AVAIL.map(a=><button key={a} className={`ob ${avail===a?'s':''}`} onClick={()=>setAv(a)} style={{fontSize:'0.78rem'}}>{a}</button>)}</div></div>
-        <div className="fg"><div className="fl">Court (optional)</div><input className="fi" value={courtName} onChange={e=>setCourt(e.target.value)} placeholder="e.g. Willmore Park" maxLength={80}/></div>
-        <div className="fg"><div className="fl">Message</div><textarea className="fi" value={message} onChange={e=>setMsg(e.target.value)} placeholder="Available for games, message me!" maxLength={200} rows={2}/></div>
-        <button className="btn btn-primary" onClick={save} disabled={saving} style={{width:'100%',opacity:saving?.6:1}}>{saving?'Saving…':editData?'Save Changes':'📢 Post'}</button>
+        <div style={{fontSize:'0.78rem',color:'var(--muted)',marginBottom:12}}>Let others know you're available. You can post multiple times.</div>
+
+        {profile&&<div style={{display:'flex',alignItems:'center',gap:10,padding:10,background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,marginBottom:14}}>
+          <div className="pc-avatar" style={{width:32,height:32,fontSize:'0.82rem'}}>{profile.photoURL?<img src={profile.photoURL} referrerPolicy="no-referrer" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/>:(profile.name||'?')[0]}</div>
+          <div><div style={{fontSize:'0.82rem',fontWeight:700}}>{profile.name}</div><div style={{fontSize:'0.68rem',color:'var(--muted)'}}>{profile.skill}{profile.gender?' · '+profile.gender:''}{profile.city?' · '+profile.city:''}</div></div>
+        </div>}
+
+        <div className="fg"><div className="fl">Looking for *</div>
+          <div className="og">{PURPOSES.map(p=><button key={p.id} className={`ob ${purpose===p.id?'s':''}`} onClick={()=>setPurpose(p.id)} style={{fontSize:'0.78rem'}}>{p.e} {p.l}</button>)}</div>
+        </div>
+
+        {purpose==='partner'&&<div className="fg"><div className="fl">Partner Gender Preference</div>
+          <div className="og">
+            <button className={`ob ${partnerGender===''?'s':''}`} onClick={()=>setPG('')} style={{fontSize:'0.78rem'}}>Any</button>
+            {['Male','Female','Non-binary'].map(g=><button key={g} className={`ob ${partnerGender===g?'s':''}`} onClick={()=>setPG(partnerGender===g?'':g)} style={{fontSize:'0.78rem'}}>{g}</button>)}
+          </div>
+        </div>}
+
+        <div className="fg"><div className="fl">Play Type *</div>
+          <div className="og">{PTYPES.map(t=><button key={t} className={`ob ${playTypes.includes(t)?'s':''}`} onClick={()=>togglePT(t)} style={{fontSize:'0.78rem'}}>{PT_E[t]} {t}</button>)}</div>
+        </div>
+
+        <div className="fg"><div className="fl">When</div>
+          <div className="og" style={{marginBottom:8}}>
+            {AVAIL.map(a=><button key={a} className={`ob ${avail===a?'s':''}`} onClick={()=>setAv(a)} style={{fontSize:'0.78rem'}}>{AV_ICO[a]} {a}</button>)}
+          </div>
+          {avail==='Today'&&<div style={{display:'flex',gap:8,marginTop:6}}>
+            <input type="date" className="fi" value={availDate} onChange={e=>setAD(e.target.value)} min={today} style={{flex:1,fontSize:'0.82rem'}}/>
+            <input type="time" className="fi" value={availTime} onChange={e=>setAT(e.target.value)} style={{flex:1,fontSize:'0.82rem'}}/>
+          </div>}
+          {avail==='This Week'&&<div style={{marginTop:6}}>
+            <div style={{fontSize:'0.65rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',marginBottom:4}}>Start Date</div>
+            <input type="date" className="fi" value={availDate} onChange={e=>setAD(e.target.value)} min={today} style={{fontSize:'0.82rem'}}/>
+          </div>}
+          {avail==='Custom Schedule'&&<div style={{marginTop:8}}>
+            <div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:8}}>Tap the days you're available each week and set your preferred times.</div>
+            <WeekSchedulePicker schedule={weekSchedule} onChange={setWS}/>
+          </div>}
+        </div>
+
+        <div className="fg"><div className="fl">Court (optional)</div>
+          <input className="fi" value={courtName} onChange={e=>setCourt(e.target.value)} placeholder="e.g. Heritage Park Courts" maxLength={100}/>
+        </div>
+
+        <div className="fg"><div className="fl">Message</div>
+          <textarea className="fi" value={message} onChange={e=>setMsg(e.target.value)} placeholder={purpose==='partner'?'Looking for 3.5+ doubles partner…':'Available for games, message me!'} maxLength={300} rows={2}/>
+        </div>
+
+        {/* Share Availability To */}
+        <div className="fg"><div className="fl">Share Availability To</div>
+          <div className="share-grid">
+            {SHARE_MODES.map(m=>(
+              <button key={m.id} onClick={()=>setShare(m.id)} className={`share-opt ${shareMode===m.id?'s':''}`}>
+                <span>{m.icon}</span>{m.label}
+              </button>
+            ))}
+          </div>
+          <div style={{fontSize:'0.68rem',color:'var(--muted)',marginBottom:shareMode==='players'||shareMode==='group'?10:0}}>{shareModeDesc[shareMode]}</div>
+          {shareMode==='players'&&<div style={{background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:12}}>
+            <PlayerPicker myUid={user.uid} selected={sharePlayers} onSelect={setSP} subtitle="Only selected players will see this post."/>
+          </div>}
+          {shareMode==='group'&&<div style={{background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:12}}>
+            <GroupManager myUid={user.uid} selectedGroupId={shareGroup?.id||null} onSelectGroup={g=>setSG(g)}/>
+          </div>}
+        </div>
+
+        <button className="btn btn-primary" onClick={save} disabled={saving} style={{width:'100%',opacity:saving?.6:1}}>{saving?'Saving…':editData?'Save Changes':'📢 Post Availability'}</button>
       </div>
     </div>
   );
@@ -1364,6 +1674,8 @@ function App(){
 
   useEffect(()=>{navigator.geolocation?.getCurrentPosition(p=>{setULat(p.coords.latitude);setULng(p.coords.longitude);},()=>{},{timeout:8000});},[]);
 
+  useEffect(()=>{if(user?.uid){cleanOldPosts(user.uid);};},[user?.uid]);
+
   useEffect(()=>{
     if(!fbOk)return;
     const u=db.collection('courts').orderBy('createdAt','desc').onSnapshot(s=>{setCourts(s.docs.map(d=>({id:d.id,...d.data()})));},e=>{if(e.code!=='permission-denied')console.error(e);});
@@ -1442,7 +1754,7 @@ function App(){
         {tab==='courts'&&<CourtsTab courts={courts} uLat={uLat} uLng={uLng} onOpenCourt={openCourt}/>}
         {tab==='court-detail'&&<CourtDetailPage courtId={courtId} onBack={()=>switchTab('courts')}/>}
         {tab==='games'&&<GamesTab user={user} profile={profile} games={games} onNeedLogin={handleNeedLogin}/>}
-        {tab==='players'&&<PlayersTab user={user} posts={posts} players={allPlayers} onChat={setChatP} onNeedLogin={handleNeedLogin}/>}
+        {tab==='players'&&<PlayersTab user={user} posts={posts} players={allPlayers} onChat={setChatP} onNeedLogin={handleNeedLogin} uLat={uLat} uLng={uLng}/>}
         {tab==='profile'&&<ProfileTab user={user} profile={profile} unread={unread} onEditProfile={()=>setShowProfile(true)} onSignOut={handleSignOut} onGoAuth={handleGoAuth} onInbox={()=>setShowInbox(true)}/>}
       </div>
 
