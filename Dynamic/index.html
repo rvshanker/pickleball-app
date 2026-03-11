@@ -345,10 +345,7 @@ textarea.fi{resize:vertical;min-height:60px;}
 const {useState,useEffect,useRef,useMemo} = React;
 
 /* Firebase */
-const isNative=!!(window.Capacitor?.isNativePlatform?.());
-// Web API key has HTTP referrer restrictions that block capacitor:// origins.
-// Use the iOS API key (GoogleService-Info.plist) on native — restricted by bundle ID instead.
-const FB={apiKey:isNative?"AIzaSyDjgdzr2gQlWMYnOYeLV56HBk5mdOXEDj8":"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",authDomain:"pickleball-app-1bba7.firebaseapp.com",projectId:"pickleball-app-1bba7",storageBucket:"pickleball-app-1bba7.firebasestorage.app",messagingSenderId:"645604154338",appId:"1:645604154338:web:b92f87c2cd11d950b737bb"};
+const FB={apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",authDomain:"pickleball-app-1bba7.firebaseapp.com",projectId:"pickleball-app-1bba7",storageBucket:"pickleball-app-1bba7.firebasestorage.app",messagingSenderId:"645604154338",appId:"1:645604154338:web:b92f87c2cd11d950b737bb"};
 let db=null,auth=null,fbOk=false;
 try{if(!firebase.apps.length)firebase.initializeApp(FB);db=firebase.firestore();auth=firebase.auth();fbOk=true;}
 catch(e){console.error('Firebase:',e);}
@@ -2161,7 +2158,15 @@ function PostForm({user,onClose,onPosted,editData,uLat,uLng}){
 }
 
 /* ── ProfileTab ── */
-function ProfileTab({user,profile,onEditProfile,onSignOut,onGoAuth,unread,onInbox}){
+function ProfileTab({user,profile,onEditProfile,onSignOut,onGoAuth,unread,onInbox,onDeleteAccount}){
+  const[showDelete,setShowDelete]=useState(false);
+  const[delInput,setDelInput]=useState('');
+  const[deleting,setDeleting]=useState(false);
+  const handleDelete=async()=>{
+    if(delInput.trim().toLowerCase()!=='delete')return;
+    setDeleting(true);
+    try{await onDeleteAccount();}catch(e){alert('Failed: '+e.message);setDeleting(false);}
+  };
   if(!user)return(
     <div className="px fade-in" style={{paddingTop:40}}>
       <div className="login-prompt-card" style={{textAlign:'center'}}>
@@ -2191,6 +2196,44 @@ function ProfileTab({user,profile,onEditProfile,onSignOut,onGoAuth,unread,onInbo
       <div className="settings-row" onClick={onSignOut} style={{borderColor:'rgba(247,91,91,0.15)'}}>
         <div className="settings-row-left"><div style={{fontSize:'1.1rem'}}>↩</div><div><div style={{fontSize:'0.88rem',fontWeight:600,color:'var(--red)'}}>Sign Out</div></div></div>
       </div>
+      <div style={{fontSize:'0.65rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginTop:24,marginBottom:8,paddingLeft:2}}>Account</div>
+      <div className="settings-row" onClick={()=>window.open('https://pickleconnect.live/privacy','_blank')}>
+        <div className="settings-row-left"><div style={{fontSize:'1.1rem'}}>🔒</div><div><div style={{fontSize:'0.88rem',fontWeight:600}}>Privacy Policy</div></div></div>
+        <span style={{color:'var(--muted)'}}>›</span>
+      </div>
+      <div className="settings-row" onClick={()=>setShowDelete(true)} style={{borderColor:'rgba(247,91,91,0.15)'}}>
+        <div className="settings-row-left"><div style={{fontSize:'1.1rem'}}>🗑</div><div><div style={{fontSize:'0.88rem',fontWeight:600,color:'var(--red)'}}>Delete Account</div><div style={{fontSize:'0.7rem',color:'var(--muted)'}}>Permanently removes all your data</div></div></div>
+        <span style={{color:'var(--red)'}}>›</span>
+      </div>
+      {showDelete&&(
+        <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget){setShowDelete(false);setDelInput('');}}}>
+          <div className="modal-sheet">
+            <div className="modal-handle"/>
+            <div style={{textAlign:'center',marginBottom:16}}>
+              <div style={{fontSize:'2.5rem',marginBottom:8}}>⚠️</div>
+              <div className="modal-title" style={{color:'var(--red)'}}>Delete Account</div>
+            </div>
+            <div style={{background:'rgba(247,91,91,0.08)',border:'1px solid rgba(247,91,91,0.2)',borderRadius:12,padding:'12px 14px',marginBottom:16,fontSize:'0.82rem',color:'var(--text)',lineHeight:1.6}}>
+              This will permanently delete:<br/>
+              <strong>• Your profile</strong><br/>
+              <strong>• All your availability posts</strong><br/>
+              <strong>• All your games</strong><br/>
+              <strong>• Your login credentials</strong><br/><br/>
+              <span style={{color:'var(--red)',fontWeight:700}}>This cannot be undone.</span>
+            </div>
+            <div className="fg">
+              <div className="fl">Type DELETE to confirm</div>
+              <input className="fi" value={delInput} onChange={e=>setDelInput(e.target.value)} placeholder="DELETE" autoCapitalize="none" autoCorrect="off" spellCheck={false}/>
+            </div>
+            <div style={{display:'flex',gap:8,marginTop:8}}>
+              <button className="btn btn-ghost" style={{flex:1}} onClick={()=>{setShowDelete(false);setDelInput('');}}>Cancel</button>
+              <button onClick={handleDelete} disabled={deleting||delInput.trim().toLowerCase()!=='delete'} style={{flex:1,padding:'11px',borderRadius:12,border:'none',background:delInput.trim().toLowerCase()==='delete'?'var(--red)':'rgba(247,91,91,0.2)',color:'white',fontFamily:'DM Sans',fontSize:'0.88rem',fontWeight:700,cursor:delInput.trim().toLowerCase()==='delete'?'pointer':'default',opacity:deleting?.6:1}}>
+                {deleting?'Deleting…':'Delete My Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2247,9 +2290,6 @@ function App(){
   // ── AUTH STATE — automatically dismisses auth screen when user signs in
   useEffect(()=>{
     if(!auth)return;
-    auth.getRedirectResult().catch(e=>{
-      if(e.code&&e.code!=='auth/redirect-cancelled-by-user')console.warn('Redirect auth:',e.message);
-    });
     return auth.onAuthStateChanged(u=>{
       setUser(u||null);
       if(u){
@@ -2316,6 +2356,30 @@ function App(){
   const handleNeedLogin=player=>setLoginPromptPlayer(player===undefined?null:player);
   const handleGoAuth=()=>{setLoginPromptPlayer(undefined);setShowAuth(true);};
   const handleSignOut=async()=>{if(window.confirm('Sign out?')){clearUnsubs();await auth.signOut();switchTab('home');}};
+  const handleDeleteAccount=async()=>{
+    if(!auth?.currentUser)return;
+    const uid=auth.currentUser.uid;
+    // Delete Firestore data
+    if(fbOk){
+      try{await db.collection('profiles').doc(uid).delete();}catch(e){}
+      // Delete user's availability posts
+      try{const snap=await db.collection('findPlayers').where('uid','==',uid).get();await Promise.all(snap.docs.map(d=>d.ref.delete()));}catch(e){}
+      // Delete user's games (where organizer)
+      try{const snap=await db.collection('games').where('organizerUid','==',uid).get();await Promise.all(snap.docs.map(d=>d.ref.delete()));}catch(e){}
+      // Remove user from other games' rosters
+      try{
+        const snap=await db.collection('games').get();
+        await Promise.all(snap.docs.map(async d=>{
+          const players=(d.data().players||[]).filter(p=>p.uid!==uid);
+          if(players.length!==(d.data().players||[]).length)await d.ref.update({players});
+        }));
+      }catch(e){}
+    }
+    // Delete Firebase Auth account
+    await auth.currentUser.delete();
+    clearUnsubs();
+    switchTab('home');
+  };
   const handleFabStartGame=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}switchTab('games');};
   const handleFabAvailable=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}switchTab('players');};
   const handleFabQueue=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}switchTab('courts');};
@@ -2350,7 +2414,7 @@ function App(){
         {tab==='court-detail'&&<CourtDetailPage courtId={courtId} onBack={()=>switchTab('courts')}/>}
         {tab==='games'&&<GamesTab user={user} profile={profile} games={games} onNeedLogin={handleNeedLogin} uLat={uLat} uLng={uLng}/>}
         {tab==='players'&&<PlayersTab user={user} posts={posts} players={allPlayers} onChat={setChatP} onNeedLogin={handleNeedLogin} uLat={uLat} uLng={uLng}/>}
-        {tab==='profile'&&<ProfileTab user={user} profile={profile} unread={unread} onEditProfile={()=>setShowProfile(true)} onSignOut={handleSignOut} onGoAuth={handleGoAuth} onInbox={()=>setShowInbox(true)}/>}
+        {tab==='profile'&&<ProfileTab user={user} profile={profile} unread={unread} onEditProfile={()=>setShowProfile(true)} onSignOut={handleSignOut} onGoAuth={handleGoAuth} onInbox={()=>setShowInbox(true)} onDeleteAccount={handleDeleteAccount}/>}
       </div>
 
       {/* FAB — only on home */}
