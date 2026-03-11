@@ -345,7 +345,10 @@ textarea.fi{resize:vertical;min-height:60px;}
 const {useState,useEffect,useRef,useMemo} = React;
 
 /* Firebase */
-const FB={apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",authDomain:"pickleball-app-1bba7.firebaseapp.com",projectId:"pickleball-app-1bba7",storageBucket:"pickleball-app-1bba7.firebasestorage.app",messagingSenderId:"645604154338",appId:"1:645604154338:web:b92f87c2cd11d950b737bb"};
+const isNative=!!(window.Capacitor?.isNativePlatform?.());
+// Web API key has HTTP referrer restrictions that block capacitor:// origins.
+// Use the iOS API key (GoogleService-Info.plist) on native — restricted by bundle ID instead.
+const FB={apiKey:isNative?"AIzaSyDjgdzr2gQlWMYnOYeLV56HBk5mdOXEDj8":"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",authDomain:"pickleball-app-1bba7.firebaseapp.com",projectId:"pickleball-app-1bba7",storageBucket:"pickleball-app-1bba7.firebasestorage.app",messagingSenderId:"645604154338",appId:"1:645604154338:web:b92f87c2cd11d950b737bb"};
 let db=null,auth=null,fbOk=false;
 try{if(!firebase.apps.length)firebase.initializeApp(FB);db=firebase.firestore();auth=firebase.auth();fbOk=true;}
 catch(e){console.error('Firebase:',e);}
