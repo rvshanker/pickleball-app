@@ -15,6 +15,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -2301,6 +2302,8 @@ function App(){
       if(u){
         // User just signed in — close auth screen
         setShowAuth(false);
+        // Initialize push notifications for this user
+        window.PickleNotif?.init(u.uid);
       }else{
         clearUnsubs();
         setProfile(null);
@@ -2437,5 +2440,6 @@ function App(){
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 <script src="nav.js"></script>
+<script src="fcm.js"></script>
 </body>
 </html>
