@@ -2196,7 +2196,7 @@ function ProfileTab({user,profile,onEditProfile,onSignOut,onGoAuth,unread,onInbo
       <div className="settings-row" onClick={onSignOut} style={{borderColor:'rgba(247,91,91,0.15)'}}>
         <div className="settings-row-left"><div style={{fontSize:'1.1rem'}}>↩</div><div><div style={{fontSize:'0.88rem',fontWeight:600,color:'var(--red)'}}>Sign Out</div></div></div>
       </div>
-      <div style={{fontSize:'0.65rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginTop:24,marginBottom:8,paddingLeft:2}}>Account</div>
+      <div style={{fontSize:'0.65rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginTop:24,marginBottom:8,paddingLeft:2}}>Legal</div>
       <div className="settings-row" onClick={()=>window.open('https://pickleconnect.live/privacy','_blank')}>
         <div className="settings-row-left"><div style={{fontSize:'1.1rem'}}>🔒</div><div><div style={{fontSize:'0.88rem',fontWeight:600}}>Privacy Policy</div></div></div>
         <span style={{color:'var(--muted)'}}>›</span>
@@ -2359,23 +2359,18 @@ function App(){
   const handleDeleteAccount=async()=>{
     if(!auth?.currentUser)return;
     const uid=auth.currentUser.uid;
-    // Delete Firestore data
     if(fbOk){
       try{await db.collection('profiles').doc(uid).delete();}catch(e){}
-      // Delete user's availability posts
-      try{const snap=await db.collection('findPlayers').where('uid','==',uid).get();await Promise.all(snap.docs.map(d=>d.ref.delete()));}catch(e){}
-      // Delete user's games (where organizer)
-      try{const snap=await db.collection('games').where('organizerUid','==',uid).get();await Promise.all(snap.docs.map(d=>d.ref.delete()));}catch(e){}
-      // Remove user from other games' rosters
+      try{const s=await db.collection('findPlayers').where('uid','==',uid).get();await Promise.all(s.docs.map(d=>d.ref.delete()));}catch(e){}
+      try{const s=await db.collection('games').where('organizerUid','==',uid).get();await Promise.all(s.docs.map(d=>d.ref.delete()));}catch(e){}
       try{
-        const snap=await db.collection('games').get();
-        await Promise.all(snap.docs.map(async d=>{
-          const players=(d.data().players||[]).filter(p=>p.uid!==uid);
-          if(players.length!==(d.data().players||[]).length)await d.ref.update({players});
+        const s=await db.collection('games').get();
+        await Promise.all(s.docs.map(async d=>{
+          const pl=(d.data().players||[]).filter(p=>p.uid!==uid);
+          if(pl.length!==(d.data().players||[]).length)await d.ref.update({players:pl});
         }));
       }catch(e){}
     }
-    // Delete Firebase Auth account
     await auth.currentUser.delete();
     clearUnsubs();
     switchTab('home');
