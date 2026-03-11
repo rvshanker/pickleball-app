@@ -99,13 +99,11 @@ function haversine(lat1, lng1, lat2, lng2) {
 async function sendPushToUser(uid, { title, body, data = {} }) {
   try {
     const [tokenDoc, prefDoc] = await Promise.all([
-      db.collection("fcm-tokens").doc(uid).get(),   // matches your existing collection name
+      db.collection("fcm-tokens").doc(uid).get(),
       db.collection("notifPrefs").doc(uid).get(),
     ]);
 
-    if (!tokenDoc.exists) return;
-    const token  = tokenDoc.data().token;
-    const prefs  = prefDoc.exists ? prefDoc.data() : {};
+    const prefs = prefDoc.exists ? prefDoc.data() : {};
 
     // Master switch (default ON)
     if (prefs.masterEnabled === false) return;
@@ -126,20 +124,63 @@ async function sendPushToUser(uid, { title, body, data = {} }) {
     const prefKey = data.prefKey;
     if (prefKey && prefs[prefKey] === false) return;
 
-    await messaging.send({
+    // ── Always write to notifications collection ──────────────────
+    // This powers the bell icon + sound in nav.js regardless of
+    // whether the FCM push is received (web or native)
+    await db.collection("notifications").add({
+      toUid:     uid,
+      fromUid:   data.fromUid || "system",
+      type:      data.type    || "general",
+      text:      body,
+      title,
+      ref:       data.gameId || data.courtId || data.postId || "",
+      screen:    data.screen || "",
+      read:      false,
+      timestamp: Date.now(),
+    });
+
+    // ── Send FCM push if token exists ─────────────────────────────
+    if (!tokenDoc.exists) return;
+    const tokenData = tokenDoc.data();
+    const token     = tokenData.token;
+    if (!token) return;
+
+    // Detect if this is a native Capacitor token (different format)
+    const isNative = tokenData.platform === "ios-native" || tokenData.platform === "android-native";
+
+    const message = {
       token,
       notification: { title, body },
       data: { ...data, sentAt: String(Date.now()) },
-      webpush: {
+    };
+
+    if (isNative) {
+      // APNs config for native iOS
+      message.apns = {
+        payload: {
+          aps: {
+            alert: { title, body },
+            sound: "default",
+            badge: 1,
+          },
+        },
+      };
+    } else {
+      // Web push config
+      message.webpush = {
         notification: {
-          icon:  "/icon-192.png",
-          badge: "/icon-96.png",
-          tag:   data.type || "pickleconnect",
+          icon:     "/icon-192.png",
+          badge:    "/icon-96.png",
+          tag:      data.type || "pickleconnect",
           renotify: true,
         },
         fcmOptions: { link: data.screen ? `/?tab=${data.screen}` : "/" },
-      },
-    });
+      };
+    }
+
+    await messaging.send(message);
+    logger.info(`sendPushToUser(${uid}): sent "${title}"`);
+
   } catch (err) {
     if (
       err.code === "messaging/invalid-registration-token" ||
