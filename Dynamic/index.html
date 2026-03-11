@@ -345,7 +345,10 @@ textarea.fi{resize:vertical;min-height:60px;}
 const {useState,useEffect,useRef,useMemo} = React;
 
 /* Firebase */
-const FB={apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",authDomain:"pickleball-app-1bba7.firebaseapp.com",projectId:"pickleball-app-1bba7",storageBucket:"pickleball-app-1bba7.firebasestorage.app",messagingSenderId:"645604154338",appId:"1:645604154338:web:b92f87c2cd11d950b737bb"};
+const isNative=!!(window.Capacitor?.isNativePlatform?.());
+// Web API key has HTTP referrer restrictions that block capacitor:// origins.
+// Use the iOS API key (GoogleService-Info.plist) on native — restricted by bundle ID instead.
+const FB={apiKey:isNative?"AIzaSyDjgdzr2gQlWMYnOYeLV56HBk5mdOXEDj8":"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",authDomain:"pickleball-app-1bba7.firebaseapp.com",projectId:"pickleball-app-1bba7",storageBucket:"pickleball-app-1bba7.firebasestorage.app",messagingSenderId:"645604154338",appId:"1:645604154338:web:b92f87c2cd11d950b737bb"};
 let db=null,auth=null,fbOk=false;
 try{if(!firebase.apps.length)firebase.initializeApp(FB);db=firebase.firestore();auth=firebase.auth();fbOk=true;}
 catch(e){console.error('Firebase:',e);}
@@ -414,7 +417,7 @@ function AuthScreen({onBack}){
   const[email,setEmail]=useState('');const[pass,setPass]=useState('');const[confirm,setConfirm]=useState('');
   const[ld,setLd]=useState(false);const[err,setErr]=useState(null);
   const iStyle={width:'100%',padding:'12px 14px',borderRadius:12,border:'1px solid rgba(255,255,255,0.15)',background:'rgba(255,255,255,0.08)',color:'#F0F4F8',fontFamily:'DM Sans',fontSize:'0.9rem',outline:'none'};
-  const googleAuth=async()=>{setLd(true);setErr(null);try{await auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider());}catch(e){if(e.code!=='auth/popup-closed-by-user')setErr(e.message);setLd(false);}};
+  const googleAuth=async()=>{}; // Google OAuth not used — email/password only
   const emailAuth=async()=>{
     if(!email.trim()||!pass){setErr('Enter email and password.');return;}
     if(mode==='signup'&&pass!==confirm){setErr('Passwords do not match.');return;}
@@ -448,10 +451,7 @@ function AuthScreen({onBack}){
         {mode==='signup'&&<input value={confirm} onChange={e=>setConfirm(e.target.value)} type="password" placeholder="Confirm password" style={iStyle} onKeyDown={e=>e.key==='Enter'&&emailAuth()}/>}
         <button onClick={emailAuth} disabled={ld} className="btn btn-primary" style={{width:'100%',opacity:ld?.6:1,marginTop:2}}>{ld?'Please wait…':mode==='signup'?'Create Account':'Sign In'}</button>
       </div>
-      <div style={{display:'flex',alignItems:'center',gap:10,width:'100%',maxWidth:320,margin:'18px 0'}}>
-        <div style={{flex:1,height:1,background:'rgba(255,255,255,0.1)'}}/><span style={{fontSize:'0.72rem',color:'var(--muted)',fontWeight:600}}>OR</span><div style={{flex:1,height:1,background:'rgba(255,255,255,0.1)'}}/>
-      </div>
-      <button className="google-btn" onClick={googleAuth} disabled={ld}><GoogleSVG/>Continue with Google</button>
+
       <div style={{fontSize:'0.7rem',color:'var(--muted2)',marginTop:16}}>Free · No spam</div>
     </div>
   );
@@ -2247,7 +2247,9 @@ function App(){
   // ── AUTH STATE — automatically dismisses auth screen when user signs in
   useEffect(()=>{
     if(!auth)return;
-    auth.getRedirectResult().catch(()=>{});
+    auth.getRedirectResult().catch(e=>{
+      if(e.code&&e.code!=='auth/redirect-cancelled-by-user')console.warn('Redirect auth:',e.message);
+    });
     return auth.onAuthStateChanged(u=>{
       setUser(u||null);
       if(u){
