@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
@@ -76,6 +77,20 @@
             <strong>Windows:</strong> Settings → System → Notifications → turn on for your browser<br>
             <strong>Mac:</strong> System Settings → Notifications → find Chrome/Firefox/Safari → Allow<br>
             <strong>Also check:</strong> Do Not Disturb / Focus mode is OFF
+        </div>
+    </div>
+
+    <!-- Auth status -->
+    <div class="card" id="authCard" style="margin-bottom:16px;">
+        <div class="fd" style="font-size:16px;font-weight:800;color:white;margin-bottom:10px;">
+            👤 SIGN-IN STATUS
+        </div>
+        <div id="authStatus" style="font-size:13px;">
+            <span class="badge badge-y">Checking…</span>
+        </div>
+        <div style="font-size:12px;color:rgba(255,255,255,.4);margin-top:8px;">
+            Token must save under your UID for invite notifications to work.
+            If not signed in, open <a href="index.html" style="color:#6ee7b7;">index.html</a> first.
         </div>
     </div>
 
@@ -278,6 +293,7 @@ const FB = {
 const VAPID_KEY = "BO8kuV9zmoNdPv7zDrUgYNz82A3Nk3cE6wSDO5-4PXi4FJZ0HEy1NLri2N0BsF_mzV5pKtgYHXbKq8_cIA2a3oY";
 
 let app, db, messaging, currentToken;
+let currentUid = null; // ← will be set when Firebase Auth resolves
 
 try {
     app       = firebase.initializeApp(FB);
@@ -287,12 +303,52 @@ try {
     log('❌ Firebase init failed: ' + e.message, 'err');
 }
 
-// Device ID (reuse from localStorage if exists)
+// Device ID kept only for display purposes
 const deviceId = localStorage.getItem('pickleDeviceId') || (() => {
     const id = 'dev_' + Math.random().toString(36).slice(2,10);
     localStorage.setItem('pickleDeviceId', id);
     return id;
 })();
+
+// ── Watch auth state — resolve uid, then check for existing token ────
+firebase.auth().onAuthStateChanged(async (user) => {
+    const authRow = document.getElementById('authStatus');
+    if (user) {
+        currentUid = user.uid;
+        log(`✅ Signed in as: ${user.email || user.uid}`, 'ok');
+        if (authRow) authRow.innerHTML = `<span class="badge badge-g">✅ Signed in — ${user.email || user.uid}</span>`;
+        // Restore token state if already saved
+        await restoreTokenState(user.uid);
+    } else {
+        currentUid = null;
+        log('⚠️ Not signed in — token will save under deviceId fallback (won\'t work for invite notifications)', 'err');
+        if (authRow) authRow.innerHTML = `<span class="badge badge-r">❌ Not signed in — open index.html first, sign in, then come back here</span>`;
+    }
+});
+
+// ── Restore UI if token already exists in Firestore ──────────────────
+async function restoreTokenState(uid) {
+    if (!db || !uid) return;
+    try {
+        const doc = await db.collection('fcm-tokens').doc(uid).get();
+        if (doc.exists && doc.data().token) {
+            currentToken = doc.data().token;
+            document.getElementById('tokenVal').textContent = currentToken;
+            document.getElementById('tokenDisplay').style.display = 'block';
+            document.getElementById('tokenCard').className = 'card green';
+            document.getElementById('tokenBtn').textContent = '🔄 Refresh Token';
+            document.getElementById('fgBtn').disabled = false;
+            document.getElementById('serverFgBtn').disabled = false;
+            document.getElementById('serverBgBtn').disabled = false;
+            log('✅ Existing token found in Firestore for uid: ' + uid, 'ok');
+            log('ℹ️  Token: ' + currentToken.slice(0,30) + '…', 'info');
+        } else {
+            log('ℹ️  No saved token yet for this user — click Get & Save Token', 'info');
+        }
+    } catch(e) {
+        log('⚠️ Could not check existing token: ' + e.message, 'err');
+    }
+}
 
 // ── Logging ───────────────────────────────────────────────────────────
 function log(msg, type = 'info') {
@@ -438,11 +494,14 @@ async function requestPerm() {
     }
 }
 
-// ── Step 3: FCM Token ────────────────────────────────────────────────
 async function getToken() {
     if (!messaging) { log('❌ Firebase Messaging not initialized', 'err'); return; }
     if (VAPID_KEY === 'YOUR_VAPID_KEY_HERE') {
-        log('⚠️  VAPID key not set! Get it from Firebase Console → Project Settings → Cloud Messaging → Web push certificates', 'err');
+        log('⚠️  VAPID key not set!', 'err');
+        return;
+    }
+    if (!currentUid) {
+        log('❌ Not signed in! Open index.html, sign in, then return to this page.', 'err');
         return;
     }
     try {
@@ -453,11 +512,12 @@ async function getToken() {
             document.getElementById('tokenVal').textContent = token;
             document.getElementById('tokenDisplay').style.display = 'block';
             document.getElementById('tokenCard').className = 'card green';
+            document.getElementById('tokenBtn').textContent = '🔄 Refresh Token';
             log('✅ FCM token obtained', 'ok');
 
-            // Save token to Firestore
+            // Save token under UID — this is what Cloud Functions look up
             if (db) {
-                await db.collection('fcm-tokens').doc(deviceId).set({
+                await db.collection('fcm-tokens').doc(currentUid).set({
                     token,
                     deviceId,
                     platform: /iPhone|iPad/.test(navigator.userAgent) ? 'ios' : /Android/.test(navigator.userAgent) ? 'android' : 'desktop',
@@ -465,7 +525,8 @@ async function getToken() {
                     standalone: !!(window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches),
                     updatedAt: Date.now()
                 });
-                log('✅ Token saved to Firestore: fcm-tokens/' + deviceId, 'ok');
+                log('✅ Token saved to fcm-tokens/' + currentUid, 'ok');
+                log('ℹ️  Invite notifications will now reach this device', 'info');
                 document.getElementById('fgBtn').disabled = false;
                 document.getElementById('serverFgBtn').disabled = false;
                 document.getElementById('serverBgBtn').disabled = false;
@@ -476,10 +537,10 @@ async function getToken() {
     } catch(e) {
         log('❌ getToken failed: ' + e.message, 'err');
         if (e.message.includes('messaging/failed-service-worker-registration')) {
-            log('ℹ️  firebase-messaging-sw.js is not found at the site root. Check file is deployed.', 'info');
+            log('ℹ️  firebase-messaging-sw.js not found at site root.', 'info');
         }
         if (e.message.includes('messaging/permission-blocked')) {
-            log('ℹ️  Notifications are blocked. Clear the block in browser settings.', 'info');
+            log('ℹ️  Notifications are blocked. Clear in browser settings.', 'info');
         }
     }
 }
