@@ -6,6 +6,15 @@
 (function () {
   'use strict';
 
+  // Guard: wait for DOM to be ready before touching document.body
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  function init() {
+
   const PAGE_META = {
     'pickleconnect-app.html': { id: 'home',       label: 'Home'       },
     'index.html':             { id: 'home',       label: 'Home'       },
@@ -278,7 +287,7 @@
     <div class="pcn-panel-hdr">
       <div class="pcn-panel-title">🔔 Notifications</div>
       <div style="display:flex;align-items:center;gap:6px;">
-        <button class="pcn-panel-close" id="pcn-notif-settings" title="Notification Settings" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;font-family:'DM Sans',sans-serif;color:#64748b;display:flex;align-items:center;gap:4px;">⚙ Settings</button>
+        <button class="pcn-panel-close" id="pcn-notif-settings" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;font-family:'DM Sans',sans-serif;color:#64748b;">⚙ Settings</button>
         <button class="pcn-panel-close" id="pcn-notif-close">✕</button>
       </div>
     </div>
@@ -295,15 +304,10 @@
     if (notifOpen) markNotifsRead();
   });
   document.getElementById('pcn-notif-close').addEventListener('click', () => {
-    notifOpen = false;
-    notifPanel.classList.remove('open');
-    notifBtn.style.background = '';
+    notifOpen = false; notifPanel.classList.remove('open'); notifBtn.style.background = '';
   });
   document.getElementById('pcn-notif-settings').addEventListener('click', () => {
-    notifOpen = false;
-    notifPanel.classList.remove('open');
-    notifBtn.style.background = '';
-    // Open notification settings — works both on index.html (SPA) and standalone pages
+    notifOpen = false; notifPanel.classList.remove('open'); notifBtn.style.background = '';
     if (typeof window.__pcnOpenNotifSettings === 'function') {
       window.__pcnOpenNotifSettings();
     } else {
@@ -476,6 +480,12 @@
     hdr.innerHTML = `<div class="pcn-dd-name">${displayName || email || 'Player'}</div><div class="pcn-dd-sub">${skill ? skill + (city ? ' · ' + city : '') : (email || '')}</div>`;
     dd.appendChild(hdr);
 
+    pillWrap.appendChild(btn);
+    pillWrap.appendChild(dd);
+
+    // Define closeDD BEFORE any buttons reference it
+    function closeDD() { dd.classList.remove('open'); btn.classList.remove('open'); }
+
     const editBtn = document.createElement('button');
     editBtn.className = 'pcn-dd-btn';
     editBtn.innerHTML = '✏️ Edit Profile';
@@ -501,6 +511,8 @@
       }
     });
     dd.appendChild(notifSettingsBtn);
+
+    const soBtn = document.createElement('button');
     soBtn.className = 'pcn-dd-btn red';
     soBtn.innerHTML = '↩ Sign Out';
     soBtn.addEventListener('click', async () => {
@@ -525,24 +537,16 @@
     delBtn.innerHTML = '🗑 Delete Account';
     delBtn.addEventListener('click', () => {
       closeDD();
-      // If on index.html (React app), trigger via tab navigation
       if (window.__pcnSetTab) { window.__pcnSetTab('profile'); }
-      // Small delay so the tab renders, then programmatically show delete confirm
       setTimeout(() => {
         if (typeof window.__pcnOpenDeleteAccount === 'function') {
           window.__pcnOpenDeleteAccount();
         } else {
-          // Fallback: navigate to profile tab and let user tap from there
           alert('Go to Profile → Delete Account to delete your account.');
         }
       }, 300);
     });
     dd.appendChild(delBtn);
-
-    pillWrap.appendChild(btn);
-    pillWrap.appendChild(dd);
-
-    function closeDD() { dd.classList.remove('open'); btn.classList.remove('open'); }
 
     btn.addEventListener('click', e => {
       e.stopPropagation();
@@ -637,4 +641,5 @@
     setTimeout(watchAuth, 200);
   }
 
+  } // end init()
 })();

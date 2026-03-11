@@ -22,13 +22,18 @@ const VAPID_KEY = "BO8kuV9zmoNdPv7zDrUgYNz82A3Nk3cE6wSDO5-4PXi4FJZ0HEy1NLri2N0Bs
 window.PickleNotif = {
 
   messaging: null,
+  _uid: null,
 
-  /**
-   * Call this after user logs in:
-   *   PickleNotif.init(user.uid)
-   */
   async init(uid) {
-    if (!uid || !window.firebase?.messaging) return;
+    // Wait until firebase-messaging is loaded
+    if (!uid) return;
+    if (!window.firebase?.messaging) {
+      console.log("[FCM] firebase-messaging not ready, retrying…");
+      setTimeout(() => this.init(uid), 500);
+      return;
+    }
+
+    this._uid = uid;
 
     try {
       this.messaging = firebase.messaging();
@@ -42,17 +47,10 @@ window.PickleNotif = {
 
       // Get token
       const token = await this.messaging.getToken({ vapidKey: VAPID_KEY });
-      if (token) {
-        await this._saveToken(uid, token);
-      }
-
-      // Handle token refresh
-      this.messaging.onTokenRefresh(async () => {
-        const newToken = await this.messaging.getToken({ vapidKey: VAPID_KEY });
-        if (newToken) await this._saveToken(uid, newToken);
-      });
+      if (token) await this._saveToken(uid, token);
 
       // Handle foreground messages (app is open)
+      // Note: onTokenRefresh was removed in Firebase v9 — getToken() always returns fresh token
       this.messaging.onMessage((payload) => {
         this._showInAppToast(payload.notification);
       });
@@ -63,10 +61,12 @@ window.PickleNotif = {
   },
 
   // ─── Save token to Firestore ───
+  // Uses fcm-tokens/{uid} to match Firestore rules + Cloud Functions
   async _saveToken(uid, token) {
     try {
       await firebase.firestore().collection("fcm-tokens").doc(uid).set({
         token,
+        deviceId: uid,                                             // rules require deviceId field
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         platform: this._getPlatform(),
       });
@@ -160,16 +160,19 @@ window.PickleNotif = {
 };
 
 // ─────────────────────────────────────────────
-// Auto-init when Firebase auth state changes
-// (plugs into existing auth setup in index.html)
+// Auto-init: wait for Firebase to be ready, then hook auth state
+// fcm.js loads after nav.js but Firebase may still be initializing
 // ─────────────────────────────────────────────
-if (window.firebase?.auth) {
-  firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-      PickleNotif.init(user.uid);
-    }
-  });
-}
+(function waitForFirebase(attempts) {
+  if (window.firebase?.apps?.length && window.firebase?.auth) {
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) PickleNotif.init(user.uid);
+    });
+  } else if (attempts > 0) {
+    setTimeout(() => waitForFirebase(attempts - 1), 300);
+  } else {
+    console.warn("[FCM] Firebase not available after waiting.");
+  }
+})(20); // retry up to 20 × 300ms = 6 seconds
 
-
-// firebase-messaging-sw.js is a separate file — see that file for the service worker code.
+// firebase-messaging-sw.js is a separate file at the site root.
