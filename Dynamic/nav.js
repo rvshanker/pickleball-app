@@ -277,7 +277,10 @@
   notifPanel.innerHTML = `
     <div class="pcn-panel-hdr">
       <div class="pcn-panel-title">🔔 Notifications</div>
-      <button class="pcn-panel-close" id="pcn-notif-close">✕</button>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button class="pcn-panel-close" id="pcn-notif-settings" title="Notification Settings" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;font-family:'DM Sans',sans-serif;color:#64748b;display:flex;align-items:center;gap:4px;">⚙ Settings</button>
+        <button class="pcn-panel-close" id="pcn-notif-close">✕</button>
+      </div>
     </div>
     <div id="pcn-notif-list"><div class="pcn-empty">No notifications yet</div></div>
   `;
@@ -295,6 +298,18 @@
     notifOpen = false;
     notifPanel.classList.remove('open');
     notifBtn.style.background = '';
+  });
+  document.getElementById('pcn-notif-settings').addEventListener('click', () => {
+    notifOpen = false;
+    notifPanel.classList.remove('open');
+    notifBtn.style.background = '';
+    // Open notification settings — works both on index.html (SPA) and standalone pages
+    if (typeof window.__pcnOpenNotifSettings === 'function') {
+      window.__pcnOpenNotifSettings();
+    } else {
+      fade.classList.add('go');
+      setTimeout(() => { window.location.href = 'notifications.html'; }, 160);
+    }
   });
   document.addEventListener('click', (e) => {
     if (notifOpen && !notifPanel.contains(e.target) && !notifBtn.contains(e.target)) {
@@ -473,7 +488,19 @@
     });
     dd.appendChild(editBtn);
 
-    const soBtn = document.createElement('button');
+    const notifSettingsBtn = document.createElement('button');
+    notifSettingsBtn.className = 'pcn-dd-btn';
+    notifSettingsBtn.innerHTML = '🔔 Notification Settings';
+    notifSettingsBtn.addEventListener('click', () => {
+      closeDD();
+      if (typeof window.__pcnOpenNotifSettings === 'function') {
+        window.__pcnOpenNotifSettings();
+      } else {
+        fade.classList.add('go');
+        setTimeout(() => { window.location.href = 'notifications.html'; }, 160);
+      }
+    });
+    dd.appendChild(notifSettingsBtn);
     soBtn.className = 'pcn-dd-btn red';
     soBtn.innerHTML = '↩ Sign Out';
     soBtn.addEventListener('click', async () => {
