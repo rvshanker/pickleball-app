@@ -484,6 +484,34 @@
     });
     dd.appendChild(soBtn);
 
+    const privBtn = document.createElement('button');
+    privBtn.className = 'pcn-dd-btn';
+    privBtn.innerHTML = '🔒 Privacy Policy';
+    privBtn.addEventListener('click', () => {
+      closeDD();
+      window.open('https://pickleconnect.live/privacy', '_blank');
+    });
+    dd.appendChild(privBtn);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'pcn-dd-btn red';
+    delBtn.innerHTML = '🗑 Delete Account';
+    delBtn.addEventListener('click', () => {
+      closeDD();
+      // If on index.html (React app), trigger via tab navigation
+      if (window.__pcnSetTab) { window.__pcnSetTab('profile'); }
+      // Small delay so the tab renders, then programmatically show delete confirm
+      setTimeout(() => {
+        if (typeof window.__pcnOpenDeleteAccount === 'function') {
+          window.__pcnOpenDeleteAccount();
+        } else {
+          // Fallback: navigate to profile tab and let user tap from there
+          alert('Go to Profile → Delete Account to delete your account.');
+        }
+      }, 300);
+    });
+    dd.appendChild(delBtn);
+
     pillWrap.appendChild(btn);
     pillWrap.appendChild(dd);
 

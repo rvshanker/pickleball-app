@@ -2162,6 +2162,8 @@ function ProfileTab({user,profile,onEditProfile,onSignOut,onGoAuth,unread,onInbo
   const[showDelete,setShowDelete]=useState(false);
   const[delInput,setDelInput]=useState('');
   const[deleting,setDeleting]=useState(false);
+  // Expose trigger for nav.js dropdown
+  useEffect(()=>{window.__pcnTriggerDelete=()=>setShowDelete(true);return()=>{delete window.__pcnTriggerDelete;};},[]);
   const handleDelete=async()=>{
     if(delInput.trim().toLowerCase()!=='delete')return;
     setDeleting(true);
@@ -2270,6 +2272,7 @@ function App(){
   useEffect(()=>{window.__pcnOpenAuth=()=>setShowAuth(true);return()=>{delete window.__pcnOpenAuth;};},[]);
   useEffect(()=>{window.__pcnOpenProfile=()=>setShowProfile(true);return()=>{delete window.__pcnOpenProfile;};},[]);
   useEffect(()=>{window.__pcnOpenInbox=()=>setShowInbox(true);if(new URLSearchParams(window.location.search).get('inbox')==='1'){setTimeout(()=>setShowInbox(true),250);}return()=>{delete window.__pcnOpenInbox;};},[]);
+  useEffect(()=>{window.__pcnOpenDeleteAccount=()=>{switchTab('profile');setTimeout(()=>{if(typeof window.__pcnTriggerDelete==='function')window.__pcnTriggerDelete();},350);};return()=>{delete window.__pcnOpenDeleteAccount;};},[]);
 
   const[courts,setCourts]=useState([]);
   const[games,setGames]=useState([]);
