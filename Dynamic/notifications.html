@@ -9,11 +9,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script>
-// Init Firebase (same config as index.html)
 const FB={apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",authDomain:"pickleball-app-1bba7.firebaseapp.com",projectId:"pickleball-app-1bba7",storageBucket:"pickleball-app-1bba7.firebasestorage.app",messagingSenderId:"645604154338",appId:"1:645604154338:web:b92f87c2cd11d950b737bb"};
 if(!firebase.apps.length) firebase.initializeApp(FB);
-const db = firebase.firestore();
-const auth = firebase.auth();
+const _db=firebase.firestore(), _auth=firebase.auth();
 </script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -25,10 +23,16 @@ const auth = firebase.auth();
   --accent:#F7C948;--blue:#5B9BF7;--red:#F75B5B;
 }
 html,body{height:100%;background:var(--navy);}
-body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-text-size-adjust:100%;max-width:480px;margin:0 auto;overflow-x:hidden;}
+body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-text-size-adjust:100%;max-width:480px;margin:0 auto;}
 
-/* Hide the built-in top-bar since nav.js injects its own */
-.top-bar{display:none!important;}
+/* Top bar */
+.top-bar{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;gap:12px;
+  padding:14px 18px 12px;
+  background:var(--navy);
+  border-bottom:1px solid var(--border);
+}
 .back-btn{
   width:36px;height:36px;border-radius:50%;
   background:var(--card);border:1px solid var(--border);
@@ -164,7 +168,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
 
 /* Toast */
 .toast{
-  position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
   background:var(--green-dark);color:white;
   padding:10px 20px;border-radius:12px;
   font-size:0.82rem;font-weight:700;
@@ -372,12 +376,10 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
 
 <script>
   let dirty = false;
-  let currentUid = null;
+  let _uid = null;
 
-  // ── Back navigation: always go to index.html (blank page fix) ──
-  function goBack() {
-    window.location.href = 'index.html';
-  }
+  // ── Back: always go to index.html (history.back() causes blank page) ──
+  function goBack() { window.location.href = 'index.html'; }
 
   function markDirty() {
     dirty = true;
@@ -386,11 +388,8 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
 
   function onMasterToggle(cb) {
     markDirty();
-    const rows = document.querySelectorAll('.notif-row');
-    rows.forEach(r => {
-      if (cb.checked) r.classList.remove('disabled');
-      else r.classList.add('disabled');
-    });
+    document.querySelectorAll('.notif-row').forEach(r =>
+      r.classList.toggle('disabled', !cb.checked));
     document.querySelectorAll('.notif-toggle').forEach(t => t.disabled = !cb.checked);
   }
 
@@ -399,132 +398,99 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
     document.getElementById('quietTo').style.display = cb.checked ? 'flex' : 'none';
   }
 
-  function setFreq(btn, val) {
-    const group = btn.closest('.freq-sel');
-    group.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('on'));
+  function setFreq(btn) {
+    btn.closest('.freq-sel').querySelectorAll('.freq-btn').forEach(b => b.classList.remove('on'));
     btn.classList.add('on');
     markDirty();
   }
 
-  // ── Collect current settings from DOM ──
+  // ── Collect settings from DOM ──
   function collectSettings() {
-    const settings = {
+    const s = {
       masterEnabled: document.getElementById('masterToggle').checked,
-      quietEnabled: document.getElementById('quietToggle').checked,
+      quietEnabled:  document.getElementById('quietToggle').checked,
       quietFrom: document.querySelector('#quietFrom input')?.value || '22:00',
-      quietTo: document.querySelector('#quietTo input')?.value || '07:00',
+      quietTo:   document.querySelector('#quietTo input')?.value   || '07:00',
       notifications: {}
     };
-    // Collect each toggle
     document.querySelectorAll('.notif-row').forEach(row => {
-      const toggle = row.querySelector('.notif-toggle');
-      const nameEl = row.querySelector('.notif-name');
+      const toggle  = row.querySelector('.notif-toggle');
+      const nameEl  = row.querySelector('.notif-name');
       if (!toggle || !nameEl) return;
-      const key = nameEl.textContent.trim().toLowerCase().replace(/\s+/g,'_').replace(/[^a-z_]/g,'');
+      const key = nameEl.textContent.trim()
+        .toLowerCase().replace(/\s+/g,'_').replace(/[^a-z_]/g,'');
       const freqBtn = row.querySelector('.freq-btn.on');
-      settings.notifications[key] = {
-        enabled: toggle.checked,
-        freq: freqBtn ? freqBtn.textContent.trim() : null
-      };
+      s.notifications[key] = { enabled: toggle.checked, freq: freqBtn?.textContent.trim() || null };
     });
-    return settings;
+    return s;
   }
 
-  // ── Apply loaded settings to DOM ──
-  function applySettings(settings) {
-    if (!settings) return;
-    if (settings.masterEnabled !== undefined) {
-      document.getElementById('masterToggle').checked = settings.masterEnabled;
+  // ── Apply settings to DOM ──
+  function applySettings(s) {
+    if (!s) return;
+    if (s.masterEnabled !== undefined) {
+      document.getElementById('masterToggle').checked = s.masterEnabled;
       onMasterToggle(document.getElementById('masterToggle'));
     }
-    if (settings.quietEnabled !== undefined) {
-      document.getElementById('quietToggle').checked = settings.quietEnabled;
-      onQuietToggle(document.getElementById('quietToggle'));
-    }
-    if (settings.quietFrom) {
-      const inp = document.querySelector('#quietFrom input');
-      if (inp) inp.value = settings.quietFrom;
-    }
-    if (settings.quietTo) {
-      const inp = document.querySelector('#quietTo input');
-      if (inp) inp.value = settings.quietTo;
-    }
-    if (settings.notifications) {
+    const qTog = document.getElementById('quietToggle');
+    if (s.quietEnabled !== undefined) { qTog.checked = s.quietEnabled; onQuietToggle(qTog); }
+    if (s.quietFrom) { const i = document.querySelector('#quietFrom input'); if(i) i.value = s.quietFrom; }
+    if (s.quietTo)   { const i = document.querySelector('#quietTo input');   if(i) i.value = s.quietTo;   }
+    if (s.notifications) {
       document.querySelectorAll('.notif-row').forEach(row => {
         const toggle = row.querySelector('.notif-toggle');
         const nameEl = row.querySelector('.notif-name');
         if (!toggle || !nameEl) return;
-        const key = nameEl.textContent.trim().toLowerCase().replace(/\s+/g,'_').replace(/[^a-z_]/g,'');
-        const saved = settings.notifications[key];
+        const key = nameEl.textContent.trim()
+          .toLowerCase().replace(/\s+/g,'_').replace(/[^a-z_]/g,'');
+        const saved = s.notifications[key];
         if (!saved) return;
         toggle.checked = saved.enabled;
         if (saved.freq) {
-          row.querySelectorAll('.freq-btn').forEach(b => {
-            b.classList.toggle('on', b.textContent.trim() === saved.freq);
-          });
+          row.querySelectorAll('.freq-btn').forEach(b =>
+            b.classList.toggle('on', b.textContent.trim() === saved.freq));
         }
       });
     }
+    dirty = false;
+    document.getElementById('saveBtn').classList.remove('visible');
   }
 
-  // ── Save to Firestore ──
+  // ── Save ──
   async function saveSettings() {
     const settings = collectSettings();
-    let saved = false;
-
-    if (currentUid) {
+    let savedToCloud = false;
+    if (_uid) {
       try {
-        await db.collection('notifSettings').doc(currentUid).set(settings, { merge: true });
-        saved = true;
-      } catch(e) {
-        console.error('Save failed:', e);
-      }
+        await _db.collection('notifSettings').doc(_uid).set(settings, { merge: true });
+        savedToCloud = true;
+      } catch(e) { console.warn('Firestore save failed:', e); }
     }
-    // Always save to localStorage as fallback
     try { localStorage.setItem('pcn_notif_settings', JSON.stringify(settings)); } catch(e) {}
-
     dirty = false;
     document.getElementById('saveBtn').classList.remove('visible');
     const t = document.getElementById('toast');
-    t.textContent = saved ? '✓ Preferences saved' : '✓ Saved locally';
+    t.textContent = savedToCloud ? '✓ Preferences saved' : '✓ Saved locally';
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2200);
   }
 
-  // ── Load from Firestore on auth ──
-  auth.onAuthStateChanged(async user => {
-    if (user) {
-      currentUid = user.uid;
+  // ── Load on auth ──
+  _auth.onAuthStateChanged(async user => {
+    _uid = user?.uid || null;
+    let settings = null;
+    if (_uid) {
       try {
-        const snap = await db.collection('notifSettings').doc(user.uid).get();
-        if (snap.exists) {
-          applySettings(snap.data());
-        } else {
-          // Try localStorage fallback
-          try {
-            const local = localStorage.getItem('pcn_notif_settings');
-            if (local) applySettings(JSON.parse(local));
-          } catch(e) {}
-        }
-      } catch(e) {
-        // Fallback to localStorage
-        try {
-          const local = localStorage.getItem('pcn_notif_settings');
-          if (local) applySettings(JSON.parse(local));
-        } catch(e2) {}
-      }
-    } else {
-      // Guest: load from localStorage only
-      try {
-        const local = localStorage.getItem('pcn_notif_settings');
-        if (local) applySettings(JSON.parse(local));
+        const snap = await _db.collection('notifSettings').doc(_uid).get();
+        if (snap.exists) settings = snap.data();
       } catch(e) {}
     }
-    // Reset dirty after loading
-    dirty = false;
-    document.getElementById('saveBtn').classList.remove('visible');
+    if (!settings) {
+      try { const raw = localStorage.getItem('pcn_notif_settings'); if(raw) settings = JSON.parse(raw); } catch(e) {}
+    }
+    if (settings) applySettings(settings);
   });
 </script>
-</body>
 <script src="nav.js"></script>
+</body>
 </html>
