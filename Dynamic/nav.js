@@ -220,7 +220,15 @@
     // Same page = do nothing
     if (target === filename) return;
 
-    // Fallback: full navigation (shouldn't happen in normal SPA flow)
+    // On standalone non-SPA pages (e.g. notifications.html): route to index.html
+    // with the desired tab as a hash so the SPA can open the right tab on load.
+    if (tabId !== undefined) {
+      fade.classList.add('go');
+      setTimeout(() => { window.location.href = 'index.html#tab=' + tabId; }, 160);
+      return;
+    }
+
+    // Fallback: full navigation
     fade.classList.add('go');
     setTimeout(() => { window.location.href = href; }, 160);
   }

@@ -674,7 +674,7 @@ function AddCourtModal({onClose, onAdded}) {
         setSaving(true);
         let fLat = lat, fLng = lng;
         if (!fLat || !fLng) { const geo = await geocodeAddress(address); if (geo) { fLat=geo.lat; fLng=geo.lng; } else { fLat=0; fLng=0; } }
-        const court = { name:name.trim(), address:address.trim(), lat:fLat, lng:fLng, numberOfCourts:numCourts, amenities, courtRules:rules.trim(), openCourts:numCourts, crowdLevel:'low', condition:'open', createdAt:Date.now(), ownerUid:window._pcnUid||null };
+        const court = { name:name.trim(), address:address.trim(), lat:fLat, lng:fLng, numberOfCourts:numCourts, amenities, courtRules:rules.trim(), openCourts:numCourts, crowdLevel:'low', condition:'open', createdAt:Date.now() };
         try { if(fbOk&&db){ const ref=await db.collection('courts').add(court); court.id=ref.id; onAdded(court); } else alert('Database not available.');
         } catch(e) { alert('Failed: '+e.message); }
         setSaving(false);
@@ -859,7 +859,9 @@ function CourtDetailPage({courtId,onBack}){
     const[weather,setWeather]=useState(null);const[forecast,setForecast]=useState([]);
     const[showEdit,setShowEdit]=useState(false);
     const checkInsRef=useRef([]);
-    const[deviceId]=useState(()=>{let id=localStorage.getItem('pickleDeviceId');if(!id){id='dev_'+Math.random().toString(36).slice(2,11);localStorage.setItem('pickleDeviceId',id);}return id;});
+    // Per-session ID — NOT persisted to localStorage — so two people on the same device
+    // each get their own unique check-in slot and don't collide with each other.
+    const[deviceId]=useState(()=>'dev_'+Math.random().toString(36).slice(2,14)+'_'+Date.now().toString(36));
     useEffect(()=>{const n=localStorage.getItem('pickleCourtUserName');const r=localStorage.getItem('pickleCourtRating');if(n)setUserName(n);if(r)setUserRating(r);},[]);
     useEffect(()=>{if(!courtId||!fbOk){setLoading(false);return;}const u=db.collection('courts').doc(courtId).onSnapshot(d=>{if(d.exists)setCourtData({id:d.id,...d.data()});else setCourtData(null);setLoading(false);},()=>setLoading(false));return()=>u();},[courtId]);
     useEffect(()=>{if(!courtId||!fbOk)return;const u=db.collection('courts').doc(courtId).collection('checkins').onSnapshot(snap=>{const now=Date.now(),cut=now-24*3600000;snap.docs.forEach(d=>{if(d.data().status==='checked-out')d.ref.delete().catch(()=>{});});const list=snap.docs.map(d=>({id:d.id,...d.data()})).filter(c=>c.status!=='checked-out'&&c.timestamp>cut).sort((a,b)=>(a.arrivalTime||a.timestamp)-(b.arrivalTime||b.timestamp));checkInsRef.current=list;setCheckIns(list);},e=>console.warn('CI:',e.message));return()=>u();},[courtId]);
@@ -867,25 +869,7 @@ function CourtDetailPage({courtId,onBack}){
     useEffect(()=>{if(!courtData?.lat||!courtData?.lng)return;const fx=async(la,ln)=>{try{const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+la+'&longitude='+ln+'&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1');const d=await r.json();setWeather({temp:Math.round(d.current.temperature_2m),wind:Math.round(d.current.wind_speed_10m)});const now=new Date();setForecast(d.hourly.time.map((t,i)=>({dt:new Date(t),temp:Math.round(d.hourly.temperature_2m[i]),wind:Math.round(d.hourly.wind_speed_10m[i])})).filter(h=>h.dt>=now&&h.dt.getDate()===now.getDate()).slice(0,10));}catch(e){}};fx(courtData.lat,courtData.lng);},[courtData?.lat,courtData?.lng]);
     const updateCourt=async(field,value)=>{if(!fbOk||!courtId)return;await db.collection('courts').doc(courtId).update({[field]:value}).catch(console.error);};
     const deleteMyCheckIns=async()=>{const snap=await db.collection('courts').doc(courtId).collection('checkins').get();await Promise.all(snap.docs.filter(d=>d.data().deviceId===deviceId).map(d=>d.ref.delete()));};
-    const submitCheckIn=async(status,atTime)=>{if(!fbOk||!userName.trim()){alert(!userName.trim()?'Enter your name':'DB error');return;}try{await deleteMyCheckIns();const ciStatus=status==='now'?'active':'later';await db.collection('courts').doc(courtId).collection('checkins').add({userName,deviceId,rating:userRating||null,status:ciStatus,guests:guestCount,duration,comment:comment.trim()||'',arrivalTime:atTime||Date.now(),timestamp:Date.now()});localStorage.setItem('pickleCourtUserName',userName);localStorage.setItem('pickleCourtRating',userRating);
-      // ── Notify court owner if signed in and different from checker-in ──
-      try{
-        const uid=window._pcnUid;
-        const ownerUid=courtData.ownerUid||courtData.createdBy||null;
-        if(ownerUid&&ownerUid!==uid){
-          const guestNote=guestCount>0?` (+${guestCount} guest${guestCount>1?'s':''})`:''
-          const timeNote=ciStatus==='later'&&atTime?` arriving at ${new Date(atTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}`:'';
-          await db.collection('notifications').add({
-            toUid:ownerUid,
-            type:'player_joined_court',
-            text:`${userName}${guestNote} checked in at ${courtData.name||'your court'}${timeNote}`,
-            ref:courtId,
-            timestamp:Date.now(),
-            read:false
-          });
-        }
-      }catch(ne){console.warn('Notif write failed:',ne);}
-      setShowForm(false);setShowLater(false);setArrivalTime('');setGuestCount(0);setComment('');}catch(e){alert('Check-in failed: '+e.message);}};
+    const submitCheckIn=async(status,atTime)=>{if(!fbOk||!userName.trim()){alert(!userName.trim()?'Enter your name':'DB error');return;}try{await deleteMyCheckIns();const ciStatus=status==='now'?'active':'later';await db.collection('courts').doc(courtId).collection('checkins').add({userName,deviceId,rating:userRating||null,status:ciStatus,guests:guestCount,duration,comment:comment.trim()||'',arrivalTime:atTime||Date.now(),timestamp:Date.now()});localStorage.setItem('pickleCourtUserName',userName);localStorage.setItem('pickleCourtRating',userRating);setShowForm(false);setShowLater(false);setArrivalTime('');setGuestCount(0);setComment('');}catch(e){alert('Check-in failed: '+e.message);}};
     const handleCheckOut=async()=>{await deleteMyCheckIns();};
 
     if(loading)return<div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:200}}><div style={{textAlign:'center'}}><div style={{fontSize:'2rem',marginBottom:8}}>🏟</div><div style={{fontSize:'0.82rem',color:'var(--muted)'}}>Loading court…</div></div></div>;
@@ -2308,7 +2292,11 @@ function App(){
 
   // Expose hooks for nav.js
   const openCourt=c=>{setCourtId(c.id);setTab('court-detail');if(window.__pcnOnTabChange)window.__pcnOnTabChange('courts');};
-  useEffect(()=>{window.__pcnSetTab=switchTab;},[]);
+  useEffect(()=>{window.__pcnSetTab=switchTab;
+    // Handle #tab=xxx from nav.js on standalone pages (e.g. back from notifications.html)
+    const hash=window.location.hash;
+    if(hash.startsWith('#tab=')){const t=hash.slice(5);if(t)switchTab(t);window.history.replaceState(null,'',window.location.pathname+window.location.search);}
+  },[]);
   useEffect(()=>{window.__pcnOpenAuth=()=>setShowAuth(true);return()=>{delete window.__pcnOpenAuth;};},[]);
   useEffect(()=>{window.__pcnOpenProfile=()=>setShowProfile(true);return()=>{delete window.__pcnOpenProfile;};},[]);
   useEffect(()=>{window.__pcnOpenInbox=()=>setShowInbox(true);if(new URLSearchParams(window.location.search).get('inbox')==='1'){setTimeout(()=>setShowInbox(true),250);}return()=>{delete window.__pcnOpenInbox;};},[]);

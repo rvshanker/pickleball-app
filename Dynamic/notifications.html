@@ -5,14 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>PickleConnect – Notifications</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script>
-const FB={apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",authDomain:"pickleball-app-1bba7.firebaseapp.com",projectId:"pickleball-app-1bba7",storageBucket:"pickleball-app-1bba7.firebasestorage.app",messagingSenderId:"645604154338",appId:"1:645604154338:web:b92f87c2cd11d950b737bb"};
-if(!firebase.apps.length) firebase.initializeApp(FB);
-const _db=firebase.firestore(), _auth=firebase.auth();
-</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -168,7 +160,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
 
 /* Toast */
 .toast{
-  position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
+  position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);
   background:var(--green-dark);color:white;
   padding:10px 20px;border-radius:12px;
   font-size:0.82rem;font-weight:700;
@@ -187,7 +179,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
 
 <!-- Top bar -->
 <div class="top-bar">
-  <div class="back-btn" onclick="goBack()">←</div>
+  <div class="back-btn" onclick="history.back()">←</div>
   <div class="top-title">Notifications</div>
   <button class="save-btn" id="saveBtn" onclick="saveSettings()">Save</button>
 </div>
@@ -376,10 +368,6 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
 
 <script>
   let dirty = false;
-  let _uid = null;
-
-  // ── Back: always go to index.html (history.back() causes blank page) ──
-  function goBack() { window.location.href = 'index.html'; }
 
   function markDirty() {
     dirty = true;
@@ -388,8 +376,11 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
 
   function onMasterToggle(cb) {
     markDirty();
-    document.querySelectorAll('.notif-row').forEach(r =>
-      r.classList.toggle('disabled', !cb.checked));
+    const rows = document.querySelectorAll('.notif-row');
+    rows.forEach(r => {
+      if (cb.checked) r.classList.remove('disabled');
+      else r.classList.add('disabled');
+    });
     document.querySelectorAll('.notif-toggle').forEach(t => t.disabled = !cb.checked);
   }
 
@@ -398,99 +389,21 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
     document.getElementById('quietTo').style.display = cb.checked ? 'flex' : 'none';
   }
 
-  function setFreq(btn) {
-    btn.closest('.freq-sel').querySelectorAll('.freq-btn').forEach(b => b.classList.remove('on'));
+  function setFreq(btn, val) {
+    // In each freq-sel group, toggle the clicked one on
+    const group = btn.closest('.freq-sel');
+    group.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('on'));
     btn.classList.add('on');
     markDirty();
   }
 
-  // ── Collect settings from DOM ──
-  function collectSettings() {
-    const s = {
-      masterEnabled: document.getElementById('masterToggle').checked,
-      quietEnabled:  document.getElementById('quietToggle').checked,
-      quietFrom: document.querySelector('#quietFrom input')?.value || '22:00',
-      quietTo:   document.querySelector('#quietTo input')?.value   || '07:00',
-      notifications: {}
-    };
-    document.querySelectorAll('.notif-row').forEach(row => {
-      const toggle  = row.querySelector('.notif-toggle');
-      const nameEl  = row.querySelector('.notif-name');
-      if (!toggle || !nameEl) return;
-      const key = nameEl.textContent.trim()
-        .toLowerCase().replace(/\s+/g,'_').replace(/[^a-z_]/g,'');
-      const freqBtn = row.querySelector('.freq-btn.on');
-      s.notifications[key] = { enabled: toggle.checked, freq: freqBtn?.textContent.trim() || null };
-    });
-    return s;
-  }
-
-  // ── Apply settings to DOM ──
-  function applySettings(s) {
-    if (!s) return;
-    if (s.masterEnabled !== undefined) {
-      document.getElementById('masterToggle').checked = s.masterEnabled;
-      onMasterToggle(document.getElementById('masterToggle'));
-    }
-    const qTog = document.getElementById('quietToggle');
-    if (s.quietEnabled !== undefined) { qTog.checked = s.quietEnabled; onQuietToggle(qTog); }
-    if (s.quietFrom) { const i = document.querySelector('#quietFrom input'); if(i) i.value = s.quietFrom; }
-    if (s.quietTo)   { const i = document.querySelector('#quietTo input');   if(i) i.value = s.quietTo;   }
-    if (s.notifications) {
-      document.querySelectorAll('.notif-row').forEach(row => {
-        const toggle = row.querySelector('.notif-toggle');
-        const nameEl = row.querySelector('.notif-name');
-        if (!toggle || !nameEl) return;
-        const key = nameEl.textContent.trim()
-          .toLowerCase().replace(/\s+/g,'_').replace(/[^a-z_]/g,'');
-        const saved = s.notifications[key];
-        if (!saved) return;
-        toggle.checked = saved.enabled;
-        if (saved.freq) {
-          row.querySelectorAll('.freq-btn').forEach(b =>
-            b.classList.toggle('on', b.textContent.trim() === saved.freq));
-        }
-      });
-    }
-    dirty = false;
-    document.getElementById('saveBtn').classList.remove('visible');
-  }
-
-  // ── Save ──
-  async function saveSettings() {
-    const settings = collectSettings();
-    let savedToCloud = false;
-    if (_uid) {
-      try {
-        await _db.collection('notifSettings').doc(_uid).set(settings, { merge: true });
-        savedToCloud = true;
-      } catch(e) { console.warn('Firestore save failed:', e); }
-    }
-    try { localStorage.setItem('pcn_notif_settings', JSON.stringify(settings)); } catch(e) {}
+  function saveSettings() {
     dirty = false;
     document.getElementById('saveBtn').classList.remove('visible');
     const t = document.getElementById('toast');
-    t.textContent = savedToCloud ? '✓ Preferences saved' : '✓ Saved locally';
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2200);
   }
-
-  // ── Load on auth ──
-  _auth.onAuthStateChanged(async user => {
-    _uid = user?.uid || null;
-    let settings = null;
-    if (_uid) {
-      try {
-        const snap = await _db.collection('notifSettings').doc(_uid).get();
-        if (snap.exists) settings = snap.data();
-      } catch(e) {}
-    }
-    if (!settings) {
-      try { const raw = localStorage.getItem('pcn_notif_settings'); if(raw) settings = JSON.parse(raw); } catch(e) {}
-    }
-    if (settings) applySettings(settings);
-  });
 </script>
-<script src="nav.js"></script>
 </body>
 </html>
