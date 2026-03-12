@@ -197,10 +197,10 @@ textarea.fi{resize:vertical;min-height:60px;}
 .cd-glance-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .cd-glance-sub{font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;text-align:center;}
 .cd-glance-pills{display:flex;gap:6px;}
-.cd-g-pill{flex:1;background:var(--navy);border:1px solid var(--border);border-radius:10px;padding:6px 8px;text-align:center;}
+.cd-g-pill{background:var(--navy);border:1px solid var(--border);border-radius:10px;padding:8px 10px;text-align:center;flex-shrink:0;}
 .cd-g-pill.lit{background:rgba(46,204,113,0.08);border-color:rgba(46,204,113,0.25);}
-.cd-g-lbl{font-size:0.5rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
-.cd-g-val{font-size:0.82rem;font-weight:800;color:var(--text);margin-top:1px;}
+.cd-g-lbl{font-size:0.52rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.cd-g-val{font-size:0.82rem;font-weight:800;color:var(--text);margin-top:2px;}
 .cd-tabs{display:flex;gap:3px;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:3px;margin:0 16px 11px;}
 .cd-tab{flex:1;padding:7px 3px;font-family:'DM Sans',sans-serif;font-size:0.7rem;font-weight:700;border:none;background:transparent;color:var(--muted);cursor:pointer;border-radius:8px;transition:all .15s;text-align:center;}
 .cd-tab.a{background:var(--green-dim);color:var(--green);}
@@ -328,8 +328,8 @@ textarea.fi{resize:vertical;min-height:60px;}
 .bp-open{background:rgba(46,204,113,.15);color:var(--green);}
 .bp-full{background:rgba(245,158,11,.15);color:#d97706;}
 .bp-priv{background:rgba(139,92,246,.15);color:#7c3aed;}
-.bp-pub{background:rgba(59,130,246,.15);color:#2563eb;}
-.bp-inv{background:rgba(59,130,246,.2);color:#1d4ed8;}
+.bp-pub{background:rgba(59,130,246,.18);color:#93c5fd;}
+.bp-inv{background:rgba(59,130,246,.22);color:#bfdbfe;}
 .bp-mine{background:var(--green-dim);color:var(--green);}
 /* Stepper */
 .stepper{display:flex;align-items:center;border:1.5px solid var(--border2);border-radius:10px;overflow:hidden;width:fit-content;}
@@ -902,21 +902,21 @@ function CourtDetailPage({courtId,onBack}){
             {weather&&<div style={{marginTop:12}}>
                 <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:8,alignItems:'start'}}>
                     {/* Current — compact */}
-                    <div className="cd-wx-card" style={{padding:'7px 10px',gap:7,minWidth:0}}>
-                        <div style={{fontSize:'1.2rem',lineHeight:1}}>{wxIcon(weather.temp,weather.wind)}</div>
+                    <div className="cd-wx-card" style={{padding:'8px 12px',gap:8,minWidth:0}}>
+                        <div style={{fontSize:'1.4rem',lineHeight:1}}>{wxIcon(weather.temp,weather.wind)}</div>
                         <div>
-                            <div style={{fontSize:'0.55rem',color:'var(--muted)',fontWeight:600}}>Now</div>
-                            <div style={{fontSize:'0.88rem',fontWeight:800,whiteSpace:'nowrap'}}>{weather.temp}°F</div>
-                            <div style={{fontSize:'0.55rem',color:'var(--muted)',whiteSpace:'nowrap'}}>💨 {weather.wind}mph</div>
+                            <div style={{fontSize:'0.58rem',color:'var(--muted)',fontWeight:600}}>Now</div>
+                            <div style={{fontSize:'0.95rem',fontWeight:800,whiteSpace:'nowrap'}}>{weather.temp}°F</div>
+                            <div style={{fontSize:'0.62rem',color:'var(--text)',fontWeight:600,whiteSpace:'nowrap'}}>💨 {weather.wind} mph</div>
                         </div>
                     </div>
-                    {/* Next 4 hrs */}
-                    <div style={{display:'flex',gap:5,overflow:'hidden'}}>
-                        {forecast.slice(0,4).map((h,i)=>(
-                            <div key={i} style={{flex:1,background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:'5px 4px',textAlign:'center',minWidth:0}}>
-                                <div style={{fontSize:'0.52rem',color:'var(--muted)',fontWeight:600,whiteSpace:'nowrap'}}>{h.dt.toLocaleTimeString([],{hour:'numeric'})}</div>
-                                <div style={{fontSize:'0.75rem',fontWeight:800,marginTop:2}}>{h.temp}°</div>
-                                <div style={{fontSize:'0.52rem',color:'var(--muted)',marginTop:1}}>💨{h.wind}</div>
+                    {/* Next 5 hrs */}
+                    <div style={{display:'flex',gap:4,overflow:'hidden'}}>
+                        {forecast.slice(0,5).map((h,i)=>(
+                            <div key={i} style={{flex:1,background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:'6px 4px',textAlign:'center',minWidth:0}}>
+                                <div style={{fontSize:'0.55rem',color:'var(--muted)',fontWeight:600,whiteSpace:'nowrap'}}>{h.dt.toLocaleTimeString([],{hour:'numeric'})}</div>
+                                <div style={{fontSize:'0.78rem',fontWeight:800,marginTop:2}}>{h.temp}°</div>
+                                <div style={{fontSize:'0.6rem',color:'var(--text)',fontWeight:600,marginTop:2}}>💨{h.wind}</div>
                             </div>
                         ))}
                     </div>
@@ -926,34 +926,44 @@ function CourtDetailPage({courtId,onBack}){
 
         {/* ── CARD 2: At a Glance ── */}
         <div className="cd-section">
-            <div style={{fontSize:'0.78rem',fontWeight:700,marginBottom:10}}>📊 At a Glance</div>
-            <div className="cd-glance-grid">
-                <div>
-                    <div className="cd-glance-sub">Activity</div>
-                    <div className="cd-glance-pills">
-                        <div className={'cd-g-pill'+(nowTotal>0?' lit':'')}>
-                            <div className="cd-g-lbl">👥 Playing</div>
-                            <div className="cd-g-val">{nowTotal}</div>
-                        </div>
-                        <div className={'cd-g-pill'+(laterTotal>0?' lit':'')}>
-                            <div className="cd-g-lbl">⏰ Coming</div>
-                            <div className="cd-g-val">{laterTotal}</div>
-                        </div>
-                    </div>
+            {/* Scrollable status strip */}
+            <div style={{overflowX:'auto',scrollbarWidth:'none',WebkitOverflowScrolling:'touch',marginBottom:0}}>
+              <div style={{display:'flex',gap:8,paddingBottom:2,minWidth:'max-content'}}>
+                {/* Activity */}
+                <div className={'cd-g-pill'+(nowTotal>0?' lit':'')} style={{minWidth:72}}>
+                  <div className="cd-g-lbl">👥 Playing</div>
+                  <div className="cd-g-val">{nowTotal}</div>
                 </div>
-                <div>
-                    <div className="cd-glance-sub">Court Status</div>
-                    <div className="cd-glance-pills">
-                        <div className={'cd-g-pill'+(courtData.lightsOn?' lit':'')}>
-                            <div className="cd-g-lbl">{courtData.lightsOn?'💡':'🌙'} Lights</div>
-                            <div className="cd-g-val">{courtData.lightsOn?'ON':'OFF'}</div>
-                        </div>
-                        <div className={'cd-g-pill'+(open>0?' lit':'')}>
-                            <div className="cd-g-lbl">⚙️ Rotation</div>
-                            <div className="cd-g-val">{open}/{total}</div>
-                        </div>
-                    </div>
+                <div className={'cd-g-pill'+(laterTotal>0?' lit':'')} style={{minWidth:72}}>
+                  <div className="cd-g-lbl">⏰ Coming</div>
+                  <div className="cd-g-val">{laterTotal}</div>
                 </div>
+                {/* Lights */}
+                <div className={'cd-g-pill'+(courtData.lightsOn?' lit':'')} style={{minWidth:72}}>
+                  <div className="cd-g-lbl">{courtData.lightsOn?'💡':'🌙'} Lights</div>
+                  <div className="cd-g-val">{courtData.lightsOn?'ON':'OFF'}</div>
+                </div>
+                {/* Courts open */}
+                <div className={'cd-g-pill'+(open>0?' lit':'')} style={{minWidth:72}}>
+                  <div className="cd-g-lbl">🏟 Courts</div>
+                  <div className="cd-g-val">{open}/{total}</div>
+                </div>
+                {/* Condition */}
+                <div className={'cd-g-pill'+((courtData.condition&&courtData.condition!=='open')?'':' lit')} style={{minWidth:72}}>
+                  <div className="cd-g-lbl">⚙️ Condition</div>
+                  <div className="cd-g-val" style={{fontSize:'0.7rem'}}>{courtData.condition==='closed'?'🚫 Closed':courtData.condition==='wet'?'💧 Wet':courtData.condition==='hot'?'🥵 Hot':courtData.condition==='windy'?'🌬️ Windy':'✅ Open'}</div>
+                </div>
+                {/* Restrooms */}
+                <div className={'cd-g-pill'+(courtData.restroom!=='closed'?' lit':'')} style={{minWidth:72}}>
+                  <div className="cd-g-lbl">🚻 Restrooms</div>
+                  <div className="cd-g-val">{courtData.restroom==='closed'?'🚫 Closed':'✅ Open'}</div>
+                </div>
+                {/* Parking */}
+                <div className={'cd-g-pill'+(courtData.parking!=='full'?' lit':'')} style={{minWidth:72}}>
+                  <div className="cd-g-lbl">🅿️ Parking</div>
+                  <div className="cd-g-val">{courtData.parking==='full'?'🚗 Full':'✅ Open'}</div>
+                </div>
+              </div>
             </div>
         </div>
 
@@ -1144,7 +1154,7 @@ function InviteStep({game,profile,uLat,uLng,onInvitesSent,onSkip}){
                 <div style={{fontSize:'0.68rem',color:'var(--muted)'}}>{p.skill||''}{p.city?' · '+p.city:''}{p._dist!==undefined?` · ${p._dist<1?p._dist.toFixed(1):Math.round(p._dist)} mi`:''}</div>
               </div>
               {isAccepted&&<span style={{fontSize:'0.6rem',fontWeight:700,background:'var(--green-dim)',color:'var(--green)',padding:'2px 6px',borderRadius:6}}>Joined</span>}
-              {isInvited&&!isSel&&<span style={{fontSize:'0.6rem',fontWeight:700,background:'rgba(59,130,246,.15)',color:'#1d4ed8',padding:'2px 6px',borderRadius:6}}>Pending</span>}
+              {isInvited&&!isSel&&<span style={{fontSize:'0.6rem',fontWeight:700,background:'rgba(59,130,246,.15)',color:'#93c5fd',padding:'2px 6px',borderRadius:6}}>Pending</span>}
               {isDeclined&&!isSel&&<span style={{fontSize:'0.6rem',fontWeight:700,background:'rgba(247,91,91,.15)',color:'var(--red)',padding:'2px 6px',borderRadius:6}}>Declined</span>}
               {p._score>=50&&!ex&&<span style={{fontSize:'0.6rem',fontWeight:700,background:'var(--green-dim)',color:'var(--green)',padding:'2px 6px',borderRadius:6}}>⭐ Match</span>}
               {isSel&&<span style={{color:'var(--green)',fontSize:'1rem',fontWeight:700}}>✓</span>}
@@ -1218,7 +1228,7 @@ function GameCard({game,user,profile,onAction,expanded,onToggle}){
                   <div style={{fontSize:'0.72rem',fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{inv.name}{inv.isOrganizer?<span style={{marginLeft:3,fontSize:'0.55rem',color:'var(--accent)'}}>👑</span>:''}</div>
                   <div style={{fontSize:'0.6rem',color:'var(--muted)'}}>{inv.skill||''}</div>
                 </div>
-                <span style={{fontSize:'0.58rem',fontWeight:700,flexShrink:0,color:inv.status==='accepted'?'var(--green)':inv.status==='invited'?'#3b82f6':'var(--red)'}}>{inv.status==='accepted'?'✓':inv.status==='invited'?'Pending':'Declined'}</span>
+                <span style={{fontSize:'0.58rem',fontWeight:700,flexShrink:0,color:inv.status==='accepted'?'var(--green)':inv.status==='invited'?'#93c5fd':'var(--red)'}}>{inv.status==='accepted'?'✓':inv.status==='invited'?'Pending':'Declined'}</span>
               </div>);
             }
             return(<div key={i} className="g-slot g-empty" onClick={()=>!isFull&&!amIn&&!amInvited&&onAction('join',game)}>
