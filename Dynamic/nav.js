@@ -6,6 +6,14 @@
 (function () {
   'use strict';
 
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  function init() {
+
   const PAGE_META = {
     'pickleconnect-app.html': { id: 'home',       label: 'Home'       },
     'index.html':             { id: 'home',       label: 'Home'       },
@@ -33,23 +41,24 @@
     if (!_audioCtx) {
       try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
     }
-    // Resume if suspended (Chrome blocks audio until user gesture)
     if (_audioCtx && _audioCtx.state === 'suspended') {
       _audioCtx.resume().catch(() => {});
     }
     return _audioCtx;
   }
 
-  // Unlock AudioContext on first user interaction
+  // Unlock audio on any user interaction — must happen before notification arrives
   function _unlockAudio() {
-    const ctx = getAudioCtx();
-    if (ctx && ctx.state === 'suspended') {
-      ctx.resume().catch(() => {});
+    if (!_audioCtx) {
+      try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+    if (_audioCtx && _audioCtx.state === 'suspended') {
+      _audioCtx.resume().catch(() => {});
     }
   }
-  document.addEventListener('click',      _unlockAudio, { once: false, passive: true });
-  document.addEventListener('touchstart', _unlockAudio, { once: false, passive: true });
-  document.addEventListener('keydown',    _unlockAudio, { once: false, passive: true });
+  document.addEventListener('click',      _unlockAudio, { passive: true });
+  document.addEventListener('touchstart', _unlockAudio, { passive: true });
+  document.addEventListener('keydown',    _unlockAudio, { passive: true });
 
   function playSound(type) {
     const ctx = getAudioCtx();
@@ -292,7 +301,10 @@
   notifPanel.innerHTML = `
     <div class="pcn-panel-hdr">
       <div class="pcn-panel-title">🔔 Notifications</div>
-      <button class="pcn-panel-close" id="pcn-notif-close">✕</button>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button class="pcn-panel-close" id="pcn-notif-settings" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;font-family:'DM Sans',sans-serif;color:#64748b;">⚙ Settings</button>
+        <button class="pcn-panel-close" id="pcn-notif-close">✕</button>
+      </div>
     </div>
     <div id="pcn-notif-list"><div class="pcn-empty">No notifications yet</div></div>
   `;
@@ -307,9 +319,16 @@
     if (notifOpen) markNotifsRead();
   });
   document.getElementById('pcn-notif-close').addEventListener('click', () => {
-    notifOpen = false;
-    notifPanel.classList.remove('open');
-    notifBtn.style.background = '';
+    notifOpen = false; notifPanel.classList.remove('open'); notifBtn.style.background = '';
+  });
+  document.getElementById('pcn-notif-settings').addEventListener('click', () => {
+    notifOpen = false; notifPanel.classList.remove('open'); notifBtn.style.background = '';
+    if (typeof window.__pcnOpenNotifSettings === 'function') {
+      window.__pcnOpenNotifSettings();
+    } else {
+      fade.classList.add('go');
+      setTimeout(() => { window.location.href = 'notifications.html'; }, 160);
+    }
   });
   document.addEventListener('click', (e) => {
     if (notifOpen && !notifPanel.contains(e.target) && !notifBtn.contains(e.target)) {
@@ -476,6 +495,12 @@
     hdr.innerHTML = `<div class="pcn-dd-name">${displayName || email || 'Player'}</div><div class="pcn-dd-sub">${skill ? skill + (city ? ' · ' + city : '') : (email || '')}</div>`;
     dd.appendChild(hdr);
 
+    pillWrap.appendChild(btn);
+    pillWrap.appendChild(dd);
+
+    // closeDD defined FIRST before any button references it
+    function closeDD() { dd.classList.remove('open'); btn.classList.remove('open'); }
+
     const editBtn = document.createElement('button');
     editBtn.className = 'pcn-dd-btn';
     editBtn.innerHTML = '✏️ Edit Profile';
@@ -487,6 +512,20 @@
       if (window.__pcnSetTab) window.__pcnSetTab('profile');
     });
     dd.appendChild(editBtn);
+
+    const notifSettingsBtn = document.createElement('button');
+    notifSettingsBtn.className = 'pcn-dd-btn';
+    notifSettingsBtn.innerHTML = '🔔 Notification Settings';
+    notifSettingsBtn.addEventListener('click', () => {
+      closeDD();
+      if (typeof window.__pcnOpenNotifSettings === 'function') {
+        window.__pcnOpenNotifSettings();
+      } else {
+        fade.classList.add('go');
+        setTimeout(() => { window.location.href = 'notifications.html'; }, 160);
+      }
+    });
+    dd.appendChild(notifSettingsBtn);
 
     const soBtn = document.createElement('button');
     soBtn.className = 'pcn-dd-btn red';
@@ -513,24 +552,16 @@
     delBtn.innerHTML = '🗑 Delete Account';
     delBtn.addEventListener('click', () => {
       closeDD();
-      // If on index.html (React app), trigger via tab navigation
       if (window.__pcnSetTab) { window.__pcnSetTab('profile'); }
-      // Small delay so the tab renders, then programmatically show delete confirm
       setTimeout(() => {
         if (typeof window.__pcnOpenDeleteAccount === 'function') {
           window.__pcnOpenDeleteAccount();
         } else {
-          // Fallback: navigate to profile tab and let user tap from there
           alert('Go to Profile → Delete Account to delete your account.');
         }
       }, 300);
     });
     dd.appendChild(delBtn);
-
-    pillWrap.appendChild(btn);
-    pillWrap.appendChild(dd);
-
-    function closeDD() { dd.classList.remove('open'); btn.classList.remove('open'); }
 
     btn.addEventListener('click', e => {
       e.stopPropagation();
@@ -625,4 +656,5 @@
     setTimeout(watchAuth, 200);
   }
 
+  } // end init()
 })();
