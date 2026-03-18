@@ -338,6 +338,54 @@ textarea.fi{resize:vertical;min-height:60px;}
 .stepper-val{width:40px;text-align:center;font-size:0.88rem;font-weight:700;color:var(--text);border:none;border-left:1.5px solid var(--border2);border-right:1.5px solid var(--border2);height:36px;line-height:36px;background:transparent;font-family:'DM Sans',sans-serif;}
 /* Toast */
 .g-toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);background:var(--navy);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:12px;font-size:0.82rem;font-weight:600;z-index:9999;animation:fadeIn .2s;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.35);}
+
+/* Player Detail Modal */
+.pdm-overlay{position:fixed;inset:0;background:rgba(5,10,18,0.85);backdrop-filter:blur(10px);z-index:9960;display:flex;align-items:center;justify-content:center;animation:fadeIn .18s ease;padding:16px;}
+.pdm-sheet{background:linear-gradient(180deg,#142232 0%,#0D1B2A 100%);border:1px solid rgba(46,204,113,0.15);border-radius:22px;width:100%;max-width:420px;max-height:82vh;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;animation:pdmIn .28s cubic-bezier(.22,1,.36,1);box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(46,204,113,0.08);}
+.pdm-sheet::-webkit-scrollbar{display:none;}
+@keyframes pdmIn{from{opacity:0;transform:scale(.92) translateY(24px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+.pdm-header{padding:20px 20px 0;display:flex;align-items:flex-start;gap:14px;position:relative;}
+.pdm-close{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:0.9rem;transition:all .15s;z-index:2;}
+.pdm-close:hover{background:rgba(255,255,255,0.12);color:var(--text);}
+.pdm-avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#1F3347,#2ECC71);display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:700;color:white;flex-shrink:0;border:2.5px solid rgba(46,204,113,0.3);overflow:hidden;}
+.pdm-avatar img{width:100%;height:100%;object-fit:cover;}
+.pdm-hinfo{flex:1;min-width:0;padding-right:32px;}
+.pdm-name{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;margin-bottom:3px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+.pdm-meta{font-size:0.72rem;color:var(--muted);line-height:1.5;}
+
+.pdm-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin:16px 20px 0;background:var(--border);border-radius:14px;overflow:hidden;}
+.pdm-stat{background:var(--card);padding:10px 6px;text-align:center;}
+.pdm-stat-val{font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:800;color:var(--green);}
+.pdm-stat-lbl{font-size:0.55rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:2px;}
+
+.pdm-section{padding:0 20px;}
+.pdm-section-title{font-size:0.6rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 8px;display:flex;align-items:center;gap:6px;}
+.pdm-section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* Availability Table */
+.pdm-avail-table{width:100%;border-collapse:separate;border-spacing:0;border-radius:12px;overflow:hidden;border:1px solid var(--border);}
+.pdm-avail-table th{background:rgba(46,204,113,0.08);color:var(--green);font-size:0.55rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:8px 4px;text-align:center;border-bottom:1px solid var(--border);}
+.pdm-avail-table td{padding:7px 4px;text-align:center;font-size:0.72rem;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.03);transition:background .15s;}
+.pdm-avail-table tr:last-child td{border-bottom:none;}
+.pdm-avail-table .avail-on{background:rgba(46,204,113,0.06);}
+.avail-check{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:8px;font-size:0.7rem;font-weight:800;}
+.avail-yes{background:linear-gradient(135deg,rgba(46,204,113,0.25),rgba(39,174,96,0.15));color:#2ECC71;border:1px solid rgba(46,204,113,0.35);}
+.avail-no{background:rgba(122,155,181,0.06);color:var(--muted2);border:1px solid transparent;}
+.avail-time{font-size:0.55rem;color:var(--green);font-weight:700;margin-top:2px;white-space:nowrap;}
+
+/* Post card inside modal */
+.pdm-post{background:rgba(26,43,60,0.5);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;position:relative;overflow:hidden;}
+.pdm-post::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;}
+.pdm-post.post-play::before{background:var(--green);}
+.pdm-post.post-partner::before{background:var(--accent);}
+.pdm-post.post-drill::before{background:var(--blue);}
+.pdm-post-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;}
+.pdm-post-court{font-size:0.72rem;color:var(--muted);margin-bottom:3px;}
+.pdm-post-msg{font-size:0.78rem;font-style:italic;color:var(--text);opacity:.85;margin-bottom:3px;}
+.pdm-post-time{font-size:0.6rem;color:var(--muted2);}
+
+.pdm-actions{padding:16px 20px 20px;display:flex;gap:8px;flex-wrap:wrap;}
 </style>
 <script src="nav.js"></script>
 </head>
@@ -1827,11 +1875,152 @@ function CalendarView({posts,user,onChat,onNeedLogin,uLat,uLng}){
   </div>);
 }
 
+/* ── PlayerDetailModal ── */
+function PlayerDetailModal({player,user,posts,onClose,onChat,onNeedLogin,onEdit,onRemove,uLat,uLng}){
+  const mine=user&&player.uid===user.uid;
+  const dist=uLat&&player.lat?haversine(uLat,uLng,player.lat,player.lng):null;
+
+  // Build weekly availability from all posts with Custom Schedule
+  const schedPosts=posts.filter(p=>p.availability==='Custom Schedule'&&p.weekSchedule?.length>0);
+  const hasSchedule=schedPosts.length>0;
+
+  // Merge all week schedules into a single grid
+  const mergedDays=DAYS_SHORT.map((_,i)=>{
+    const slots=[];
+    schedPosts.forEach(p=>{
+      const s=(p.weekSchedule||[]).find(x=>x.day===i);
+      if(s)slots.push({start:s.startTime,end:s.endTime,postId:p.id});
+    });
+    return{day:i,slots};
+  });
+
+  // Non-schedule posts (Today, Now, This Week, specific date)
+  const spotPosts=posts.filter(p=>p.availability!=='Custom Schedule');
+
+  return(
+    <div className="pdm-overlay" onClick={onClose}>
+      <div className="pdm-sheet" onClick={e=>e.stopPropagation()}>
+        {/* Header */}
+        <div className="pdm-header">
+          <div className="pdm-avatar">{player.photoURL?<img src={player.photoURL} referrerPolicy="no-referrer"/>:player.name?.[0]||'?'}</div>
+          <div className="pdm-hinfo">
+            <div className="pdm-name">
+              {player.name}
+              {mine&&<span style={{fontSize:'0.6rem',fontWeight:700,background:'var(--green-dim)',color:'var(--green)',padding:'2px 6px',borderRadius:4}}>YOU</span>}
+            </div>
+            <div className="pdm-meta">
+              {player.city||'No location'}{dist!=null?` · ${dist<1?dist.toFixed(1):Math.round(dist)} mi`:''}
+              {player.age?` · ${player.age}`:''}
+              {player.gender?` · ${player.gender}`:''}
+            </div>
+          </div>
+          <div className="pdm-close" onClick={onClose}>✕</div>
+        </div>
+
+        {/* Stats strip */}
+        <div className="pdm-stats">
+          <div className="pdm-stat"><div className="pdm-stat-val">{player.skill||'NR'}</div><div className="pdm-stat-lbl">Skill Level</div></div>
+          <div className="pdm-stat"><div className="pdm-stat-val">{posts.length}</div><div className="pdm-stat-lbl">Active Posts</div></div>
+          <div className="pdm-stat"><div className="pdm-stat-val">{player.duprId?<a href={`https://mydupr.com/dashboard/players/${player.duprId}`} target="_blank" style={{color:'var(--green)',textDecoration:'none',fontSize:'0.8rem'}}>View</a>:'–'}</div><div className="pdm-stat-lbl">DUPR</div></div>
+        </div>
+
+        {/* Weekly Availability */}
+        {hasSchedule&&<div className="pdm-section">
+          <div className="pdm-section-title">Weekly Availability</div>
+          <table className="pdm-avail-table">
+            <thead><tr>
+              {DAYS_SHORT.map(d=><th key={d}>{d}</th>)}
+            </tr></thead>
+            <tbody><tr>
+              {mergedDays.map((md,i)=>{
+                const slot=md.slots[0];
+                return(
+                  <td key={i} className={slot?'avail-on':''}>
+                    <div className={`avail-check ${slot?'avail-yes':'avail-no'}`}>{slot?'✓':'–'}</div>
+                    {slot&&<div className="avail-time">{fmtTime(slot.start)}</div>}
+                  </td>
+                );
+              })}
+            </tr></tbody>
+          </table>
+        </div>}
+
+        {/* Posts */}
+        <div className="pdm-section">
+          <div className="pdm-section-title">{posts.length>1?`${posts.length} Active Posts`:'Post Details'}</div>
+          {posts.map(p=>{
+            const pu=PURPOSES.find(x=>x.id===p.purpose);
+            const postClass=p.purpose==='partner'?'post-partner':p.purpose==='drill'?'post-drill':'post-play';
+            const isMyPost=user&&p.uid===user.uid;
+            const fmtPostTime2=()=>{
+              if(p.startTime&&p.endTime){const fmt=t=>{const[h,m]=t.split(':').map(Number);return`${h%12||12}:${String(m).padStart(2,'0')}${h>=12?'pm':'am'}`};return`${fmt(p.startTime)}–${fmt(p.endTime)}`;}
+              return null;
+            };
+            const avLabel=(()=>{
+              if(p.availability==='Custom Schedule')return'📅 Weekly';
+              if(p.availDate){
+                const d=new Date(p.availDate+'T12:00:00');
+                const today=new Date();today.setHours(0,0,0,0);
+                const diff=Math.round((d-today)/86400000);
+                if(diff===0)return`📅 Today · ${d.toLocaleDateString('en',{month:'short',day:'numeric'})}`;
+                if(diff===1)return`📅 Tomorrow · ${d.toLocaleDateString('en',{month:'short',day:'numeric'})}`;
+                return`📅 ${d.toLocaleDateString('en',{weekday:'short',month:'short',day:'numeric'})}`;
+              }
+              return`📅 ${p.availability}`;
+            })();
+            return(
+              <div key={p.id} className={`pdm-post ${postClass}`}>
+                <div className="pdm-post-tags">
+                  <span className="tag t-green">{pu?.e} {pu?.l||'Play'}</span>
+                  {p.playTypes?.map(t=><span key={t} className="tag t-muted">{PT_E[t]||''} {t}</span>)}
+                  <span className="tag t-blue">{avLabel}</span>
+                  {fmtPostTime2()&&<span className="tag t-muted">🕐 {fmtPostTime2()}</span>}
+                  {p.shareMode&&p.shareMode!=='public'&&<span className="tag t-blue">🔒 {p.shareMode==='connections'?'Connections':p.shareMode==='group'?'Group':'Private'}</span>}
+                </div>
+                {/* Per-post schedule grid */}
+                {p.availability==='Custom Schedule'&&p.weekSchedule?.length>0&&(
+                  <table className="pdm-avail-table" style={{marginBottom:8}}>
+                    <thead><tr>{DAYS_SHORT.map(d=><th key={d}>{d}</th>)}</tr></thead>
+                    <tbody><tr>
+                      {DAYS_SHORT.map((_,i)=>{
+                        const s=(p.weekSchedule||[]).find(x=>x.day===i);
+                        return(<td key={i} className={s?'avail-on':''}>
+                          <div className={`avail-check ${s?'avail-yes':'avail-no'}`}>{s?'✓':'–'}</div>
+                          {s&&<div className="avail-time">{fmtTime(s.startTime)}</div>}
+                        </td>);
+                      })}
+                    </tr></tbody>
+                  </table>
+                )}
+                {p.courtName&&<div className="pdm-post-court">📍 {p.courtName}</div>}
+                {p.message&&<div className="pdm-post-msg">"{p.message}"</div>}
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:4}}>
+                  <div className="pdm-post-time">{timeAgo(p.timestamp)} ago</div>
+                  {isMyPost&&<div style={{display:'flex',gap:5}}>
+                    <button onClick={()=>onEdit(p)} style={{padding:'3px 9px',fontSize:'0.65rem',fontWeight:700,border:'1px solid var(--border2)',borderRadius:6,background:'transparent',color:'var(--green)',cursor:'pointer'}}>✏️ Edit</button>
+                    <button onClick={()=>onRemove(p.id)} style={{padding:'3px 9px',fontSize:'0.65rem',fontWeight:700,border:'1px solid rgba(247,91,91,0.3)',borderRadius:6,background:'transparent',color:'var(--red)',cursor:'pointer'}}>🗑</button>
+                  </div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Actions */}
+        <div className="pdm-actions">
+          {!mine&&<MsgBtn player={player} user={user} onChat={onChat} onNeedLogin={onNeedLogin}/>}
+          {mine&&<button className="btn btn-ghost btn-sm" onClick={()=>onEdit(null)}>+ New Post</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── PlayersTab ── */
 function PlayersTab({user,posts,players,onChat,onNeedLogin,uLat,uLng}){
   const[search,setSearch]=useState('');
   const[tab,setTab]=useState('all');
-  const[expanded,setExpanded]=useState(null);
+  const[selectedPlayer,setSelectedPlayer]=useState(null);
   const[showPost,setShowPost]=useState(false);
   const[editPost,setEditPost]=useState(null);
   const[showF,setShowF]=useState(false);
@@ -1940,9 +2129,11 @@ function PlayersTab({user,posts,players,onChat,onNeedLogin,uLat,uLng}){
           const dist=uLat&&g.lat?haversine(uLat,uLng,g.lat,g.lng):null;
           const latestPost=g.posts[0];
           const pu=latestPost?PURPOSES.find(p=>p.id===latestPost.purpose):null;
-          const isExp=expanded===g.uid;
+          // Quick availability preview: show available days from schedule
+          const schedPost=g.posts.find(p=>p.availability==='Custom Schedule'&&p.weekSchedule?.length>0);
+          const availDays=schedPost?(schedPost.weekSchedule||[]).map(s=>s.day):[];
           return(
-            <div key={g.uid} className={`player-card ${isExp?'expanded':''}`} onClick={()=>setExpanded(isExp?null:g.uid)} style={mine?{borderColor:'rgba(46,204,113,0.3)'}:{}}>
+            <div key={g.uid} className="player-card" onClick={()=>setSelectedPlayer(g)} style={mine?{borderColor:'rgba(46,204,113,0.3)'}:{}}>
               <div className="pc-row">
                 <div className="pc-avatar">{g.photoURL?<img src={g.photoURL} referrerPolicy="no-referrer" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/>:g.name?.[0]||'?'}</div>
                 <div className="pc-info">
@@ -1952,68 +2143,45 @@ function PlayersTab({user,posts,players,onChat,onNeedLogin,uLat,uLng}){
                     {g.posts.length>1&&<span style={{fontSize:'0.6rem',fontWeight:700,background:'var(--green)',color:'white',padding:'2px 6px',borderRadius:8}}>{g.posts.length}</span>}
                   </div>
                   <div className="pc-sub">{g.city||'No location'}{dist!=null?` · ${dist<1?dist.toFixed(1):Math.round(dist)} mi`:''}{g.age?` · ${g.age}`:''}{g.gender?` · ${g.gender}`:''}</div>
-                  {latestPost&&!isExp&&<div style={{display:'flex',gap:4,flexWrap:'wrap',marginTop:3}}>
+                  {latestPost&&<div style={{display:'flex',gap:4,flexWrap:'wrap',marginTop:3}}>
                     {pu&&<span className="tag t-green">{pu.e} {pu.l}</span>}
                     <span className="tag t-blue">{fmtAvailLabel(latestPost)}</span>
                     {fmtPostTime(latestPost)&&<span className="tag t-muted">🕐 {fmtPostTime(latestPost)}</span>}
                   </div>}
+                  {/* Mini availability dots preview */}
+                  {schedPost&&<div style={{display:'flex',gap:3,marginTop:5}}>
+                    {DAYS_SHORT.map((d,i)=>{
+                      const isAvail=availDays.includes(i);
+                      return(<div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:1}}>
+                        <div style={{fontSize:'0.45rem',fontWeight:700,color:isAvail?'var(--green)':'var(--muted2)',textTransform:'uppercase'}}>{d}</div>
+                        <div style={{width:6,height:6,borderRadius:3,background:isAvail?'var(--green)':'var(--border)'}}/>
+                      </div>);
+                    })}
+                  </div>}
                 </div>
-                <div className="pc-skill">{g.skill||'NR'}</div>
+                <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4}}>
+                  <div className="pc-skill">{g.skill||'NR'}</div>
+                  <div style={{fontSize:'0.55rem',color:'var(--muted)',fontWeight:600}}>View ›</div>
+                </div>
               </div>
-              {isExp&&(
-                <div className="pc-expand" onClick={e=>e.stopPropagation()}>
-                  <div style={{display:'flex',gap:14,padding:'6px 0 10px',borderBottom:'1px solid var(--border)',marginBottom:10,flexWrap:'wrap'}}>
-                    {g.age&&<div style={{fontSize:'0.7rem'}}><span style={{color:'var(--muted)',fontWeight:700,textTransform:'uppercase',fontSize:'0.6rem'}}>Age </span><span style={{fontWeight:600}}>{g.age}</span></div>}
-                    {g.gender&&<div style={{fontSize:'0.7rem'}}><span style={{color:'var(--muted)',fontWeight:700,textTransform:'uppercase',fontSize:'0.6rem'}}>Gender </span><span style={{fontWeight:600}}>{g.gender}</span></div>}
-                    {g.city&&<div style={{fontSize:'0.7rem'}}><span style={{color:'var(--muted)',fontWeight:700,textTransform:'uppercase',fontSize:'0.6rem'}}>City </span><span style={{fontWeight:600}}>{g.city}</span></div>}
-                    {g.duprId&&<a href={`https://mydupr.com/dashboard/players/${g.duprId}`} target="_blank" style={{fontSize:'0.7rem',color:'var(--green)',fontWeight:700,textDecoration:'none'}}>DUPR: {g.duprId}</a>}
-                  </div>
-                  {g.posts.length>1&&<div style={{fontSize:'0.62rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>{g.posts.length} Active Posts</div>}
-                  {g.posts.map(p=>{
-                    const pu2=PURPOSES.find(x=>x.id===p.purpose);
-                    const isMyPost=user&&p.uid===user.uid;
-                    return(
-                      <div key={p.id} style={{background:'var(--navy2)',border:'1px solid var(--border)',borderRadius:12,padding:'10px 12px',marginBottom:8}}>
-                        <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:6,flexWrap:'wrap'}}>
-                          <span className="tag t-green">{pu2?.e} {pu2?.l||'Play'}</span>
-                          {p.playTypes?.map(t=><span key={t} className="tag t-muted">{PT_E[t]||''} {t}</span>)}
-                          <span className="tag t-blue">{fmtAvailLabel(p)}</span>
-                          {fmtPostTime(p)&&<span className="tag t-muted">🕐 {fmtPostTime(p)}</span>}
-                          {p.shareMode&&p.shareMode!=='public'&&<span className="tag t-blue">🔒 {p.shareMode==='connections'?'Connections':p.shareMode==='group'?'Group':'Private'}</span>}
-                          {isMyPost&&<div style={{marginLeft:'auto',display:'flex',gap:5}}>
-                            <button onClick={()=>{setEditPost(p);setShowPost(true);}} style={{padding:'3px 9px',fontSize:'0.65rem',fontWeight:700,border:'1px solid var(--border2)',borderRadius:6,background:'transparent',color:'var(--green)',cursor:'pointer'}}>✏️ Edit</button>
-                            <button onClick={()=>removePost(p.id)} style={{padding:'3px 9px',fontSize:'0.65rem',fontWeight:700,border:'1px solid rgba(247,91,91,0.3)',borderRadius:6,background:'transparent',color:'var(--red)',cursor:'pointer'}}>🗑</button>
-                          </div>}
-                        </div>
-                        {/* Custom Schedule day grid */}
-                        {p.availability==='Custom Schedule'&&p.weekSchedule?.length>0&&(
-                          <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:3,marginBottom:8}}>
-                            {DAYS_SHORT.map((d,i)=>{
-                              const s=p.weekSchedule.find(x=>x.day===i);
-                              return(<div key={i} style={{textAlign:'center'}}>
-                                <div style={{fontSize:'0.5rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',marginBottom:2}}>{d}</div>
-                                <div style={{borderRadius:5,padding:'3px 1px',fontSize:'0.55rem',fontWeight:700,background:s?'var(--green-dim)':'transparent',border:`1px solid ${s?'rgba(46,204,113,0.3)':'var(--border)'}`,color:s?'var(--green)':'var(--muted2)'}}>{s?'✓':'–'}</div>
-                                {s&&<div style={{fontSize:'0.45rem',color:'var(--muted)',marginTop:1,lineHeight:1.2}}>{fmtTime(s.startTime)}</div>}
-                              </div>);
-                            })}
-                          </div>
-                        )}
-                        {p.courtName&&<div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:4}}>📍 {p.courtName}</div>}
-                        {p.message&&<div style={{fontSize:'0.78rem',fontStyle:'italic',marginBottom:4}}>"{p.message}"</div>}
-                        <div style={{fontSize:'0.62rem',color:'var(--muted2)'}}>{timeAgo(p.timestamp)} ago</div>
-                      </div>
-                    );
-                  })}
-                  <div style={{display:'flex',gap:8,paddingTop:4,flexWrap:'wrap'}}>
-                    {!mine&&<MsgBtn player={g} user={user} onChat={onChat} onNeedLogin={onNeedLogin}/>}
-                    {mine&&<button className="btn btn-ghost btn-sm" onClick={()=>{setEditPost(null);setShowPost(true);}}>+ New Post</button>}
-                  </div>
-                </div>
-              )}
             </div>
           );
         })}
       </>}
+
+      {/* Player Detail Modal */}
+      {selectedPlayer&&<PlayerDetailModal
+        player={selectedPlayer}
+        user={user}
+        posts={selectedPlayer.posts}
+        onClose={()=>setSelectedPlayer(null)}
+        onChat={onChat}
+        onNeedLogin={onNeedLogin}
+        onEdit={(p)=>{setSelectedPlayer(null);setEditPost(p);setShowPost(true);}}
+        onRemove={(id)=>{removePost(id);}}
+        uLat={uLat}
+        uLng={uLng}
+      />}
 
       {showPost&&user&&<PostForm user={user} editData={editPost} onClose={()=>{setShowPost(false);setEditPost(null);}} onPosted={()=>{setShowPost(false);setEditPost(null);}} uLat={uLat} uLng={uLng}/>}
     </div>
