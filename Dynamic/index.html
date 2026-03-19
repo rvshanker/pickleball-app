@@ -339,7 +339,7 @@ textarea.fi{resize:vertical;min-height:60px;}
 /* Toast */
 .g-toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);background:var(--navy);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:12px;font-size:0.82rem;font-weight:600;z-index:9999;animation:fadeIn .2s;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.35);}
 
-/* Player Detail Modal */
+/* ═══ Player Detail Modal ═══ */
 .pdm-overlay{position:fixed;inset:0;background:rgba(5,10,18,0.85);backdrop-filter:blur(10px);z-index:9960;display:flex;align-items:center;justify-content:center;animation:fadeIn .18s ease;padding:16px;}
 .pdm-sheet{background:linear-gradient(180deg,#142232 0%,#0D1B2A 100%);border:1px solid rgba(46,204,113,0.15);border-radius:22px;width:100%;max-width:420px;max-height:82vh;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;animation:pdmIn .28s cubic-bezier(.22,1,.36,1);box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(46,204,113,0.08);}
 .pdm-sheet::-webkit-scrollbar{display:none;}
@@ -374,8 +374,18 @@ textarea.fi{resize:vertical;min-height:60px;}
 .avail-no{background:rgba(122,155,181,0.06);color:var(--muted2);border:1px solid transparent;}
 .avail-time{font-size:0.55rem;color:var(--green);font-weight:700;margin-top:2px;white-space:nowrap;}
 
+/* ═══ Swipe Carousel ═══ */
+.swipe-wrap{position:relative;overflow:hidden;margin-bottom:8px;}
+.swipe-track{display:flex;transition:transform .3s cubic-bezier(.25,.46,.45,.94);will-change:transform;}
+.swipe-slide{min-width:100%;padding:0 2px;box-sizing:border-box;}
+.swipe-dots{display:flex;justify-content:center;gap:5px;padding:8px 0 4px;}
+.swipe-dot{width:6px;height:6px;border-radius:50%;background:var(--border2);transition:all .2s;}
+.swipe-dot.active{background:var(--green);width:18px;border-radius:3px;}
+.swipe-hint{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:0.6rem;color:var(--muted);font-weight:600;opacity:.7;pointer-events:none;animation:swipeHint 2s ease-in-out infinite;}
+@keyframes swipeHint{0%,100%{transform:translateY(-50%) translateX(0);opacity:.7;}50%{transform:translateY(-50%) translateX(-4px);opacity:1;}}
+
 /* Post card inside modal */
-.pdm-post{background:rgba(26,43,60,0.5);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;position:relative;overflow:hidden;}
+.pdm-post{background:rgba(26,43,60,0.5);border:1px solid var(--border);border-radius:14px;padding:12px 14px;position:relative;overflow:hidden;}
 .pdm-post::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;}
 .pdm-post.post-play::before{background:var(--green);}
 .pdm-post.post-partner::before{background:var(--accent);}
@@ -386,6 +396,36 @@ textarea.fi{resize:vertical;min-height:60px;}
 .pdm-post-time{font-size:0.6rem;color:var(--muted2);}
 
 .pdm-actions{padding:16px 20px 20px;display:flex;gap:8px;flex-wrap:wrap;}
+
+/* ═══ Compact player row card ═══ */
+.plr-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:10px;}
+.plr-card:hover{border-color:var(--border2);}
+.plr-card:active{transform:scale(.99);}
+.plr-card.plr-you{border-color:rgba(46,204,113,0.25);}
+.plr-av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1F3347,#2ECC71);display:flex;align-items:center;justify-content:center;font-size:0.95rem;font-weight:700;color:white;flex-shrink:0;overflow:hidden;}
+.plr-av img{width:100%;height:100%;object-fit:cover;}
+.plr-info{flex:1;min-width:0;}
+.plr-name{font-weight:700;font-size:0.82rem;display:flex;align-items:center;gap:5px;margin-bottom:1px;}
+.plr-avail{font-size:0.68rem;color:var(--muted);line-height:1.4;}
+.plr-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;}
+.plr-skill{background:var(--green-dim);border:1px solid rgba(46,204,113,0.2);color:var(--green);font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:12px;white-space:nowrap;}
+.plr-arrow{font-size:0.7rem;color:var(--muted);}
+
+/* ═══ Game Detail Modal ═══ */
+.gdm-overlay{position:fixed;inset:0;background:rgba(5,10,18,0.85);backdrop-filter:blur(10px);z-index:9960;display:flex;align-items:center;justify-content:center;animation:fadeIn .18s ease;padding:16px;}
+.gdm-sheet{background:linear-gradient(180deg,#142232 0%,#0D1B2A 100%);border:1px solid rgba(46,204,113,0.15);border-radius:22px;width:100%;max-width:420px;max-height:82vh;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;animation:pdmIn .28s cubic-bezier(.22,1,.36,1);box-shadow:0 24px 80px rgba(0,0,0,.6);}
+.gdm-sheet::-webkit-scrollbar{display:none;}
+.gdm-header{padding:20px 20px 0;display:flex;align-items:flex-start;gap:12px;position:relative;}
+.gdm-close{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:0.9rem;transition:all .15s;z-index:2;}
+.gdm-close:hover{background:rgba(255,255,255,0.12);color:var(--text);}
+.gdm-section{padding:0 20px;}
+.gdm-section-title{font-size:0.6rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px;display:flex;align-items:center;gap:6px;}
+.gdm-section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.gdm-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;}
+.gdm-info-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 10px;}
+.gdm-info-label{font-size:0.5rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;}
+.gdm-info-val{font-size:0.82rem;font-weight:700;color:var(--text);}
+.gdm-actions{padding:14px 20px 20px;display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
 </style>
 <script src="nav.js"></script>
 </head>
@@ -1211,7 +1251,7 @@ function InviteStep({game,profile,uLat,uLng,onInvitesSent,onSkip}){
 }
 
 /* ── GameCard ── */
-function GameCard({game,user,profile,onAction,expanded,onToggle}){
+function GameCard({game,user,profile,onAction,onSelect}){
   const{dayStr,numStr,rel}=getDateParts(game.date);
   const expired=isGameExpired(game);
   const used=slotsUsed(game.players);
@@ -1220,11 +1260,10 @@ function GameCard({game,user,profile,onAction,expanded,onToggle}){
   const myInvite=game.players?.find(i=>i.uid===user?.uid);
   const amIn=myInvite&&myInvite.status==='accepted';
   const amInvited=myInvite&&myInvite.status==='invited';
-  const amDeclined=myInvite&&myInvite.status==='declined';
   const openSlots=Math.max(0,(game.totalSlots||4)-used);
   return(
-    <div className={`game-card${isFull?' gc-full':' gc-open'}${game.isPrivate?' gc-private':''}${isOrg?' gc-mine':''}${amInvited?' gc-invited':''}`} style={expired?{opacity:.5}:{}}>
-      <div style={{padding:'12px 14px 10px',display:'flex',alignItems:'flex-start',gap:11,cursor:'pointer'}} onClick={onToggle}>
+    <div className={`game-card${isFull?' gc-full':' gc-open'}${game.isPrivate?' gc-private':''}${isOrg?' gc-mine':''}${amInvited?' gc-invited':''}`} style={expired?{opacity:.5}:{}} onClick={()=>onSelect(game)}>
+      <div style={{padding:'12px 14px 10px',display:'flex',alignItems:'flex-start',gap:11,cursor:'pointer'}}>
         <div className={`gc-date-block gc-${rel}`}>
           <div className="gc-day-lbl">{dayStr}</div>
           <div className="gc-day-num">{numStr}</div>
@@ -1233,61 +1272,23 @@ function GameCard({game,user,profile,onAction,expanded,onToggle}){
           <div style={{fontWeight:700,fontSize:'0.9rem',marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{game.title||`${game.playType||'Casual'} Game`}</div>
           <div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:5,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>📍 {game.court} · ⏰ {fmtTimeRange(game.time,game.timeEnd)}</div>
           <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
-            <span className={`bp ${isFull?'bp-full':'bp-open'}`}>{isFull?'Full':`${openSlots} spot${openSlots!==1?'s':''} left`}</span>
-            {game.isPrivate&&<span className="bp bp-priv">🔒 Private</span>}
-            {!game.isPrivate&&<span className="bp bp-pub">🌍 Public</span>}
-            {isOrg&&<span className="bp bp-mine">👑 You organize</span>}
+            <span className={`bp ${isFull?'bp-full':'bp-open'}`}>{isFull?'Full':`${openSlots} spot${openSlots!==1?'s':''}`}</span>
+            {game.isPrivate&&<span className="bp bp-priv">🔒</span>}
+            {isOrg&&<span className="bp bp-mine">👑 Yours</span>}
             {amIn&&!isOrg&&<span className="bp bp-mine">✓ Joined</span>}
             {amInvited&&<span className="bp bp-inv">📩 Invited</span>}
-            {game.skillMin&&game.skillMin!=='Any'&&<span className="bp" style={{background:'var(--card2)',color:'var(--muted)'}}>{game.skillMin}{game.skillMax&&game.skillMax!==game.skillMin&&game.skillMax!=='Any'?`–${game.skillMax}`:''}</span>}
           </div>
         </div>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2.5" style={{flexShrink:0,marginTop:5,transition:'transform .2s',transform:expanded?'rotate(180deg)':'none'}}><path d="M6 9l6 6 6-6"/></svg>
+        <div style={{flexShrink:0,marginTop:5,fontSize:'0.7rem',color:'var(--muted)'}}>›</div>
       </div>
 
-      {/* Inline invite banner (collapsed) */}
-      {amInvited&&!expanded&&<div style={{padding:'0 14px 10px'}}>
+      {/* Quick invite accept banner */}
+      {amInvited&&<div style={{padding:'0 14px 10px'}} onClick={e=>e.stopPropagation()}>
         <div className="inv-banner">
-          <div style={{flex:1,fontSize:'0.82rem',fontWeight:600,color:'#93c5fd'}}>🎾 {game.organizerName} invited you to play!</div>
+          <div style={{flex:1,fontSize:'0.82rem',fontWeight:600,color:'#93c5fd'}}>🎾 {game.organizerName} invited you!</div>
           <button className="btn btn-primary btn-sm" onClick={()=>onAction('accept',game)} style={{padding:'5px 12px',fontSize:'0.72rem'}}>✓ Accept</button>
           <button className="btn btn-ghost btn-sm" onClick={()=>onAction('decline',game)} style={{padding:'5px 10px',fontSize:'0.72rem',color:'var(--red)',borderColor:'rgba(247,91,91,.3)'}}>✕</button>
         </div>
-      </div>}
-
-      {expanded&&<div style={{borderTop:'1px solid var(--border)',padding:'10px 14px 12px'}}>
-        {/* Roster */}
-        <div style={{fontSize:'0.62rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:8}}>Players ({used}/{game.totalSlots||4})</div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:10}}>
-          {Array.from({length:game.totalSlots||4}).map((_,i)=>{
-            const inv=(game.players||[])[i];
-            if(inv){
-              const cls=inv.uid===user?.uid?'g-mine':inv.status==='declined'?'g-declined':inv.status==='invited'?'g-invited':'filled';
-              return(<div key={i} className={`g-slot ${cls}`}>
-                <div className="slot-av">{inv.photoURL?<img src={inv.photoURL} referrerPolicy="no-referrer"/>:(inv.name||'?')[0].toUpperCase()}</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:'0.72rem',fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{inv.name}{inv.isOrganizer?<span style={{marginLeft:3,fontSize:'0.55rem',color:'var(--accent)'}}>👑</span>:''}</div>
-                  <div style={{fontSize:'0.6rem',color:'var(--muted)'}}>{inv.skill||''}</div>
-                </div>
-                <span style={{fontSize:'0.58rem',fontWeight:700,flexShrink:0,color:inv.status==='accepted'?'var(--green)':inv.status==='invited'?'#3b82f6':'var(--red)'}}>{inv.status==='accepted'?'✓':inv.status==='invited'?'Pending':'Declined'}</span>
-              </div>);
-            }
-            return(<div key={i} className="g-slot g-empty" onClick={()=>!isFull&&!amIn&&!amInvited&&onAction('join',game)}>
-              <div style={{width:28,height:28,borderRadius:'50%',background:'var(--border)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:'0.85rem'}}>+</div>
-              <div style={{fontSize:'0.7rem',color:'var(--muted)'}}>Open Spot</div>
-            </div>);
-          })}
-        </div>
-        {game.notes&&<div style={{fontSize:'0.75rem',color:'var(--muted)',fontStyle:'italic',marginBottom:10}}>"{game.notes}"</div>}
-        <div style={{display:'flex',gap:7,flexWrap:'wrap',alignItems:'center'}}>
-          {amInvited&&<><button className="btn btn-primary btn-sm" onClick={()=>onAction('accept',game)}>✓ Accept Invite</button><button className="btn btn-ghost btn-sm" onClick={()=>onAction('decline',game)} style={{color:'var(--red)',borderColor:'rgba(247,91,91,.3)'}}>Decline</button></>}
-          {myInvite&&myInvite.status==='declined'&&!isFull&&!expired&&<button className="btn btn-primary btn-sm" onClick={()=>onAction('rejoin',game)}>🏓 Rejoin</button>}
-          {!isOrg&&!myInvite&&!isFull&&!expired&&!game.isPrivate&&<button className="btn btn-primary btn-sm" onClick={()=>onAction('join',game)}>🏓 Join Game</button>}
-          {amIn&&!isOrg&&<button className="btn btn-ghost btn-sm" onClick={()=>onAction('leave',game)} style={{color:'var(--red)',borderColor:'rgba(247,91,91,.3)'}}>Leave</button>}
-          {isOrg&&<button className="btn btn-ghost btn-sm" onClick={()=>onAction('edit',game)}>✏️ Edit</button>}
-          {isOrg&&<button className="btn btn-primary btn-sm" onClick={()=>onAction('invite',game)}>+ Invite</button>}
-          {isOrg&&<button className="btn btn-ghost btn-sm" onClick={()=>onAction('cancel',game)} style={{marginLeft:'auto',color:'var(--red)',borderColor:'rgba(247,91,91,.3)',fontSize:'0.65rem'}}>Cancel Game</button>}
-        </div>
-        <div style={{fontSize:'0.62rem',color:'var(--muted2)',marginTop:8}}>By {game.organizerName||'organizer'} · {timeAgo(game.createdAt)}</div>
       </div>}
     </div>
   );
@@ -1360,7 +1361,7 @@ function GamesTab({user,profile,games,onNeedLogin,uLat,uLng}){
   const[tab,setTab]=useState('list');
   const[showForm,setShowForm]=useState(false);
   const[editGame,setEditGame]=useState(null);
-  const[expanded,setExpanded]=useState(null);
+  const[selectedGame,setSelectedGame]=useState(null);
   const[selectedDay,setSelectedDay]=useState(null);
   const[search,setSearch]=useState('');
   const[showF,setShowF]=useState(false);
@@ -1399,9 +1400,9 @@ function GamesTab({user,profile,games,onNeedLogin,uLat,uLng}){
 
   const handleAction=async(type,game)=>{
     if(!user||!profile){onNeedLogin(null);return;}
-    if(type==='edit'){setEditGame(game);setShowForm(true);return;}
-    if(type==='invite'){setShowInviteFor(game);return;}
-    if(type==='cancel'){if(!confirm('Cancel this game?'))return;try{await db.collection('games').doc(game.id).update({status:'cancelled'});showToast('Game cancelled.');}catch(e){alert(e.message);}return;}
+    if(type==='edit'){setSelectedGame(null);setEditGame(game);setShowForm(true);return;}
+    if(type==='invite'){setSelectedGame(null);setShowInviteFor(game);return;}
+    if(type==='cancel'){if(!confirm('Cancel this game?'))return;setSelectedGame(null);try{await db.collection('games').doc(game.id).update({status:'cancelled'});showToast('Game cancelled.');}catch(e){alert(e.message);}return;}
     const ref=db.collection('games').doc(game.id);
     try{
       let roster=[...(game.players||[])];
@@ -1418,6 +1419,7 @@ function GamesTab({user,profile,games,onNeedLogin,uLat,uLng}){
       if(type==='accept'||type==='join'||type==='rejoin')showToast('✅ You joined the game!');
       if(type==='decline')showToast('Invite declined.');
       if(type==='leave')showToast('Left the game.');
+      setSelectedGame(null);
     }catch(e){alert(e.message);}
   };
 
@@ -1472,7 +1474,9 @@ function GamesTab({user,profile,games,onNeedLogin,uLat,uLng}){
         <div className="empty-sub">{tab==='invited'?"You're all caught up!":tab==='mine'?'Create or join a game':selectedDay?'No games on this day':search||fCount?'Try different filters':'Be the first to create one!'}</div>
       </div>}
 
-      {filtered.map(g=><GameCard key={g.id} game={g} user={user} profile={profile} onAction={handleAction} expanded={expanded===g.id} onToggle={()=>setExpanded(expanded===g.id?null:g.id)}/>)}
+      {filtered.map(g=><GameCard key={g.id} game={g} user={user} profile={profile} onAction={handleAction} onSelect={setSelectedGame}/>)}
+
+      {selectedGame&&<GameDetailModal game={selectedGame} user={user} profile={profile} onAction={handleAction} onClose={()=>setSelectedGame(null)}/>}
 
       {showForm&&user&&profile&&<CreateGameForm profile={profile} editGame={editGame} uLat={uLat} uLng={uLng} onClose={()=>{setShowForm(false);setEditGame(null);}} onCreated={()=>{setShowForm(false);setEditGame(null);}}/>}
       {showInviteFor&&user&&profile&&<InviteStep game={showInviteFor} profile={profile} uLat={uLat} uLng={uLng} onInvitesSent={()=>{setShowInviteFor(null);showToast('Invites sent!');}} onSkip={()=>setShowInviteFor(null)}/>}
@@ -1875,6 +1879,31 @@ function CalendarView({posts,user,onChat,onNeedLogin,uLat,uLng}){
   </div>);
 }
 
+/* ── SwipeCarousel ── */
+function SwipeCarousel({children,showHint=true}){
+  const items=React.Children.toArray(children);
+  const[idx,setIdx]=useState(0);
+  const startX=useRef(null);
+  const deltaX=useRef(0);
+  const trackRef=useRef(null);
+  if(items.length<=1)return <>{items[0]||null}</>;
+  const onTouchStart=e=>{startX.current=e.touches[0].clientX;deltaX.current=0;if(trackRef.current)trackRef.current.style.transition='none';};
+  const onTouchMove=e=>{if(startX.current===null)return;deltaX.current=e.touches[0].clientX-startX.current;if(trackRef.current)trackRef.current.style.transform=`translateX(calc(-${idx*100}% + ${deltaX.current}px))`;};
+  const onTouchEnd=()=>{if(startX.current===null)return;if(trackRef.current)trackRef.current.style.transition='transform .3s cubic-bezier(.25,.46,.45,.94)';if(deltaX.current<-40&&idx<items.length-1)setIdx(idx+1);else if(deltaX.current>40&&idx>0)setIdx(idx-1);else if(trackRef.current)trackRef.current.style.transform=`translateX(-${idx*100}%)`;startX.current=null;deltaX.current=0;};
+  useEffect(()=>{if(trackRef.current)trackRef.current.style.transform=`translateX(-${idx*100}%)`;},[idx]);
+  return(
+    <div className="swipe-wrap">
+      <div className="swipe-track" ref={trackRef} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+        {items.map((child,i)=><div key={i} className="swipe-slide">{child}</div>)}
+      </div>
+      {showHint&&idx===0&&items.length>1&&<div className="swipe-hint">swipe ‹</div>}
+      <div className="swipe-dots">
+        {items.map((_,i)=><div key={i} className={`swipe-dot ${i===idx?'active':''}`} onClick={()=>setIdx(i)}/>)}
+      </div>
+    </div>
+  );
+}
+
 /* ── PlayerDetailModal ── */
 function PlayerDetailModal({player,user,posts,onClose,onChat,onNeedLogin,onEdit,onRemove,uLat,uLng}){
   const mine=user&&player.uid===user.uid;
@@ -1883,24 +1912,53 @@ function PlayerDetailModal({player,user,posts,onClose,onChat,onNeedLogin,onEdit,
   // Build weekly availability from all posts with Custom Schedule
   const schedPosts=posts.filter(p=>p.availability==='Custom Schedule'&&p.weekSchedule?.length>0);
   const hasSchedule=schedPosts.length>0;
-
-  // Merge all week schedules into a single grid
   const mergedDays=DAYS_SHORT.map((_,i)=>{
     const slots=[];
-    schedPosts.forEach(p=>{
-      const s=(p.weekSchedule||[]).find(x=>x.day===i);
-      if(s)slots.push({start:s.startTime,end:s.endTime,postId:p.id});
-    });
+    schedPosts.forEach(p=>{const s=(p.weekSchedule||[]).find(x=>x.day===i);if(s)slots.push({start:s.startTime,end:s.endTime});});
     return{day:i,slots};
   });
 
-  // Non-schedule posts (Today, Now, This Week, specific date)
-  const spotPosts=posts.filter(p=>p.availability!=='Custom Schedule');
+  const renderPost=(p)=>{
+    const pu=PURPOSES.find(x=>x.id===p.purpose);
+    const postClass=p.purpose==='partner'?'post-partner':p.purpose==='drill'?'post-drill':'post-play';
+    const isMyPost=user&&p.uid===user.uid;
+    const fmtPT=()=>{if(p.startTime&&p.endTime){const fmt=t=>{const[h,m]=t.split(':').map(Number);return`${h%12||12}:${String(m).padStart(2,'0')}${h>=12?'pm':'am'}`};return`${fmt(p.startTime)}–${fmt(p.endTime)}`;}return null;};
+    const avLabel=(()=>{
+      if(p.availability==='Custom Schedule')return'📅 Weekly';
+      if(p.availDate){const d=new Date(p.availDate+'T12:00:00');const today=new Date();today.setHours(0,0,0,0);const diff=Math.round((d-today)/86400000);if(diff===0)return`📅 Today · ${d.toLocaleDateString('en',{month:'short',day:'numeric'})}`;if(diff===1)return`📅 Tomorrow · ${d.toLocaleDateString('en',{month:'short',day:'numeric'})}`;return`📅 ${d.toLocaleDateString('en',{weekday:'short',month:'short',day:'numeric'})}`;}
+      return`📅 ${p.availability}`;
+    })();
+    return(
+      <div className={`pdm-post ${postClass}`}>
+        <div className="pdm-post-tags">
+          <span className="tag t-green">{pu?.e} {pu?.l||'Play'}</span>
+          {p.playTypes?.map(t=><span key={t} className="tag t-muted">{PT_E[t]||''} {t}</span>)}
+          <span className="tag t-blue">{avLabel}</span>
+          {fmtPT()&&<span className="tag t-muted">🕐 {fmtPT()}</span>}
+          {p.shareMode&&p.shareMode!=='public'&&<span className="tag t-blue">🔒 {p.shareMode==='connections'?'Connections':p.shareMode==='group'?'Group':'Private'}</span>}
+        </div>
+        {p.availability==='Custom Schedule'&&p.weekSchedule?.length>0&&(
+          <table className="pdm-avail-table" style={{marginBottom:8}}>
+            <thead><tr>{DAYS_SHORT.map(d=><th key={d}>{d}</th>)}</tr></thead>
+            <tbody><tr>{DAYS_SHORT.map((_,i)=>{const s=(p.weekSchedule||[]).find(x=>x.day===i);return(<td key={i} className={s?'avail-on':''}><div className={`avail-check ${s?'avail-yes':'avail-no'}`}>{s?'✓':'–'}</div>{s&&<div className="avail-time">{fmtTime(s.startTime)}</div>}</td>);})}</tr></tbody>
+          </table>
+        )}
+        {p.courtName&&<div className="pdm-post-court">📍 {p.courtName}</div>}
+        {p.message&&<div className="pdm-post-msg">"{p.message}"</div>}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:4}}>
+          <div className="pdm-post-time">{timeAgo(p.timestamp)} ago</div>
+          {isMyPost&&<div style={{display:'flex',gap:5}}>
+            <button onClick={()=>onEdit(p)} style={{padding:'3px 9px',fontSize:'0.65rem',fontWeight:700,border:'1px solid var(--border2)',borderRadius:6,background:'transparent',color:'var(--green)',cursor:'pointer'}}>✏️ Edit</button>
+            <button onClick={()=>onRemove(p.id)} style={{padding:'3px 9px',fontSize:'0.65rem',fontWeight:700,border:'1px solid rgba(247,91,91,0.3)',borderRadius:6,background:'transparent',color:'var(--red)',cursor:'pointer'}}>🗑</button>
+          </div>}
+        </div>
+      </div>
+    );
+  };
 
   return(
     <div className="pdm-overlay" onClick={onClose}>
       <div className="pdm-sheet" onClick={e=>e.stopPropagation()}>
-        {/* Header */}
         <div className="pdm-header">
           <div className="pdm-avatar">{player.photoURL?<img src={player.photoURL} referrerPolicy="no-referrer"/>:player.name?.[0]||'?'}</div>
           <div className="pdm-hinfo">
@@ -1917,99 +1975,129 @@ function PlayerDetailModal({player,user,posts,onClose,onChat,onNeedLogin,onEdit,
           <div className="pdm-close" onClick={onClose}>✕</div>
         </div>
 
-        {/* Stats strip */}
         <div className="pdm-stats">
           <div className="pdm-stat"><div className="pdm-stat-val">{player.skill||'NR'}</div><div className="pdm-stat-lbl">Skill Level</div></div>
           <div className="pdm-stat"><div className="pdm-stat-val">{posts.length}</div><div className="pdm-stat-lbl">Active Posts</div></div>
           <div className="pdm-stat"><div className="pdm-stat-val">{player.duprId?<a href={`https://mydupr.com/dashboard/players/${player.duprId}`} target="_blank" style={{color:'var(--green)',textDecoration:'none',fontSize:'0.8rem'}}>View</a>:'–'}</div><div className="pdm-stat-lbl">DUPR</div></div>
         </div>
 
-        {/* Weekly Availability */}
         {hasSchedule&&<div className="pdm-section">
           <div className="pdm-section-title">Weekly Availability</div>
           <table className="pdm-avail-table">
-            <thead><tr>
-              {DAYS_SHORT.map(d=><th key={d}>{d}</th>)}
-            </tr></thead>
-            <tbody><tr>
-              {mergedDays.map((md,i)=>{
-                const slot=md.slots[0];
-                return(
-                  <td key={i} className={slot?'avail-on':''}>
-                    <div className={`avail-check ${slot?'avail-yes':'avail-no'}`}>{slot?'✓':'–'}</div>
-                    {slot&&<div className="avail-time">{fmtTime(slot.start)}</div>}
-                  </td>
-                );
-              })}
-            </tr></tbody>
+            <thead><tr>{DAYS_SHORT.map(d=><th key={d}>{d}</th>)}</tr></thead>
+            <tbody><tr>{mergedDays.map((md,i)=>{const slot=md.slots[0];return(<td key={i} className={slot?'avail-on':''}><div className={`avail-check ${slot?'avail-yes':'avail-no'}`}>{slot?'✓':'–'}</div>{slot&&<div className="avail-time">{fmtTime(slot.start)}</div>}</td>);})}</tr></tbody>
           </table>
         </div>}
 
-        {/* Posts */}
-        <div className="pdm-section">
-          <div className="pdm-section-title">{posts.length>1?`${posts.length} Active Posts`:'Post Details'}</div>
-          {posts.map(p=>{
-            const pu=PURPOSES.find(x=>x.id===p.purpose);
-            const postClass=p.purpose==='partner'?'post-partner':p.purpose==='drill'?'post-drill':'post-play';
-            const isMyPost=user&&p.uid===user.uid;
-            const fmtPostTime2=()=>{
-              if(p.startTime&&p.endTime){const fmt=t=>{const[h,m]=t.split(':').map(Number);return`${h%12||12}:${String(m).padStart(2,'0')}${h>=12?'pm':'am'}`};return`${fmt(p.startTime)}–${fmt(p.endTime)}`;}
-              return null;
-            };
-            const avLabel=(()=>{
-              if(p.availability==='Custom Schedule')return'📅 Weekly';
-              if(p.availDate){
-                const d=new Date(p.availDate+'T12:00:00');
-                const today=new Date();today.setHours(0,0,0,0);
-                const diff=Math.round((d-today)/86400000);
-                if(diff===0)return`📅 Today · ${d.toLocaleDateString('en',{month:'short',day:'numeric'})}`;
-                if(diff===1)return`📅 Tomorrow · ${d.toLocaleDateString('en',{month:'short',day:'numeric'})}`;
-                return`📅 ${d.toLocaleDateString('en',{weekday:'short',month:'short',day:'numeric'})}`;
-              }
-              return`📅 ${p.availability}`;
-            })();
-            return(
-              <div key={p.id} className={`pdm-post ${postClass}`}>
-                <div className="pdm-post-tags">
-                  <span className="tag t-green">{pu?.e} {pu?.l||'Play'}</span>
-                  {p.playTypes?.map(t=><span key={t} className="tag t-muted">{PT_E[t]||''} {t}</span>)}
-                  <span className="tag t-blue">{avLabel}</span>
-                  {fmtPostTime2()&&<span className="tag t-muted">🕐 {fmtPostTime2()}</span>}
-                  {p.shareMode&&p.shareMode!=='public'&&<span className="tag t-blue">🔒 {p.shareMode==='connections'?'Connections':p.shareMode==='group'?'Group':'Private'}</span>}
-                </div>
-                {/* Per-post schedule grid */}
-                {p.availability==='Custom Schedule'&&p.weekSchedule?.length>0&&(
-                  <table className="pdm-avail-table" style={{marginBottom:8}}>
-                    <thead><tr>{DAYS_SHORT.map(d=><th key={d}>{d}</th>)}</tr></thead>
-                    <tbody><tr>
-                      {DAYS_SHORT.map((_,i)=>{
-                        const s=(p.weekSchedule||[]).find(x=>x.day===i);
-                        return(<td key={i} className={s?'avail-on':''}>
-                          <div className={`avail-check ${s?'avail-yes':'avail-no'}`}>{s?'✓':'–'}</div>
-                          {s&&<div className="avail-time">{fmtTime(s.startTime)}</div>}
-                        </td>);
-                      })}
-                    </tr></tbody>
-                  </table>
-                )}
-                {p.courtName&&<div className="pdm-post-court">📍 {p.courtName}</div>}
-                {p.message&&<div className="pdm-post-msg">"{p.message}"</div>}
-                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:4}}>
-                  <div className="pdm-post-time">{timeAgo(p.timestamp)} ago</div>
-                  {isMyPost&&<div style={{display:'flex',gap:5}}>
-                    <button onClick={()=>onEdit(p)} style={{padding:'3px 9px',fontSize:'0.65rem',fontWeight:700,border:'1px solid var(--border2)',borderRadius:6,background:'transparent',color:'var(--green)',cursor:'pointer'}}>✏️ Edit</button>
-                    <button onClick={()=>onRemove(p.id)} style={{padding:'3px 9px',fontSize:'0.65rem',fontWeight:700,border:'1px solid rgba(247,91,91,0.3)',borderRadius:6,background:'transparent',color:'var(--red)',cursor:'pointer'}}>🗑</button>
-                  </div>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {posts.length>0&&<div className="pdm-section">
+          <div className="pdm-section-title">{posts.length>1?`${posts.length} Active Posts — Swipe to browse`:'Post Details'}</div>
+          {posts.length===1?renderPost(posts[0]):
+            <SwipeCarousel>{posts.map(p=><div key={p.id}>{renderPost(p)}</div>)}</SwipeCarousel>
+          }
+        </div>}
 
-        {/* Actions */}
+        {posts.length===0&&<div className="pdm-section">
+          <div style={{textAlign:'center',padding:'16px 0',color:'var(--muted)',fontSize:'0.78rem'}}>No active posts yet</div>
+        </div>}
+
         <div className="pdm-actions">
           {!mine&&<MsgBtn player={player} user={user} onChat={onChat} onNeedLogin={onNeedLogin}/>}
           {mine&&<button className="btn btn-ghost btn-sm" onClick={()=>onEdit(null)}>+ New Post</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── GameDetailModal ── */
+function GameDetailModal({game,user,profile,onAction,onClose}){
+  const{dayStr,numStr,rel}=getDateParts(game.date);
+  const expired=isGameExpired(game);
+  const used=slotsUsed(game.players);
+  const isFull=used>=game.totalSlots;
+  const isOrg=game.organizerUid===user?.uid;
+  const myInvite=game.players?.find(i=>i.uid===user?.uid);
+  const amIn=myInvite&&myInvite.status==='accepted';
+  const amInvited=myInvite&&myInvite.status==='invited';
+  const openSlots=Math.max(0,(game.totalSlots||4)-used);
+
+  return(
+    <div className="gdm-overlay" onClick={onClose}>
+      <div className="gdm-sheet" onClick={e=>e.stopPropagation()}>
+        <div className="gdm-header">
+          <div className={`gc-date-block gc-${rel}`} style={{width:54,height:54}}>
+            <div className="gc-day-lbl">{dayStr}</div>
+            <div className="gc-day-num">{numStr}</div>
+          </div>
+          <div style={{flex:1,minWidth:0,paddingRight:32}}>
+            <div style={{fontFamily:'Syne',fontWeight:800,fontSize:'1.05rem',marginBottom:3}}>{game.title||`${game.playType||'Casual'} Game`}</div>
+            <div style={{fontSize:'0.72rem',color:'var(--muted)'}}>by {game.organizerName||'organizer'} · {timeAgo(game.createdAt)} ago</div>
+          </div>
+          <div className="gdm-close" onClick={onClose}>✕</div>
+        </div>
+
+        {/* Badges */}
+        <div style={{display:'flex',gap:5,flexWrap:'wrap',padding:'12px 20px 0'}}>
+          <span className={`bp ${isFull?'bp-full':'bp-open'}`}>{isFull?'Full':`${openSlots} spot${openSlots!==1?'s':''} left`}</span>
+          {game.isPrivate?<span className="bp bp-priv">🔒 Private</span>:<span className="bp bp-pub">🌍 Public</span>}
+          {isOrg&&<span className="bp bp-mine">👑 You organize</span>}
+          {amIn&&!isOrg&&<span className="bp bp-mine">✓ Joined</span>}
+          {amInvited&&<span className="bp bp-inv">📩 Invited</span>}
+        </div>
+
+        {/* Info grid */}
+        <div className="gdm-section">
+          <div className="gdm-section-title">Details</div>
+          <div className="gdm-info-grid">
+            <div className="gdm-info-item"><div className="gdm-info-label">Court</div><div className="gdm-info-val">📍 {game.court}</div></div>
+            <div className="gdm-info-item"><div className="gdm-info-label">Time</div><div className="gdm-info-val">⏰ {fmtTimeRange(game.time,game.timeEnd)}</div></div>
+            <div className="gdm-info-item"><div className="gdm-info-label">Type</div><div className="gdm-info-val">{GAME_PT_E[game.playType]||'🎾'} {game.playType||'Casual'}</div></div>
+            <div className="gdm-info-item"><div className="gdm-info-label">Skill</div><div className="gdm-info-val">{game.skillMin&&game.skillMin!=='Any'?`${game.skillMin}${game.skillMax&&game.skillMax!==game.skillMin?`–${game.skillMax}`:''}`:'Any level'}</div></div>
+          </div>
+          {game.notes&&<div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,padding:'8px 10px',marginTop:8,fontSize:'0.78rem',color:'var(--muted)',fontStyle:'italic'}}>"{game.notes}"</div>}
+        </div>
+
+        {/* Roster */}
+        <div className="gdm-section">
+          <div className="gdm-section-title">Players ({used}/{game.totalSlots||4})</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+            {Array.from({length:game.totalSlots||4}).map((_,i)=>{
+              const inv=(game.players||[])[i];
+              if(inv){
+                const cls=inv.uid===user?.uid?'g-mine':inv.status==='declined'?'g-declined':inv.status==='invited'?'g-invited':'filled';
+                return(<div key={i} className={`g-slot ${cls}`}>
+                  <div className="slot-av">{inv.photoURL?<img src={inv.photoURL} referrerPolicy="no-referrer"/>:(inv.name||'?')[0].toUpperCase()}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:'0.72rem',fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{inv.name}{inv.isOrganizer?<span style={{marginLeft:3,fontSize:'0.55rem',color:'var(--accent)'}}>👑</span>:''}</div>
+                    <div style={{fontSize:'0.6rem',color:'var(--muted)'}}>{inv.skill||''}</div>
+                  </div>
+                  <span style={{fontSize:'0.58rem',fontWeight:700,flexShrink:0,color:inv.status==='accepted'?'var(--green)':inv.status==='invited'?'#3b82f6':'var(--red)'}}>{inv.status==='accepted'?'✓':inv.status==='invited'?'Pending':'Declined'}</span>
+                </div>);
+              }
+              return(<div key={i} className="g-slot g-empty" onClick={()=>!isFull&&!amIn&&!amInvited&&onAction('join',game)}>
+                <div style={{width:28,height:28,borderRadius:'50%',background:'var(--border)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:'0.85rem'}}>+</div>
+                <div style={{fontSize:'0.7rem',color:'var(--muted)'}}>Open Spot</div>
+              </div>);
+            })}
+          </div>
+        </div>
+
+        {/* Invite banner */}
+        {amInvited&&<div style={{padding:'12px 20px 0'}}>
+          <div className="inv-banner">
+            <div style={{flex:1,fontSize:'0.82rem',fontWeight:600,color:'#93c5fd'}}>🎾 {game.organizerName} invited you!</div>
+          </div>
+        </div>}
+
+        {/* Actions */}
+        <div className="gdm-actions">
+          {amInvited&&<><button className="btn btn-primary btn-sm" onClick={()=>onAction('accept',game)}>✓ Accept</button><button className="btn btn-ghost btn-sm" onClick={()=>onAction('decline',game)} style={{color:'var(--red)',borderColor:'rgba(247,91,91,.3)'}}>Decline</button></>}
+          {myInvite&&myInvite.status==='declined'&&!isFull&&!expired&&<button className="btn btn-primary btn-sm" onClick={()=>onAction('rejoin',game)}>🏓 Rejoin</button>}
+          {!isOrg&&!myInvite&&!isFull&&!expired&&!game.isPrivate&&<button className="btn btn-primary btn-sm" onClick={()=>onAction('join',game)}>🏓 Join Game</button>}
+          {amIn&&!isOrg&&<button className="btn btn-ghost btn-sm" onClick={()=>onAction('leave',game)} style={{color:'var(--red)',borderColor:'rgba(247,91,91,.3)'}}>Leave</button>}
+          {isOrg&&<button className="btn btn-ghost btn-sm" onClick={()=>onAction('edit',game)}>✏️ Edit</button>}
+          {isOrg&&<button className="btn btn-primary btn-sm" onClick={()=>onAction('invite',game)}>+ Invite</button>}
+          {isOrg&&<button className="btn btn-ghost btn-sm" onClick={()=>onAction('cancel',game)} style={{marginLeft:'auto',color:'var(--red)',borderColor:'rgba(247,91,91,.3)',fontSize:'0.65rem'}}>Cancel</button>}
         </div>
       </div>
     </div>
@@ -2028,7 +2116,9 @@ function PlayersTab({user,posts,players,onChat,onNeedLogin,uLat,uLng}){
   const fCount=[fSkill,fType,fGender,fPurpose,fDist].filter(Boolean).length;
   const clearF=()=>{setFS('');setFT('');setFG('');setFP('');setFD('');};
 
-  const grouped=useMemo(()=>{
+  // Build a map of uid→posts
+  const postsByUid=useMemo(()=>{
+    const map={};
     let fp=[...posts];
     fp=fp.filter(p=>{
       if(!p.shareMode||p.shareMode==='public')return true;
@@ -2038,28 +2128,56 @@ function PlayersTab({user,posts,players,onChat,onNeedLogin,uLat,uLng}){
       if(p.shareMode==='players'||p.shareMode==='group')return(p.sharePlayerIds||[]).includes(user.uid);
       return false;
     });
-    if(tab==='now')fp=fp.filter(p=>p.availability==='Now'||p.availability==='Today');
-    if(tab==='nearby'&&uLat)fp=fp.filter(p=>p.lat&&haversine(uLat,uLng,p.lat,p.lng)<=25);
-    if(search.trim()){const q=search.toLowerCase();fp=fp.filter(p=>[p.name,p.city,p.skill,p.message,p.courtName].some(v=>(v||'').toLowerCase().includes(q)));}
-    if(fSkill)fp=fp.filter(p=>p.skill===fSkill);
-    if(fType)fp=fp.filter(p=>p.playTypes?.includes(fType));
-    if(fGender)fp=fp.filter(p=>p.gender===fGender);
-    if(fPurpose)fp=fp.filter(p=>p.purpose===fPurpose);
-    if(fDist&&uLat)fp=fp.filter(p=>p.lat&&haversine(uLat,uLng,p.lat,p.lng)<=parseInt(fDist));
-    const map={};
-    fp.forEach(p=>{
-      if(!map[p.uid])map[p.uid]={uid:p.uid,name:p.name,skill:p.skill,city:p.city,age:p.age,gender:p.gender,duprId:p.duprId,photoURL:p.photoURL,lat:p.lat,lng:p.lng,posts:[]};
-      map[p.uid].posts.push(p);
-      if(p.timestamp>(map[p.uid]._ts||0)){map[p.uid]._ts=p.timestamp;Object.assign(map[p.uid],{name:p.name,skill:p.skill,city:p.city,photoURL:p.photoURL,duprId:p.duprId});}
+    fp.forEach(p=>{if(!map[p.uid])map[p.uid]=[];map[p.uid].push(p);});
+    return map;
+  },[posts,user]);
+
+  // Build all-players list: merge registered profiles + post data
+  const allList=useMemo(()=>{
+    // Start with all registered players
+    let list=players.map(p=>{
+      const userPosts=postsByUid[p.uid]||[];
+      return{...p,posts:userPosts,hasPosts:userPosts.length>0,_ts:userPosts.reduce((mx,pp)=>Math.max(mx,pp.timestamp||0),0)};
     });
-    let arr=Object.values(map);
-    arr.sort((a,b)=>{
+    // Add any post-only users not in registered profiles
+    const profileUids=new Set(players.map(p=>p.uid));
+    Object.entries(postsByUid).forEach(([uid,ups])=>{
+      if(!profileUids.has(uid)&&ups.length>0){
+        const latest=ups.reduce((a,b)=>(b.timestamp||0)>(a.timestamp||0)?b:a,ups[0]);
+        list.push({uid,name:latest.name,skill:latest.skill,city:latest.city,age:latest.age,gender:latest.gender,duprId:latest.duprId,photoURL:latest.photoURL,lat:latest.lat,lng:latest.lng,posts:ups,hasPosts:true,_ts:ups.reduce((mx,pp)=>Math.max(mx,pp.timestamp||0),0)});
+      }
+    });
+    // Also include current user if logged in and not already listed
+    if(user&&!list.find(p=>p.uid===user.uid)){
+      list.unshift({uid:user.uid,name:user.displayName||'You',photoURL:user.photoURL||null,posts:postsByUid[user.uid]||[],hasPosts:(postsByUid[user.uid]||[]).length>0,_ts:0});
+    }
+
+    // Apply tab filters
+    if(tab==='now')list=list.filter(p=>p.posts.some(pp=>pp.availability==='Now'||pp.availability==='Today'));
+    if(tab==='nearby'&&uLat)list=list.filter(p=>p.lat&&haversine(uLat,uLng,p.lat,p.lng)<=25);
+
+    // Apply search
+    if(search.trim()){const q=search.toLowerCase();list=list.filter(p=>[p.name,p.city,p.skill].some(v=>(v||'').toLowerCase().includes(q))||p.posts.some(pp=>[pp.message,pp.courtName].some(v=>(v||'').toLowerCase().includes(q))));}
+
+    // Apply detail filters (only affect players with posts)
+    if(fSkill)list=list.filter(p=>!p.hasPosts||p.posts.some(pp=>pp.skill===fSkill));
+    if(fType)list=list.filter(p=>!p.hasPosts||p.posts.some(pp=>pp.playTypes?.includes(fType)));
+    if(fGender)list=list.filter(p=>p.gender===fGender);
+    if(fPurpose)list=list.filter(p=>p.posts.some(pp=>pp.purpose===fPurpose));
+    if(fDist&&uLat)list=list.filter(p=>p.lat&&haversine(uLat,uLng,p.lat,p.lng)<=parseInt(fDist));
+
+    // Sort: you first, then players with posts (recent first), then no-post players alphabetically
+    list.sort((a,b)=>{
       if(user&&a.uid===user.uid)return -1;if(user&&b.uid===user.uid)return 1;
-      if(tab==='nearby'&&uLat&&a.lat&&b.lat)return haversine(uLat,uLng,a.lat,a.lng)-haversine(uLat,uLng,b.lat,b.lng);
-      return(b._ts||0)-(a._ts||0);
+      if(a.hasPosts&&!b.hasPosts)return -1;if(!a.hasPosts&&b.hasPosts)return 1;
+      if(a.hasPosts&&b.hasPosts){
+        if(tab==='nearby'&&uLat&&a.lat&&b.lat)return haversine(uLat,uLng,a.lat,a.lng)-haversine(uLat,uLng,b.lat,b.lng);
+        return(b._ts||0)-(a._ts||0);
+      }
+      return(a.name||'').localeCompare(b.name||'');
     });
-    return arr;
-  },[posts,tab,search,fSkill,fType,fGender,fPurpose,fDist,user,uLat,uLng]);
+    return list;
+  },[players,postsByUid,tab,search,fSkill,fType,fGender,fPurpose,fDist,user,uLat,uLng]);
 
   const removePost=async(id)=>{
     if(!confirm('Remove this post?'))return;
@@ -2067,23 +2185,29 @@ function PlayersTab({user,posts,players,onChat,onNeedLogin,uLat,uLng}){
     catch(e){alert(e.message);}
   };
 
-  const fmtPostTime=p=>{
-    if(p.startTime&&p.endTime){const fmt=t=>{const[h,m]=t.split(':').map(Number);return`${h%12||12}:${String(m).padStart(2,'0')}${h>=12?'pm':'am'}`};return`${fmt(p.startTime)}–${fmt(p.endTime)}`;}
-    return null;
-  };
-
-  // Returns a compact readable label: for Today/This Week show actual date; for Custom Schedule show "Weekly"
-  const fmtAvailLabel=p=>{
-    if(p.availability==='Custom Schedule')return'📅 Weekly';
-    if(p.availDate){
-      const d=new Date(p.availDate+'T12:00:00');
+  // Build availability summary for a player
+  const getAvailSummary=(p)=>{
+    if(!p.hasPosts||p.posts.length===0)return null;
+    const schedPost=p.posts.find(pp=>pp.availability==='Custom Schedule'&&pp.weekSchedule?.length>0);
+    if(schedPost){
+      const days=(schedPost.weekSchedule||[]).map(s=>DAYS_SHORT[s.day]).join(', ');
+      return`📅 ${days}`;
+    }
+    const latest=p.posts[0];
+    if(latest.availability==='Now')return'⚡ Available Now';
+    if(latest.availability==='Today'){
+      const time=latest.startTime?` · ${fmtTime(latest.startTime)}`:'';
+      return`📅 Today${time}`;
+    }
+    if(latest.availDate){
+      const d=new Date(latest.availDate+'T12:00:00');
       const today=new Date();today.setHours(0,0,0,0);
       const diff=Math.round((d-today)/86400000);
-      if(diff===0)return`📅 Today · ${d.toLocaleDateString('en',{month:'short',day:'numeric'})}`;
-      if(diff===1)return`📅 Tomorrow · ${d.toLocaleDateString('en',{month:'short',day:'numeric'})}`;
-      return`📅 ${d.toLocaleDateString('en',{weekday:'short',month:'short',day:'numeric'})}`;
+      const dl=diff===0?'Today':diff===1?'Tomorrow':d.toLocaleDateString('en',{weekday:'short',month:'short',day:'numeric'});
+      const time=latest.startTime?` · ${fmtTime(latest.startTime)}`:'';
+      return`📅 ${dl}${time}`;
     }
-    return`📅 ${p.availability}`;
+    return`📅 ${latest.availability}`;
   };
 
   return(
@@ -2093,19 +2217,15 @@ function PlayersTab({user,posts,players,onChat,onNeedLogin,uLat,uLng}){
         <button className="btn btn-primary btn-sm" onClick={()=>{if(!user){onNeedLogin(null);return;}setEditPost(null);setShowPost(true);}}>📢 Post</button>
       </div>
 
-      {/* Tabs */}
       <div className="tab-pills">
         {[['all','🏓 All'],['now','⚡ Now'],['calendar','📅 Calendar'],['nearby','📍 Nearby']].map(([k,l])=>(
           <div key={k} className={`pill ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</div>
         ))}
       </div>
 
-      {/* Calendar tab */}
       {tab==='calendar'&&<CalendarView posts={posts} user={user} onChat={onChat} onNeedLogin={onNeedLogin} uLat={uLat} uLng={uLng}/>}
 
-      {/* List tabs */}
       {tab!=='calendar'&&<>
-        {/* Search + Filter */}
         <div style={{display:'flex',gap:8,marginBottom:10,alignItems:'center'}}>
           <div style={{position:'relative',flex:1}}><span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}}>🔍</span><input className="fi" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search players…" style={{paddingLeft:36}}/></div>
           <button onClick={()=>setShowF(!showF)} style={{padding:'10px 14px',border:`1.5px solid ${showF||fCount?'var(--green)':'var(--border2)'}`,borderRadius:12,background:showF||fCount?'var(--green-dim)':'transparent',color:showF||fCount?'var(--green)':'var(--muted)',fontFamily:'DM Sans',fontSize:'0.78rem',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
@@ -2122,58 +2242,40 @@ function PlayersTab({user,posts,players,onChat,onNeedLogin,uLat,uLng}){
           {fCount>0&&<button onClick={clearF} style={{marginTop:8,background:'none',border:'none',color:'var(--red)',fontSize:'0.72rem',fontWeight:600,cursor:'pointer'}}>✕ Clear all</button>}
         </div>}
 
-        <div style={{fontSize:'0.7rem',color:'var(--muted)',marginBottom:10}}>{grouped.length} player{grouped.length!==1?'s':''}</div>
-        {grouped.length===0&&<div className="empty-state"><div className="empty-icon">👥</div><div className="empty-title">No players found</div><div className="empty-sub">{search||fCount?'Try different filters':'Be the first to post!'}</div></div>}
-        {grouped.map(g=>{
-          const mine=user&&g.uid===user.uid;
-          const dist=uLat&&g.lat?haversine(uLat,uLng,g.lat,g.lng):null;
-          const latestPost=g.posts[0];
-          const pu=latestPost?PURPOSES.find(p=>p.id===latestPost.purpose):null;
-          // Quick availability preview: show available days from schedule
-          const schedPost=g.posts.find(p=>p.availability==='Custom Schedule'&&p.weekSchedule?.length>0);
-          const availDays=schedPost?(schedPost.weekSchedule||[]).map(s=>s.day):[];
+        <div style={{fontSize:'0.7rem',color:'var(--muted)',marginBottom:10}}>{allList.length} player{allList.length!==1?'s':''}</div>
+        {allList.length===0&&<div className="empty-state"><div className="empty-icon">👥</div><div className="empty-title">No players found</div><div className="empty-sub">{search||fCount?'Try different filters':'Be the first to post!'}</div></div>}
+
+        {allList.map(p=>{
+          const mine=user&&p.uid===user.uid;
+          const avail=getAvailSummary(p);
+          const dist=uLat&&p.lat?haversine(uLat,uLng,p.lat,p.lng):null;
           return(
-            <div key={g.uid} className="player-card" onClick={()=>setSelectedPlayer(g)} style={mine?{borderColor:'rgba(46,204,113,0.3)'}:{}}>
-              <div className="pc-row">
-                <div className="pc-avatar">{g.photoURL?<img src={g.photoURL} referrerPolicy="no-referrer" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}}/>:g.name?.[0]||'?'}</div>
-                <div className="pc-info">
-                  <div className="pc-name">
-                    {g.name}
-                    {mine&&<span style={{fontSize:'0.6rem',fontWeight:700,background:'var(--green-dim)',color:'var(--green)',padding:'2px 5px',borderRadius:4}}>YOU</span>}
-                    {g.posts.length>1&&<span style={{fontSize:'0.6rem',fontWeight:700,background:'var(--green)',color:'white',padding:'2px 6px',borderRadius:8}}>{g.posts.length}</span>}
-                  </div>
-                  <div className="pc-sub">{g.city||'No location'}{dist!=null?` · ${dist<1?dist.toFixed(1):Math.round(dist)} mi`:''}{g.age?` · ${g.age}`:''}{g.gender?` · ${g.gender}`:''}</div>
-                  {latestPost&&<div style={{display:'flex',gap:4,flexWrap:'wrap',marginTop:3}}>
-                    {pu&&<span className="tag t-green">{pu.e} {pu.l}</span>}
-                    <span className="tag t-blue">{fmtAvailLabel(latestPost)}</span>
-                    {fmtPostTime(latestPost)&&<span className="tag t-muted">🕐 {fmtPostTime(latestPost)}</span>}
-                  </div>}
-                  {/* Mini availability dots preview */}
-                  {schedPost&&<div style={{display:'flex',gap:3,marginTop:5}}>
-                    {DAYS_SHORT.map((d,i)=>{
-                      const isAvail=availDays.includes(i);
-                      return(<div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:1}}>
-                        <div style={{fontSize:'0.45rem',fontWeight:700,color:isAvail?'var(--green)':'var(--muted2)',textTransform:'uppercase'}}>{d}</div>
-                        <div style={{width:6,height:6,borderRadius:3,background:isAvail?'var(--green)':'var(--border)'}}/>
-                      </div>);
-                    })}
-                  </div>}
+            <div key={p.uid} className={`plr-card${mine?' plr-you':''}`} onClick={()=>setSelectedPlayer(p)}>
+              <div className="plr-av">{p.photoURL?<img src={p.photoURL} referrerPolicy="no-referrer"/>:p.name?.[0]||'?'}</div>
+              <div className="plr-info">
+                <div className="plr-name">
+                  {p.name||'Player'}
+                  {mine&&<span style={{fontSize:'0.55rem',fontWeight:700,background:'var(--green-dim)',color:'var(--green)',padding:'1px 5px',borderRadius:4}}>YOU</span>}
+                  {p.posts.length>1&&<span style={{fontSize:'0.55rem',fontWeight:700,background:'var(--green)',color:'white',padding:'1px 5px',borderRadius:8}}>{p.posts.length}</span>}
                 </div>
-                <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4}}>
-                  <div className="pc-skill">{g.skill||'NR'}</div>
-                  <div style={{fontSize:'0.55rem',color:'var(--muted)',fontWeight:600}}>View ›</div>
+                <div className="plr-avail">
+                  {avail?<span style={{color:'var(--green)'}}>{avail}</span>:<span style={{color:'var(--muted2)'}}>No availability posted</span>}
+                  {dist!=null&&<span style={{color:'var(--muted)'}}> · {dist<1?dist.toFixed(1):Math.round(dist)} mi</span>}
                 </div>
+              </div>
+              <div className="plr-right">
+                <div className="plr-skill">{p.skill||'NR'}</div>
+                <div className="plr-arrow">›</div>
               </div>
             </div>
           );
         })}
       </>}
 
-      {/* Player Detail Modal */}
       {selectedPlayer&&<PlayerDetailModal
         player={selectedPlayer}
         user={user}
-        posts={selectedPlayer.posts}
+        posts={selectedPlayer.posts||[]}
         onClose={()=>setSelectedPlayer(null)}
         onChat={onChat}
         onNeedLogin={onNeedLogin}
