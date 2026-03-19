@@ -936,7 +936,7 @@ function EditCourtModal({court,onClose,onSaved}){
   </div>);
 }
 
-function CourtDetailPage({courtId,onBack}){
+function CourtDetailPage({courtId,onBack,user,profile}){
     const[courtData,setCourtData]=useState(null);const[checkIns,setCheckIns]=useState([]);
     const[loading,setLoading]=useState(true);const[tab,setTab]=useState('now');
     const[showForm,setShowForm]=useState(false);const[showLater,setShowLater]=useState(false);
@@ -947,10 +947,15 @@ function CourtDetailPage({courtId,onBack}){
     const[weather,setWeather]=useState(null);const[forecast,setForecast]=useState([]);
     const[showEdit,setShowEdit]=useState(false);
     const checkInsRef=useRef([]);
-    // Per-session ID — NOT persisted to localStorage — so two people on the same device
-    // each get their own unique check-in slot and don't collide with each other.
-    const[deviceId]=useState(()=>'dev_'+Math.random().toString(36).slice(2,14)+'_'+Date.now().toString(36));
-    useEffect(()=>{const n=localStorage.getItem('pickleCourtUserName');const r=localStorage.getItem('pickleCourtRating');if(n)setUserName(n);if(r)setUserRating(r);},[]);
+    // Use Firebase UID as deviceId for logged-in users (enables push notifications to find them)
+    // Fall back to random ID for guest users
+    const[deviceId]=useState(()=>user?.uid||('dev_'+Math.random().toString(36).slice(2,14)+'_'+Date.now().toString(36)));
+    // Auto-fill name and skill from profile for logged-in users
+    useEffect(()=>{
+      if(profile?.name&&!userName)setUserName(profile.name);
+      if(profile?.skill&&!userRating)setUserRating(profile.skill);
+      if(!profile){const n=localStorage.getItem('pickleCourtUserName');const r=localStorage.getItem('pickleCourtRating');if(n&&!userName)setUserName(n);if(r&&!userRating)setUserRating(r);}
+    },[profile]);
     useEffect(()=>{if(!courtId||!fbOk){setLoading(false);return;}const u=db.collection('courts').doc(courtId).onSnapshot(d=>{if(d.exists)setCourtData({id:d.id,...d.data()});else setCourtData(null);setLoading(false);},()=>setLoading(false));return()=>u();},[courtId]);
     useEffect(()=>{if(!courtId||!fbOk)return;const u=db.collection('courts').doc(courtId).collection('checkins').onSnapshot(snap=>{const now=Date.now(),cut=now-24*3600000;snap.docs.forEach(d=>{if(d.data().status==='checked-out')d.ref.delete().catch(()=>{});});const list=snap.docs.map(d=>({id:d.id,...d.data()})).filter(c=>c.status!=='checked-out'&&c.timestamp>cut).sort((a,b)=>(a.arrivalTime||a.timestamp)-(b.arrivalTime||b.timestamp));checkInsRef.current=list;setCheckIns(list);},e=>console.warn('CI:',e.message));return()=>u();},[courtId]);
     useEffect(()=>{if(!courtId||!fbOk)return;const tick=async()=>{const now=Date.now(),list=checkInsRef.current;for(const c of list){const st=c.status==='active'?c.timestamp:c.arrivalTime;if(c.status==='active'&&c.duration&&st&&now>st+c.duration*60000){await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).delete().catch(()=>{});}if(c.status==='later'&&c.arrivalTime&&now>=c.arrivalTime){await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).update({status:'active',timestamp:now}).catch(()=>{});}}};tick();const t=setInterval(tick,15000);return()=>clearInterval(t);},[courtId]);
@@ -2451,9 +2456,84 @@ function PostForm({user,onClose,onPosted,editData,uLat,uLng}){
   );
 }
 
+/* ── NotificationSettings ── */
+function NotificationSettings({user,onClose}){
+  const[prefs,setPrefs]=useState(null);
+  const[loading,setLoading]=useState(true);
+  const defaults={masterEnabled:true,nearbyGame:true,playerMatch:true,gameInvite:true,inviteResponse:true,courtJoined:true,gameReminder:true,directMessage:true,quietEnabled:false};
+  useEffect(()=>{if(!user||!fbOk)return;db.collection('notifPrefs').doc(user.uid).get().then(d=>{setPrefs(d.exists?{...defaults,...d.data()}:{...defaults});setLoading(false);}).catch(()=>{setPrefs({...defaults});setLoading(false);});},[user]);
+  const toggle=async(key)=>{if(!prefs)return;const nv={...prefs,[key]:!prefs[key]};setPrefs(nv);
+    // If master toggle changed, also update token
+    if(key==='masterEnabled')window.PickleNotif?.setEnabled(user.uid,nv.masterEnabled);
+    await db.collection('notifPrefs').doc(user.uid).set(nv,{merge:true}).catch(()=>{});
+  };
+  const Toggle=({on,onToggle})=>(
+    <div onClick={onToggle} style={{width:44,height:26,borderRadius:13,background:on?'var(--green)':'var(--border2)',cursor:'pointer',position:'relative',transition:'background .2s',flexShrink:0}}>
+      <div style={{width:22,height:22,borderRadius:11,background:'white',position:'absolute',top:2,left:on?20:2,transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,.3)'}}/>
+    </div>
+  );
+  const Row=({icon,title,sub,prefKey})=>(
+    <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0',borderBottom:'1px solid var(--border)'}}>
+      <div style={{fontSize:'1.2rem',width:28,textAlign:'center'}}>{icon}</div>
+      <div style={{flex:1}}><div style={{fontSize:'0.85rem',fontWeight:600}}>{title}</div>{sub&&<div style={{fontSize:'0.68rem',color:'var(--muted)',marginTop:1}}>{sub}</div>}</div>
+      <Toggle on={prefs?.[prefKey]!==false} onToggle={()=>toggle(prefKey)}/>
+    </div>
+  );
+  if(loading)return(<div className="modal-overlay" onClick={onClose}><div className="modal-sheet" onClick={e=>e.stopPropagation()}><div className="modal-handle"/><div style={{textAlign:'center',padding:40,color:'var(--muted)'}}>Loading…</div></div></div>);
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
+        <div className="modal-handle"/>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}>
+          <button onClick={onClose} className="icon-btn" style={{position:'static'}}>←</button>
+          <div className="modal-title">🔔 Push Notifications</div>
+        </div>
+        <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:'4px 14px 14px',marginBottom:16}}>
+          <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0'}}>
+            <div style={{fontSize:'1.2rem',width:28,textAlign:'center'}}>🔔</div>
+            <div style={{flex:1}}><div style={{fontSize:'0.9rem',fontWeight:700}}>Push Notifications</div><div style={{fontSize:'0.68rem',color:'var(--muted)',marginTop:1}}>Stay in the loop when games, players & messages need your attention</div></div>
+            <Toggle on={prefs?.masterEnabled!==false} onToggle={()=>toggle('masterEnabled')}/>
+          </div>
+        </div>
+        {prefs?.masterEnabled!==false&&<>
+          <div style={{fontSize:'0.62rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>Nearby Activity</div>
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:'0 14px',marginBottom:16}}>
+            <Row icon="🏓" title="Nearby Game Available" sub="A game is open & starting near you" prefKey="nearbyGame"/>
+            <Row icon="👥" title="Player Availability Match" sub="A player's availability overlaps yours" prefKey="playerMatch"/>
+          </div>
+          <div style={{fontSize:'0.62rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>Games & Invites</div>
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:'0 14px',marginBottom:16}}>
+            <Row icon="📨" title="Game Invite Received" sub="Someone invited you to their game" prefKey="gameInvite"/>
+            <Row icon="✅" title="Invite Accepted / Declined" sub="A player responded to your game invite" prefKey="inviteResponse"/>
+            <Row icon="⏰" title="Game Starting Soon" sub="Reminder before your game begins" prefKey="gameReminder"/>
+          </div>
+          <div style={{fontSize:'0.62rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>On Court</div>
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:'0 14px',marginBottom:16}}>
+            <Row icon="🏟️" title="Player Joined Your Court" sub="Someone joins you during Playing Now" prefKey="courtJoined"/>
+          </div>
+          <div style={{fontSize:'0.62rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>Messages</div>
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:'0 14px',marginBottom:16}}>
+            <Row icon="💬" title="Direct Messages" sub="New message from another player" prefKey="directMessage"/>
+          </div>
+          <div style={{fontSize:'0.62rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>Quiet Hours</div>
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:'0 14px',marginBottom:8}}>
+            <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0'}}>
+              <div style={{fontSize:'1.2rem',width:28,textAlign:'center'}}>🌙</div>
+              <div style={{flex:1}}><div style={{fontSize:'0.85rem',fontWeight:600}}>Enable Quiet Hours</div><div style={{fontSize:'0.68rem',color:'var(--muted)',marginTop:1}}>Pause non-urgent notifications overnight</div></div>
+              <Toggle on={prefs?.quietEnabled===true} onToggle={()=>toggle('quietEnabled')}/>
+            </div>
+          </div>
+          {prefs?.quietEnabled&&<div style={{background:'rgba(91,155,247,0.08)',border:'1px solid rgba(91,155,247,0.2)',borderRadius:10,padding:'8px 12px',fontSize:'0.72rem',color:'var(--blue)',lineHeight:1.5}}>ℹ️ Game invites and urgent court alerts will still come through during quiet hours.</div>}
+        </>}
+      </div>
+    </div>
+  );
+}
+
 /* ── ProfileTab ── */
 function ProfileTab({user,profile,onEditProfile,onSignOut,onGoAuth,unread,onInbox,onDeleteAccount}){
   const[showDelete,setShowDelete]=useState(false);
+  const[showNotifSettings,setShowNotifSettings]=useState(false);
   const[delInput,setDelInput]=useState('');
   const[deleting,setDeleting]=useState(false);
   // Expose trigger for nav.js dropdown
@@ -2484,6 +2564,10 @@ function ProfileTab({user,profile,onEditProfile,onSignOut,onGoAuth,unread,onInbo
       <div className="settings-row" onClick={onInbox}>
         <div className="settings-row-left"><div style={{fontSize:'1.1rem'}}>💬</div><div><div style={{fontSize:'0.88rem',fontWeight:600}}>Messages</div><div style={{fontSize:'0.7rem',color:'var(--muted)'}}>Your private conversations</div></div></div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>{unread>0&&<div style={{background:'var(--red)',color:'white',borderRadius:10,padding:'2px 7px',fontSize:'0.72rem',fontWeight:700}}>{unread}</div>}<span style={{color:'var(--muted)'}}>›</span></div>
+      </div>
+      <div className="settings-row" onClick={()=>setShowNotifSettings(true)}>
+        <div className="settings-row-left"><div style={{fontSize:'1.1rem'}}>🔔</div><div><div style={{fontSize:'0.88rem',fontWeight:600}}>Notification Settings</div><div style={{fontSize:'0.7rem',color:'var(--muted)'}}>Push alerts, quiet hours</div></div></div>
+        <span style={{color:'var(--muted)'}}>›</span>
       </div>
       <div className="settings-row" onClick={onEditProfile}>
         <div className="settings-row-left"><div style={{fontSize:'1.1rem'}}>✏️</div><div><div style={{fontSize:'0.88rem',fontWeight:600}}>Edit Profile</div><div style={{fontSize:'0.7rem',color:'var(--muted)'}}>Name, skill, location</div></div></div>
@@ -2530,6 +2614,7 @@ function ProfileTab({user,profile,onEditProfile,onSignOut,onGoAuth,unread,onInbo
           </div>
         </div>
       )}
+      {showNotifSettings&&<NotificationSettings user={user} onClose={()=>setShowNotifSettings(false)}/>}
     </div>
   );
 }
@@ -2709,7 +2794,7 @@ function App(){
       <div className="screen-body">
         {tab==='home'&&<HomeTab user={user} profile={profile} courts={courts} players={allPlayers} games={games} uLat={uLat} uLng={uLng} onChat={setChatP} onNeedLogin={handleNeedLogin} onSetTab={switchTab} onOpenCourt={openCourt}/>}
         {tab==='courts'&&<CourtsTab courts={courts} uLat={uLat} uLng={uLng} onOpenCourt={openCourt}/>}
-        {tab==='court-detail'&&<CourtDetailPage courtId={courtId} onBack={()=>switchTab('courts')}/>}
+        {tab==='court-detail'&&<CourtDetailPage courtId={courtId} onBack={()=>switchTab('courts')} user={user} profile={profile}/>}
         {tab==='games'&&<GamesTab user={user} profile={profile} games={games} onNeedLogin={handleNeedLogin} uLat={uLat} uLng={uLng}/>}
         {tab==='players'&&<PlayersTab user={user} posts={posts} players={allPlayers} onChat={setChatP} onNeedLogin={handleNeedLogin} uLat={uLat} uLng={uLng}/>}
         {tab==='profile'&&<ProfileTab user={user} profile={profile} unread={unread} onEditProfile={()=>setShowProfile(true)} onSignOut={handleSignOut} onGoAuth={handleGoAuth} onInbox={()=>setShowInbox(true)} onDeleteAccount={handleDeleteAccount}/>}

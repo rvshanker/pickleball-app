@@ -14,8 +14,9 @@ window.PickleNotif = {
     if (!uid) return;
     this._uid = uid;
 
+    // Check master toggle — field name matches Cloud Functions: masterEnabled
     const prefs = await this.loadPrefs(uid);
-    if (prefs?.enabled === false) {
+    if (prefs?.masterEnabled === false) {
       console.log("[FCM] Notifications disabled by user.");
       await this._removeToken(uid);
       return;
@@ -25,12 +26,10 @@ window.PickleNotif = {
     if (window.Capacitor?.isNativePlatform?.()) {
       console.log("[FCM] Native platform detected");
       try {
-        // Use @capacitor-firebase/messaging which returns proper FCM tokens
         const FirebaseMessaging = window.Capacitor.Plugins?.FirebaseMessaging;
 
         if (!FirebaseMessaging) {
           console.error("[FCM] FirebaseMessaging plugin not found, trying PushNotifications");
-          // Fallback to basic push plugin
           const PushNotifications = window.Capacitor.Plugins?.PushNotifications;
           if (PushNotifications) {
             const perm = await PushNotifications.requestPermissions();
@@ -39,23 +38,19 @@ window.PickleNotif = {
           return;
         }
 
-        // Request permission
         const perm = await FirebaseMessaging.requestPermissions();
         console.log("[FCM] Permission:", perm.receive);
 
         if (perm.receive === "granted") {
-          // getToken() returns the FCM token (not APNs token)
           const result = await FirebaseMessaging.getToken();
           console.log("[FCM] FCM token:", result.token);
           await this._saveToken(uid, result.token);
 
-          // Listen for token refresh
           await FirebaseMessaging.addListener("tokenReceived", async (event) => {
             console.log("[FCM] Token refreshed:", event.token);
             await this._saveToken(uid, event.token);
           });
 
-          // Foreground notification
           await FirebaseMessaging.addListener("notificationReceived", (event) => {
             console.log("[FCM] Foreground push:", event.notification);
             this._showInAppToast({
@@ -64,7 +59,6 @@ window.PickleNotif = {
             });
           });
 
-          // Notification tapped
           await FirebaseMessaging.addListener("notificationActionPerformed", (event) => {
             console.log("[FCM] Push tapped:", event);
             const data = event.notification?.data || {};
@@ -105,7 +99,7 @@ window.PickleNotif = {
 
   async setEnabled(uid, enabled) {
     if (!uid) return;
-    await this.savePrefs(uid, { enabled });
+    await this.savePrefs(uid, { masterEnabled: enabled });
     if (enabled) await this.init(uid);
     else await this._removeToken(uid);
   },
