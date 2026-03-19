@@ -4,12 +4,12 @@
  * 1. GroupMe scheduled message sender      (existing)
  * 2. GroupMe real-time check-in trigger    (existing, bug fixed)
  * 3. FCM notification-queue processor      (existing)
- * 4. Push: nearby game available           (new)
- * 5. Push: player availability match       (new)
- * 6. Push: game invite / accept / decline  (new)
- * 7. Push: player joined your court        (new)
- * 8. Push: game starting soon reminder     (new — piggybacked on existing 5-min schedule)
- * 9. Push: direct message received         (new)
+ * 4. Push: nearby game available           (existing)
+ * 5. Push: player availability match       (existing)
+ * 6. Push: game invite / accept / decline  (existing)
+ * 7. Push: player joined your court        (FIXED — now triggers on checkins subcollection)
+ * 8. Push: game starting soon reminder     (existing — piggybacked on 5-min schedule)
+ * 9. Push: direct message received         (FIXED — now triggers on chatMessages collection)
  */
 
 const { onSchedule }        = require("firebase-functions/v2/scheduler");
@@ -419,7 +419,7 @@ exports.sendScheduledGroupMeMessages = onSchedule(
       await Promise.allSettled(groupMePromises);
     }
 
-    // ── NEW — Game start reminders (push notifications, 15-min window) ──
+    // ── Game start reminders (push notifications, 15-min window) ──
     try {
       const soon      = new Date(now + 15 * 60 * 1000);
       const todayStr  = new Date(now).toISOString().split("T")[0];
@@ -438,7 +438,7 @@ exports.sendScheduledGroupMeMessages = onSchedule(
         const accepted = (game.players || []).filter(p => p.status === "accepted");
         const payload  = {
           title: "🕐 Game starting soon!",
-          body:  `Your ${game.playType || ""} game at ${game.courtName || "the court"} starts in ~15 minutes`,
+          body:  `Your ${game.playType || ""} game at ${game.courtName || game.court || "the court"} starts in ~15 minutes`,
           data:  { type: "game_reminder", prefKey: "gameReminder", gameId: doc.id, screen: "games" },
         };
         for (const p of accepted) reminderSends.push(sendPushToUser(p.uid, payload));
@@ -456,7 +456,7 @@ exports.sendScheduledGroupMeMessages = onSchedule(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// EXISTING — GroupMe check-in trigger  (bug fixed: botDoc was used before fetch)
+// EXISTING — GroupMe check-in trigger + NEW push to other players at court
 // ─────────────────────────────────────────────────────────────────────────────
 
 exports.onCheckinCreated = onDocumentCreated(
@@ -465,58 +465,91 @@ exports.onCheckinCreated = onDocumentCreated(
     const courtId = event.params.courtId;
     const checkin = event.data.data();
     if (!checkin) return;
-    if (checkin.status !== "active") return;
 
-    // ✅ BUG FIX: botDoc was referenced before being fetched in original code
-    let botDoc;
-    try { botDoc = await db.collection("groupme_bots").doc(courtId).get(); }
-    catch (e) { logger.error("Failed to fetch botDoc:", e.message); return; }
+    // ── GroupMe bot message (existing, only for active check-ins) ──
+    if (checkin.status === "active") {
+      let botDoc;
+      try { botDoc = await db.collection("groupme_bots").doc(courtId).get(); }
+      catch (e) { logger.error("Failed to fetch botDoc:", e.message); }
 
-    if (!botDoc.exists) return;
-    const botConfig = botDoc.data();
-    if (!botConfig.botId || botConfig.enabled === false) return;
+      if (botDoc?.exists) {
+        const botConfig = botDoc.data();
+        if (botConfig.botId && botConfig.enabled !== false) {
+          const rulesSnap = await db
+            .collection("groupme_bots").doc(courtId).collection("event_rules")
+            .where("trigger", "==", "checkin")
+            .where("enabled", "==", true)
+            .limit(1)
+            .get();
 
-    const rulesSnap = await db
-      .collection("groupme_bots").doc(courtId).collection("event_rules")
-      .where("trigger", "==", "checkin")
-      .where("enabled", "==", true)
-      .limit(1)
-      .get();
+          if (!rulesSnap.empty) {
+            const rule = rulesSnap.docs[0].data();
+            let msg;
 
-    if (rulesSnap.empty) return;
+            if (rule.customMsg) {
+              const courtDoc  = await db.collection("courts").doc(courtId).get();
+              const courtData = courtDoc.exists ? courtDoc.data() : {};
+              const checkinsSnap = await db.collection("courts").doc(courtId).collection("checkins")
+                .where("status", "==", "active").get();
+              msg = rule.customMsg
+                .replace("{name}",    checkin.userName || "Someone")
+                .replace("{court}",   courtData.name || "the court")
+                .replace("{players}", String(checkinsSnap.size))
+                .replace("{courts}",  String(courtData.openCourts ?? courtData.numberOfCourts ?? 4));
+            }
 
-    const rule = rulesSnap.docs[0].data();
-    let msg;
+            if (!msg) {
+              const courtDoc     = await db.collection("courts").doc(courtId).get();
+              const courtData    = courtDoc.exists ? courtDoc.data() : {};
+              const checkinsSnap = await db.collection("courts").doc(courtId).collection("checkins")
+                .where("status", "==", "active").get();
+              const playerCount  = checkinsSnap.size;
+              const openCourts   = courtData.openCourts ?? courtData.numberOfCourts ?? 4;
+              const ratingMap    = { "1.0":"1.0","1.5":"1.5","2.0":"2.0","2.5":"2.5","3.0":"3.0","3.5":"3.5","4.0":"4.0","4.5":"4.5","5.0":"5.0","5plus":"5.0+" };
+              const rating       = checkin.rating && ratingMap[checkin.rating] ? ` ${ratingMap[checkin.rating]}` : "";
+              const guests       = checkin.guests > 0 ? ` (+${checkin.guests} guests)` : "";
+              msg =
+                `🎾 ${checkin.userName}${rating} checked in at ${courtData.name || "court"}${guests}\n` +
+                `👥 ${playerCount} player${playerCount !== 1 ? "s" : ""} on-site  🏟 ${openCourts} court${openCourts !== 1 ? "s" : ""} rotating`;
+            }
 
-    if (rule.customMsg) {
+            const result = await postGroupMe(botConfig.botId, msg);
+            await writeLog(courtId, msg, result.ok ? "sent" : "failed", "event_checkin");
+          }
+        }
+      }
+    }
+
+    // ── NEW: Push notification to other checked-in players at this court ──
+    try {
       const courtDoc  = await db.collection("courts").doc(courtId).get();
-      const courtData = courtDoc.exists ? courtDoc.data() : {};
-      const checkinsSnap = await db.collection("courts").doc(courtId).collection("checkins")
-        .where("status", "==", "active").get();
-      msg = rule.customMsg
-        .replace("{name}",    checkin.userName || "Someone")
-        .replace("{court}",   courtData.name || "the court")
-        .replace("{players}", String(checkinsSnap.size))
-        .replace("{courts}",  String(courtData.openCourts ?? courtData.numberOfCourts ?? 4));
-    }
+      const courtName = courtDoc.exists ? (courtDoc.data().name || "the court") : "the court";
 
-    if (!msg) {
-      const courtDoc     = await db.collection("courts").doc(courtId).get();
-      const courtData    = courtDoc.exists ? courtDoc.data() : {};
-      const checkinsSnap = await db.collection("courts").doc(courtId).collection("checkins")
-        .where("status", "==", "active").get();
-      const playerCount  = checkinsSnap.size;
-      const openCourts   = courtData.openCourts ?? courtData.numberOfCourts ?? 4;
-      const ratingMap    = { "1.0":"1.0","1.5":"1.5","2.0":"2.0","2.5":"2.5","3.0":"3.0","3.5":"3.5","4.0":"4.0","4.5":"4.5","5.0":"5.0","5plus":"5.0+" };
-      const rating       = checkin.rating && ratingMap[checkin.rating] ? ` ${ratingMap[checkin.rating]}` : "";
-      const guests       = checkin.guests > 0 ? ` (+${checkin.guests} guests)` : "";
-      msg =
-        `🎾 ${checkin.userName}${rating} checked in at ${courtData.name || "court"}${guests}\n` +
-        `👥 ${playerCount} player${playerCount !== 1 ? "s" : ""} on-site  🏟 ${openCourts} court${openCourts !== 1 ? "s" : ""} rotating`;
-    }
+      // Get all other active/later check-ins at this court
+      const othersSnap = await db.collection("courts").doc(courtId).collection("checkins")
+        .where("status", "in", ["active", "later"])
+        .get();
 
-    const result = await postGroupMe(botConfig.botId, msg);
-    await writeLog(courtId, msg, result.ok ? "sent" : "failed", "event_checkin");
+      const sends = [];
+      const thisDeviceId = checkin.deviceId;
+
+      othersSnap.forEach((doc) => {
+        const other = doc.data();
+        // Skip the person who just checked in, and skip non-uid deviceIds
+        if (!other.deviceId || other.deviceId === thisDeviceId) return;
+        // deviceId is the user's uid for logged-in users
+        sends.push(sendPushToUser(other.deviceId, {
+          title: "🏟️ Player joined your court!",
+          body:  `${checkin.userName || "Someone"} checked in at ${courtName}`,
+          data:  { type: "court_joined", prefKey: "courtJoined", courtId, screen: "courts" },
+        }));
+      });
+
+      await Promise.allSettled(sends);
+      if (sends.length > 0) logger.info(`Court check-in push: notified ${sends.length} player(s) at ${courtName}`);
+    } catch (e) {
+      logger.error("Court check-in push failed:", e.message);
+    }
   }
 );
 
@@ -565,8 +598,7 @@ exports.sendPushNotification = onDocumentCreated(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NEW — Nearby game available
-// Fires when a new game is created, notifies players within 25 miles
+// EXISTING — Nearby game available (unchanged)
 // ─────────────────────────────────────────────────────────────────────────────
 
 exports.onGameCreated = onDocumentCreated(
@@ -599,8 +631,7 @@ exports.onGameCreated = onDocumentCreated(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NEW — Player availability match
-// Fires when a findPlayers post is created, matches overlapping availability
+// EXISTING — Player availability match (unchanged)
 // ─────────────────────────────────────────────────────────────────────────────
 
 exports.onPlayerPostCreated = onDocumentCreated(
@@ -644,8 +675,7 @@ exports.onPlayerPostCreated = onDocumentCreated(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NEW — Game invite / accept / decline
-// Fires when the players array on a game document changes
+// EXISTING — Game invite / accept / decline (unchanged)
 // ─────────────────────────────────────────────────────────────────────────────
 
 exports.onGameUpdated = onDocumentUpdated(
@@ -694,48 +724,33 @@ exports.onGameUpdated = onDocumentUpdated(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NEW — Player joined your court (Playing Now / scheduled sessions)
-// Expects: courtSessions/{courtId}/sessions/{sessionId}
-// doc shape: { organizerUid, courtName, players: [{uid, name, joinedAt}] }
-// ─────────────────────────────────────────────────────────────────────────────
-
-exports.onCourtSessionUpdated = onDocumentUpdated(
-  "courtSessions/{courtId}/sessions/{sessionId}",
-  async (event) => {
-    const before = event.data.before.data();
-    const after  = event.data.after.data();
-
-    const uidsBefore = (before.players || []).map(p => p.uid);
-    const newPlayers = (after.players  || []).filter(
-      p => !uidsBefore.includes(p.uid) && p.uid !== after.organizerUid
-    );
-
-    for (const joiner of newPlayers) {
-      await sendPushToUser(after.organizerUid, {
-        title: "🙋 Someone joined your court!",
-        body:  `${joiner.name || "A player"} joined you at ${after.courtName || "your court"}`,
-        data:  { type: "court_joined", prefKey: "courtJoined", courtId: event.params.courtId, screen: "courts" },
-      });
-    }
-  }
-);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// NEW — Direct message received
-// Expects: messages/{conversationId}/msgs/{msgId}
-// doc shape: { senderUid, senderName, recipientUid, text }
+// FIXED — Direct message received
+// Was: messages/{conversationId}/msgs/{msgId} (wrong path)
+// Now: chatMessages/{msgId} (matches client-side code)
+// Client writes: { convoId: "uid1__uid2", senderUid, senderName, text, timestamp }
 // ─────────────────────────────────────────────────────────────────────────────
 
 exports.onMessageCreated = onDocumentCreated(
-  "messages/{conversationId}/msgs/{msgId}",
+  "chatMessages/{msgId}",
   async (event) => {
     const msg = event.data.data();
-    if (!msg.senderUid || !msg.recipientUid) return;
+    if (!msg || !msg.senderUid || !msg.convoId) return;
 
-    await sendPushToUser(msg.recipientUid, {
+    // convoId is "uid1__uid2" sorted — extract recipient
+    const [uid1, uid2] = msg.convoId.split("__");
+    const recipientUid = msg.senderUid === uid1 ? uid2 : uid1;
+    if (!recipientUid || recipientUid === msg.senderUid) return;
+
+    await sendPushToUser(recipientUid, {
       title: `💬 ${msg.senderName || "New message"}`,
       body:  msg.text ? msg.text.substring(0, 80) : "Sent you a message",
-      data:  { type: "direct_message", prefKey: "directMessage", conversationId: event.params.conversationId, senderUid: msg.senderUid, screen: "messages" },
+      data:  {
+        type:           "direct_message",
+        prefKey:        "directMessage",
+        senderUid:      msg.senderUid,
+        conversationId: msg.convoId,
+        screen:         "profile",
+      },
     });
   }
 );
