@@ -1,15 +1,6 @@
 /**
- * PickleConnect – FCM Client Integration (updated)
- * =================================================
- * Handles: permission request, token management, foreground toasts,
- *          notification preferences (master toggle + per-category).
- *
- * The master toggle ("enabled") controls everything:
- *   - ON:  requests permission, registers token, sends to Cloud Functions
- *   - OFF: does NOT request permission, removes token from Firestore
- *          so Cloud Functions can't send anything
- *
- * Replace VAPID_KEY with yours from Firebase Console.
+ * PickleConnect – FCM Client Integration
+ * Handles web + native iOS/Android push notifications
  */
 
 const VAPID_KEY = "BO8kuV9zmoNdPv7zDrUgYNz82A3Nk3cE6wSDO5-4PXi4FJZ0HEy1NLri2N0BsF_mzV5pKtgYHXbKq8_cIA2a3oY";
@@ -19,22 +10,73 @@ window.PickleNotif = {
   messaging: null,
   _uid: null,
 
-  // ─── Main init: called on auth state change ───
   async init(uid) {
     if (!uid) return;
-    if (!window.firebase?.messaging) {
-      setTimeout(() => this.init(uid), 500);
-      return;
-    }
-
     this._uid = uid;
 
-    // Check master toggle FIRST
+    // Check master toggle
     const prefs = await this.loadPrefs(uid);
     if (prefs?.enabled === false) {
       console.log("[FCM] Notifications disabled by user.");
-      // Ensure token is removed so no pushes arrive
       await this._removeToken(uid);
+      return;
+    }
+
+    // ─── NATIVE iOS/Android (Capacitor) ───
+    if (window.Capacitor?.isNativePlatform?.()) {
+      console.log("[FCM] Native platform detected, using Capacitor push");
+      try {
+        // Wait for Capacitor plugins to be ready
+        const Capacitor = window.Capacitor;
+        const PushNotifications = Capacitor.Plugins?.PushNotifications;
+        
+        if (!PushNotifications) {
+          console.error("[FCM] PushNotifications plugin not available");
+          return;
+        }
+
+        // Request permission
+        const perm = await PushNotifications.requestPermissions();
+        console.log("[FCM] Permission result:", perm.receive);
+        
+        if (perm.receive === "granted") {
+          await PushNotifications.register();
+          
+          // Listen for the FCM token
+          await PushNotifications.addListener("registration", async (token) => {
+            console.log("[FCM] Native token received:", token.value);
+            await this._saveToken(uid, token.value);
+          });
+
+          await PushNotifications.addListener("registrationError", (err) => {
+            console.error("[FCM] Native registration error:", err);
+          });
+
+          // Foreground notification
+          await PushNotifications.addListener("pushNotificationReceived", (notification) => {
+            console.log("[FCM] Foreground push:", notification);
+            this._showInAppToast({ title: notification.title, body: notification.body });
+          });
+
+          // Notification tapped
+          await PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
+            console.log("[FCM] Push tapped:", action);
+            const data = action.notification?.data || {};
+            if (data.screen) {
+              window.location.hash = "#tab=" + data.screen;
+            }
+          });
+        }
+      } catch (e) {
+        console.error("[FCM] Native push setup failed:", e);
+      }
+      return;
+    }
+
+    // ─── WEB (browser / PWA) ───
+    if (!window.firebase?.messaging) {
+      console.log("[FCM] firebase-messaging not ready, retrying...");
+      setTimeout(() => this.init(uid), 500);
       return;
     }
 
@@ -50,7 +92,6 @@ window.PickleNotif = {
       const token = await this.messaging.getToken({ vapidKey: VAPID_KEY });
       if (token) await this._saveToken(uid, token);
 
-      // Foreground message handler
       this.messaging.onMessage((payload) => {
         this._showInAppToast(payload.notification);
       });
@@ -60,47 +101,42 @@ window.PickleNotif = {
     }
   },
 
-  // ─── Master toggle handler ───
-  // Call this when user flips the top switch
   async setEnabled(uid, enabled) {
     if (!uid) return;
     await this.savePrefs(uid, { enabled });
     if (enabled) {
-      // Re-init to request permission + register token
       await this.init(uid);
     } else {
-      // Remove token so Cloud Functions can't send pushes
       await this._removeToken(uid);
     }
   },
 
-  // ─── Save token to Firestore ───
   async _saveToken(uid, token) {
     try {
+      const platform = window.Capacitor?.isNativePlatform?.()
+        ? (/iPhone|iPad|iPod/.test(navigator.userAgent) ? "ios-native" : "android-native")
+        : this._getPlatform();
       await firebase.firestore().collection("fcm-tokens").doc(uid).set({
         token,
         deviceId: uid,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        platform: this._getPlatform(),
+        platform,
       });
-      console.log("[FCM] Token saved.");
+      console.log("[FCM] Token saved. Platform:", platform);
     } catch (e) {
       console.error("[FCM] Token save failed:", e);
     }
   },
 
-  // ─── Remove token from Firestore (disables pushes) ───
   async _removeToken(uid) {
     try {
       await firebase.firestore().collection("fcm-tokens").doc(uid).delete();
-      console.log("[FCM] Token removed (notifications disabled).");
+      console.log("[FCM] Token removed.");
     } catch (e) {
-      // Document may not exist — that's fine
       if (e.code !== "not-found") console.error("[FCM] Token remove failed:", e);
     }
   },
 
-  // ─── In-app toast for foreground notifications ───
   _showInAppToast({ title, body } = {}) {
     if (!title) return;
     const existing = document.getElementById("fcm-toast");
@@ -108,10 +144,9 @@ window.PickleNotif = {
 
     const el = document.createElement("div");
     el.id = "fcm-toast";
-    el.innerHTML = `
-      <div style="font-weight:700;font-size:0.85rem;margin-bottom:3px;">${title}</div>
-      <div style="font-size:0.75rem;opacity:0.85;line-height:1.4;">${body || ""}</div>
-    `;
+    el.innerHTML =
+      '<div style="font-weight:700;font-size:0.85rem;margin-bottom:3px;">' + title + '</div>' +
+      '<div style="font-size:0.75rem;opacity:0.85;line-height:1.4;">' + (body || "") + '</div>';
     Object.assign(el.style, {
       position: "fixed", top: "70px", left: "50%", transform: "translateX(-50%)",
       background: "#1A2B3C", border: "1px solid rgba(46,204,113,0.35)",
@@ -126,12 +161,7 @@ window.PickleNotif = {
     if (!document.getElementById("fcm-style")) {
       const style = document.createElement("style");
       style.id = "fcm-style";
-      style.textContent = `
-        @keyframes fcmSlideIn {
-          from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-        }
-      `;
+      style.textContent = "@keyframes fcmSlideIn { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }";
       document.head.appendChild(style);
     }
 
@@ -140,18 +170,15 @@ window.PickleNotif = {
     setTimeout(() => el?.remove(), 4500);
   },
 
-  // ─── Save notification preferences ───
   async savePrefs(uid, prefs) {
     if (!uid || !firebase?.firestore) return;
     try {
       await firebase.firestore().collection("notifPrefs").doc(uid).set(prefs, { merge: true });
-      console.log("[FCM] Prefs saved:", Object.keys(prefs));
     } catch (e) {
       console.error("[FCM] Prefs save failed:", e);
     }
   },
 
-  // ─── Load preferences ───
   async loadPrefs(uid) {
     if (!uid) return null;
     try {
@@ -164,14 +191,12 @@ window.PickleNotif = {
   },
 
   _getPlatform() {
-    if (window.Capacitor?.isNativePlatform?.()) return "native";
     if (/iPhone|iPad|iPod/.test(navigator.userAgent)) return "ios-web";
     if (/Android/.test(navigator.userAgent)) return "android-web";
     return "web";
   },
 };
 
-// ─── Auto-init on auth state ───
 (function waitForFirebase(attempts) {
   if (window.firebase?.apps?.length && window.firebase?.auth) {
     firebase.auth().onAuthStateChanged((user) => {
@@ -179,7 +204,5 @@ window.PickleNotif = {
     });
   } else if (attempts > 0) {
     setTimeout(() => waitForFirebase(attempts - 1), 300);
-  } else {
-    console.warn("[FCM] Firebase not available after waiting.");
   }
 })(20);
