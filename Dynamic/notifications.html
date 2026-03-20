@@ -213,7 +213,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
     <span class="section-head-text">Nearby Activity</span>
   </div>
 
-  <div class="notif-row fade-up" style="animation-delay:.06s">
+  <div class="notif-row fade-up" style="animation-delay:.06s" data-prefkey="nearbyGame">
     <div class="notif-emoji">🏓</div>
     <div class="notif-info">
       <div class="notif-name">Nearby Game Available</div>
@@ -228,7 +228,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
     </div>
   </div>
 
-  <div class="notif-row fade-up" style="animation-delay:.08s">
+  <div class="notif-row fade-up" style="animation-delay:.08s" data-prefkey="playerMatch">
     <div class="notif-emoji">👥</div>
     <div class="notif-info">
       <div class="notif-name">Player Availability Match</div>
@@ -249,7 +249,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
     <span class="section-head-text">Games &amp; Invites</span>
   </div>
 
-  <div class="notif-row fade-up" style="animation-delay:.12s">
+  <div class="notif-row fade-up" style="animation-delay:.12s" data-prefkey="gameInvite">
     <div class="notif-emoji">📨</div>
     <div class="notif-info">
       <div class="notif-name">Game Invite Received</div>
@@ -260,7 +260,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
     </div>
   </div>
 
-  <div class="notif-row fade-up" style="animation-delay:.14s">
+  <div class="notif-row fade-up" style="animation-delay:.14s" data-prefkey="inviteResponse">
     <div class="notif-emoji">✅</div>
     <div class="notif-info">
       <div class="notif-name">Invite Accepted</div>
@@ -271,7 +271,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
     </div>
   </div>
 
-  <div class="notif-row fade-up" style="animation-delay:.16s">
+  <div class="notif-row fade-up" style="animation-delay:.16s" data-prefkey="inviteResponse2">
     <div class="notif-emoji">❌</div>
     <div class="notif-info">
       <div class="notif-name">Invite Declined</div>
@@ -288,7 +288,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
     <span class="section-head-text">On Court</span>
   </div>
 
-  <div class="notif-row fade-up" style="animation-delay:.20s">
+  <div class="notif-row fade-up" style="animation-delay:.20s" data-prefkey="courtJoined">
     <div class="notif-emoji">🙋</div>
     <div class="notif-info">
       <div class="notif-name">Player Joined Your Court</div>
@@ -299,7 +299,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
     </div>
   </div>
 
-  <div class="notif-row fade-up" style="animation-delay:.22s">
+  <div class="notif-row fade-up" style="animation-delay:.22s" data-prefkey="gameReminder">
     <div class="notif-emoji">🕐</div>
     <div class="notif-info">
       <div class="notif-name">Game Starting Soon</div>
@@ -321,7 +321,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
     <span class="section-head-text">Messages</span>
   </div>
 
-  <div class="notif-row fade-up" style="animation-delay:.26s">
+  <div class="notif-row fade-up" style="animation-delay:.26s" data-prefkey="directMessage">
     <div class="notif-emoji">💬</div>
     <div class="notif-info">
       <div class="notif-name">Direct Messages</div>
@@ -378,8 +378,16 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
   let dirty = false;
   let _uid = null;
 
-  // ── Back: always go to index.html (history.back() causes blank page) ──
-  function goBack() { window.location.href = 'index.html'; }
+  // ── Back: always go to index.html with fade transition ──
+  function goBack() {
+    const fade = document.getElementById('pcn-fade');
+    if (fade) {
+      fade.classList.add('go');
+      setTimeout(() => { window.location.href = 'index.html'; }, 160);
+    } else {
+      window.location.href = 'index.html';
+    }
+  }
 
   function markDirty() {
     dirty = true;
@@ -405,22 +413,25 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
   }
 
   // ── Collect settings from DOM ──
+  // Saves flat keys matching Cloud Functions prefKey values:
+  // masterEnabled, nearbyGame, playerMatch, gameInvite, inviteResponse, courtJoined, gameReminder, directMessage
   function collectSettings() {
     const s = {
       masterEnabled: document.getElementById('masterToggle').checked,
       quietEnabled:  document.getElementById('quietToggle').checked,
       quietFrom: document.querySelector('#quietFrom input')?.value || '22:00',
       quietTo:   document.querySelector('#quietTo input')?.value   || '07:00',
-      notifications: {}
+      _freq: {}  // frequency settings stored separately (UI-only)
     };
     document.querySelectorAll('.notif-row').forEach(row => {
       const toggle  = row.querySelector('.notif-toggle');
-      const nameEl  = row.querySelector('.notif-name');
-      if (!toggle || !nameEl) return;
-      const key = nameEl.textContent.trim()
-        .toLowerCase().replace(/\s+/g,'_').replace(/[^a-z_]/g,'');
+      const prefKey = row.dataset.prefkey;
+      if (!toggle || !prefKey) return;
+      // inviteResponse2 (Invite Declined) shares the inviteResponse key
+      const key = prefKey === 'inviteResponse2' ? 'inviteResponse' : prefKey;
+      s[key] = toggle.checked;
       const freqBtn = row.querySelector('.freq-btn.on');
-      s.notifications[key] = { enabled: toggle.checked, freq: freqBtn?.textContent.trim() || null };
+      if (freqBtn) s._freq[key] = freqBtn.textContent.trim();
     });
     return s;
   }
@@ -436,22 +447,20 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
     if (s.quietEnabled !== undefined) { qTog.checked = s.quietEnabled; onQuietToggle(qTog); }
     if (s.quietFrom) { const i = document.querySelector('#quietFrom input'); if(i) i.value = s.quietFrom; }
     if (s.quietTo)   { const i = document.querySelector('#quietTo input');   if(i) i.value = s.quietTo;   }
-    if (s.notifications) {
-      document.querySelectorAll('.notif-row').forEach(row => {
-        const toggle = row.querySelector('.notif-toggle');
-        const nameEl = row.querySelector('.notif-name');
-        if (!toggle || !nameEl) return;
-        const key = nameEl.textContent.trim()
-          .toLowerCase().replace(/\s+/g,'_').replace(/[^a-z_]/g,'');
-        const saved = s.notifications[key];
-        if (!saved) return;
-        toggle.checked = saved.enabled;
-        if (saved.freq) {
-          row.querySelectorAll('.freq-btn').forEach(b =>
-            b.classList.toggle('on', b.textContent.trim() === saved.freq));
-        }
-      });
-    }
+    // Apply flat prefKey toggles
+    document.querySelectorAll('.notif-row').forEach(row => {
+      const toggle  = row.querySelector('.notif-toggle');
+      const prefKey = row.dataset.prefkey;
+      if (!toggle || !prefKey) return;
+      const key = prefKey === 'inviteResponse2' ? 'inviteResponse' : prefKey;
+      if (s[key] !== undefined) toggle.checked = s[key];
+      // Apply frequency from _freq sub-object
+      const freq = s._freq?.[key];
+      if (freq) {
+        row.querySelectorAll('.freq-btn').forEach(b =>
+          b.classList.toggle('on', b.textContent.trim() === freq));
+      }
+    });
     dirty = false;
     document.getElementById('saveBtn').classList.remove('visible');
   }
@@ -462,8 +471,12 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
     let savedToCloud = false;
     if (_uid) {
       try {
-        await _db.collection('notifSettings').doc(_uid).set(settings, { merge: true });
+        await _db.collection('notifPrefs').doc(_uid).set(settings, { merge: true });
         savedToCloud = true;
+        // Sync master toggle with FCM token registration
+        if (window.PickleNotif) {
+          await window.PickleNotif.setEnabled(_uid, settings.masterEnabled);
+        }
       } catch(e) { console.warn('Firestore save failed:', e); }
     }
     try { localStorage.setItem('pcn_notif_settings', JSON.stringify(settings)); } catch(e) {}
@@ -481,7 +494,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-t
     let settings = null;
     if (_uid) {
       try {
-        const snap = await _db.collection('notifSettings').doc(_uid).get();
+        const snap = await _db.collection('notifPrefs').doc(_uid).get();
         if (snap.exists) settings = snap.data();
       } catch(e) {}
     }

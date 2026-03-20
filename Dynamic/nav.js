@@ -266,9 +266,10 @@
     updateActive(tabId);
   };
 
-  // Icon buttons container
+  // Icon buttons container (hidden by default until auth resolves)
   const iconsWrap = document.createElement('div');
   iconsWrap.className = 'pcn-icons';
+  iconsWrap.style.display = 'none';
 
   // ── Messages icon button ──
   const msgBtn = document.createElement('div');
@@ -460,6 +461,7 @@
   /* ── Profile pill builders ────────────────────────────────────────── */
   function guestPill() {
     pillWrap.innerHTML = '';
+    iconsWrap.style.display = 'none';
     const btn = document.createElement('button');
     btn.id = 'pcn-signin';
     btn.innerHTML = '🔑 Sign In';
@@ -472,6 +474,7 @@
 
   function userPill(displayName, email, photoURL, skill, city) {
     pillWrap.innerHTML = '';
+    iconsWrap.style.display = 'flex';
 
     const btn = document.createElement('button');
     btn.className = 'pcn-pill-btn';
@@ -640,9 +643,11 @@
               if (window.__pcnOnUnreadMsg) window.__pcnOnUnreadMsg(unread);
             }, () => {});
 
-          // ── Listen: notifications ──
+          // ── Listen: notifications (last 7 days only) ──
+          const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
           db.collection('notifications')
             .where('toUid', '==', user.uid)
+            .where('timestamp', '>', sevenDaysAgo)
             .orderBy('timestamp', 'desc')
             .limit(30)
             .onSnapshot(snap => {
