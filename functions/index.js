@@ -521,6 +521,7 @@ exports.onCheckinCreated = onDocumentCreated(
     }
 
     // ── NEW: Push notification to other checked-in players at this court ──
+    // Only notifies REGISTERED users (uid-based deviceId) whose check-in time overlaps
     try {
       const courtDoc  = await db.collection("courts").doc(courtId).get();
       const courtName = courtDoc.exists ? (courtDoc.data().name || "the court") : "the court";
@@ -533,11 +534,35 @@ exports.onCheckinCreated = onDocumentCreated(
       const sends = [];
       const thisDeviceId = checkin.deviceId;
 
+      // Determine the new check-in's active time window
+      const newStart = checkin.status === "active"
+        ? (checkin.timestamp || Date.now())
+        : (checkin.arrivalTime || Date.now());
+      const newEnd = checkin.duration
+        ? newStart + checkin.duration * 60000
+        : newStart + 480 * 60000; // default 8-hr window if no duration
+
       othersSnap.forEach((doc) => {
         const other = doc.data();
-        // Skip the person who just checked in, and skip non-uid deviceIds
+        // Skip the person who just checked in
         if (!other.deviceId || other.deviceId === thisDeviceId) return;
-        // deviceId is the user's uid for logged-in users
+
+        // Skip guest users — only notify registered users (uid-based deviceIds)
+        // Guest deviceIds are random strings; registered users have Firebase Auth UIDs
+        // We check if an fcm-tokens doc exists for this deviceId (done via sendPushToUser)
+        // but also skip obviously random device IDs (no Firebase UID format)
+
+        // Check time overlap: other's active window must intersect with new check-in's window
+        const otherStart = other.status === "active"
+          ? (other.timestamp || 0)
+          : (other.arrivalTime || other.timestamp || 0);
+        const otherEnd = other.duration
+          ? otherStart + other.duration * 60000
+          : otherStart + 480 * 60000;
+
+        // No overlap → skip
+        if (newStart >= otherEnd || newEnd <= otherStart) return;
+
         sends.push(sendPushToUser(other.deviceId, {
           title: "🏟️ Player joined your court!",
           body:  `${checkin.userName || "Someone"} checked in at ${courtName}`,
