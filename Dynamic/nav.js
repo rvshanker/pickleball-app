@@ -29,7 +29,6 @@
     { id: 'courts',     label: 'Courts',     icon: '🏟', href: 'court-main.html' },
     { id: 'games',      label: 'Games',      icon: '🎮', href: 'findgame.html'   },
     { id: 'players',    label: 'Players',    icon: '👥', href: 'findplayer.html' },
-    { id: 'tournament', label: 'Tournament', icon: '🏆', href: 'tournament.html' },
   ];
 
   const filename = window.location.pathname.split('/').pop() || 'index.html';

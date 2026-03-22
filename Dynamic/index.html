@@ -827,15 +827,6 @@ function CourtsTab({courts,uLat,uLng,onOpenCourt}){
           <div className={`court-badge ${crowdBadge(c)}`}>{crowdLabel(c)} ›</div>
         </div>
       );})}
-      {/* Tournament link */}
-      <div style={{background:'linear-gradient(135deg,#2a1350,#4c1d95)',border:'1px solid rgba(124,58,237,0.3)',borderRadius:16,padding:'14px 16px',display:'flex',alignItems:'center',gap:12,marginTop:8,cursor:'pointer'}} onClick={()=>window.open('tournament.html','_blank')}>
-        <div style={{width:40,height:40,background:'rgba(255,255,255,.1)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.2rem',flexShrink:0}}>🏆</div>
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{fontFamily:'Syne',fontSize:'0.88rem',fontWeight:800,color:'white'}}>Tournament Generator</div>
-          <div style={{fontSize:'0.68rem',color:'rgba(233,213,255,0.7)',marginTop:1}}>Round-robin brackets & live scoring</div>
-        </div>
-        <span style={{color:'rgba(233,213,255,0.5)'}}>›</span>
-      </div>
       {showAdd&&<AddCourtModal onClose={()=>setShowAdd(false)} onAdded={(c)=>{setShowAdd(false);onOpenCourt(c);}}/>}
     </div>
   );
@@ -2884,18 +2875,6 @@ function App(){
 
   return(
     <div className="app-shell">
-      {/* Nearby court check-in prompt */}
-      {nearbyCourt&&<div style={{position:'fixed',top:'calc(var(--pcn-top, 54px) + 8px)',left:8,right:8,zIndex:9950,background:'linear-gradient(135deg,rgba(46,204,113,0.15),rgba(46,204,113,0.05))',border:'1.5px solid rgba(46,204,113,0.4)',borderRadius:16,padding:'12px 14px',display:'flex',alignItems:'center',gap:12,boxShadow:'0 4px 20px rgba(0,0,0,0.3)',backdropFilter:'blur(12px)',maxWidth:460,margin:'0 auto',animation:'fadeUp .25s ease'}}>
-        <div style={{fontSize:'1.6rem',flexShrink:0}}>📍</div>
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{fontWeight:700,fontSize:'0.85rem'}}>You're near {nearbyCourt.name}!</div>
-          <div style={{fontSize:'0.72rem',color:'var(--muted)',marginTop:2}}>Want to check in and let others know you're here?</div>
-        </div>
-        <div style={{display:'flex',flexDirection:'column',gap:4,flexShrink:0}}>
-          <button onClick={()=>{setDismissedCourt(nearbyCourt.id);setNearbyCourt(null);openCourt(nearbyCourt);}} style={{padding:'6px 12px',borderRadius:10,border:'none',background:'var(--green)',color:'white',fontFamily:"'DM Sans',sans-serif",fontSize:'0.72rem',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>Check In</button>
-          <button onClick={()=>{setDismissedCourt(nearbyCourt.id);setNearbyCourt(null);}} style={{padding:'4px 8px',borderRadius:8,border:'none',background:'transparent',color:'var(--muted)',fontFamily:"'DM Sans',sans-serif",fontSize:'0.62rem',fontWeight:600,cursor:'pointer'}}>Not now</button>
-        </div>
-      </div>}
 
       <div className="screen-body">
         {/* Proximity check-in prompt */}
