@@ -2493,13 +2493,20 @@ function NotificationSettings({user,onClose}){
       <Toggle on={prefs?.[prefKey]!==false} onToggle={()=>toggle(prefKey)}/>
     </div>
   );
-  if(loading)return(<div className="modal-overlay" onClick={onClose}><div className="modal-sheet" onClick={e=>e.stopPropagation()}><div className="modal-handle"/><div style={{textAlign:'center',padding:40,color:'var(--muted)'}}>Loading…</div></div></div>);
+  if(loading)return(<div className="modal-overlay" onClick={onClose} style={{zIndex:10000,alignItems:'stretch'}}><div className="modal-sheet" onClick={e=>e.stopPropagation()} style={{borderRadius:0,paddingTop:16,maxHeight:'100vh'}}><div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16,paddingTop:8}}><button onClick={onClose} style={{width:36,height:36,borderRadius:'50%',background:'var(--card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',cursor:'pointer',flexShrink:0,color:'var(--text)'}}>←</button><div className="modal-title">🔔 Push Notifications</div></div><div style={{textAlign:'center',padding:40,color:'var(--muted)'}}>Loading…</div></div></div>);
+
+  // Hide/show top nav bar when modal is open
+  useEffect(()=>{
+    const topBar=document.getElementById('pcn-top');
+    if(topBar)topBar.style.display='none';
+    return()=>{if(topBar)topBar.style.display='';};
+  },[]);
+
   return(
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
-        <div className="modal-handle"/>
-        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}>
-          <button onClick={onClose} className="icon-btn" style={{position:'static'}}>←</button>
+    <div className="modal-overlay" onClick={onClose} style={{zIndex:10000,alignItems:'stretch'}}>
+      <div className="modal-sheet" onClick={e=>e.stopPropagation()} style={{borderRadius:0,paddingTop:16,maxHeight:'100vh'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16,paddingTop:8}}>
+          <button onClick={onClose} style={{width:36,height:36,borderRadius:'50%',background:'var(--card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',cursor:'pointer',flexShrink:0,color:'var(--text)'}}>←</button>
           <div className="modal-title">🔔 Push Notifications</div>
         </div>
         <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:'4px 14px 14px',marginBottom:16}}>
@@ -2670,7 +2677,10 @@ function App(){
   useEffect(()=>{window.__pcnOpenProfile=()=>setShowProfile(true);return()=>{delete window.__pcnOpenProfile;};},[]);
   useEffect(()=>{window.__pcnOpenInbox=()=>setShowInbox(true);if(new URLSearchParams(window.location.search).get('inbox')==='1'){setTimeout(()=>setShowInbox(true),250);}return()=>{delete window.__pcnOpenInbox;};},[]);
   useEffect(()=>{window.__pcnOpenDeleteAccount=()=>{switchTab('profile');setTimeout(()=>{if(typeof window.__pcnTriggerDelete==='function')window.__pcnTriggerDelete();},350);};return()=>{delete window.__pcnOpenDeleteAccount;};},[]);
-  useEffect(()=>{window.__pcnOpenNotifSettings=()=>setShowNotifSettingsApp(true);return()=>{delete window.__pcnOpenNotifSettings;};},[]);
+  useEffect(()=>{window.__pcnOpenNotifSettings=()=>{
+    if(user){setShowNotifSettingsApp(true);}
+    else{window.location.href='notifications.html';}
+  };return()=>{delete window.__pcnOpenNotifSettings;};},[user]);
 
   const[courts,setCourts]=useState([]);
   const[games,setGames]=useState([]);
@@ -2802,6 +2812,34 @@ function App(){
   const handleFabAvailable=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}switchTab('players');};
   const handleFabQueue=()=>{setShowFab(false);if(!user){handleNeedLogin(null);return;}switchTab('courts');};
 
+  // ── Proximity check-in prompt: detect if user is near a court ──
+  const[nearbyCourt,setNearbyCourt]=useState(null);
+  const[dismissedCourt,setDismissedCourt]=useState(null);
+  useEffect(()=>{
+    if(!uLat||!uLng||!courts.length||!user)return;
+    const THRESHOLD=0.15; // miles (~800 feet)
+    let closest=null,closestDist=THRESHOLD;
+    courts.forEach(c=>{
+      if(!c.lat||!c.lng)return;
+      const d=haversine(uLat,uLng,c.lat,c.lng);
+      if(d<closestDist){closestDist=d;closest=c;}
+    });
+    if(closest&&closest.id!==dismissedCourt){
+      // Check if user already checked in at this court
+      if(fbOk&&user){
+        const deviceId=user.uid;
+        db.collection('courts').doc(closest.id).collection('checkins')
+          .where('deviceId','==',deviceId)
+          .get().then(snap=>{
+            if(snap.empty)setNearbyCourt({...closest,_dist:closestDist});
+            else setNearbyCourt(null);
+          }).catch(()=>{});
+      }
+    }else if(!closest){
+      setNearbyCourt(null);
+    }
+  },[uLat,uLng,courts,user?.uid,dismissedCourt]);
+
   // ── Loading
   if(user===undefined)return(
     <div className="app-shell" style={{alignItems:'center',justifyContent:'center'}}>
@@ -2824,9 +2862,70 @@ function App(){
     </div>
   );
 
+  // ── Nearby court check-in prompt ──
+  const[nearbyPromptCourt,setNearbyPromptCourt]=useState(null);
+  const[dismissedCourts,setDismissedCourts]=useState(()=>{try{return JSON.parse(sessionStorage.getItem('pcn_dismissed_courts')||'{}');}catch(e){return{};}});
+  useEffect(()=>{
+    if(!uLat||!uLng||!courts.length||!user)return;
+    // Check every 30 seconds
+    const check=()=>{
+      const now=Date.now();
+      for(const c of courts){
+        if(!c.lat||!c.lng)continue;
+        const dist=haversine(uLat,uLng,c.lat,c.lng);
+        if(dist<=0.15){  // within ~800 feet / 0.15 miles
+          // Don't prompt if dismissed in last 2 hours
+          if(dismissedCourts[c.id]&&now-dismissedCourts[c.id]<2*3600000)continue;
+          setNearbyPromptCourt(c);
+          return;
+        }
+      }
+      setNearbyPromptCourt(null);
+    };
+    check();
+    const t=setInterval(check,30000);
+    return()=>clearInterval(t);
+  },[uLat,uLng,courts,user,dismissedCourts]);
+
+  const dismissNearbyPrompt=(courtId)=>{
+    const updated={...dismissedCourts,[courtId]:Date.now()};
+    setDismissedCourts(updated);
+    setNearbyPromptCourt(null);
+    try{sessionStorage.setItem('pcn_dismissed_courts',JSON.stringify(updated));}catch(e){}
+  };
+
   return(
     <div className="app-shell">
+      {/* Nearby court check-in prompt */}
+      {nearbyPromptCourt&&<div style={{position:'fixed',top:'calc(var(--pcn-top, 54px) + 8px)',left:8,right:8,zIndex:9950,background:'linear-gradient(135deg,rgba(46,204,113,0.15),rgba(46,204,113,0.05))',border:'1.5px solid rgba(46,204,113,0.4)',borderRadius:16,padding:'12px 14px',display:'flex',alignItems:'center',gap:12,boxShadow:'0 4px 20px rgba(0,0,0,0.3)',backdropFilter:'blur(12px)',maxWidth:460,margin:'0 auto',animation:'fadeUp .25s ease'}}>
+        <div style={{fontSize:'1.6rem',flexShrink:0}}>📍</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontWeight:700,fontSize:'0.85rem'}}>You're near {nearbyPromptCourt.name}!</div>
+          <div style={{fontSize:'0.72rem',color:'var(--muted)',marginTop:2}}>Want to check in and let others know you're here?</div>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:4,flexShrink:0}}>
+          <button onClick={()=>{dismissNearbyPrompt(nearbyPromptCourt.id);openCourt(nearbyPromptCourt);}} style={{padding:'6px 12px',borderRadius:10,border:'none',background:'var(--green)',color:'white',fontFamily:"'DM Sans',sans-serif",fontSize:'0.72rem',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>Check In</button>
+          <button onClick={()=>dismissNearbyPrompt(nearbyPromptCourt.id)} style={{padding:'4px 8px',borderRadius:8,border:'none',background:'transparent',color:'var(--muted)',fontFamily:"'DM Sans',sans-serif",fontSize:'0.62rem',fontWeight:600,cursor:'pointer'}}>Not now</button>
+        </div>
+      </div>}
+
       <div className="screen-body">
+        {/* Proximity check-in prompt */}
+        {nearbyCourt&&tab==='home'&&<div style={{margin:'0 12px 12px',background:'linear-gradient(135deg,rgba(46,204,113,0.12),rgba(46,204,113,0.04))',border:'1.5px solid rgba(46,204,113,0.3)',borderRadius:16,padding:'14px 16px',animation:'fadeUp .3s ease'}}>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <div style={{fontSize:'1.8rem',flexShrink:0}}>📍</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:'0.88rem',fontWeight:700,marginBottom:2}}>You're near {nearbyCourt.name}!</div>
+              <div style={{fontSize:'0.72rem',color:'var(--muted)',lineHeight:1.4}}>
+                {nearbyCourt._dist<0.05?'You\'re right at the courts':'About '+Math.round(nearbyCourt._dist*5280)+' ft away'} — let others know you're here
+              </div>
+            </div>
+          </div>
+          <div style={{display:'flex',gap:8,marginTop:12}}>
+            <button onClick={()=>{setDismissedCourt(nearbyCourt.id);setNearbyCourt(null);}} style={{flex:1,padding:'10px',borderRadius:12,border:'1px solid var(--border)',background:'transparent',color:'var(--muted)',fontFamily:'DM Sans',fontSize:'0.78rem',fontWeight:600,cursor:'pointer'}}>Not Now</button>
+            <button onClick={()=>{openCourt(nearbyCourt);setNearbyCourt(null);}} style={{flex:2,padding:'10px',borderRadius:12,border:'none',background:'linear-gradient(135deg,#2ECC71,#27AE60)',color:'white',fontFamily:'DM Sans',fontSize:'0.78rem',fontWeight:700,cursor:'pointer',boxShadow:'0 2px 8px rgba(46,204,113,0.35)'}}>🎾 Check In</button>
+          </div>
+        </div>}
         {tab==='home'&&<HomeTab user={user} profile={profile} courts={courts} players={allPlayers} games={games} uLat={uLat} uLng={uLng} onChat={setChatP} onNeedLogin={handleNeedLogin} onSetTab={switchTab} onOpenCourt={openCourt}/>}
         {tab==='courts'&&<CourtsTab courts={courts} uLat={uLat} uLng={uLng} onOpenCourt={openCourt}/>}
         {tab==='court-detail'&&<CourtDetailPage courtId={courtId} onBack={()=>switchTab('courts')} user={user} profile={profile}/>}
