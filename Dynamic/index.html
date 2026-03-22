@@ -2476,6 +2476,21 @@ function NotificationSettings({user,onClose}){
   const[loading,setLoading]=useState(true);
   const defaults={masterEnabled:true,nearbyGame:true,playerMatch:true,gameInvite:true,inviteResponse:true,courtJoined:true,gameReminder:true,directMessage:true,quietEnabled:false};
   useEffect(()=>{if(!user||!fbOk)return;db.collection('notifPrefs').doc(user.uid).get().then(d=>{setPrefs(d.exists?{...defaults,...d.data()}:{...defaults});setLoading(false);}).catch(()=>{setPrefs({...defaults});setLoading(false);});},[user]);
+  // Hide nav bars on mount, restore on unmount
+  useEffect(()=>{
+    const top=document.getElementById('pcn-top');
+    const bot=document.getElementById('pcn-bot');
+    if(top)top.style.setProperty('display','none','important');
+    if(bot)bot.style.setProperty('display','none','important');
+    document.body.style.paddingTop='0';
+    document.body.style.paddingBottom='0';
+    return()=>{
+      if(top)top.style.removeProperty('display');
+      if(bot)bot.style.removeProperty('display');
+      document.body.style.paddingTop='';
+      document.body.style.paddingBottom='';
+    };
+  },[]);
   const toggle=async(key)=>{if(!prefs)return;const nv={...prefs,[key]:!prefs[key]};setPrefs(nv);
     if(key==='masterEnabled')window.PickleNotif?.setEnabled(user.uid,nv.masterEnabled);
     await db.collection('notifPrefs').doc(user.uid).set(nv,{merge:true}).catch(()=>{});
@@ -2492,13 +2507,12 @@ function NotificationSettings({user,onClose}){
       <Toggle on={prefs?.[prefKey]!==false} onToggle={()=>toggle(prefKey)}/>
     </div>
   );
-  // Full-screen overlay style that covers everything including nav bars
-  const overlayStyle={position:'fixed',inset:0,zIndex:99999,background:'var(--navy)',overflowY:'auto',overflowX:'hidden',animation:'slideUp .28s ease'};
+  const overlayStyle={position:'fixed',inset:0,zIndex:99999,background:'var(--navy)',overflowY:'auto',overflowX:'hidden'};
   const headerStyle={position:'sticky',top:0,zIndex:1,background:'var(--navy)',borderBottom:'1px solid var(--border)',padding:'14px 18px 12px',display:'flex',alignItems:'center',gap:12};
   const backBtnStyle={width:36,height:36,borderRadius:'50%',background:'var(--card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',cursor:'pointer',flexShrink:0,color:'var(--text)'};
-  const bodyStyle={padding:'0 18px 90px',maxWidth:480,margin:'0 auto'};
+  const bodyStyle={padding:'0 18px 40px',maxWidth:480,margin:'0 auto'};
 
-  if(loading)return(
+  const content = loading ? (
     <div style={overlayStyle}>
       <div style={headerStyle}>
         <button onClick={onClose} style={backBtnStyle}>←</button>
@@ -2506,9 +2520,7 @@ function NotificationSettings({user,onClose}){
       </div>
       <div style={{textAlign:'center',padding:60,color:'var(--muted)'}}>Loading…</div>
     </div>
-  );
-
-  return(
+  ) : (
     <div style={overlayStyle}>
       <div style={headerStyle}>
         <button onClick={onClose} style={backBtnStyle}>←</button>
@@ -2555,6 +2567,8 @@ function NotificationSettings({user,onClose}){
       </div>
     </div>
   );
+
+  return ReactDOM.createPortal(content, document.body);
 }
 
 /* ── ProfileTab ── */
