@@ -820,7 +820,7 @@ function AddCourtModal({onClose, onAdded}) {
 
 /* ── CourtsTab (Enhanced) ── */
 function CourtsTab({courts,uLat,uLng,onOpenCourt}){
-  const[view,setView]=useState('list');const[search,setSearch]=useState('');
+  const[search,setSearch]=useState('');
   const[showAdd,setShowAdd]=useState(false);
   const sorted=useMemo(()=>{let l=[...courts];if(search.trim()){const q=search.toLowerCase();l=l.filter(c=>c.name?.toLowerCase().includes(q)||c.address?.toLowerCase().includes(q));}if(uLat)l.sort((a,b)=>{const da=a.lat?haversine(uLat,uLng,a.lat,a.lng):999;const db2=b.lat?haversine(uLat,uLng,b.lat,b.lng):999;return da-db2;});return l;},[courts,uLat,uLng,search]);
   const crowdBadge=c=>{const l=c.crowdLevel;return l==='high'?'badge-full':l==='medium'?'badge-busy':'badge-open';};
@@ -833,8 +833,6 @@ function CourtsTab({courts,uLat,uLng,onOpenCourt}){
         <button className="btn btn-primary btn-sm" onClick={()=>setShowAdd(true)}>+ Add Court</button>
       </div>
       <div style={{position:'relative',marginBottom:12}}><span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}}>🔍</span><input className="fi" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search courts…" style={{paddingLeft:36}}/></div>
-      <div className="tab-pills">{[['list','📋 List'],['map','🗺 Map']].map(([k,l])=><div key={k} className={`pill ${view===k?'active':''}`} onClick={()=>setView(k)}>{l}</div>)}</div>
-      {view==='map'&&<div className="map-box"><div className="map-grid"/>{sorted.slice(0,4).map((c,i)=>{const p=[{top:30,left:50},{top:55,left:140},{top:22,left:210},{top:75,left:85}][i]||{top:40+i*20,left:60+i*30};return<div key={c.id} className="map-pin" style={{top:p.top,left:p.left}}>📍</div>;})} <div className="map-label">{sorted.length} courts</div></div>}
       {sorted.length===0&&<div className="empty-state"><div className="empty-icon">🏟</div><div className="empty-title">No courts found</div><div className="empty-sub">{search?'Try a different search':'Be the first to add your local courts!'}</div>{!search&&<button className="btn btn-primary" onClick={()=>setShowAdd(true)} style={{marginTop:8}}>+ Add Court</button>}</div>}
       {sorted.map(c=>{const dist=getDist(c);return(
         <div key={c.id} className="court-card" onClick={()=>onOpenCourt(c)}>
@@ -1009,7 +1007,7 @@ function CourtDetailPage({courtId,onBack,user,profile}){
                         <div>
                             <div style={{fontSize:'0.55rem',color:'var(--muted)',fontWeight:600}}>Now</div>
                             <div style={{fontSize:'0.88rem',fontWeight:800,whiteSpace:'nowrap'}}>{weather.temp}°F</div>
-                            <div style={{fontSize:'0.55rem',color:'var(--muted)',whiteSpace:'nowrap'}}>💨 {weather.wind}mph</div>
+                            <div style={{fontSize:'0.72rem',color:weather.wind>15?'var(--yellow)':'var(--muted)',fontWeight:weather.wind>15?700:500,whiteSpace:'nowrap'}}>💨 {weather.wind} mph</div>
                         </div>
                     </div>
                     {/* Next 4 hrs */}
@@ -1018,7 +1016,7 @@ function CourtDetailPage({courtId,onBack,user,profile}){
                             <div key={i} style={{flex:1,background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:'5px 4px',textAlign:'center',minWidth:0}}>
                                 <div style={{fontSize:'0.52rem',color:'var(--muted)',fontWeight:600,whiteSpace:'nowrap'}}>{h.dt.toLocaleTimeString([],{hour:'numeric'})}</div>
                                 <div style={{fontSize:'0.75rem',fontWeight:800,marginTop:2}}>{h.temp}°</div>
-                                <div style={{fontSize:'0.52rem',color:'var(--muted)',marginTop:1}}>💨{h.wind}</div>
+                                <div style={{fontSize:'0.65rem',color:h.wind>15?'var(--yellow)':'var(--muted)',fontWeight:h.wind>15?700:500,marginTop:1}}>💨{h.wind}</div>
                             </div>
                         ))}
                     </div>
@@ -1026,35 +1024,32 @@ function CourtDetailPage({courtId,onBack,user,profile}){
             </div>}
         </div>
 
-        {/* ── CARD 2: At a Glance ── */}
+        {/* ── CARD 2: Court Status ── */}
         <div className="cd-section">
-            <div style={{fontSize:'0.78rem',fontWeight:700,marginBottom:10}}>📊 At a Glance</div>
-            <div className="cd-glance-grid">
-                <div>
-                    <div className="cd-glance-sub">Activity</div>
-                    <div className="cd-glance-pills">
-                        <div className={'cd-g-pill'+(nowTotal>0?' lit':'')}>
-                            <div className="cd-g-lbl">👥 Playing</div>
-                            <div className="cd-g-val">{nowTotal}</div>
-                        </div>
-                        <div className={'cd-g-pill'+(laterTotal>0?' lit':'')}>
-                            <div className="cd-g-lbl">⏰ Coming</div>
-                            <div className="cd-g-val">{laterTotal}</div>
-                        </div>
-                    </div>
+            <div className="cd-glance-grid" style={{gridTemplateColumns:'1fr 1fr 1fr'}}>
+                <div className={'cd-g-pill'+(nowTotal>0?' lit':'')}>
+                    <div className="cd-g-lbl">👥 Playing</div>
+                    <div className="cd-g-val">{nowTotal}</div>
                 </div>
-                <div>
-                    <div className="cd-glance-sub">Court Status</div>
-                    <div className="cd-glance-pills">
-                        <div className={'cd-g-pill'+(courtData.lightsOn?' lit':'')}>
-                            <div className="cd-g-lbl">{courtData.lightsOn?'💡':'🌙'} Lights</div>
-                            <div className="cd-g-val">{courtData.lightsOn?'ON':'OFF'}</div>
-                        </div>
-                        <div className={'cd-g-pill'+(open>0?' lit':'')}>
-                            <div className="cd-g-lbl">⚙️ Rotation</div>
-                            <div className="cd-g-val">{open}/{total}</div>
-                        </div>
-                    </div>
+                <div className={'cd-g-pill'+(laterTotal>0?' lit':'')}>
+                    <div className="cd-g-lbl">⏰ Coming</div>
+                    <div className="cd-g-val">{laterTotal}</div>
+                </div>
+                <div className={'cd-g-pill'+(courtData.crowdLevel==='high'||courtData.crowdLevel==='medium'?' lit':'')}>
+                    <div className="cd-g-lbl">🎪 Crowd</div>
+                    <div className="cd-g-val">{courtData.crowdLevel==='high'?'Packed':courtData.crowdLevel==='medium'?'Busy':'Light'}</div>
+                </div>
+                <div className={'cd-g-pill'+(courtData.lightsOn?' lit':'')}>
+                    <div className="cd-g-lbl">{courtData.lightsOn?'💡':'🌙'} Lights</div>
+                    <div className="cd-g-val">{courtData.lightsOn?'ON':'OFF'}</div>
+                </div>
+                <div className={'cd-g-pill'+(open>0?' lit':'')}>
+                    <div className="cd-g-lbl">⚙️ Rotation</div>
+                    <div className="cd-g-val">{open}/{total}</div>
+                </div>
+                <div className={'cd-g-pill'+((courtData.condition||'open')==='open'?' lit':'')}>
+                    <div className="cd-g-lbl">📋 Condition</div>
+                    <div className="cd-g-val">{condMap[courtData.condition]?.l||'Open'}</div>
                 </div>
             </div>
         </div>
@@ -1296,7 +1291,8 @@ function GameCard({game,user,profile,onAction,onSelect}){
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontWeight:700,fontSize:'0.9rem',marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{game.title||`${game.playType||'Casual'} Game`}</div>
-          <div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:5,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>📍 {game.court} · ⏰ {fmtTimeRange(game.time,game.timeEnd)}</div>
+          <div style={{fontSize:'0.82rem',color:'var(--muted)',marginBottom:5,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>📍 {game.court}</div>
+          <div style={{fontSize:'0.92rem',fontWeight:700,color:'var(--text)',marginBottom:5}}>⏰ {fmtFullDate(game.date)} · {fmtTimeRange(game.time,game.timeEnd)}</div>
           <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
             <span className={`bp ${isFull?'bp-full':'bp-open'}`}>{isFull?'Full':`${openSlots} spot${openSlots!==1?'s':''}`}</span>
             {game.isPrivate&&<span className="bp bp-priv">🔒</span>}

@@ -131,33 +131,33 @@
     .pcn-pill-btn.open .pcn-pill-caret{transform:rotate(180deg);}
 
     /* PILL DROPDOWN */
-    #pcn-dd{display:none;position:absolute;top:calc(100% + 8px);right:0;background:white;border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,0.18);border:1px solid #e8f0fe;min-width:170px;overflow:hidden;z-index:9999;animation:pcnDrop .16s ease;}
+    #pcn-dd{display:none;position:absolute;top:calc(100% + 8px);right:0;background:#1A2B3C;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.1);min-width:180px;overflow:hidden;z-index:9999;animation:pcnDrop .16s ease;}
     #pcn-dd.open{display:block;}
     @keyframes pcnDrop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-    .pcn-dd-hdr{padding:11px 14px 9px;border-bottom:1px solid #f1f5f9;}
-    .pcn-dd-name{font-size:13px;font-weight:700;color:#0f172a;}
-    .pcn-dd-sub{font-size:11px;color:#94a3b8;margin-top:1px;}
-    .pcn-dd-btn{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;padding:10px 14px;font-family:'DM Sans','Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;text-align:left;transition:background .12s;}
-    .pcn-dd-btn:hover{background:#f8fafc;}
-    .pcn-dd-btn.red{color:#dc2626;}
-    .pcn-dd-btn.red:hover{background:#fef2f2;}
+    .pcn-dd-hdr{padding:13px 16px 10px;border-bottom:1px solid rgba(255,255,255,0.08);}
+    .pcn-dd-name{font-size:14px;font-weight:700;color:#F0F4F8;}
+    .pcn-dd-sub{font-size:11px;color:#7A9BB5;margin-top:2px;}
+    .pcn-dd-btn{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;padding:11px 16px;font-family:'DM Sans','Outfit',sans-serif;font-size:13px;font-weight:600;color:#F0F4F8;cursor:pointer;text-align:left;transition:background .12s;}
+    .pcn-dd-btn:hover{background:rgba(255,255,255,0.06);}
+    .pcn-dd-btn.red{color:#F75B5B;}
+    .pcn-dd-btn.red:hover{background:rgba(247,91,91,0.08);}
 
     /* NOTIFICATION PANEL */
-    #pcn-notif-panel{display:none;position:fixed;top:var(--pcn-top);right:0;width:min(340px,100vw);background:white;box-shadow:-4px 0 24px rgba(0,0,0,.15);z-index:9990;overflow:hidden;animation:pcnSlideR .2s ease;max-height:calc(100vh - var(--pcn-top) - var(--pcn-bot));overflow-y:auto;}
+    #pcn-notif-panel{display:none;position:fixed;top:var(--pcn-top);right:0;width:min(360px,100vw);background:#1A2B3C;box-shadow:-4px 0 32px rgba(0,0,0,0.4);border-left:1px solid rgba(255,255,255,0.08);z-index:9990;overflow:hidden;animation:pcnSlideR .2s ease;max-height:calc(100vh - var(--pcn-top) - var(--pcn-bot));overflow-y:auto;}
     #pcn-notif-panel.open{display:block;}
     @keyframes pcnSlideR{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
-    .pcn-panel-hdr{padding:14px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:white;z-index:1;}
-    .pcn-panel-title{font-size:15px;font-weight:800;color:#0f172a;}
-    .pcn-panel-close{background:#f1f5f9;border:none;border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:13px;}
-    .pcn-notif-item{padding:12px 16px;border-bottom:1px solid #f8fafc;display:flex;gap:10px;align-items:flex-start;cursor:pointer;}
-    .pcn-notif-item:hover{background:#f8fafc;}
-    .pcn-notif-item.unread{background:#f0fdf4;}
-    .pcn-notif-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+    .pcn-panel-hdr{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#1A2B3C;z-index:1;}
+    .pcn-panel-title{font-size:15px;font-weight:800;color:#F0F4F8;}
+    .pcn-panel-close{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:13px;color:#7A9BB5;}
+    .pcn-notif-item{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:10px;align-items:flex-start;cursor:pointer;transition:background .12s;}
+    .pcn-notif-item:hover{background:rgba(255,255,255,0.04);}
+    .pcn-notif-item.unread{background:rgba(46,204,113,0.06);}
+    .pcn-notif-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:rgba(255,255,255,0.06);}
     .pcn-notif-body{flex:1;min-width:0;}
-    .pcn-notif-text{font-size:13px;font-weight:600;color:#0f172a;line-height:1.4;}
-    .pcn-notif-time{font-size:11px;color:#94a3b8;margin-top:2px;}
+    .pcn-notif-text{font-size:13px;font-weight:600;color:#F0F4F8;line-height:1.4;}
+    .pcn-notif-time{font-size:11px;color:#7A9BB5;margin-top:2px;}
     .pcn-notif-dot{width:8px;height:8px;border-radius:50%;background:#2ECC71;flex-shrink:0;margin-top:4px;}
-    .pcn-empty{text-align:center;padding:40px 20px;color:#94a3b8;font-size:13px;}
+    .pcn-empty{text-align:center;padding:40px 20px;color:#7A9BB5;font-size:13px;}
 
     /* SIGN-IN BUTTON (guest) */
     #pcn-signin{display:flex;align-items:center;gap:5px;background:linear-gradient(135deg,#2ECC71,#27AE60);border:none;border-radius:18px;padding:6px 12px;font-family:'DM Sans','Outfit',sans-serif;font-size:0.75rem;font-weight:700;color:white;cursor:pointer;white-space:nowrap;flex-shrink:0;box-shadow:0 2px 10px rgba(46,204,113,0.35);transition:opacity .15s;}
@@ -310,7 +310,7 @@
     <div class="pcn-panel-hdr">
       <div class="pcn-panel-title">🔔 Notifications</div>
       <div style="display:flex;align-items:center;gap:6px;">
-        <button class="pcn-panel-close" id="pcn-notif-settings" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;font-family:'DM Sans',sans-serif;color:#64748b;">⚙ Settings</button>
+        <button class="pcn-panel-close" id="pcn-notif-settings" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;font-family:'DM Sans',sans-serif;color:#7A9BB5;">⚙ Settings</button>
         <button class="pcn-panel-close" id="pcn-notif-close">✕</button>
       </div>
     </div>
@@ -400,7 +400,7 @@
     list.innerHTML = notifs.slice(0, 30).map(n => {
       const icons = { invite:'🏓', message:'💬', accept:'✅', decline:'❌', game:'🎮', player:'👥', general:'🔔' };
       const ico = icons[n.type] || icons.general;
-      const bg = n.type === 'invite' ? '#ecfdf5' : n.type === 'message' ? '#eff6ff' : '#f9fafb';
+      const bg = n.type === 'invite' ? 'rgba(46,204,113,0.1)' : n.type === 'message' ? 'rgba(91,155,247,0.1)' : 'rgba(255,255,255,0.06)';
       return `<div class="pcn-notif-item${n.read?'':' unread'}" data-id="${n.id}" onclick="window.__pcnHandleNotif && window.__pcnHandleNotif('${n.id}','${n.type}','${n.ref||''}')">
         <div class="pcn-notif-icon" style="background:${bg}">${ico}</div>
         <div class="pcn-notif-body">
