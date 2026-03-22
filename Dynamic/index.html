@@ -2862,50 +2862,18 @@ function App(){
     </div>
   );
 
-  // ── Nearby court check-in prompt ──
-  const[nearbyPromptCourt,setNearbyPromptCourt]=useState(null);
-  const[dismissedCourts,setDismissedCourts]=useState(()=>{try{return JSON.parse(sessionStorage.getItem('pcn_dismissed_courts')||'{}');}catch(e){return{};}});
-  useEffect(()=>{
-    if(!uLat||!uLng||!courts.length||!user)return;
-    // Check every 30 seconds
-    const check=()=>{
-      const now=Date.now();
-      for(const c of courts){
-        if(!c.lat||!c.lng)continue;
-        const dist=haversine(uLat,uLng,c.lat,c.lng);
-        if(dist<=0.15){  // within ~800 feet / 0.15 miles
-          // Don't prompt if dismissed in last 2 hours
-          if(dismissedCourts[c.id]&&now-dismissedCourts[c.id]<2*3600000)continue;
-          setNearbyPromptCourt(c);
-          return;
-        }
-      }
-      setNearbyPromptCourt(null);
-    };
-    check();
-    const t=setInterval(check,30000);
-    return()=>clearInterval(t);
-  },[uLat,uLng,courts,user,dismissedCourts]);
-
-  const dismissNearbyPrompt=(courtId)=>{
-    const updated={...dismissedCourts,[courtId]:Date.now()};
-    setDismissedCourts(updated);
-    setNearbyPromptCourt(null);
-    try{sessionStorage.setItem('pcn_dismissed_courts',JSON.stringify(updated));}catch(e){}
-  };
-
   return(
     <div className="app-shell">
       {/* Nearby court check-in prompt */}
-      {nearbyPromptCourt&&<div style={{position:'fixed',top:'calc(var(--pcn-top, 54px) + 8px)',left:8,right:8,zIndex:9950,background:'linear-gradient(135deg,rgba(46,204,113,0.15),rgba(46,204,113,0.05))',border:'1.5px solid rgba(46,204,113,0.4)',borderRadius:16,padding:'12px 14px',display:'flex',alignItems:'center',gap:12,boxShadow:'0 4px 20px rgba(0,0,0,0.3)',backdropFilter:'blur(12px)',maxWidth:460,margin:'0 auto',animation:'fadeUp .25s ease'}}>
+      {nearbyCourt&&<div style={{position:'fixed',top:'calc(var(--pcn-top, 54px) + 8px)',left:8,right:8,zIndex:9950,background:'linear-gradient(135deg,rgba(46,204,113,0.15),rgba(46,204,113,0.05))',border:'1.5px solid rgba(46,204,113,0.4)',borderRadius:16,padding:'12px 14px',display:'flex',alignItems:'center',gap:12,boxShadow:'0 4px 20px rgba(0,0,0,0.3)',backdropFilter:'blur(12px)',maxWidth:460,margin:'0 auto',animation:'fadeUp .25s ease'}}>
         <div style={{fontSize:'1.6rem',flexShrink:0}}>📍</div>
         <div style={{flex:1,minWidth:0}}>
-          <div style={{fontWeight:700,fontSize:'0.85rem'}}>You're near {nearbyPromptCourt.name}!</div>
+          <div style={{fontWeight:700,fontSize:'0.85rem'}}>You're near {nearbyCourt.name}!</div>
           <div style={{fontSize:'0.72rem',color:'var(--muted)',marginTop:2}}>Want to check in and let others know you're here?</div>
         </div>
         <div style={{display:'flex',flexDirection:'column',gap:4,flexShrink:0}}>
-          <button onClick={()=>{dismissNearbyPrompt(nearbyPromptCourt.id);openCourt(nearbyPromptCourt);}} style={{padding:'6px 12px',borderRadius:10,border:'none',background:'var(--green)',color:'white',fontFamily:"'DM Sans',sans-serif",fontSize:'0.72rem',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>Check In</button>
-          <button onClick={()=>dismissNearbyPrompt(nearbyPromptCourt.id)} style={{padding:'4px 8px',borderRadius:8,border:'none',background:'transparent',color:'var(--muted)',fontFamily:"'DM Sans',sans-serif",fontSize:'0.62rem',fontWeight:600,cursor:'pointer'}}>Not now</button>
+          <button onClick={()=>{setDismissedCourt(nearbyCourt.id);setNearbyCourt(null);openCourt(nearbyCourt);}} style={{padding:'6px 12px',borderRadius:10,border:'none',background:'var(--green)',color:'white',fontFamily:"'DM Sans',sans-serif",fontSize:'0.72rem',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>Check In</button>
+          <button onClick={()=>{setDismissedCourt(nearbyCourt.id);setNearbyCourt(null);}} style={{padding:'4px 8px',borderRadius:8,border:'none',background:'transparent',color:'var(--muted)',fontFamily:"'DM Sans',sans-serif",fontSize:'0.62rem',fontWeight:600,cursor:'pointer'}}>Not now</button>
         </div>
       </div>}
 
