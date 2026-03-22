@@ -2477,7 +2477,6 @@ function NotificationSettings({user,onClose}){
   const defaults={masterEnabled:true,nearbyGame:true,playerMatch:true,gameInvite:true,inviteResponse:true,courtJoined:true,gameReminder:true,directMessage:true,quietEnabled:false};
   useEffect(()=>{if(!user||!fbOk)return;db.collection('notifPrefs').doc(user.uid).get().then(d=>{setPrefs(d.exists?{...defaults,...d.data()}:{...defaults});setLoading(false);}).catch(()=>{setPrefs({...defaults});setLoading(false);});},[user]);
   const toggle=async(key)=>{if(!prefs)return;const nv={...prefs,[key]:!prefs[key]};setPrefs(nv);
-    // If master toggle changed, also update token
     if(key==='masterEnabled')window.PickleNotif?.setEnabled(user.uid,nv.masterEnabled);
     await db.collection('notifPrefs').doc(user.uid).set(nv,{merge:true}).catch(()=>{});
   };
@@ -2493,21 +2492,29 @@ function NotificationSettings({user,onClose}){
       <Toggle on={prefs?.[prefKey]!==false} onToggle={()=>toggle(prefKey)}/>
     </div>
   );
-  // Hide/show top nav bar when modal is open
-  useEffect(()=>{
-    const topBar=document.getElementById('pcn-top');
-    if(topBar)topBar.style.display='none';
-    return()=>{if(topBar)topBar.style.display='';};
-  },[]);
-  if(loading)return(<div className="modal-overlay" onClick={onClose} style={{zIndex:10000,alignItems:'stretch'}}><div className="modal-sheet" onClick={e=>e.stopPropagation()} style={{borderRadius:0,paddingTop:16,maxHeight:'100vh'}}><div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16,paddingTop:8}}><button onClick={onClose} style={{width:36,height:36,borderRadius:'50%',background:'var(--card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',cursor:'pointer',flexShrink:0,color:'var(--text)'}}>←</button><div className="modal-title">🔔 Push Notifications</div></div><div style={{textAlign:'center',padding:40,color:'var(--muted)'}}>Loading…</div></div></div>);
+  // Full-screen overlay style that covers everything including nav bars
+  const overlayStyle={position:'fixed',inset:0,zIndex:99999,background:'var(--navy)',overflowY:'auto',overflowX:'hidden',animation:'slideUp .28s ease'};
+  const headerStyle={position:'sticky',top:0,zIndex:1,background:'var(--navy)',borderBottom:'1px solid var(--border)',padding:'14px 18px 12px',display:'flex',alignItems:'center',gap:12};
+  const backBtnStyle={width:36,height:36,borderRadius:'50%',background:'var(--card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',cursor:'pointer',flexShrink:0,color:'var(--text)'};
+  const bodyStyle={padding:'0 18px 90px',maxWidth:480,margin:'0 auto'};
+
+  if(loading)return(
+    <div style={overlayStyle}>
+      <div style={headerStyle}>
+        <button onClick={onClose} style={backBtnStyle}>←</button>
+        <div style={{fontFamily:"'Syne',sans-serif",fontSize:'1.05rem',fontWeight:800}}>Notifications</div>
+      </div>
+      <div style={{textAlign:'center',padding:60,color:'var(--muted)'}}>Loading…</div>
+    </div>
+  );
 
   return(
-    <div className="modal-overlay" onClick={onClose} style={{zIndex:10000,alignItems:'stretch'}}>
-      <div className="modal-sheet" onClick={e=>e.stopPropagation()} style={{borderRadius:0,paddingTop:16,maxHeight:'100vh'}}>
-        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16,paddingTop:8}}>
-          <button onClick={onClose} style={{width:36,height:36,borderRadius:'50%',background:'var(--card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',cursor:'pointer',flexShrink:0,color:'var(--text)'}}>←</button>
-          <div className="modal-title">🔔 Push Notifications</div>
-        </div>
+    <div style={overlayStyle}>
+      <div style={headerStyle}>
+        <button onClick={onClose} style={backBtnStyle}>←</button>
+        <div style={{fontFamily:"'Syne',sans-serif",fontSize:'1.05rem',fontWeight:800}}>Notifications</div>
+      </div>
+      <div style={bodyStyle}>
         <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:'4px 14px 14px',marginBottom:16}}>
           <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0'}}>
             <div style={{fontSize:'1.2rem',width:28,textAlign:'center'}}>🔔</div>
