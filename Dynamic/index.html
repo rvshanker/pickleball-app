@@ -1289,7 +1289,7 @@ function GameCard({game,user,profile,onAction,onSelect}){
         <div className={`gc-date-block gc-${rel}`}>
           <div className="gc-day-lbl">{dayStr}</div>
           <div className="gc-day-num">{numStr}</div>
-          {game.time&&<div style={{fontSize:'0.58rem',fontWeight:700,color:'var(--green)',marginTop:2,whiteSpace:'nowrap'}}>{fmtTime(game.time)}</div>}
+          {game.time&&<div style={{fontSize:'0.68rem',fontWeight:700,color:'var(--green)',marginTop:2,whiteSpace:'nowrap'}}>{fmtTime(game.time)}</div>}
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontWeight:700,fontSize:'0.9rem',marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{game.title||`${game.playType||'Casual'} Game`}</div>
@@ -2024,7 +2024,7 @@ function PlayerDetailModal({player,user,posts,onClose,onChat,onNeedLogin,onEdit,
         </div>}
 
         <div className="pdm-actions">
-          {!mine&&<MsgBtn player={player} user={user} onChat={onChat} onNeedLogin={onNeedLogin}/>}
+          {!mine&&<MsgBtn player={player} user={user} onChat={(p)=>{onClose();setTimeout(()=>onChat(p),200);}} onNeedLogin={onNeedLogin}/>}
           {mine&&<button className="btn btn-ghost btn-sm" onClick={()=>onEdit(null)}>+ New Post</button>}
         </div>
       </div>
