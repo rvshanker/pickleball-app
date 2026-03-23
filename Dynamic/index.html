@@ -197,8 +197,9 @@ textarea.fi{resize:vertical;min-height:60px;}
 .cd-glance-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .cd-glance-sub{font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;text-align:center;}
 .cd-glance-pills{display:flex;gap:6px;}
-.cd-g-pill{flex:1;background:var(--navy);border:1px solid var(--border);border-radius:10px;padding:6px 8px;text-align:center;}
+.cd-g-pill{flex:1;min-width:80px;background:var(--navy);border:1px solid var(--border);border-radius:10px;padding:6px 8px;text-align:center;}
 .cd-g-pill.lit{background:rgba(46,204,113,0.08);border-color:rgba(46,204,113,0.25);}
+.hide-scrollbar::-webkit-scrollbar{display:none;}.hide-scrollbar{-ms-overflow-style:none;scrollbar-width:none;}
 .cd-g-lbl{font-size:0.5rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
 .cd-g-val{font-size:0.82rem;font-weight:800;color:var(--text);margin-top:1px;}
 .cd-tabs{display:flex;gap:3px;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:3px;margin:0 16px 11px;}
@@ -1026,28 +1027,28 @@ function CourtDetailPage({courtId,onBack,user,profile}){
 
         {/* ── CARD 2: Court Status ── */}
         <div className="cd-section">
-            <div className="cd-glance-grid" style={{gridTemplateColumns:'1fr 1fr 1fr'}}>
-                <div className={'cd-g-pill'+(nowTotal>0?' lit':'')}>
+            <div style={{display:'flex',gap:8,overflowX:'auto',WebkitOverflowScrolling:'touch',scrollbarWidth:'none',paddingBottom:4}} className="hide-scrollbar">
+                <div className={'cd-g-pill'+(nowTotal>0?' lit':'')} style={{flexShrink:0}}>
                     <div className="cd-g-lbl">👥 Playing</div>
                     <div className="cd-g-val">{nowTotal}</div>
                 </div>
-                <div className={'cd-g-pill'+(laterTotal>0?' lit':'')}>
+                <div className={'cd-g-pill'+(laterTotal>0?' lit':'')} style={{flexShrink:0}}>
                     <div className="cd-g-lbl">⏰ Coming</div>
                     <div className="cd-g-val">{laterTotal}</div>
                 </div>
-                <div className={'cd-g-pill'+(courtData.crowdLevel==='high'||courtData.crowdLevel==='medium'?' lit':'')}>
+                <div className={'cd-g-pill'+(courtData.crowdLevel==='high'||courtData.crowdLevel==='medium'?' lit':'')} style={{flexShrink:0}}>
                     <div className="cd-g-lbl">🎪 Crowd</div>
                     <div className="cd-g-val">{courtData.crowdLevel==='high'?'Packed':courtData.crowdLevel==='medium'?'Busy':'Light'}</div>
                 </div>
-                <div className={'cd-g-pill'+(courtData.lightsOn?' lit':'')}>
+                <div className={'cd-g-pill'+(courtData.lightsOn?' lit':'')} style={{flexShrink:0}}>
                     <div className="cd-g-lbl">{courtData.lightsOn?'💡':'🌙'} Lights</div>
                     <div className="cd-g-val">{courtData.lightsOn?'ON':'OFF'}</div>
                 </div>
-                <div className={'cd-g-pill'+(open>0?' lit':'')}>
+                <div className={'cd-g-pill'+(open>0?' lit':'')} style={{flexShrink:0}}>
                     <div className="cd-g-lbl">⚙️ Rotation</div>
                     <div className="cd-g-val">{open}/{total}</div>
                 </div>
-                <div className={'cd-g-pill'+((courtData.condition||'open')==='open'?' lit':'')}>
+                <div className={'cd-g-pill'+((courtData.condition||'open')==='open'?' lit':'')} style={{flexShrink:0}}>
                     <div className="cd-g-lbl">📋 Condition</div>
                     <div className="cd-g-val">{condMap[courtData.condition]?.l||'Open'}</div>
                 </div>
@@ -1288,11 +1289,11 @@ function GameCard({game,user,profile,onAction,onSelect}){
         <div className={`gc-date-block gc-${rel}`}>
           <div className="gc-day-lbl">{dayStr}</div>
           <div className="gc-day-num">{numStr}</div>
+          {game.time&&<div style={{fontSize:'0.58rem',fontWeight:700,color:'var(--green)',marginTop:2,whiteSpace:'nowrap'}}>{fmtTime(game.time)}</div>}
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontWeight:700,fontSize:'0.9rem',marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{game.title||`${game.playType||'Casual'} Game`}</div>
-          <div style={{fontSize:'0.82rem',color:'var(--muted)',marginBottom:5,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>📍 {game.court}</div>
-          <div style={{fontSize:'0.92rem',fontWeight:700,color:'var(--text)',marginBottom:5}}>⏰ {fmtFullDate(game.date)} · {fmtTimeRange(game.time,game.timeEnd)}</div>
+          <div style={{fontSize:'0.78rem',color:'var(--muted)',marginBottom:5,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>📍 {game.court}</div>
           <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
             <span className={`bp ${isFull?'bp-full':'bp-open'}`}>{isFull?'Full':`${openSlots} spot${openSlots!==1?'s':''}`}</span>
             {game.isPrivate&&<span className="bp bp-priv">🔒</span>}
