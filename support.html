@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PickleConnect — Support</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#0A0F1A;--card:#1A2536;--card2:#1F3040;--green:#2ECC71;--green-dim:rgba(46,204,113,0.1);--green-glow:rgba(46,204,113,0.25);--yellow:#F7C948;--blue:#5B9BF7;--text:#E8EDF3;--muted:#7A92AA;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);}
+html{scroll-behavior:smooth;}
+body{font-family:'Instrument Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.top{position:sticky;top:0;z-index:100;background:rgba(10,15,26,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:12px;}
+.logo{font-family:'Bricolage Grotesque',sans-serif;font-size:1.05rem;font-weight:800;color:var(--green);cursor:pointer;text-decoration:none;}
+.logo span{color:var(--text);}
+.top-links{margin-left:auto;display:flex;gap:8px;}
+.top-links a{font-size:0.72rem;font-weight:600;color:var(--muted);text-decoration:none;padding:5px 10px;border-radius:8px;border:1px solid transparent;transition:all .15s;}
+.top-links a:hover{color:var(--green);border-color:var(--green-glow);background:var(--green-dim);}
+.hero{text-align:center;padding:48px 20px 36px;background:radial-gradient(ellipse at 50% 0%,rgba(46,204,113,0.06) 0%,transparent 60%);}
+.hero h1{font-family:'Bricolage Grotesque',sans-serif;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;margin-bottom:10px;}
+.hero h1 em{font-style:normal;color:var(--green);}
+.hero p{font-size:0.92rem;color:var(--muted);max-width:480px;margin:0 auto;}
+.wrap{max-width:680px;margin:0 auto;padding:0 20px 80px;}
+
+/* Contact card */
+.contact-card{background:linear-gradient(135deg,rgba(46,204,113,0.08),rgba(46,204,113,0.02));border:1.5px solid var(--green-glow);border-radius:18px;padding:28px 24px;text-align:center;margin-bottom:36px;}
+.contact-card h2{font-family:'Bricolage Grotesque',sans-serif;font-size:1.15rem;font-weight:800;margin-bottom:8px;}
+.contact-card p{color:var(--muted);font-size:0.88rem;margin-bottom:16px;}
+.contact-btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#2ECC71,#27AE60);color:white;font-family:'Instrument Sans',sans-serif;font-size:0.88rem;font-weight:700;padding:12px 28px;border-radius:12px;text-decoration:none;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(46,204,113,0.35);transition:opacity .15s;}
+.contact-btn:hover{opacity:0.9;text-decoration:none;}
+.contact-sub{font-size:0.75rem;color:var(--muted);margin-top:12px;}
+
+/* FAQ */
+.section-title{font-family:'Bricolage Grotesque',sans-serif;font-size:0.65rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.faq{margin-bottom:36px;}
+.faq-item{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:8px;overflow:hidden;}
+.faq-q{padding:14px 18px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;transition:background .12s;}
+.faq-q:hover{background:rgba(255,255,255,0.03);}
+.faq-q-text{font-weight:700;font-size:0.9rem;}
+.faq-arrow{color:var(--muted);font-size:0.8rem;flex-shrink:0;transition:transform .2s;}
+.faq-item.open .faq-arrow{transform:rotate(180deg);}
+.faq-a{padding:0 18px 16px;font-size:0.85rem;color:var(--muted);line-height:1.7;display:none;}
+.faq-item.open .faq-a{display:block;}
+
+/* Quick links */
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:36px;}
+@media(max-width:480px){.quick-grid{grid-template-columns:1fr;}}
+.quick-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;text-decoration:none;color:var(--text);transition:border-color .15s;}
+.quick-card:hover{border-color:var(--green-glow);}
+.quick-icon{font-size:1.3rem;margin-bottom:6px;}
+.quick-title{font-weight:700;font-size:0.88rem;margin-bottom:3px;}
+.quick-desc{font-size:0.75rem;color:var(--muted);line-height:1.5;}
+
+/* System status */
+.status-bar{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:12px;margin-bottom:36px;}
+.status-dot{width:10px;height:10px;border-radius:50%;background:#2ECC71;flex-shrink:0;box-shadow:0 0 8px rgba(46,204,113,0.5);}
+.status-text{font-weight:600;font-size:0.88rem;}
+.status-sub{font-size:0.75rem;color:var(--muted);}
+
+.footer{text-align:center;padding:30px 20px;border-top:1px solid var(--border);color:var(--muted);font-size:0.75rem;}
+.footer a{color:var(--green);text-decoration:none;}
+@media(max-width:480px){.wrap{padding:0 16px 60px;}.hero{padding:36px 16px 28px;}.contact-card{padding:22px 18px;}}
+@supports(padding-top:env(safe-area-inset-top)){.top{padding-top:calc(14px + env(safe-area-inset-top));}}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <a href="/" class="logo">Pickle<span>Connect</span></a>
+  <div class="top-links">
+    <a href="/">Home</a>
+    <a href="/privacy">Privacy</a>
+    <a href="/guide">User Guide</a>
+  </div>
+</div>
+
+<div class="hero">
+  <h1>How can we <em>help</em>?</h1>
+  <p>Find answers to common questions, or reach out to our team directly.</p>
+</div>
+
+<div class="wrap">
+
+  <!-- System Status -->
+  <div class="status-bar">
+    <div class="status-dot"></div>
+    <div>
+      <div class="status-text">All Systems Operational</div>
+      <div class="status-sub">Courts, games, messaging, and notifications are running normally.</div>
+    </div>
+  </div>
+
+  <!-- Contact -->
+  <div class="contact-card">
+    <h2>📬 Get in Touch</h2>
+    <p>Bug reports, feature requests, account issues — we're here to help.</p>
+    <a href="mailto:contact@pickleconnect.live?subject=PickleConnect%20Support" class="contact-btn">✉️ Email Support</a>
+    <div class="contact-sub">We typically respond within 24 hours.</div>
+  </div>
+
+  <!-- Quick Links -->
+  <div class="section-title">Quick Links</div>
+  <div class="quick-grid">
+    <a href="/guide" class="quick-card">
+      <div class="quick-icon">📖</div>
+      <div class="quick-title">User Guide</div>
+      <div class="quick-desc">Step-by-step walkthrough of every feature.</div>
+    </a>
+    <a href="/privacy" class="quick-card">
+      <div class="quick-icon">🔒</div>
+      <div class="quick-title">Privacy Policy</div>
+      <div class="quick-desc">How we handle your data and your choices.</div>
+    </a>
+    <a href="mailto:contact@pickleconnect.live?subject=Bug%20Report" class="quick-card">
+      <div class="quick-icon">🐛</div>
+      <div class="quick-title">Report a Bug</div>
+      <div class="quick-desc">Include your device, steps to reproduce, and a screenshot.</div>
+    </a>
+    <a href="mailto:contact@pickleconnect.live?subject=Feature%20Request" class="quick-card">
+      <div class="quick-icon">💡</div>
+      <div class="quick-title">Feature Request</div>
+      <div class="quick-desc">Tell us what would make PickleConnect better for you.</div>
+    </a>
+  </div>
+
+  <!-- FAQ -->
+  <div class="section-title">Frequently Asked Questions</div>
+  <div class="faq">
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <div class="faq-q-text">How do I create an account?</div>
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">Tap "Sign In" in the top-right corner. You can sign up with your email and a password. First-time users are guided through a profile setup where you enter your name, skill level, and city.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <div class="faq-q-text">I forgot my password. How do I reset it?</div>
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">On the Sign In screen, tap "Forgot password?" Enter your email address and tap "Send Reset Link." Check your inbox (and spam folder) for the reset email from Firebase. Click the link to set a new password.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <div class="faq-q-text">Why aren't nearby courts showing in the right order?</div>
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">Courts are sorted by distance, which requires location access. Make sure you've granted location permission to PickleConnect in your device settings. On iOS, go to Settings → PickleConnect → Location → "While Using the App."</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <div class="faq-q-text">How do I stop receiving notifications?</div>
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">Tap your profile avatar → Notification Settings. You can disable all notifications with the master toggle, or turn off specific types individually. You can also set quiet hours to pause non-urgent notifications overnight.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <div class="faq-q-text">How do I check in at a court?</div>
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">Go to Courts → tap a court → tap "CHECK IN." Enter your name, select your skill level and how long you plan to play. Choose "Playing Now" to appear as on-site, or "Later" to set an arrival time. If you're physically near a court, the app may prompt you to check in automatically.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <div class="faq-q-text">Can other players see my email?</div>
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">No. Other players only see your display name, skill level, city, and any optional profile details you provide. Your email address is never shown to other users.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <div class="faq-q-text">How do I delete my account?</div>
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">Tap your profile avatar → Delete Account. Type "DELETE" to confirm. This permanently removes your profile, posts, game history, messages, and all associated data. This action cannot be undone.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <div class="faq-q-text">How do I add a new court?</div>
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">Go to Courts → tap "+ Add Court." Enter the court name, address, number of courts, and optional amenities. The court's GPS coordinates are automatically looked up from the address. Any registered player can add courts.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <div class="faq-q-text">Is PickleConnect free?</div>
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">Yes! PickleConnect is completely free to use. There are no ads, no premium tiers, and no hidden costs. We built it because we love pickleball.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <div class="faq-q-text">What devices are supported?</div>
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">PickleConnect works on any modern web browser (Chrome, Safari, Firefox, Edge) on desktop and mobile. A native iOS app is available via the App Store. An Android app is coming soon.</div>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="footer">
+  <p>🏓 <strong>PickleConnect</strong></p>
+  <p style="margin-top:4px"><a href="/privacy">Privacy Policy</a> · <a href="mailto:contact@pickleconnect.live">contact@pickleconnect.live</a></p>
+  <p style="margin-top:4px">© 2025 PickleConnect. All rights reserved.</p>
+</div>
+
+</body>
+</html>
