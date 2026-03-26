@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PickleConnect — User Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0A0F1A;
+  --bg2: #111827;
+  --card: #1A2536;
+  --card2: #1F3040;
+  --green: #2ECC71;
+  --green-dim: rgba(46,204,113,0.1);
+  --green-glow: rgba(46,204,113,0.25);
+  --yellow: #F7C948;
+  --blue: #5B9BF7;
+  --red: #F75B5B;
+  --text: #E8EDF3;
+  --muted: #7A92AA;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Instrument Sans', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── NAV ─── */
+.nav-bar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,15,26,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.nav-logo {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 1.1rem; font-weight: 800;
+  color: var(--green);
+  flex-shrink: 0;
+}
+.nav-logo span { color: var(--text); }
+.nav-links {
+  margin-left: auto; display: flex; gap: 4px;
+  flex-wrap: wrap; justify-content: flex-end;
+}
+.nav-link {
+  font-size: 0.65rem; font-weight: 700;
+  color: var(--muted); text-decoration: none;
+  padding: 5px 8px; border-radius: 8px;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.nav-link:hover, .nav-link:active { color: var(--green); border-color: var(--green-glow); background: var(--green-dim); }
+
+@media (max-width: 480px) {
+  .nav-bar { padding: 10px 12px; gap: 8px; }
+  .nav-links { gap: 3px; }
+  .nav-link { font-size: 0.6rem; padding: 4px 6px; }
+}
+
+/* ─── HERO ─── */
+.hero {
+  text-align: center; padding: 48px 20px 32px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(46,204,113,0.06) 0%, transparent 60%);
+}
+.hero-badge {
+  display: inline-block;
+  font-size: 0.62rem; font-weight: 800;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--green);
+  background: var(--green-dim);
+  border: 1px solid var(--green-glow);
+  border-radius: 20px;
+  padding: 5px 14px;
+  margin-bottom: 16px;
+}
+.hero h1 {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: clamp(1.7rem, 5vw, 3rem);
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 14px;
+}
+.hero h1 em { font-style: normal; color: var(--green); }
+.hero p { font-size: 0.95rem; color: var(--muted); max-width: 560px; margin: 0 auto; padding: 0 8px; }
+
+@media (max-width: 480px) {
+  .hero { padding: 36px 16px 26px; }
+  .hero p { font-size: 0.88rem; }
+}
+
+/* ─── TOC ─── */
+.toc {
+  max-width: 700px; margin: 0 auto 36px;
+  padding: 0 16px;
+}
+.toc-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 20px;
+}
+.toc-title {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 0.72rem; font-weight: 800;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.toc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; }
+@media (max-width: 500px) {
+  .toc-grid { grid-template-columns: 1fr; }
+  .toc-card { padding: 16px; }
+}
+.toc-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 0;
+  font-size: 0.88rem; font-weight: 600;
+  color: var(--text); text-decoration: none;
+  transition: color 0.15s;
+}
+.toc-item:hover { color: var(--green); }
+.toc-emoji { font-size: 1.1rem; width: 24px; text-align: center; flex-shrink: 0; }
+.toc-num {
+  font-size: 0.55rem; font-weight: 800; color: var(--green);
+  background: var(--green-dim);
+  border-radius: 6px; padding: 2px 6px;
+  min-width: 20px; text-align: center;
+  flex-shrink: 0;
+}
+
+/* ─── SECTIONS ─── */
+.content { max-width: 700px; margin: 0 auto; padding: 0 16px 80px; }
+.section { margin-bottom: 44px; scroll-margin-top: 70px; }
+.section-header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.section-icon {
+  width: 42px; height: 42px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+  background: var(--green-dim);
+  border: 1px solid var(--green-glow);
+}
+.section-label {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 0.6rem; font-weight: 800;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--green); margin-bottom: 2px;
+}
+.section-title {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 1.2rem; font-weight: 800;
+  line-height: 1.2;
+}
+
+p { margin-bottom: 12px; color: var(--text); font-size: 0.92rem; }
+p.muted { color: var(--muted); font-size: 0.85rem; }
+
+/* Steps */
+.steps { margin: 14px 0 18px; }
+.step {
+  display: flex; gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+}
+.step:last-child { border-bottom: none; }
+.step-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--green); color: var(--bg);
+  font-size: 0.68rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 2px;
+}
+.step-body { flex: 1; min-width: 0; }
+.step-title { font-weight: 700; font-size: 0.88rem; margin-bottom: 3px; }
+.step-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.6; word-wrap: break-word; }
+
+/* Info cards */
+.info-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 14px 0;
+}
+.info-card.tip { border-left: 3px solid var(--green); }
+.info-card.warn { border-left: 3px solid var(--yellow); }
+.info-card.blue { border-left: 3px solid var(--blue); }
+.info-label {
+  font-size: 0.62rem; font-weight: 800;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.info-card.tip .info-label { color: var(--green); }
+.info-card.warn .info-label { color: var(--yellow); }
+.info-card.blue .info-label { color: var(--blue); }
+.info-text { font-size: 0.8rem; color: var(--muted); line-height: 1.6; word-wrap: break-word; }
+
+/* Tags */
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.tag {
+  font-size: 0.68rem; font-weight: 700;
+  padding: 5px 10px; border-radius: 8px;
+  background: var(--card2); border: 1px solid var(--border2);
+  color: var(--text);
+  word-wrap: break-word;
+}
+.tag.green { background: var(--green-dim); border-color: var(--green-glow); color: var(--green); }
+
+/* Features grid */
+.feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
+@media (max-width: 500px) { .feat-grid { grid-template-columns: 1fr; gap: 8px; } }
+.feat-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.feat-emoji { font-size: 1.1rem; margin-bottom: 4px; }
+.feat-name { font-weight: 700; font-size: 0.82rem; margin-bottom: 3px; }
+.feat-desc { font-size: 0.72rem; color: var(--muted); line-height: 1.5; }
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 30px 16px 40px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.footer a { color: var(--green); text-decoration: none; }
+
+/* ─── GLOBAL MOBILE FIXES ─── */
+@media (max-width: 480px) {
+  body { font-size: 14px; }
+  .content { padding: 0 14px 60px; }
+  .section { margin-bottom: 36px; }
+  .section-title { font-size: 1.1rem; }
+  .section-icon { width: 38px; height: 38px; font-size: 1.1rem; }
+  .step { gap: 10px; }
+  .info-card { padding: 12px 14px; }
+  .feat-item { padding: 10px 12px; }
+  .toc { padding: 0 14px; }
+  .hero { padding: 32px 14px 24px; }
+}
+
+/* Safe area for notched phones */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .nav-bar { padding-top: calc(12px + env(safe-area-inset-top)); }
+  .footer { padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
+}
+
+/* Prevent horizontal overflow */
+html, body { overflow-x: hidden; }
+img, video, iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="nav-bar">
+  <div class="nav-logo">Pickle<span>Connect</span></div>
+  <div class="nav-links">
+    <a href="#getting-started" class="nav-link">Start</a>
+    <a href="#courts" class="nav-link">Courts</a>
+    <a href="#availability" class="nav-link">Availability</a>
+    <a href="#games" class="nav-link">Games</a>
+    <a href="#messaging" class="nav-link">Chat</a>
+    <a href="#notifications" class="nav-link">Notifications</a>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">🏓 Tester Guide v1.0</div>
+  <h1>Welcome to<br><em>PickleConnect</em></h1>
+  <p>Your complete guide to finding courts, connecting with players, and organizing games — all in one app.</p>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <div class="toc-card">
+    <div class="toc-title">What's Inside</div>
+    <div class="toc-grid">
+      <a href="#getting-started" class="toc-item"><span class="toc-num">01</span><span class="toc-emoji">🚀</span> Getting Started</a>
+      <a href="#home" class="toc-item"><span class="toc-num">02</span><span class="toc-emoji">🏠</span> Home Dashboard</a>
+      <a href="#courts" class="toc-item"><span class="toc-num">03</span><span class="toc-emoji">🏟</span> Courts & Check-In</a>
+      <a href="#availability" class="toc-item"><span class="toc-num">04</span><span class="toc-emoji">👥</span> Player Availability</a>
+      <a href="#games" class="toc-item"><span class="toc-num">05</span><span class="toc-emoji">🎮</span> Games & Invites</a>
+      <a href="#messaging" class="toc-item"><span class="toc-num">06</span><span class="toc-emoji">💬</span> Messaging</a>
+      <a href="#notifications" class="toc-item"><span class="toc-num">07</span><span class="toc-emoji">🔔</span> Notifications</a>
+      <a href="#proximity" class="toc-item"><span class="toc-num">08</span><span class="toc-emoji">📍</span> Proximity Prompt</a>
+      <a href="#profile" class="toc-item"><span class="toc-num">09</span><span class="toc-emoji">⚙️</span> Profile & Settings</a>
+      <a href="#tips" class="toc-item"><span class="toc-num">10</span><span class="toc-emoji">💡</span> Testing Tips</a>
+    </div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- 1. GETTING STARTED -->
+  <div class="section" id="getting-started">
+    <div class="section-header">
+      <div class="section-icon">🚀</div>
+      <div><div class="section-label">Section 01</div><div class="section-title">Getting Started</div></div>
+    </div>
+    <p>PickleConnect works on web browsers (desktop and mobile) and as a native iOS app via TestFlight. Here's how to get up and running.</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-body"><div class="step-title">Open the App</div><div class="step-desc">Visit <strong>pickleconnect.live</strong> in your browser, or install from TestFlight on iOS.</div></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><div class="step-title">Sign In</div><div class="step-desc">Tap <strong>Sign In</strong> in the top-right corner. You can sign in with Google or email. First-time users will be guided to set up a profile.</div></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><div class="step-title">Set Up Your Profile</div><div class="step-desc">Enter your name, skill level (2.0–5.0+), city, and optional details like age and gender. This helps other players find and match with you.</div></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><div class="step-title">Allow Location Access</div><div class="step-desc">When prompted, allow location access so the app can show nearby courts and players sorted by distance.</div></div></div>
+    </div>
+    <div class="info-card tip">
+      <div class="info-label">💡 Tip</div>
+      <div class="info-text">You can browse courts and players as a guest, but you'll need to sign in to check in, post availability, create games, or message other players.</div>
+    </div>
+  </div>
+
+  <!-- 2. HOME DASHBOARD -->
+  <div class="section" id="home">
+    <div class="section-header">
+      <div class="section-icon">🏠</div>
+      <div><div class="section-label">Section 02</div><div class="section-title">Home Dashboard</div></div>
+    </div>
+    <p>The Home tab is your at-a-glance overview of what's happening in your area.</p>
+    <div class="feat-grid">
+      <div class="feat-item"><div class="feat-emoji">🏟</div><div class="feat-name">Open Courts</div><div class="feat-desc">Count of courts currently open (not closed or under maintenance).</div></div>
+      <div class="feat-item"><div class="feat-emoji">👥</div><div class="feat-name">Registered Players</div><div class="feat-desc">Total number of registered players in the community.</div></div>
+      <div class="feat-item"><div class="feat-emoji">🎮</div><div class="feat-name">Games Today</div><div class="feat-desc">Number of games scheduled for today.</div></div>
+      <div class="feat-item"><div class="feat-emoji">📍</div><div class="feat-name">Nearby Courts</div><div class="feat-desc">Top 3 courts sorted by distance from your current location.</div></div>
+    </div>
+    <p class="muted">Tap any stat card or court to jump directly to that section. The "I WANT TO PLAY" button at the bottom gives you quick options to start a game, post your availability, or join a court queue.</p>
+  </div>
+
+  <!-- 3. COURTS & CHECK-IN -->
+  <div class="section" id="courts">
+    <div class="section-header">
+      <div class="section-icon">🏟</div>
+      <div><div class="section-label">Section 03</div><div class="section-title">Courts & Check-In</div></div>
+    </div>
+    <p>The Courts tab lists all registered courts sorted by distance. Tap any court to see its live detail page.</p>
+
+    <div class="section-title" style="font-size:1rem;margin:18px 0 10px">Court Detail Page</div>
+    <p>Each court page has three tabs:</p>
+    <div class="tag-row">
+      <span class="tag green">👥 Players</span>
+      <span class="tag green">📅 Schedule</span>
+      <span class="tag green">⚙️ Controls</span>
+    </div>
+
+    <div class="section-title" style="font-size:1rem;margin:18px 0 10px">Checking In</div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-body"><div class="step-title">Enter Your Name</div><div class="step-desc">Type your name in the check-in field. Select your skill rating and how long you plan to play.</div></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><div class="step-title">Choose "Now" or "Later"</div><div class="step-desc"><strong>Playing Now:</strong> Shows you as currently on-site. <strong>Later:</strong> Pick an arrival time — you'll appear in the "Coming Soon" schedule.</div></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><div class="step-title">Optional: Add Guests & Comment</div><div class="step-desc">Bringing friends? Increment the guest count. Add a comment like "Looking for 4.0+ doubles" to help others know what you're looking for.</div></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><div class="step-title">Check Out</div><div class="step-desc">When you're done, tap "Check Out" to remove yourself. Players auto-expire when their duration runs out.</div></div></div>
+    </div>
+
+    <div class="section-title" style="font-size:1rem;margin:18px 0 10px">Schedule Tab</div>
+    <p>The Schedule tab shows upcoming players grouped by arrival time (e.g., "⏰ 2:30 PM — 3 players"). This helps you plan when to show up based on when others will be there.</p>
+
+    <div class="section-title" style="font-size:1rem;margin:18px 0 10px">Controls Tab</div>
+    <p>Any user can update live court conditions:</p>
+    <div class="feat-grid">
+      <div class="feat-item"><div class="feat-emoji">🟢</div><div class="feat-name">Crowd Level</div><div class="feat-desc">Light / Busy / Packed</div></div>
+      <div class="feat-item"><div class="feat-emoji">📋</div><div class="feat-name">Condition</div><div class="feat-desc">Open / Closed / Wet</div></div>
+      <div class="feat-item"><div class="feat-emoji">💡</div><div class="feat-name">Lights</div><div class="feat-desc">ON or OFF</div></div>
+      <div class="feat-item"><div class="feat-emoji">🏟</div><div class="feat-name">Courts Rotating</div><div class="feat-desc">How many courts are currently in play</div></div>
+    </div>
+
+    <div class="info-card tip">
+      <div class="info-label">💡 Tip</div>
+      <div class="info-text">The court detail page also shows live weather (temperature and wind) pulled from your court's GPS coordinates.</div>
+    </div>
+  </div>
+
+  <!-- 4. PLAYER AVAILABILITY -->
+  <div class="section" id="availability">
+    <div class="section-header">
+      <div class="section-icon">👥</div>
+      <div><div class="section-label">Section 04</div><div class="section-title">Player Availability</div></div>
+    </div>
+    <p>The Players tab is where you broadcast that you're available to play, and find others who are too.</p>
+
+    <div class="section-title" style="font-size:1rem;margin:18px 0 10px">Posting Your Availability</div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-body"><div class="step-title">Tap "I'm Available"</div><div class="step-desc">From the Players tab or the "I WANT TO PLAY" button on Home, tap <strong>"I'm Available"</strong>.</div></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><div class="step-title">Choose Your Purpose</div><div class="step-desc">Select why you're looking to play: <strong>Looking to Play</strong> (open to anything), <strong>Need a Partner</strong> (doubles), or <strong>Drilling</strong> (practice).</div></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><div class="step-title">Select Play Types</div><div class="step-desc">Pick one or more: Casual, Competitive, Tournament, or Drilling.</div></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><div class="step-title">Set Your Availability</div><div class="step-desc">Choose when you're free: <strong>Today</strong>, <strong>Tomorrow</strong>, <strong>This Week</strong>, <strong>Pick a Date</strong>, or <strong>Custom Schedule</strong> (recurring weekly days with time ranges).</div></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-body"><div class="step-title">Set Time Range</div><div class="step-desc">Pick your start and end time so others know your window.</div></div></div>
+      <div class="step"><div class="step-num">6</div><div class="step-body"><div class="step-title">Choose Who Can See It</div><div class="step-desc">Control visibility with share modes:</div></div></div>
+    </div>
+
+    <div class="feat-grid">
+      <div class="feat-item"><div class="feat-emoji">🌍</div><div class="feat-name">Everyone</div><div class="feat-desc">All PickleConnect players can see your post.</div></div>
+      <div class="feat-item"><div class="feat-emoji">👥</div><div class="feat-name">Connections</div><div class="feat-desc">Only people you've chatted with before.</div></div>
+      <div class="feat-item"><div class="feat-emoji">👤</div><div class="feat-name">Select Players</div><div class="feat-desc">Hand-pick specific players from a list.</div></div>
+      <div class="feat-item"><div class="feat-emoji">🏷️</div><div class="feat-name">My Groups</div><div class="feat-desc">Share only with members of a group you create or manage.</div></div>
+    </div>
+
+    <div class="info-card blue">
+      <div class="info-label">ℹ️ How Matching Works</div>
+      <div class="info-text">When you post, the app automatically checks if any other player's availability overlaps with yours (same day, nearby location). Both players get a push notification about the match — you don't have to search manually.</div>
+    </div>
+
+    <div class="section-title" style="font-size:1rem;margin:18px 0 10px">Custom Schedule (Recurring)</div>
+    <p>If you play on a regular schedule, use "Custom Schedule" to set recurring days. For example, select Mon/Wed/Fri with 8:00 AM – 11:00 AM. This stays active until your chosen end date (defaults to 1 month). Other players can see your weekly availability grid and match with you.</p>
+  </div>
+
+  <!-- 5. GAMES & INVITES -->
+  <div class="section" id="games">
+    <div class="section-header">
+      <div class="section-icon">🎮</div>
+      <div><div class="section-label">Section 05</div><div class="section-title">Games & Invites</div></div>
+    </div>
+    <p>The Games tab lets you create structured games with a date, time, and player list — and invite others to join.</p>
+
+    <div class="section-title" style="font-size:1rem;margin:18px 0 10px">Creating a Game</div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-body"><div class="step-title">Tap "+ New Game"</div><div class="step-desc">From the Games tab or the "I WANT TO PLAY" → "Start a Game" option.</div></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><div class="step-title">Fill in Details</div><div class="step-desc">Set the <strong>play type</strong> (Casual, Competitive, etc.), <strong>date</strong>, <strong>time</strong>, <strong>court name</strong>, number of <strong>players needed</strong>, and <strong>skill range</strong>. Add an optional description.</div></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><div class="step-title">Set Visibility</div><div class="step-desc">Choose Public (anyone can see) or Private (invite-only). Set a distance radius to limit who sees it.</div></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><div class="step-title">Create & Invite Players</div><div class="step-desc">After creating, you'll see an invite screen showing nearby players sorted by distance and skill match. Tap to select players, then send invites.</div></div></div>
+    </div>
+
+    <div class="section-title" style="font-size:1rem;margin:18px 0 10px">Responding to Invites</div>
+    <p>When someone invites you to a game, you'll receive a push notification. Open the Games tab to see your invites and tap <strong>Accept</strong> or <strong>Decline</strong>. The game organizer gets notified of your response.</p>
+
+    <div class="section-title" style="font-size:1rem;margin:18px 0 10px">Game Reminders</div>
+    <p>If you've accepted a game, you'll automatically get a reminder notification ~15 minutes before the game starts.</p>
+
+    <div class="info-card tip">
+      <div class="info-label">💡 Tip</div>
+      <div class="info-text">Use the filters at the top of the Games tab to narrow by play type, skill level, visibility, and distance. Toggle between "Upcoming" and "My Games" to see games you've created or joined.</div>
+    </div>
+  </div>
+
+  <!-- 6. MESSAGING -->
+  <div class="section" id="messaging">
+    <div class="section-header">
+      <div class="section-icon">💬</div>
+      <div><div class="section-label">Section 06</div><div class="section-title">Messaging</div></div>
+    </div>
+    <p>PickleConnect has built-in direct messaging so you can coordinate with other players without sharing personal contact info.</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-body"><div class="step-title">Start a Chat</div><div class="step-desc">Tap the 💬 button next to any player's name — in the Players tab, court detail, or game detail. This opens a direct chat.</div></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><div class="step-title">View Your Inbox</div><div class="step-desc">Tap the message icon (💬) in the top-right header to see all your conversations. Unread messages show a red badge count.</div></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><div class="step-title">Get Notified</div><div class="step-desc">When someone messages you, you'll receive a push notification and hear a chime sound (if the app is open).</div></div></div>
+    </div>
+    <div class="info-card warn">
+      <div class="info-label">⚠️ Note</div>
+      <div class="info-text">Message and notification icons in the top header are only visible to signed-in users. Guest users will see a "Sign In" button instead.</div>
+    </div>
+  </div>
+
+  <!-- 7. NOTIFICATIONS -->
+  <div class="section" id="notifications">
+    <div class="section-header">
+      <div class="section-icon">🔔</div>
+      <div><div class="section-label">Section 07</div><div class="section-title">Push Notifications</div></div>
+    </div>
+    <p>PickleConnect sends smart push notifications to keep you updated without being spammy. Every notification type can be individually toggled on or off.</p>
+
+    <div class="section-title" style="font-size:1rem;margin:18px 0 10px">Notification Types</div>
+    <div class="feat-grid">
+      <div class="feat-item"><div class="feat-emoji">🏓</div><div class="feat-name">Nearby Game</div><div class="feat-desc">A new game was created within 25 miles of you.</div></div>
+      <div class="feat-item"><div class="feat-emoji">👥</div><div class="feat-name">Player Match</div><div class="feat-desc">Another player's availability overlaps with yours.</div></div>
+      <div class="feat-item"><div class="feat-emoji">📨</div><div class="feat-name">Game Invite</div><div class="feat-desc">Someone invited you to their game.</div></div>
+      <div class="feat-item"><div class="feat-emoji">✅</div><div class="feat-name">Invite Response</div><div class="feat-desc">A player accepted or declined your invite.</div></div>
+      <div class="feat-item"><div class="feat-emoji">🏟️</div><div class="feat-name">Court Joined</div><div class="feat-desc">Someone checked in at the same court during your time slot.</div></div>
+      <div class="feat-item"><div class="feat-emoji">⏰</div><div class="feat-name">Game Reminder</div><div class="feat-desc">Your game starts in ~15 minutes.</div></div>
+      <div class="feat-item"><div class="feat-emoji">💬</div><div class="feat-name">Direct Message</div><div class="feat-desc">New message from another player.</div></div>
+    </div>
+
+    <div class="section-title" style="font-size:1rem;margin:18px 0 10px">Managing Notifications</div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-body"><div class="step-title">Open Notification Settings</div><div class="step-desc">Tap your profile avatar (top-right) → <strong>Notification Settings</strong>, or tap the bell icon → ⚙ Settings.</div></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><div class="step-title">Master Toggle</div><div class="step-desc">Turn all push notifications on or off with one switch. When off, you won't receive any push notifications.</div></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><div class="step-title">Individual Toggles</div><div class="step-desc">Turn specific notification types on or off. For example, keep "Game Invite" on but turn off "Player Match" if you get too many.</div></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><div class="step-title">Quiet Hours</div><div class="step-desc">Enable quiet hours to pause non-urgent notifications overnight (e.g., 10 PM – 7 AM). Game invites and urgent court alerts still come through.</div></div></div>
+    </div>
+
+    <div class="section-title" style="font-size:1rem;margin:18px 0 10px">Notification Bell</div>
+    <p>The bell icon in the top-right shows your recent notifications (last 7 days, up to 30). Unread notifications show a red badge count and a green dot. Tapping the bell marks all as read.</p>
+
+    <div class="info-card blue">
+      <div class="info-label">ℹ️ How "Court Joined" Works</div>
+      <div class="info-text">You only get this notification if another registered player checks in at the same court AND their time overlaps with yours. Guest users and non-overlapping check-ins don't trigger it. This avoids notification spam when unrelated people are at the same venue at different times.</div>
+    </div>
+  </div>
+
+  <!-- 8. PROXIMITY PROMPT -->
+  <div class="section" id="proximity">
+    <div class="section-header">
+      <div class="section-icon">📍</div>
+      <div><div class="section-label">Section 08</div><div class="section-title">Proximity Check-In Prompt</div></div>
+    </div>
+    <p>When you're physically near a court (~800 feet / 0.15 miles), the app detects it and shows a floating banner at the top of the screen:</p>
+    <div class="info-card tip">
+      <div class="info-label">📍 You're near Elm Park Courts!</div>
+      <div class="info-text">Want to check in and let others know you're here? → <strong>Check In</strong> / <strong>Not now</strong></div>
+    </div>
+    <p>Tapping "Check In" opens the court detail page where you can complete your check-in. "Not now" dismisses the prompt for that court during the current session. The app checks your proximity every 30 seconds and only prompts for courts where you haven't already checked in.</p>
+    <div class="info-card warn">
+      <div class="info-label">⚠️ Requires Location</div>
+      <div class="info-text">This feature requires location permissions. On iOS, make sure "When In Use" location access is granted. The prompt only appears for signed-in users.</div>
+    </div>
+  </div>
+
+  <!-- 9. PROFILE & SETTINGS -->
+  <div class="section" id="profile">
+    <div class="section-header">
+      <div class="section-icon">⚙️</div>
+      <div><div class="section-label">Section 09</div><div class="section-title">Profile & Settings</div></div>
+    </div>
+    <p>Tap your profile avatar in the top-right to access:</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">✏️</div><div class="step-body"><div class="step-title">Edit Profile</div><div class="step-desc">Update your name, skill level, city, age, and gender. Your profile is visible to other players.</div></div></div>
+      <div class="step"><div class="step-num">🔔</div><div class="step-body"><div class="step-title">Notification Settings</div><div class="step-desc">Manage push notification preferences (see Section 07).</div></div></div>
+      <div class="step"><div class="step-num">🔒</div><div class="step-body"><div class="step-title">Privacy Policy</div><div class="step-desc">Opens the privacy policy page.</div></div></div>
+      <div class="step"><div class="step-num">↩</div><div class="step-body"><div class="step-title">Sign Out</div><div class="step-desc">Signs you out and returns to the home screen.</div></div></div>
+      <div class="step"><div class="step-num">🗑</div><div class="step-body"><div class="step-title">Delete Account</div><div class="step-desc">Permanently deletes your profile, posts, and game data. Type "DELETE" to confirm.</div></div></div>
+    </div>
+  </div>
+
+  <!-- 10. TESTING TIPS -->
+  <div class="section" id="tips">
+    <div class="section-header">
+      <div class="section-icon">💡</div>
+      <div><div class="section-label">Section 10</div><div class="section-title">Testing Tips & Known Behaviors</div></div>
+    </div>
+
+    <div class="section-title" style="font-size:1rem;margin:18px 0 10px">What to Test</div>
+    <div class="steps">
+      <div class="step"><div class="step-num">✓</div><div class="step-body"><div class="step-title">Sign In / Sign Out Flow</div><div class="step-desc">Try Google sign-in and email sign-in. Verify your profile loads after signing in. Check that guest icons (bell, messages) are hidden.</div></div></div>
+      <div class="step"><div class="step-num">✓</div><div class="step-body"><div class="step-title">Court Check-In</div><div class="step-desc">Check in as "Now" and "Later" at a court. Verify you appear in the right section. Check out and confirm removal.</div></div></div>
+      <div class="step"><div class="step-num">✓</div><div class="step-body"><div class="step-title">Availability Post</div><div class="step-desc">Post with different share modes (Everyone, Connections, Select Players). Verify others can see it when expected.</div></div></div>
+      <div class="step"><div class="step-num">✓</div><div class="step-body"><div class="step-title">Create & Join a Game</div><div class="step-desc">Create a game, invite a player, accept/decline from the other account. Verify notifications are received.</div></div></div>
+      <div class="step"><div class="step-num">✓</div><div class="step-body"><div class="step-title">Messaging</div><div class="step-desc">Send a message between two accounts. Verify the notification appears and the badge count updates.</div></div></div>
+      <div class="step"><div class="step-num">✓</div><div class="step-body"><div class="step-title">Notification Toggles</div><div class="step-desc">Disable a notification type, trigger the event, and verify no push is received. Re-enable and confirm it works.</div></div></div>
+      <div class="step"><div class="step-num">✓</div><div class="step-body"><div class="step-title">Nearby Courts (Location)</div><div class="step-desc">Allow location access and verify courts are sorted by distance. On mobile, confirm the proximity check-in prompt appears when near a court.</div></div></div>
+    </div>
+
+    <div class="section-title" style="font-size:1rem;margin:18px 0 10px">Reporting Issues</div>
+    <p>When reporting a bug, please include:</p>
+    <div class="tag-row">
+      <span class="tag">📱 Device (iPhone 15, Chrome desktop, etc.)</span>
+      <span class="tag">🔄 Steps to reproduce</span>
+      <span class="tag">📸 Screenshot if possible</span>
+      <span class="tag">⏰ Time it happened</span>
+    </div>
+
+    <div class="info-card warn">
+      <div class="info-label">⚠️ Known Behaviors</div>
+      <div class="info-text">
+        <strong>Browser warning:</strong> You may see a Babel transformer warning in the console — this is expected during development.<br><br>
+        <strong>Push notifications on iOS web:</strong> iOS Safari requires adding the app to your Home Screen (PWA mode) for web push notifications to work. The native TestFlight build handles push natively.<br><br>
+        <strong>First-time notification permission:</strong> When you first sign in, the app will ask for notification permission. If you deny it, you can re-enable it in your browser/device settings.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <p>🏓 <strong>PickleConnect</strong> — Tester Guide</p>
+  <p style="margin-top:4px">Questions? Reach out at <a href="mailto:contact@pickleconnect.live">contact@pickleconnect.live</a></p>
+</div>
+
+</body>
+</html>

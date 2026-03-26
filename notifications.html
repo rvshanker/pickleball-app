@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PickleConnect – Notifications</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script>
+const _isNative=!!(window.Capacitor?.isNativePlatform?.());
+const FB={apiKey:_isNative?"AIzaSyDjgdzr2gQlWMYnOYeLV56HBk5mdOXEDj8":"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",authDomain:"pickleball-app-1bba7.firebaseapp.com",projectId:"pickleball-app-1bba7",storageBucket:"pickleball-app-1bba7.firebasestorage.app",messagingSenderId:"645604154338",appId:"1:645604154338:web:b92f87c2cd11d950b737bb"};
+if(!firebase.apps.length) firebase.initializeApp(FB);
+const _db=firebase.firestore(), _auth=firebase.auth();
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --green:#2ECC71;--green-dark:#27AE60;--green-dim:rgba(46,204,113,0.12);
+  --navy:#0D1B2A;--navy2:#142232;--card:#1A2B3C;--card2:#1F3347;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#F0F4F8;--muted:#7A9BB5;--muted2:rgba(122,155,181,0.5);
+  --accent:#F7C948;--blue:#5B9BF7;--red:#F75B5B;
+}
+html,body{height:100%;background:var(--navy);}
+body{font-family:'DM Sans',sans-serif;color:var(--text);font-size:15px;-webkit-text-size-adjust:100%;max-width:480px;margin:0 auto;}
+
+/* Top bar */
+.top-bar{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;gap:12px;
+  padding:14px 18px 12px;
+  background:var(--navy);
+  border-bottom:1px solid var(--border);
+}
+.back-btn{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--card);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;cursor:pointer;flex-shrink:0;
+  transition:background .15s;
+}
+.back-btn:hover{background:var(--card2);}
+.top-title{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;flex:1;}
+.save-btn{
+  padding:7px 16px;border-radius:10px;border:none;
+  background:linear-gradient(135deg,#2ECC71,#27AE60);
+  color:white;font-family:'DM Sans',sans-serif;
+  font-size:0.78rem;font-weight:700;cursor:pointer;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.save-btn.visible{opacity:1;pointer-events:all;}
+
+/* Scroll body */
+.screen-body{padding:0 0 80px;}
+
+/* Master toggle banner */
+.master-banner{
+  margin:14px 16px 6px;
+  background:linear-gradient(135deg,rgba(46,204,113,0.08),rgba(46,204,113,0.03));
+  border:1.5px solid rgba(46,204,113,0.25);
+  border-radius:18px;padding:16px 18px;
+  display:flex;align-items:center;gap:14px;
+}
+.master-icon{font-size:1.6rem;flex-shrink:0;}
+.master-text h3{font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:800;margin-bottom:2px;}
+.master-text p{font-size:0.72rem;color:var(--muted);line-height:1.4;}
+.master-text{flex:1;}
+
+/* Section header */
+.section-head{
+  padding:18px 18px 8px;
+  display:flex;align-items:center;gap:8px;
+}
+.section-head-icon{font-size:1rem;}
+.section-head-text{font-size:0.62rem;font-weight:700;letter-spacing:0.11em;text-transform:uppercase;color:var(--muted);}
+
+/* Notification row */
+.notif-row{
+  background:var(--card);
+  border-top:1px solid var(--border);
+  padding:13px 18px;
+  display:flex;align-items:center;gap:12px;
+  transition:background .15s;
+  cursor:default;
+}
+.notif-row:last-child{border-bottom:1px solid var(--border);}
+.notif-row.disabled{opacity:0.4;}
+.notif-emoji{font-size:1.2rem;width:32px;text-align:center;flex-shrink:0;}
+.notif-info{flex:1;min-width:0;}
+.notif-name{font-size:0.88rem;font-weight:600;margin-bottom:2px;}
+.notif-desc{font-size:0.7rem;color:var(--muted);line-height:1.4;}
+.notif-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}
+
+/* Toggle switch */
+.toggle{
+  position:relative;width:44px;height:25px;flex-shrink:0;cursor:pointer;
+}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-track{
+  position:absolute;inset:0;border-radius:25px;
+  background:var(--card2);border:1.5px solid var(--border2);
+  transition:all .2s;
+}
+.toggle input:checked ~ .toggle-track{
+  background:linear-gradient(135deg,#2ECC71,#27AE60);
+  border-color:transparent;
+  box-shadow:0 2px 8px rgba(46,204,113,0.4);
+}
+.toggle-thumb{
+  position:absolute;top:3px;left:3px;
+  width:17px;height:17px;border-radius:50%;
+  background:white;transition:transform .2s;
+  box-shadow:0 1px 4px rgba(0,0,0,0.3);
+}
+.toggle input:checked ~ .toggle-track .toggle-thumb{transform:translateX(19px);}
+
+/* Quiet hours rows */
+.quiet-card{
+  margin:4px 16px 0;
+  background:var(--card);
+  border:1px solid var(--border);border-radius:14px;overflow:hidden;
+}
+.quiet-row{
+  padding:12px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+}
+.quiet-row:last-child{border-bottom:none;}
+.quiet-label{font-size:0.82rem;font-weight:600;}
+.quiet-sub{font-size:0.68rem;color:var(--muted);margin-top:2px;}
+.time-picker{
+  background:var(--navy2);border:1.5px solid var(--border2);
+  border-radius:9px;padding:6px 10px;
+  color:var(--text);font-family:'DM Sans',sans-serif;
+  font-size:0.82rem;font-weight:600;
+  cursor:pointer;outline:none;
+  -webkit-appearance:none;
+  transition:border-color .15s;
+}
+.time-picker:focus{border-color:rgba(46,204,113,0.5);}
+
+/* Frequency badge */
+.freq-sel{
+  display:flex;gap:3px;
+}
+.freq-btn{
+  padding:3px 9px;border-radius:8px;font-size:0.62rem;font-weight:700;
+  border:1.5px solid var(--border2);background:transparent;
+  color:var(--muted);font-family:'DM Sans',sans-serif;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.freq-btn.on{
+  border-color:rgba(46,204,113,0.4);
+  background:var(--green-dim);color:var(--green);
+}
+
+/* Info tip */
+.info-tip{
+  margin:8px 16px;
+  background:rgba(91,155,247,0.07);
+  border:1px solid rgba(91,155,247,0.18);
+  border-radius:12px;padding:10px 14px;
+  font-size:0.72rem;color:var(--blue);
+  display:flex;gap:8px;align-items:flex-start;
+  line-height:1.5;
+}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--green-dark);color:white;
+  padding:10px 20px;border-radius:12px;
+  font-size:0.82rem;font-weight:700;
+  opacity:0;transition:all .25s;pointer-events:none;
+  white-space:nowrap;z-index:999;
+  box-shadow:0 4px 16px rgba(46,204,113,0.4);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .25s ease both;}
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="top-bar">
+  <div class="back-btn" onclick="goBack()">←</div>
+  <div class="top-title">Notifications</div>
+  <button class="save-btn" id="saveBtn" onclick="saveSettings()">Save</button>
+</div>
+
+<div class="screen-body">
+
+  <!-- Master toggle -->
+  <div class="master-banner fade-up">
+    <div class="master-icon">🔔</div>
+    <div class="master-text">
+      <h3>Push Notifications</h3>
+      <p>Stay in the loop when games, players &amp; messages need your attention.</p>
+    </div>
+    <label class="toggle">
+      <input type="checkbox" id="masterToggle" checked onchange="onMasterToggle(this)">
+      <div class="toggle-track"><div class="toggle-thumb"></div></div>
+    </label>
+  </div>
+
+  <!-- ── NEARBY ── -->
+  <div class="section-head fade-up" style="animation-delay:.04s">
+    <span class="section-head-icon">📍</span>
+    <span class="section-head-text">Nearby Activity</span>
+  </div>
+
+  <div class="notif-row fade-up" style="animation-delay:.06s" data-prefkey="nearbyGame">
+    <div class="notif-emoji">🏓</div>
+    <div class="notif-info">
+      <div class="notif-name">Nearby Game Available</div>
+      <div class="notif-desc">A game is open &amp; starting near you</div>
+    </div>
+    <div class="notif-right">
+      <label class="toggle"><input type="checkbox" class="notif-toggle" checked onchange="markDirty()"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+      <div class="freq-sel">
+        <button class="freq-btn" onclick="setFreq(this,'instant')">Instant</button>
+        <button class="freq-btn on" onclick="setFreq(this,'digest')">Digest</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="notif-row fade-up" style="animation-delay:.08s" data-prefkey="playerMatch">
+    <div class="notif-emoji">👥</div>
+    <div class="notif-info">
+      <div class="notif-name">Player Availability Match</div>
+      <div class="notif-desc">A player's availability overlaps yours</div>
+    </div>
+    <div class="notif-right">
+      <label class="toggle"><input type="checkbox" class="notif-toggle" checked onchange="markDirty()"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+      <div class="freq-sel">
+        <button class="freq-btn on" onclick="setFreq(this,'instant')">Instant</button>
+        <button class="freq-btn" onclick="setFreq(this,'digest')">Digest</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GAMES & INVITES ── -->
+  <div class="section-head fade-up" style="animation-delay:.10s">
+    <span class="section-head-icon">🎮</span>
+    <span class="section-head-text">Games &amp; Invites</span>
+  </div>
+
+  <div class="notif-row fade-up" style="animation-delay:.12s" data-prefkey="gameInvite">
+    <div class="notif-emoji">📨</div>
+    <div class="notif-info">
+      <div class="notif-name">Game Invite Received</div>
+      <div class="notif-desc">Someone invited you to join their game</div>
+    </div>
+    <div class="notif-right">
+      <label class="toggle"><input type="checkbox" class="notif-toggle" checked onchange="markDirty()"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+    </div>
+  </div>
+
+  <div class="notif-row fade-up" style="animation-delay:.14s" data-prefkey="inviteResponse">
+    <div class="notif-emoji">✅</div>
+    <div class="notif-info">
+      <div class="notif-name">Invite Accepted</div>
+      <div class="notif-desc">A player accepted your game invite</div>
+    </div>
+    <div class="notif-right">
+      <label class="toggle"><input type="checkbox" class="notif-toggle" checked onchange="markDirty()"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+    </div>
+  </div>
+
+  <div class="notif-row fade-up" style="animation-delay:.16s" data-prefkey="inviteResponse2">
+    <div class="notif-emoji">❌</div>
+    <div class="notif-info">
+      <div class="notif-name">Invite Declined</div>
+      <div class="notif-desc">A player declined your game invite</div>
+    </div>
+    <div class="notif-right">
+      <label class="toggle"><input type="checkbox" class="notif-toggle" checked onchange="markDirty()"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+    </div>
+  </div>
+
+  <!-- ── ON COURT ── -->
+  <div class="section-head fade-up" style="animation-delay:.18s">
+    <span class="section-head-icon">🏅</span>
+    <span class="section-head-text">On Court</span>
+  </div>
+
+  <div class="notif-row fade-up" style="animation-delay:.20s" data-prefkey="courtJoined">
+    <div class="notif-emoji">🙋</div>
+    <div class="notif-info">
+      <div class="notif-name">Player Joined Your Court</div>
+      <div class="notif-desc">Someone joins you during your Playing Now or scheduled court time</div>
+    </div>
+    <div class="notif-right">
+      <label class="toggle"><input type="checkbox" class="notif-toggle" checked onchange="markDirty()"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+    </div>
+  </div>
+
+  <div class="notif-row fade-up" style="animation-delay:.22s" data-prefkey="gameReminder">
+    <div class="notif-emoji">🕐</div>
+    <div class="notif-info">
+      <div class="notif-name">Game Starting Soon</div>
+      <div class="notif-desc">Reminder before your scheduled game begins</div>
+    </div>
+    <div class="notif-right">
+      <label class="toggle"><input type="checkbox" class="notif-toggle" checked onchange="markDirty()"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+      <div class="freq-sel">
+        <button class="freq-btn on" onclick="setFreq(this,'15min')">15 min</button>
+        <button class="freq-btn" onclick="setFreq(this,'30min')">30 min</button>
+        <button class="freq-btn" onclick="setFreq(this,'1hr')">1 hr</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MESSAGES ── -->
+  <div class="section-head fade-up" style="animation-delay:.24s">
+    <span class="section-head-icon">💬</span>
+    <span class="section-head-text">Messages</span>
+  </div>
+
+  <div class="notif-row fade-up" style="animation-delay:.26s" data-prefkey="directMessage">
+    <div class="notif-emoji">💬</div>
+    <div class="notif-info">
+      <div class="notif-name">Direct Messages</div>
+      <div class="notif-desc">New message from another player</div>
+    </div>
+    <div class="notif-right">
+      <label class="toggle"><input type="checkbox" class="notif-toggle" checked onchange="markDirty()"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+    </div>
+  </div>
+
+  <!-- ── QUIET HOURS ── -->
+  <div class="section-head fade-up" style="animation-delay:.28s">
+    <span class="section-head-icon">🌙</span>
+    <span class="section-head-text">Quiet Hours</span>
+  </div>
+
+  <div class="quiet-card fade-up" style="animation-delay:.30s">
+    <div class="quiet-row">
+      <div>
+        <div class="quiet-label">Enable Quiet Hours</div>
+        <div class="quiet-sub">Pause non-urgent notifications overnight</div>
+      </div>
+      <label class="toggle" style="margin-left:12px">
+        <input type="checkbox" id="quietToggle" onchange="onQuietToggle(this);markDirty()">
+        <div class="toggle-track"><div class="toggle-thumb"></div></div>
+      </label>
+    </div>
+    <div class="quiet-row" id="quietFrom" style="display:none">
+      <div>
+        <div class="quiet-label">From</div>
+      </div>
+      <input type="time" class="time-picker" value="22:00" onchange="markDirty()">
+    </div>
+    <div class="quiet-row" id="quietTo" style="display:none">
+      <div>
+        <div class="quiet-label">Until</div>
+      </div>
+      <input type="time" class="time-picker" value="07:00" onchange="markDirty()">
+    </div>
+  </div>
+
+  <div class="info-tip fade-up" style="animation-delay:.34s;margin-top:14px">
+    ℹ️ &nbsp;Game invites and urgent court alerts will still come through during quiet hours.
+  </div>
+
+  <div style="height:20px;"></div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">✓ Preferences saved</div>
+
+<script>
+  let dirty = false;
+  let _uid = null;
+
+  // ── Back: always go to index.html with fade transition ──
+  function goBack() {
+    const fade = document.getElementById('pcn-fade');
+    if (fade) {
+      fade.classList.add('go');
+      setTimeout(() => { window.location.href = 'index.html'; }, 160);
+    } else {
+      window.location.href = 'index.html';
+    }
+  }
+
+  function markDirty() {
+    dirty = true;
+    document.getElementById('saveBtn').classList.add('visible');
+  }
+
+  function onMasterToggle(cb) {
+    markDirty();
+    document.querySelectorAll('.notif-row').forEach(r =>
+      r.classList.toggle('disabled', !cb.checked));
+    document.querySelectorAll('.notif-toggle').forEach(t => t.disabled = !cb.checked);
+  }
+
+  function onQuietToggle(cb) {
+    document.getElementById('quietFrom').style.display = cb.checked ? 'flex' : 'none';
+    document.getElementById('quietTo').style.display = cb.checked ? 'flex' : 'none';
+  }
+
+  function setFreq(btn) {
+    btn.closest('.freq-sel').querySelectorAll('.freq-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    markDirty();
+  }
+
+  // ── Collect settings from DOM ──
+  // Saves flat keys matching Cloud Functions prefKey values:
+  // masterEnabled, nearbyGame, playerMatch, gameInvite, inviteResponse, courtJoined, gameReminder, directMessage
+  function collectSettings() {
+    const s = {
+      masterEnabled: document.getElementById('masterToggle').checked,
+      quietEnabled:  document.getElementById('quietToggle').checked,
+      quietFrom: document.querySelector('#quietFrom input')?.value || '22:00',
+      quietTo:   document.querySelector('#quietTo input')?.value   || '07:00',
+      _freq: {}  // frequency settings stored separately (UI-only)
+    };
+    document.querySelectorAll('.notif-row').forEach(row => {
+      const toggle  = row.querySelector('.notif-toggle');
+      const prefKey = row.dataset.prefkey;
+      if (!toggle || !prefKey) return;
+      // inviteResponse2 (Invite Declined) shares the inviteResponse key
+      const key = prefKey === 'inviteResponse2' ? 'inviteResponse' : prefKey;
+      s[key] = toggle.checked;
+      const freqBtn = row.querySelector('.freq-btn.on');
+      if (freqBtn) s._freq[key] = freqBtn.textContent.trim();
+    });
+    return s;
+  }
+
+  // ── Apply settings to DOM ──
+  function applySettings(s) {
+    if (!s) return;
+    if (s.masterEnabled !== undefined) {
+      document.getElementById('masterToggle').checked = s.masterEnabled;
+      onMasterToggle(document.getElementById('masterToggle'));
+    }
+    const qTog = document.getElementById('quietToggle');
+    if (s.quietEnabled !== undefined) { qTog.checked = s.quietEnabled; onQuietToggle(qTog); }
+    if (s.quietFrom) { const i = document.querySelector('#quietFrom input'); if(i) i.value = s.quietFrom; }
+    if (s.quietTo)   { const i = document.querySelector('#quietTo input');   if(i) i.value = s.quietTo;   }
+    // Apply flat prefKey toggles
+    document.querySelectorAll('.notif-row').forEach(row => {
+      const toggle  = row.querySelector('.notif-toggle');
+      const prefKey = row.dataset.prefkey;
+      if (!toggle || !prefKey) return;
+      const key = prefKey === 'inviteResponse2' ? 'inviteResponse' : prefKey;
+      if (s[key] !== undefined) toggle.checked = s[key];
+      // Apply frequency from _freq sub-object
+      const freq = s._freq?.[key];
+      if (freq) {
+        row.querySelectorAll('.freq-btn').forEach(b =>
+          b.classList.toggle('on', b.textContent.trim() === freq));
+      }
+    });
+    dirty = false;
+    document.getElementById('saveBtn').classList.remove('visible');
+  }
+
+  // ── Save ──
+  async function saveSettings() {
+    const settings = collectSettings();
+    let savedToCloud = false;
+    if (_uid) {
+      try {
+        await _db.collection('notifPrefs').doc(_uid).set(settings, { merge: true });
+        savedToCloud = true;
+        // Sync master toggle with FCM token registration
+        if (window.PickleNotif) {
+          await window.PickleNotif.setEnabled(_uid, settings.masterEnabled);
+        }
+      } catch(e) { console.warn('Firestore save failed:', e); }
+    }
+    // Always save locally as backup
+    try { localStorage.setItem('pcn_notif_settings', JSON.stringify(settings)); } catch(e) {}
+    dirty = false;
+    document.getElementById('saveBtn').classList.remove('visible');
+    const t = document.getElementById('toast');
+    if (savedToCloud) {
+      t.textContent = '✓ Preferences saved';
+    } else if (!_uid) {
+      t.textContent = '⚠ Sign in to save to your account';
+    } else {
+      t.textContent = '⚠ Saved locally — cloud sync failed';
+    }
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // ── Load on auth ──
+  let _authResolved = false;
+
+  // Show loading state while waiting for auth
+  function showAuthLoading(show) {
+    const saveBtn = document.getElementById('saveBtn');
+    if (show) {
+      saveBtn.textContent = 'Loading…';
+      saveBtn.classList.add('visible');
+      saveBtn.style.opacity = '0.5';
+      saveBtn.style.pointerEvents = 'none';
+    } else {
+      saveBtn.textContent = 'Save';
+      saveBtn.classList.remove('visible');
+      saveBtn.style.opacity = '';
+      saveBtn.style.pointerEvents = '';
+    }
+  }
+
+  showAuthLoading(true);
+
+  _auth.onAuthStateChanged(async user => {
+    _authResolved = true;
+    _uid = user?.uid || null;
+    showAuthLoading(false);
+    let settings = null;
+    if (_uid) {
+      try {
+        const snap = await _db.collection('notifPrefs').doc(_uid).get();
+        if (snap.exists) settings = snap.data();
+      } catch(e) { console.warn('notifPrefs load failed:', e); }
+    }
+    if (!settings) {
+      try { const raw = localStorage.getItem('pcn_notif_settings'); if(raw) settings = JSON.parse(raw); } catch(e) {}
+    }
+    if (settings) applySettings(settings);
+  });
+
+  // Safety timeout: if auth hasn't resolved in 5s (e.g. mobile cold start), load from localStorage
+  setTimeout(() => {
+    if (!_authResolved) {
+      console.warn('[Notifications] Auth timeout — loading from localStorage');
+      showAuthLoading(false);
+      try {
+        const raw = localStorage.getItem('pcn_notif_settings');
+        if (raw) applySettings(JSON.parse(raw));
+      } catch(e) {}
+    }
+  }, 5000);
+</script>
+<script src="nav.js"></script>
+</body>
+</html>
