@@ -466,8 +466,8 @@ exports.onCheckinCreated = onDocumentCreated(
     const checkin = event.data.data();
     if (!checkin) return;
 
-    // ── GroupMe bot message (existing, only for active check-ins) ──
-    if (checkin.status === "active") {
+    // ── GroupMe bot message (for both active and scheduled check-ins) ──
+    if (checkin.status === "active" || checkin.status === "later") {
       let botDoc;
       try { botDoc = await db.collection("groupme_bots").doc(courtId).get(); }
       catch (e) { logger.error("Failed to fetch botDoc:", e.message); }
@@ -486,9 +486,10 @@ exports.onCheckinCreated = onDocumentCreated(
             const rule = rulesSnap.docs[0].data();
             let msg;
 
+            const courtDoc  = await db.collection("courts").doc(courtId).get();
+            const courtData = courtDoc.exists ? courtDoc.data() : {};
+
             if (rule.customMsg) {
-              const courtDoc  = await db.collection("courts").doc(courtId).get();
-              const courtData = courtDoc.exists ? courtDoc.data() : {};
               const checkinsSnap = await db.collection("courts").doc(courtId).collection("checkins")
                 .where("status", "==", "active").get();
               msg = rule.customMsg
@@ -499,18 +500,27 @@ exports.onCheckinCreated = onDocumentCreated(
             }
 
             if (!msg) {
-              const courtDoc     = await db.collection("courts").doc(courtId).get();
-              const courtData    = courtDoc.exists ? courtDoc.data() : {};
               const checkinsSnap = await db.collection("courts").doc(courtId).collection("checkins")
-                .where("status", "==", "active").get();
-              const playerCount  = checkinsSnap.size;
+                .where("status", "in", ["active", "later"]).get();
+              const activeCount  = checkinsSnap.docs.filter(d => d.data().status === "active").length;
+              const laterCount   = checkinsSnap.docs.filter(d => d.data().status === "later").length;
               const openCourts   = courtData.openCourts ?? courtData.numberOfCourts ?? 4;
               const ratingMap    = { "1.0":"1.0","1.5":"1.5","2.0":"2.0","2.5":"2.5","3.0":"3.0","3.5":"3.5","4.0":"4.0","4.5":"4.5","5.0":"5.0","5plus":"5.0+" };
               const rating       = checkin.rating && ratingMap[checkin.rating] ? ` ${ratingMap[checkin.rating]}` : "";
               const guests       = checkin.guests > 0 ? ` (+${checkin.guests} guests)` : "";
-              msg =
-                `🎾 ${checkin.userName}${rating} checked in at ${courtData.name || "court"}${guests}\n` +
-                `👥 ${playerCount} player${playerCount !== 1 ? "s" : ""} on-site  🏟 ${openCourts} court${openCourts !== 1 ? "s" : ""} rotating`;
+
+              if (checkin.status === "later" && checkin.arrivalTime) {
+                const arrTime = new Date(checkin.arrivalTime).toLocaleTimeString("en-US", {
+                  hour: "numeric", minute: "2-digit", timeZone: "America/Chicago"
+                });
+                msg =
+                  `⏰ ${checkin.userName}${rating} is coming to ${courtData.name || "court"} at ${arrTime}${guests}\n` +
+                  `👥 ${activeCount} playing now · ${laterCount} scheduled  🏟 ${openCourts} court${openCourts !== 1 ? "s" : ""} rotating`;
+              } else {
+                msg =
+                  `🎾 ${checkin.userName}${rating} checked in at ${courtData.name || "court"}${guests}\n` +
+                  `👥 ${activeCount} player${activeCount !== 1 ? "s" : ""} on-site  🏟 ${openCourts} court${openCourts !== 1 ? "s" : ""} rotating`;
+              }
             }
 
             const result = await postGroupMe(botConfig.botId, msg);
