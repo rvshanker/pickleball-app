@@ -956,6 +956,7 @@ function CourtDetailPage({courtId,onBack,user,profile}){
     const[guestCount,setGuestCount]=useState(0);const[comment,setComment]=useState('');
     const[weather,setWeather]=useState(null);const[forecast,setForecast]=useState([]);
     const[showEdit,setShowEdit]=useState(false);
+    const[courtReports,setCourtReports]=useState([]);
     const checkInsRef=useRef([]);
     // Use Firebase UID as deviceId for logged-in users (enables push notifications to find them)
     // Fall back to random ID for guest users
@@ -968,6 +969,7 @@ function CourtDetailPage({courtId,onBack,user,profile}){
     },[profile]);
     useEffect(()=>{if(!courtId||!fbOk){setLoading(false);return;}const u=db.collection('courts').doc(courtId).onSnapshot(d=>{if(d.exists)setCourtData({id:d.id,...d.data()});else setCourtData(null);setLoading(false);},()=>setLoading(false));return()=>u();},[courtId]);
     useEffect(()=>{if(!courtId||!fbOk)return;const u=db.collection('courts').doc(courtId).collection('checkins').onSnapshot(snap=>{const now=Date.now(),cut=now-24*3600000;snap.docs.forEach(d=>{if(d.data().status==='checked-out')d.ref.delete().catch(()=>{});});const list=snap.docs.map(d=>({id:d.id,...d.data()})).filter(c=>c.status!=='checked-out'&&c.timestamp>cut).sort((a,b)=>(a.arrivalTime||a.timestamp)-(b.arrivalTime||b.timestamp));checkInsRef.current=list;setCheckIns(list);},e=>console.warn('CI:',e.message));return()=>u();},[courtId]);
+    useEffect(()=>{if(!courtId||!fbOk)return;const u=db.collection('courts').doc(courtId).collection('court_reports').orderBy('timestamp','desc').limit(1).onSnapshot(snap=>{const cut=Date.now()-4*3600000;const list=snap.docs.map(d=>({id:d.id,...d.data()})).filter(r=>r.timestamp>cut);setCourtReports(list);},()=>{});return()=>u();},[courtId]);
     useEffect(()=>{if(!courtId||!fbOk)return;const tick=async()=>{const now=Date.now(),list=checkInsRef.current;for(const c of list){const st=c.status==='active'?c.timestamp:c.arrivalTime;if(c.status==='active'&&c.duration&&st&&now>st+c.duration*60000){await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).delete().catch(()=>{});}if(c.status==='later'&&c.arrivalTime&&now>=c.arrivalTime){await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).update({status:'active',timestamp:now}).catch(()=>{});}}};tick();const t=setInterval(tick,15000);return()=>clearInterval(t);},[courtId]);
     useEffect(()=>{if(!courtData?.lat||!courtData?.lng)return;const fx=async(la,ln)=>{try{const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+la+'&longitude='+ln+'&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1');const d=await r.json();setWeather({temp:Math.round(d.current.temperature_2m),wind:Math.round(d.current.wind_speed_10m)});const now=new Date();setForecast(d.hourly.time.map((t,i)=>({dt:new Date(t),temp:Math.round(d.hourly.temperature_2m[i]),wind:Math.round(d.hourly.wind_speed_10m[i])})).filter(h=>h.dt>=now&&h.dt.getDate()===now.getDate()).slice(0,10));}catch(e){}};fx(courtData.lat,courtData.lng);},[courtData?.lat,courtData?.lng]);
     const updateCourt=async(field,value)=>{if(!fbOk||!courtId)return;await db.collection('courts').doc(courtId).update({[field]:value}).catch(console.error);};
@@ -1056,6 +1058,33 @@ function CourtDetailPage({courtId,onBack,user,profile}){
                     <div className="cd-g-lbl">📋 Condition</div>
                     <div className="cd-g-val">{condMap[courtData.condition]?.l||'Open'}</div>
                 </div>
+            </div>
+        </div>
+
+        {/* ── COURT REPORT STRIP ── */}
+        <div className="cd-section" style={{paddingTop:0}}>
+            <div style={{background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:'10px 14px',display:'flex',alignItems:'center',gap:10}}>
+                {courtReports.length>0?(()=>{
+                    const r=courtReports[0];
+                    const pL={'0':'🏜️ Empty','1-4':'👤 1–4','5-8':'👥 5–8','9-12':'🎾 9–12','13-20':'🔥 13–20','20+':'🤯 20+'};
+                    const wL={'calm':'😌 Calm','light':'🍃 Light','moderate':'💨 Moderate','strong':'🌬️ Strong','very_strong':'🌪️ V.Strong'};
+                    const ago=Math.round((Date.now()-r.timestamp)/60000);
+                    const agoT=ago<1?'just now':ago<60?ago+'m ago':Math.round(ago/60)+'h ago';
+                    return<>
+                        <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:'0.65rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:3}}>📋 Latest Report · {agoT}</div>
+                            <div style={{fontSize:'0.82rem',color:'var(--text)',fontWeight:600,display:'flex',gap:10,flexWrap:'wrap'}}>
+                                <span>{pL[r.playerCount]||r.playerCount}</span>
+                                <span>{wL[r.windCondition]||r.windCondition}</span>
+                                <span style={{color:'var(--muted)',fontWeight:400}}>— {r.reporterName}</span>
+                            </div>
+                        </div>
+                        <a href={'courtreport.html?id='+courtId} style={{background:'var(--green)',color:'white',borderRadius:8,padding:'6px 12px',fontSize:'0.72rem',fontWeight:700,textDecoration:'none',whiteSpace:'nowrap',flexShrink:0}}>📋 Report</a>
+                    </>;
+                })():(
+                    <><div style={{flex:1,fontSize:'0.78rem',color:'var(--muted)'}}>📋 No recent court reports</div>
+                    <a href={'courtreport.html?id='+courtId} style={{background:'var(--green)',color:'white',borderRadius:8,padding:'6px 12px',fontSize:'0.72rem',fontWeight:700,textDecoration:'none',whiteSpace:'nowrap',flexShrink:0}}>📋 Report</a></>
+                )}
             </div>
         </div>
 
