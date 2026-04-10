@@ -735,6 +735,7 @@ function CourtPage() {
     const [showEdit,    setShowEdit]    = useState(false);
     const [showFB,      setShowFB]      = useState(false);
     const [showGroupMe, setShowGroupMe] = useState(false);
+    const [courtReports, setCourtReports] = useState([]);
     const [showTotalEdit,setShowTotalEdit]=useState(false);
     const [newTotal,    setNewTotal]    = useState('');
     const [tick,        setTick]        = useState(0);
@@ -804,6 +805,20 @@ function CourtPage() {
                 checkInsRef.current = list;
                 setCheckIns(list);
             }, err => console.warn('Checkins:', err.message));
+        return () => unsub();
+    }, [courtId]);
+
+    // Load court reports (subcollection)
+    useEffect(() => {
+        if (!courtId || !fbOk || !db) return;
+        const unsub = db.collection('courts').doc(courtId).collection('court_reports')
+            .orderBy('timestamp','desc')
+            .limit(5)
+            .onSnapshot(snap => {
+                const cutoff = Date.now() - 4 * 3600000;
+                const list = snap.docs.map(d=>({id:d.id,...d.data()})).filter(r => r.timestamp > cutoff);
+                setCourtReports(list);
+            }, () => {});
         return () => unsub();
     }, [courtId]);
 
@@ -1177,6 +1192,7 @@ function CourtPage() {
                                         <div style={{fontSize:14,color:'#64748b',marginBottom:12}}>Let others know you're here!</div>
                                         <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>
                                             <button className="btn-g" onClick={()=>setShowForm(true)}>🏟️ Check In</button>
+                                            <a href={`courtreport.html?id=${courtId}`} className="btn-out" style={{textDecoration:'none',display:'inline-flex',alignItems:'center'}}>📋 Report Conditions</a>
                                         </div>
                                     </div>
                                 ):(
@@ -1252,6 +1268,34 @@ function CourtPage() {
                                     No one here yet — be the first! 🎾
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {/* ── COURT REPORTS (visible on now tab) ── */}
+                    {tab==='now' && courtReports.length > 0 && (
+                        <div className="card" style={{marginTop:0}}>
+                            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+                                <div className="fd" style={{fontSize:19,fontWeight:800,color:'#0f172a'}}>📋 COURT REPORTS</div>
+                                <a href={`courtreport.html?id=${courtId}`} style={{fontSize:12,fontWeight:700,color:'#059669',textDecoration:'none'}}>+ Add Report</a>
+                            </div>
+                            {courtReports.map(r => {
+                                const pLabels = {'0':'🏜️ Empty','1-4':'👤 1–4','5-8':'👥 5–8','9-12':'🎾 9–12','13-20':'🔥 13–20','20+':'🤯 20+'};
+                                const wLabels = {'calm':'😌 Calm','light':'🍃 Light','moderate':'💨 Moderate','strong':'🌬️ Strong','very_strong':'🌪️ Very Strong'};
+                                const ago = Math.round((Date.now() - r.timestamp) / 60000);
+                                const agoText = ago < 1 ? 'Just now' : ago < 60 ? `${ago}m ago` : `${Math.round(ago/60)}h ago`;
+                                return (
+                                    <div key={r.id} style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:10,padding:'10px 13px',marginBottom:7}}>
+                                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+                                            <span style={{fontSize:13,fontWeight:700,color:'#1e293b'}}>{r.reporterName}</span>
+                                            <span style={{fontSize:11,color:'#94a3b8'}}>{agoText}</span>
+                                        </div>
+                                        <div style={{display:'flex',gap:14,fontSize:12,color:'#64748b'}}>
+                                            <span>👥 {pLabels[r.playerCount] || r.playerCount}</span>
+                                            <span>🌬️ {wLabels[r.windCondition] || r.windCondition}</span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
 
