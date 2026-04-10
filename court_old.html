@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PickleConnect – Court Details</title>
+    <meta name="description" content="View pickleball court details, check in to play, see who's on the court right now, and get live weather conditions.">
+    <meta name="keywords" content="pickleball court, pickleball check in, who is playing pickleball, pickleball players near me, court conditions, pickleball weather, outdoor pickleball court">
+    <meta name="author" content="PickleConnect">
+    <meta name="robots" content="index, follow">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://rvhanker.github.io/court.html">
+    <meta property="og:title" content="PickleConnect – Pickleball Court Details">
+    <meta property="og:description" content="Check in to a pickleball court, see who's playing right now, and track court conditions live.">
+    <meta property="og:image" content="https://rvhanker.github.io/og-image.png">
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="PickleConnect – Pickleball Court Details">
+    <meta property="twitter:description" content="Check in to a pickleball court, see who's playing right now, and track court conditions live.">
+    <link rel="canonical" href="https://rvhanker.github.io/court.html">
+    <meta name="theme-color" content="#059669">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8VE2FTD711"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-8VE2FTD711');
+    </script>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23059669'/><circle cx='50' cy='50' r='28' fill='white' opacity='0.15'/><ellipse cx='50' cy='50' rx='20' ry='20' fill='none' stroke='white' stroke-width='3'/><line x1='30' y1='50' x2='70' y2='50' stroke='white' stroke-width='3'/><line x1='50' y1='30' x2='50' y2='70' stroke='white' stroke-width='3'/><circle cx='50' cy='50' r='6' fill='white'/></svg>" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Outfit',sans-serif;background:#f1f5f9;font-size:16px;-webkit-text-size-adjust:100%;}
+        .fd{font-family:'Barlow Condensed',sans-serif;}
+        .hero-bg{background:linear-gradient(135deg,#0f172a 0%,#1e3a2f 50%,#052e16 100%);}
+
+        /* Status pills */
+        .status-bar{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+        .status-bar::-webkit-scrollbar{display:none;}
+        .status-pill{display:flex;align-items:center;gap:7px;background:white;border-radius:10px;padding:7px 11px;white-space:nowrap;border:2px solid transparent;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+        .status-pill.green{border-color:#10b981;background:linear-gradient(135deg,#f0fdf4,#dcfce7);}
+        .status-pill.yellow{border-color:#fbbf24;background:linear-gradient(135deg,#fefce8,#fef3c7);}
+        .status-pill.red{border-color:#ef4444;background:linear-gradient(135deg,#fef2f2,#fee2e2);}
+        .status-pill.dark{border-color:#059669;background:linear-gradient(135deg,#0f172a,#1e293b);}
+        .pill-label{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;}
+        .pill-val{font-size:13px;font-weight:800;color:#0f172a;}
+
+        /* Buttons */
+        .btn-g{background:linear-gradient(135deg,#059669,#10b981);color:white;border-radius:10px;padding:12px 22px;font-weight:700;font-size:15px;border:none;cursor:pointer;transition:all .2s;font-family:'Outfit',sans-serif;box-shadow:0 4px 12px rgba(5,150,105,.25);}
+        .btn-g:hover{background:linear-gradient(135deg,#047857,#059669);transform:translateY(-1px);}
+        .btn-g:active{transform:translateY(0);}
+        .btn-g:disabled{opacity:.45;transform:none;cursor:not-allowed;}
+        .btn-out{background:transparent;color:#059669;border:2px solid #059669;border-radius:10px;padding:10px 20px;font-weight:600;font-size:14px;cursor:pointer;transition:all .15s;font-family:'Outfit',sans-serif;}
+        .btn-out:hover{background:#059669;color:white;}
+        .btn-red{background:#ef4444;color:white;border-radius:8px;padding:8px 14px;font-weight:600;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;border:none;}
+        .btn-red:hover{background:#dc2626;}
+
+        /* Toggle group */
+        .toggle-group{display:flex;border:2px solid #e2e8f0;border-radius:10px;overflow:hidden;background:white;}
+        .toggle-btn{flex:1;padding:8px 5px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;border:none;background:white;color:#94a3b8;cursor:pointer;transition:all .2s;border-right:1px solid #e2e8f0;}
+        .toggle-btn:last-child{border-right:none;}
+        .toggle-btn.active{background:#059669;color:white;}
+        .toggle-btn:hover:not(.active){background:#f1f5f9;}
+
+        /* Player rows */
+        .player-item{background:white;border-radius:10px;padding:9px 13px;display:flex;align-items:center;gap:10px;border:1px solid #e2e8f0;margin-bottom:7px;}
+        .player-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#059669,#10b981);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0;}
+
+        /* Rating badges */
+        .rating-badge{display:inline-flex;align-items:center;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:700;}
+        .rating-u3{background:#e0e7ff;color:#3730a3;}
+        .rating-3{background:#dbeafe;color:#1d4ed8;}
+        .rating-35{background:#dcfce7;color:#166534;}
+        .rating-4{background:#fef3c7;color:#92400e;}
+        .rating-5plus{background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;}
+
+        /* Hour schedule blocks */
+        .hour-block{background:white;border-radius:12px;padding:12px 15px;margin-bottom:9px;border-left:4px solid #e2e8f0;}
+        .hour-block.has-players{border-left-color:#059669;}
+
+        /* Card */
+        .card{background:white;border-radius:14px;padding:15px 17px;margin-bottom:13px;box-shadow:0 2px 10px rgba(0,0,0,.06);}
+
+        /* Tabs */
+        .tab-bar{display:flex;background:#e2e8f0;border-radius:11px;padding:3px;margin-bottom:13px;}
+        .tab-btn{flex:1;padding:8px 4px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;border:none;background:transparent;color:#64748b;cursor:pointer;border-radius:8px;transition:all .2s;}
+        .tab-btn.active{background:white;color:#059669;box-shadow:0 1px 4px rgba(0,0,0,.1);}
+
+        /* Fields */
+        .field{width:100%;padding:10px 13px;font-size:15px;border-radius:9px;border:2px solid #e2e8f0;font-family:'Outfit',sans-serif;outline:none;background:white;transition:border-color .15s;}
+        .field:focus{border-color:#059669;}
+        select.field{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:17px;padding-right:36px;cursor:pointer;}
+        .flbl{font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;}
+
+        /* Duration buttons */
+        .dur-btn{flex:1;padding:9px 4px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;border:2px solid #e2e8f0;background:white;color:#64748b;cursor:pointer;transition:all .2s;border-radius:8px;}
+        .dur-btn.active{border-color:#059669;background:#f0fdf4;color:#059669;}
+        .dur-btn:hover:not(.active){border-color:#cbd5e1;background:#f8fafc;}
+
+        /* Flash message banner */
+        @keyframes flashSlide{from{transform:translateY(-8px);opacity:0}to{transform:translateY(0);opacity:1}}
+        .flash-banner{background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;padding:10px 17px;display:flex;align-items:center;gap:10px;animation:flashSlide .3s ease;}
+        .flash-banner-text{flex:1;font-size:13px;font-weight:600;line-height:1.4;}
+        .flash-banner-close{background:none;border:none;color:white;font-size:18px;cursor:pointer;opacity:.7;padding:0 4px;flex-shrink:0;}
+
+        /* Weather strip */
+        .weather-strip{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+        .weather-strip::-webkit-scrollbar{display:none;}
+        .weather-hour{display:flex;flex-direction:column;align-items:center;padding:7px 10px;min-width:58px;border-right:1px solid rgba(255,255,255,.15);flex-shrink:0;}
+        .weather-hour:last-child{border-right:none;}
+        .weather-hour.now{background:rgba(16,185,129,.25);border-radius:7px;}
+
+        /* Funny message */
+        @keyframes bounceIn{0%{transform:scale(0.5);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+        .funny-msg{animation:bounceIn .4s ease;}
+
+        /* Timer bar */
+        .timer-track{height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden;margin-top:6px;}
+        .timer-fill{height:100%;background:linear-gradient(90deg,#10b981,#059669);border-radius:2px;transition:width 1s linear;}
+
+        /* Nav */
+        .nav{background:#0f172a;padding:13px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;}
+
+        /* Page container */
+        .pg{padding:13px;max-width:740px;width:100%;margin:0 auto;}
+
+        /* Footer */
+        .footer{text-align:center;padding:18px 16px 24px;font-size:12px;color:#94a3b8;}
+
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+        .live-dot{width:7px;height:7px;background:#10b981;border-radius:50%;animation:pulse 2s infinite;display:inline-block;}
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        /* Edit modal */
+        .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:500;}
+        .modal-sheet{background:white;border-radius:20px 20px 0 0;width:100%;max-width:740px;padding:24px 20px 32px;max-height:90vh;overflow-y:auto;}
+
+        /* Amenity tags */
+        .amen-tag{display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;border:2px solid #e2e8f0;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;transition:all .15s;margin:3px;}
+        .amen-tag.on{background:#f0fdf4;border-color:#10b981;color:#059669;}
+
+        @media(max-width:380px){
+            .pg{padding:10px;}
+            .card{padding:13px 14px;}
+        }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState, useEffect, useRef} = React;
+
+// ── Firebase ──────────────────────────────────────────────────────────
+const FB = {
+    apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
+    authDomain:"pickleball-app-1bba7.firebaseapp.com",
+    projectId:"pickleball-app-1bba7",
+    storageBucket:"pickleball-app-1bba7.firebasestorage.app",
+    messagingSenderId:"645604154338",
+    appId:"1:645604154338:web:b92f87c2cd11d950b737bb"
+};
+let db = null, fbOk = false;
+try {
+    if (!firebase.apps.length) firebase.initializeApp(FB);
+    db = firebase.firestore();
+    fbOk = true;
+} catch(e) { console.error('Firebase:', e); }
+
+// ── URL param helper ──────────────────────────────────────────────────
+const getCourtId = () => new URLSearchParams(window.location.search).get('id');
+
+// ── Constants & Helpers ───────────────────────────────────────────────
+const RATINGS = [
+    {key:'under3',label:'<3.0',cls:'rating-u3'},
+    {key:'3to35',label:'3.0–3.5',cls:'rating-3'},
+    {key:'35to4',label:'3.5–4.0',cls:'rating-35'},
+    {key:'over4',label:'4.0+',cls:'rating-4'},
+    {key:'5plus',label:'5.0+',cls:'rating-5plus'},
+];
+const ratingInfo = key => RATINGS.find(r => r.key === key);
+
+const FUNNY_5PLUS = [
+    "Woah there! 🎾 Maybe try the ATP tour instead?",
+    "5.0+?! The courts are shaking in fear 😱",
+    "Legend detected 🏆 Our courts are calling their lawyer.",
+    "Okay hotshot 😤 Don't come crying when everyone refuses to play you!",
+    "5.0+ entered the chat... everyone else has left 😂",
+];
+const FUNNY_COMMENTS = [
+    "Ready to dink you into oblivion 😈",
+    "Here to body-bag anyone who lobs 🎯",
+    "Warning: I WILL poach your shot 🕵️",
+    "Brace yourselves, the spin king has arrived 👑",
+    "Just here for the vibes… and to destroy you 🫶",
+    "I've been watching YouTube tutorials all week — fear me 📹",
+    "My therapist said this was better than revenge 🧘",
+];
+const randFunnyComment = () => FUNNY_COMMENTS[Math.floor(Math.random() * FUNNY_COMMENTS.length)];
+
+const DURATION_OPTIONS = [
+    {label:'1 hr',value:60,funny:null},
+    {label:'2 hr',value:120,funny:null},
+    {label:'3 hr',value:180,funny:null},
+    {label:'4 hr',value:240,funny:'💧 4 hours?! Stay hydrated!'},
+    {label:'All Day',value:480,funny:'🌮 All day?! Say goodbye to your legs!'},
+];
+
+const AMENITIES = [
+    {key:'restrooms',label:'🚻 Restrooms'},
+    {key:'parking',label:'🅿️ Parking'},
+    {key:'lights',label:'💡 Lights'},
+    {key:'water',label:'💧 Water'},
+    {key:'benches',label:'🪑 Benches'},
+    {key:'shade',label:'⛱️ Shade'},
+    {key:'indoor',label:'🏢 Indoor'},
+    {key:'pro_shop',label:'🛒 Pro Shop'},
+];
+
+function buildTimeOptions() {
+    const opts = [];
+    const now = new Date();
+    const todayStart = new Date(now); todayStart.setMinutes(0,0,0); todayStart.setHours(todayStart.getHours()+1);
+    const todayEnd = new Date(now); todayEnd.setHours(23,0,0,0);
+    const cur = new Date(todayStart);
+    while (cur <= todayEnd) {
+        opts.push({label:cur.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}),value:cur.getTime()});
+        cur.setHours(cur.getHours()+1);
+    }
+    const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate()+1); tomorrow.setHours(6,0,0,0);
+    const tomorrowEnd = new Date(tomorrow); tomorrowEnd.setHours(22,0,0,0);
+    const tmr = new Date(tomorrow);
+    while (tmr <= tomorrowEnd) {
+        opts.push({label:tmr.toLocaleDateString([],{weekday:'short'})+' '+tmr.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}),value:tmr.getTime()});
+        tmr.setHours(tmr.getHours()+1);
+    }
+    return opts;
+}
+
+function groupByHour(players) {
+    const groups = {};
+    players.forEach(c => {
+        const ts = c.arrivalTime || c.timestamp;
+        const d = new Date(ts); d.setMinutes(0,0,0);
+        const key = d.getTime();
+        if (!groups[key]) groups[key] = {ts:key,players:[]};
+        groups[key].players.push(c);
+    });
+    return Object.values(groups).sort((a,b) => a.ts - b.ts);
+}
+
+function headcount(players) { return players.reduce((sum,p) => sum+1+(p.guests||0), 0); }
+const wIcon = (temp, wind) => wind > 20 ? '🌬️' : temp < 32 ? '🥶' : temp < 50 ? '🧥' : temp > 88 ? '☀️' : '⛅';
+
+// ── PlayTimer ─────────────────────────────────────────────────────────
+function PlayTimer({checkInTime, durationMins}) {
+    const [remaining, setRemaining] = useState(0);
+    useEffect(() => {
+        const calc = () => setRemaining(Math.max(0, checkInTime + durationMins*60000 - Date.now()));
+        calc(); const t = setInterval(calc, 10000); return () => clearInterval(t);
+    }, [checkInTime, durationMins]);
+    if (remaining <= 0) return <span style={{fontSize:11,color:'#ef4444',fontWeight:700}}>⏰ Time's up!</span>;
+    const mins = Math.ceil(remaining/60000), hrs = Math.floor(mins/60), m = mins%60;
+    const pct = Math.max(0, (remaining/(durationMins*60000))*100);
+    return (
+        <div style={{minWidth:80}}>
+            <span style={{fontSize:11,color:'#059669',fontWeight:700}}>⏱ {hrs>0?`${hrs}h `:''}{m}m left</span>
+            <div className="timer-track"><div className="timer-fill" style={{width:`${pct}%`}}/></div>
+        </div>
+    );
+}
+
+// ── PlayerRow ─────────────────────────────────────────────────────────
+function PlayerRow({p, isNow}) {
+    const ri = ratingInfo(p.rating);
+    const nowMs = Date.now();
+    const effectivelyNow = isNow || p.status==='now' || (p.status==='later'&&p.arrivalTime&&nowMs>=p.arrivalTime);
+    const arrLabel = p.status==='later'&&p.arrivalTime&&!effectivelyNow ? new Date(p.arrivalTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}) : null;
+    const guests = p.guests||0;
+    return (
+        <div className="player-item">
+            <div className="player-avatar">{(p.userName||'?')[0].toUpperCase()}</div>
+            <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:700,fontSize:14,color:'#0f172a',display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                    {p.userName}
+                    {guests>0&&<span style={{fontSize:11,fontWeight:700,color:'#7c3aed',background:'#ede9fe',borderRadius:10,padding:'1px 6px'}}>+{guests} guest{guests>1?'s':''}</span>}
+                    {ri&&<span className={`rating-badge ${ri.cls}`}>{ri.label}</span>}
+                </div>
+                <div style={{fontSize:12,color:'#64748b',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                    <span>{effectivelyNow?'🎾 Playing':arrLabel?`⏰ Arriving ${arrLabel}`:'👀 Watching'}</span>
+                    {effectivelyNow&&p.duration&&<PlayTimer checkInTime={p.timestamp} durationMins={p.duration}/>}
+                </div>
+                {p.comment&&(
+                    <div style={{fontSize:12,color:'#059669',fontStyle:'italic',marginTop:3,background:'#f0fdf4',borderRadius:7,padding:'3px 8px',display:'inline-block',maxWidth:'100%',wordBreak:'break-word'}}>
+                        💬 {p.comment}
+                    </div>
+                )}
+            </div>
+            <div style={{fontSize:10,color:'#cbd5e1',flexShrink:0}}>
+                {new Date(p.timestamp).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
+            </div>
+        </div>
+    );
+}
+
+// ── Edit Court Modal ──────────────────────────────────────────────────
+function EditCourtModal({court, onClose, onSaved}) {
+    const [name, setName] = useState(court.name||'');
+    const [address, setAddress] = useState(court.address||'');
+    const [numCourts, setNumCourts] = useState(court.numberOfCourts||4);
+    const [amenities, setAmenities] = useState(court.amenities||[]);
+    const [rules, setRules] = useState(court.courtRules||'');
+    const [saving, setSaving] = useState(false);
+    const [geoStatus, setGeoStatus] = useState(null);
+    const [geoFixing, setGeoFixing] = useState(false);
+    const [lat, setLat] = useState(court.lat||null);
+    const [lng, setLng] = useState(court.lng||null);
+    const geoDebounceRef = useRef(null);
+
+    const toggleAmenity = key => setAmenities(a => a.includes(key)?a.filter(x=>x!==key):[...a,key]);
+
+    const geocodeAddress = async (addr) => {
+        try {
+            const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1&addressdetails=1`);
+            const d = await r.json();
+            if (d.length) return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon), display: d[0].display_name };
+        } catch(e) {}
+        return null;
+    };
+
+    // Auto-geocode when address changes, debounced 900ms
+    const handleAddressChange = (val) => {
+        setAddress(val);
+        setGeoStatus(null);
+        if (geoDebounceRef.current) clearTimeout(geoDebounceRef.current);
+        if (!val.trim() || val.trim().length < 8) return;
+        geoDebounceRef.current = setTimeout(async () => {
+            setGeoFixing(true);
+            const geo = await geocodeAddress(val.trim());
+            if (geo) {
+                setLat(geo.lat);
+                setLng(geo.lng);
+                setGeoStatus({ok:true, msg:`📍 Auto-located: ${geo.lat.toFixed(4)}, ${geo.lng.toFixed(4)}`});
+            } else {
+                setGeoStatus({ok:false, msg:'Could not auto-locate. Try clicking Fix Location.'});
+            }
+            setGeoFixing(false);
+        }, 900);
+    };
+
+    const fixCoords = async () => {
+        const addrToGeo = address.trim() || court.address;
+        if (!addrToGeo) { setGeoStatus({ok:false,msg:'No address to geocode.'}); return; }
+        setGeoFixing(true);
+        setGeoStatus(null);
+        const geo = await geocodeAddress(addrToGeo);
+        if (geo) {
+            setLat(geo.lat);
+            setLng(geo.lng);
+            setGeoStatus({ok:true, msg:`📍 Found: ${geo.lat.toFixed(4)}, ${geo.lng.toFixed(4)}`});
+        } else {
+            setGeoStatus({ok:false, msg:'Could not geocode this address. Try a more specific address.'});
+        }
+        setGeoFixing(false);
+    };
+
+    const save = async () => {
+        if (!name.trim()) { alert('Court name required.'); return; }
+        setSaving(true);
+        try {
+            const updates = {
+                name: name.trim(),
+                address: address.trim(),
+                numberOfCourts: numCourts,
+                amenities,
+                courtRules: rules.trim(),
+            };
+            if (lat && lng) { updates.lat = lat; updates.lng = lng; }
+            await db.collection('courts').doc(court.id).update(updates);
+            onSaved({...court, ...updates});
+        } catch(e) { alert('Save failed: '+e.message); }
+        setSaving(false);
+    };
+
+    const hasCoords = !!(lat && lng && lat !== 0 && lng !== 0);
+    const coordsLookSuspicious = hasCoords && Math.abs(lat - (court.lat||0)) < 0.0001 && Math.abs(lng - (court.lng||0)) < 0.0001 && court.lat === 0;
+
+    return (
+        <div className="modal-bg" onClick={e=>{if(e.target.className==='modal-bg')onClose();}}>
+            <div className="modal-sheet">
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
+                    <div className="fd" style={{fontSize:26,fontWeight:800,color:'#0f172a'}}>EDIT COURT</div>
+                    <button onClick={onClose} style={{background:'none',border:'none',fontSize:26,cursor:'pointer',color:'#94a3b8',lineHeight:1}}>×</button>
+                </div>
+                <div style={{marginBottom:14}}>
+                    <span className="flbl">Court Name *</span>
+                    <input className="field" value={name} onChange={e=>setName(e.target.value)}/>
+                </div>
+                <div style={{marginBottom:14}}>
+                    <span className="flbl">Address</span>
+                    <input className="field" value={address} onChange={e=>handleAddressChange(e.target.value)} placeholder="e.g. 123 Main St, Springfield, IL"/>
+                </div>
+                {/* Coordinates row */}
+                <div style={{marginBottom:14,background:'#f8fafc',border:'2px solid',borderColor:geoFixing?'#fbbf24':hasCoords&&lat!==0?'#a7f3d0':'#fca5a5',borderRadius:10,padding:'12px 14px'}}>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}>
+                        <div>
+                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:2}}>📍 Coordinates</div>
+                            {geoFixing
+                                ? <div style={{fontSize:13,color:'#d97706',fontWeight:600}}>⏳ Auto-locating…</div>
+                                : hasCoords && lat !== 0
+                                    ? <div style={{fontSize:13,color:'#059669',fontWeight:600}}>{lat.toFixed(5)}, {lng.toFixed(5)}</div>
+                                    : <div style={{fontSize:13,color:'#ef4444',fontWeight:600}}>⚠️ Missing — type address above to auto-locate</div>
+                            }
+                            {geoStatus && !geoFixing && (
+                                <div style={{fontSize:12,color:geoStatus.ok?'#059669':'#ef4444',marginTop:4,fontWeight:600}}>{geoStatus.msg}</div>
+                            )}
+                        </div>
+                        <button onClick={fixCoords} disabled={geoFixing} style={{background:'linear-gradient(135deg,#3b82f6,#60a5fa)',color:'white',border:'none',borderRadius:8,padding:'9px 16px',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:700,cursor:'pointer',flexShrink:0,opacity:geoFixing?.6:1}}>
+                            {geoFixing ? '⏳ Locating…' : '🔧 Fix Location'}
+                        </button>
+                    </div>
+                </div>
+                <div style={{marginBottom:14}}>
+                    <span className="flbl">Number of Courts</span>
+                    <div style={{display:'flex',alignItems:'center',gap:12}}>
+                        <button onClick={()=>setNumCourts(n=>Math.max(1,n-1))} style={{width:38,height:38,background:'#f1f5f9',border:'2px solid #e2e8f0',borderRadius:9,fontSize:20,cursor:'pointer',fontWeight:700}}>−</button>
+                        <span style={{fontSize:24,fontWeight:800,fontFamily:'Barlow Condensed,sans-serif',color:'#0f172a',minWidth:32,textAlign:'center'}}>{numCourts}</span>
+                        <button onClick={()=>setNumCourts(n=>Math.min(30,n+1))} style={{width:38,height:38,background:'linear-gradient(135deg,#059669,#10b981)',border:'none',borderRadius:9,fontSize:20,cursor:'pointer',fontWeight:700,color:'white'}}>+</button>
+                    </div>
+                </div>
+                <div style={{marginBottom:14}}>
+                    <span className="flbl">Amenities</span>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:2}}>
+                        {AMENITIES.map(a=>(
+                            <button key={a.key} className={`amen-tag ${amenities.includes(a.key)?'on':''}`} onClick={()=>toggleAmenity(a.key)}>{a.label}</button>
+                        ))}
+                    </div>
+                </div>
+                <div style={{marginBottom:22}}>
+                    <span className="flbl">Court Rules / Notes</span>
+                    <textarea className="field" value={rules} onChange={e=>setRules(e.target.value)} rows={3} style={{resize:'vertical'}}/>
+                </div>
+                <button className="btn-g" onClick={save} disabled={saving} style={{width:'100%',padding:14,fontSize:16}}>
+                    {saving?'⏳ Saving…':'💾 Save Changes'}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// ── Main Court Page ───────────────────────────────────────────────────
+// ── Feedback Modal ────────────────────────────────────────────────────
+function FeedbackModal({onClose, courtId}) {
+    const [name, setName] = React.useState('');
+    const [email, setEmail] = React.useState('');
+    const [type, setType] = React.useState('general');
+    const [rating, setRating] = React.useState(0);
+    const [hoverRating, setHoverRating] = React.useState(0);
+    const [msg, setMsg] = React.useState('');
+    const [busy, setBusy] = React.useState(false);
+    const [done, setDone] = React.useState(false);
+
+    const submit = async () => {
+        if (!msg.trim()) { alert('Please enter a message.'); return; }
+        setBusy(true);
+        try {
+            if (fbOk && db) {
+                await db.collection('feedback').add({
+                    name: name.trim() || 'Anonymous', email: email.trim() || '', type, rating,
+                    message: msg.trim(), page: 'court', courtId: courtId || '', timestamp: Date.now(),
+                    createdAt: new Date().toISOString()
+                });
+            }
+        } catch(e) {}
+        setBusy(false);
+        setDone(true);
+        setTimeout(() => { setDone(false); onClose(); }, 2200);
+    };
+    const types = [['general','💬 General'],['bug','🐛 Bug'],['feature','💡 Feature'],['compliment','⭐ Compliment']];
+    return (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:16}}>
+            <div style={{background:'white',borderRadius:20,padding:28,maxWidth:460,width:'100%',boxShadow:'0 24px 64px rgba(0,0,0,.25)',maxHeight:'90vh',overflowY:'auto'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:26,fontWeight:800,color:'#0f172a'}}>💬 SEND FEEDBACK</div>
+                    <button onClick={onClose} style={{background:'none',border:'none',fontSize:26,cursor:'pointer',color:'#94a3b8',lineHeight:1}}>×</button>
+                </div>
+                {done ? (
+                    <div style={{textAlign:'center',padding:'32px 0'}}>
+                        <div style={{fontSize:48,marginBottom:12}}>🎉</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:18,fontWeight:700,color:'#059669'}}>Thanks for your feedback!</div>
+                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:14,color:'#64748b',marginTop:6}}>We really appreciate it.</div>
+                    </div>
+                ) : (
+                    <div style={{display:'flex',flexDirection:'column',gap:16}}>
+                        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                            <div>
+                                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>Name (optional)</div>
+                                <input style={{width:'100%',padding:'10px 13px',fontSize:14,border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',outline:'none'}} value={name} onChange={e=>setName(e.target.value)} placeholder="Your name"/>
+                            </div>
+                            <div>
+                                <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>Email (optional)</div>
+                                <input type="email" style={{width:'100%',padding:'10px 13px',fontSize:14,border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',outline:'none'}} value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@email.com"/>
+                            </div>
+                        </div>
+                        <div>
+                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Feedback Type</div>
+                            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                                {types.map(([v,l])=>(
+                                    <button key={v} onClick={()=>setType(v)} style={{padding:'8px 14px',border:'2px solid '+(type===v?'#059669':'#e2e8f0'),borderRadius:99,background:type===v?'#f0fdf4':'white',color:type===v?'#059669':'#64748b',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:600,cursor:'pointer'}}>
+                                        {l}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Overall Rating</div>
+                            <div style={{display:'flex',gap:4}}>
+                                {[1,2,3,4,5].map(s=>(
+                                    <button key={s} onClick={()=>setRating(s)} onMouseEnter={()=>setHoverRating(s)} onMouseLeave={()=>setHoverRating(0)} style={{background:'none',border:'none',fontSize:28,cursor:'pointer',opacity:s<=(hoverRating||rating)?1:.3}}>⭐</button>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>Message *</div>
+                            <textarea style={{width:'100%',padding:'10px 13px',fontSize:14,border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',outline:'none',resize:'vertical',minHeight:90}} value={msg} onChange={e=>setMsg(e.target.value)} placeholder="Tell us what's on your mind…"/>
+                        </div>
+                        <button onClick={submit} disabled={busy} style={{background:'linear-gradient(135deg,#059669,#10b981)',color:'white',border:'none',borderRadius:10,padding:'14px',fontFamily:'Outfit,sans-serif',fontSize:15,fontWeight:700,cursor:'pointer',width:'100%',boxShadow:'0 4px 12px rgba(5,150,105,.3)'}}>
+                            {busy ? '⏳ Sending…' : '📤 Send Feedback'}
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── GroupMe Integration ───────────────────────────────────────────────
+const GROUPME_BOT_KEY = 'pickleGroupMeBotId';
+
+async function postGroupMe(text, botId) {
+    if (!botId) return;
+    try {
+        await fetch('https://api.groupme.com/v3/bots/post', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bot_id: botId, text })
+        });
+    } catch(e) {
+        console.warn('GroupMe post failed:', e);
+    }
+}
+
+function buildCheckInMsg(name, status, guests, courtName, nowPlaying, nowLater, openCourts, arrivalTime) {
+    const nameStr = name + (guests > 0 ? ` (+${guests} guest${guests !== 1 ? 's' : ''})` : '');
+    const action = status === 'active' ? 'is playing at' : 'is heading to';
+    const arrivalLabel = (status === 'later' && arrivalTime)
+        ? new Date(arrivalTime).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})
+        : null;
+    const line1 = arrivalLabel
+        ? `${nameStr} ${action} ${courtName} at ${arrivalLabel}`
+        : `${nameStr} ${action} ${courtName}`;
+    return [
+        line1,
+        `🎾 ${nowPlaying} player${nowPlaying !== 1 ? 's' : ''} playing now`,
+        `📅 ${nowLater} arriving soon  🏟 ${openCourts} court${openCourts !== 1 ? 's' : ''} rotating`,
+    ].join('\n');
+}
+
+function buildCheckOutMsg(name, courtName, nowPlaying, nowLater, openCourts) {
+    return [
+        `👋 ${name} left ${courtName}`,
+        `🎾 ${nowPlaying} player${nowPlaying !== 1 ? 's' : ''} playing now`,
+        `📅 ${nowLater} arriving soon  🏟 ${openCourts} court${openCourts !== 1 ? 's' : ''} rotating`,
+    ].join('\n');
+}
+
+function buildStatusMsg(courtName, field, value) {
+    const labels = {
+        condition: { open: '✅ Courts Open', closed: '🚫 Courts Closed', wet: '💧 Courts Wet', hot: '🥵 Very Hot', windy: '🌬️ Windy Conditions' },
+        crowdLevel: { low: '🟢 Light crowd (0–12)', medium: '🟡 Busy (12–24)', high: '🔴 Packed (24+)' },
+    };
+    const map = labels[field];
+    if (!map) return null;
+    const label = map[value];
+    if (!label) return null;
+    return `${label} at ${courtName}`;
+}
+
+function applyPlaceholders(template, {name='', court='', players='', courts=''}) {
+    return template
+        .replace(/\{name\}/g, name)
+        .replace(/\{court\}/g, court)
+        .replace(/\{players\}/g, players)
+        .replace(/\{courts\}/g, courts);
+}
+
+// Fire a GroupMe event for a given trigger type, using event_rules from Firestore if available
+async function fireGroupMeEvent(courtId, trigger, defaultMsg, placeholders) {
+    if (!fbOk || !db || !courtId) return;
+
+    // Get bot config from Firestore only — no localStorage fallback
+    // (localStorage would bleed Court A's bot into Court B)
+    const botDoc = await db.collection('groupme_bots').doc(courtId).get().catch(()=>null);
+    const botCfg = botDoc?.exists ? botDoc.data() : null;
+    if (!botCfg?.enabled || !botCfg?.botId) return; // this court has no bot configured
+
+    const botId = botCfg.botId;
+
+    // Check if an event rule exists for this specific trigger on this court
+    const rulesSnap = await db.collection('groupme_bots').doc(courtId).collection('event_rules')
+        .where('trigger','==',trigger).where('enabled','==',true).get().catch(()=>null);
+
+    // Only fire if an explicit event rule exists for this trigger
+    if (!rulesSnap || rulesSnap.empty) return;
+
+    const rule = rulesSnap.docs[0].data();
+    const msg = rule.customMsg ? applyPlaceholders(rule.customMsg, placeholders||{}) : defaultMsg;
+    if (msg) await postGroupMe(msg, botId);
+}
+
+function GroupMeSettingsModal({onClose}) {
+    const [botId, setBotId] = React.useState(localStorage.getItem(GROUPME_BOT_KEY)||'');
+    const [testing, setTesting] = React.useState(false);
+    const [testResult, setTestResult] = React.useState(null);
+
+    const save = () => {
+        localStorage.setItem(GROUPME_BOT_KEY, botId.trim());
+        onClose();
+    };
+
+    const test = async () => {
+        const id = botId.trim();
+        if (!id) { setTestResult({ok:false,msg:'Enter a Bot ID first'}); return; }
+        setTesting(true);
+        setTestResult(null);
+        try {
+            const r = await fetch('https://api.groupme.com/v3/bots/post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bot_id: id, text: '🎾 PickleConnect connected! Court updates will now post here automatically.' })
+            });
+            setTestResult(r.ok || r.status === 202 || r.status === 200
+                ? {ok:true, msg:'✅ Test message sent! Check your GroupMe group.'}
+                : {ok:false, msg:`Error ${r.status} — double-check your Bot ID`});
+        } catch(e) {
+            setTestResult({ok:false, msg:'Network error — check Bot ID and try again'});
+        }
+        setTesting(false);
+    };
+
+    return (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:16}}>
+            <div style={{background:'white',borderRadius:20,padding:28,maxWidth:440,width:'100%',boxShadow:'0 24px 64px rgba(0,0,0,.25)'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:24,fontWeight:800,color:'#0f172a'}}>💬 GROUPME BOT</div>
+                    <button onClick={onClose} style={{background:'none',border:'none',fontSize:26,cursor:'pointer',color:'#94a3b8',lineHeight:1}}>×</button>
+                </div>
+                <div style={{fontFamily:'Outfit,sans-serif',fontSize:13,color:'#64748b',marginBottom:20,lineHeight:1.5}}>
+                    Auto-post check-ins & court updates to your GroupMe group.
+                </div>
+
+                <div style={{background:'#f0fdf4',border:'1px solid #a7f3d0',borderRadius:12,padding:'14px 16px',marginBottom:20,fontFamily:'Outfit,sans-serif',fontSize:13,color:'#065f46',lineHeight:1.6}}>
+                    <strong>How to get a Bot ID:</strong><br/>
+                    1. Go to <a href="https://dev.groupme.com/bots" target="_blank" style={{color:'#059669'}}>dev.groupme.com/bots</a><br/>
+                    2. Click <strong>Create Bot</strong><br/>
+                    3. Select your pickleball group<br/>
+                    4. Name it (e.g. "PickleConnect") → Submit<br/>
+                    5. Copy the <strong>Bot ID</strong> and paste below
+                </div>
+
+                <div style={{marginBottom:12}}>
+                    <div style={{fontSize:11,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>Bot ID</div>
+                    <input
+                        value={botId}
+                        onChange={e=>{ setBotId(e.target.value); setTestResult(null); }}
+                        placeholder="e.g. abc123def456..."
+                        style={{width:'100%',padding:'11px 14px',fontSize:14,border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',outline:'none',fontFamily:'monospace'}}
+                    />
+                </div>
+
+                {testResult && (
+                    <div style={{padding:'10px 14px',borderRadius:10,background:testResult.ok?'#f0fdf4':'#fef2f2',border:'1px solid '+(testResult.ok?'#a7f3d0':'#fca5a5'),fontFamily:'Outfit,sans-serif',fontSize:13,color:testResult.ok?'#065f46':'#b91c1c',marginBottom:12}}>
+                        {testResult.msg}
+                    </div>
+                )}
+
+                <div style={{display:'flex',gap:10}}>
+                    <button onClick={test} disabled={testing||!botId.trim()} style={{flex:1,padding:'12px',background:'white',border:'2px solid #e2e8f0',borderRadius:10,fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:700,color:'#475569',cursor:'pointer',opacity:testing||!botId.trim()?.5:1}}>
+                        {testing ? '⏳ Testing…' : '🧪 Test'}
+                    </button>
+                    <button onClick={save} style={{flex:1,padding:'12px',background:'linear-gradient(135deg,#059669,#10b981)',color:'white',border:'none',borderRadius:10,fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:700,cursor:'pointer',boxShadow:'0 4px 12px rgba(5,150,105,.3)'}}>
+                        💾 Save
+                    </button>
+                </div>
+                {botId && (
+                    <button onClick={()=>{localStorage.removeItem(GROUPME_BOT_KEY);setBotId('');}} style={{width:'100%',marginTop:10,padding:'10px',background:'none',border:'1px solid #fca5a5',borderRadius:10,color:'#ef4444',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:600,cursor:'pointer'}}>
+                        🗑️ Disconnect GroupMe
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function CourtPage() {
+    const courtId = getCourtId();
+    const [courtData,   setCourtData]   = useState(null);
+    const [checkIns,    setCheckIns]    = useState([]);
+    const [loading,     setLoading]     = useState(true);
+    const [tab,         setTab]         = useState('now');
+    const [showForm,    setShowForm]    = useState(false);
+    const [userName,    setUserName]    = useState('');
+    const [userRating,  setUserRating]  = useState('');
+    const [arrivalTime, setArrivalTime] = useState('');
+    const [showLaterTime,setShowLaterTime]=useState(false);
+    const [duration,    setDuration]    = useState(120);
+    const [guestCount,  setGuestCount]  = useState(0);
+    const [comment,     setComment]     = useState('');
+    const [funnyMsg,    setFunnyMsg]    = useState('');
+    const [durationFunny,setDurationFunny]=useState('');
+    const [guestFunny,  setGuestFunny]  = useState('');
+    const [weather,     setWeather]     = useState(null);
+    const [forecast,    setForecast]    = useState([]);
+    const [wxUpdated,   setWxUpdated]   = useState(null);
+    const [flashMsg,    setFlashMsg]    = useState('');
+    const [flashDismissed, setFlashDismissed] = useState(false);
+    const [flashInput,  setFlashInput]  = useState('');
+    const [showEdit,    setShowEdit]    = useState(false);
+    const [showFB,      setShowFB]      = useState(false);
+    const [showGroupMe, setShowGroupMe] = useState(false);
+    const [showTotalEdit,setShowTotalEdit]=useState(false);
+    const [newTotal,    setNewTotal]    = useState('');
+    const [tick,        setTick]        = useState(0);
+
+    const checkInsRef = useRef([]);
+
+    // Device identity
+    const [deviceId] = useState(() => {
+        let id = localStorage.getItem('pickleDeviceId');
+        if (!id) { id = 'dev_'+Math.random().toString(36).slice(2,11); localStorage.setItem('pickleDeviceId',id); }
+        return id;
+    });
+
+    useEffect(() => {
+        const n = localStorage.getItem('pickleCourtUserName');
+        const r = localStorage.getItem('pickleCourtRating');
+        if (n) setUserName(n);
+        if (r) setUserRating(r);
+    }, []);
+
+    // Tick every minute for auto-promote
+    useEffect(() => {
+        const t = setInterval(() => setTick(n=>n+1), 60000);
+        return () => clearInterval(t);
+    }, []);
+
+    // Load court data
+    useEffect(() => {
+        if (!courtId || !fbOk || !db) { setLoading(false); return; }
+        const unsub = db.collection('courts').doc(courtId).onSnapshot(doc => {
+            if (doc.exists) {
+                const data = {id:doc.id,...doc.data()};
+                setCourtData(data);
+                localStorage.setItem('lastCourtId', doc.id);
+                localStorage.setItem('lastCourtName', data.name);
+                if (data.flashMsg && data.flashMsgTime && (Date.now()-data.flashMsgTime) < 4*3600000) {
+                    setFlashMsg(prev => {
+                        // If the message changed, reset dismissed so new message shows
+                        if (prev !== data.flashMsg) setFlashDismissed(false);
+                        return data.flashMsg;
+                    });
+                } else { setFlashMsg(''); }
+            } else {
+                setCourtData(null);
+            }
+            setLoading(false);
+        }, () => setLoading(false));
+        return () => unsub();
+    }, [courtId]);
+
+    // Load check-ins (subcollection)
+    useEffect(() => {
+        if (!courtId || !fbOk || !db) return;
+        const unsub = db.collection('courts').doc(courtId).collection('checkins')
+            .onSnapshot(snap => {
+                const now = Date.now(), cutoff = now - 24*3600000;
+                // Delete any checked-out or stale docs we encounter
+                snap.docs.forEach(d => {
+                    const c = d.data();
+                    if (c.status === 'checked-out') {
+                        d.ref.delete().catch(()=>{});
+                    }
+                });
+                const list = snap.docs.map(d=>({id:d.id,...d.data()}))
+                    .filter(c => c.status !== 'checked-out' && c.timestamp > cutoff)
+                    .sort((a,b) => (a.arrivalTime||a.timestamp)-(b.arrivalTime||b.timestamp));
+                checkInsRef.current = list;
+                setCheckIns(list);
+            }, err => console.warn('Checkins:', err.message));
+        return () => unsub();
+    }, [courtId]);
+
+    // Auto-checkout / auto-promote interval
+    useEffect(() => {
+        if (!courtId || !fbOk || !db) return;
+        const tick = async () => {
+            const now = Date.now(), list = checkInsRef.current;
+            for (const c of list) {
+                const startTime = c.status==='active' ? c.timestamp : c.arrivalTime;
+                const expired = c.duration && startTime && now > startTime + c.duration*60000;
+                // Delete expired active check-ins
+                if (c.status==='active' && expired) {
+                    await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).delete().catch(()=>{});
+                    continue;
+                }
+                // Also delete expired 'later' check-ins (in case promotion failed)
+                if (c.status==='later' && expired) {
+                    await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).delete().catch(()=>{});
+                    continue;
+                }
+                // Clean up stale checked-out docs
+                if (c.status==='checked-out' && c.timestamp && now > c.timestamp + 10*60000) {
+                    await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).delete().catch(()=>{});
+                    continue;
+                }
+                // Promote 'later' to 'active' when arrival time is reached
+                if (c.status==='later' && c.arrivalTime && now >= c.arrivalTime) {
+                    await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).update({status:'active',timestamp:now}).catch(()=>{});
+                }
+            }
+        };
+        tick();
+        const t = setInterval(tick, 15000);
+        return () => clearInterval(t);
+    }, [courtId]);
+
+    // Weather (use court lat/lng when available)
+    useEffect(() => {
+        if (!courtData?.lat || !courtData?.lng) return;
+        fetchWeather(courtData.lat, courtData.lng);
+        const t = setInterval(() => fetchWeather(courtData.lat, courtData.lng), 3600000);
+        return () => clearInterval(t);
+    }, [courtData?.lat, courtData?.lng]);
+
+    const fetchWeather = async (lat, lng) => {
+        try {
+            const pointRes = await fetch(`https://api.weather.gov/points/${lat},${lng}`,{headers:{'User-Agent':'PickleCourtConnect/2.0'}});
+            const pointData = await pointRes.json();
+            const fxRes = await fetch(pointData.properties.forecastHourly,{headers:{'User-Agent':'PickleCourtConnect/2.0'}});
+            const fxData = await fxRes.json();
+            const periods = fxData.properties.periods, cur = periods[0];
+            const windGust = cur.windGust?parseInt(cur.windGust):null;
+            setWeather({temp:cur.temperature,wind:parseInt(cur.windSpeed),gust:windGust,desc:cur.shortForecast});
+            setWxUpdated(new Date());
+            setForecast(periods.slice(0,12).map(p=>({dt:new Date(p.startTime),temp:p.temperature,wind:parseInt(p.windSpeed),gust:p.windGust?parseInt(p.windGust):null,desc:p.shortForecast})));
+        } catch(e) {
+            try {
+                const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,wind_gusts_10m&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1`);
+                const d = await r.json();
+                setWeather({temp:Math.round(d.current.temperature_2m),wind:Math.round(d.current.wind_speed_10m),gust:d.current.wind_gusts_10m?Math.round(d.current.wind_gusts_10m):null});
+                setWxUpdated(new Date());
+                const now = new Date();
+                setForecast(d.hourly.time.map((t,i)=>({dt:new Date(t),temp:Math.round(d.hourly.temperature_2m[i]),wind:Math.round(d.hourly.wind_speed_10m[i]),gust:d.hourly.wind_gusts_10m[i]?Math.round(d.hourly.wind_gusts_10m[i]):null})).filter(h=>h.dt>=now&&h.dt.getDate()===now.getDate()));
+            } catch(e2) {}
+        }
+    };
+
+    const updateCourt = async (field, value) => {
+        if (!fbOk || !db || !courtId) return;
+        await db.collection('courts').doc(courtId).update({[field]:value,lastUpdate:firebase.firestore.FieldValue.serverTimestamp()}).catch(console.error);
+        // GroupMe notifications for status changes
+        const cName = courtData?.name||'Court';
+        const openC = courtData?.openCourts !== undefined ? courtData.openCourts : (courtData?.numberOfCourts||4);
+        const players = String(checkInsRef.current.filter(c=>c.status==='active').length||0);
+        const courts = String(openC);
+        if (field === 'condition') {
+            const triggerMap = {closed:'status_closed', open:'status_open', wet:'status_wet'};
+            const trigger = triggerMap[value];
+            if (trigger) {
+                const defaultMsg = buildStatusMsg(cName, field, value);
+                if (defaultMsg) fireGroupMeEvent(courtId, trigger, defaultMsg, {court:cName, players, courts});
+            }
+        } else if (field === 'lightsOn') {
+            const trigger = value ? 'lights_on' : 'lights_off';
+            const defaultMsg = value ? `💡 Lights are ON at ${cName}` : `🌙 Lights are OFF at ${cName}`;
+            fireGroupMeEvent(courtId, trigger, defaultMsg, {court:cName, players, courts});
+        } else if (field === 'crowdLevel') {
+            const crowdTriggerMap = {high:'crowd_high', low:'crowd_low'};
+            const crowdTrigger = crowdTriggerMap[value];
+            if (crowdTrigger) {
+                const defaultMsg = buildStatusMsg(cName, field, value);
+                if (defaultMsg) fireGroupMeEvent(courtId, crowdTrigger, defaultMsg, {court:cName, players, courts});
+            }
+        }
+    };
+
+    const saveFlashMsg = async () => {
+        const msg = flashInput.trim();
+        await db.collection('courts').doc(courtId).update({flashMsg:msg,flashMsgTime:msg?Date.now():null,lastUpdate:firebase.firestore.FieldValue.serverTimestamp()});
+        setFlashInput('');
+        // GroupMe notification for flash announcements
+        if (msg) {
+            const cName = courtData?.name||'Court';
+            const defaultMsg = `📣 ${cName} Announcement:\n${msg}`;
+            fireGroupMeEvent(courtId, 'flash', defaultMsg, {court:cName});
+        }
+    };
+
+    const clearFlashMsg = async () => {
+        await db.collection('courts').doc(courtId).update({flashMsg:'',flashMsgTime:null,lastUpdate:firebase.firestore.FieldValue.serverTimestamp()});
+    };
+
+    const handleTotalSave = async () => {
+        const n = parseInt(newTotal);
+        if (!n||n<1||n>30) { alert('Enter a number 1–30'); return; }
+        const open = Math.min(courtData.openCourts||n, n);
+        await db.collection('courts').doc(courtId).update({numberOfCourts:n,openCourts:open,lastUpdate:firebase.firestore.FieldValue.serverTimestamp()});
+        setShowTotalEdit(false); setNewTotal('');
+    };
+
+    const deleteMyCheckIns = async () => {
+        const snap = await db.collection('courts').doc(courtId).collection('checkins').get();
+        const mine = snap.docs.filter(d => d.data().deviceId===deviceId);
+        await Promise.all(mine.map(d => d.ref.delete()));
+    };
+
+    const submitCheckIn = async (status, atTime) => {
+        if (!fbOk || !db) { alert('Database not available'); return; }
+        try {
+            await deleteMyCheckIns();
+            const ciStatus = status==='now' ? 'active' : 'later';
+            await db.collection('courts').doc(courtId).collection('checkins').add({
+                userName, deviceId,
+                rating: userRating||null,
+                status: ciStatus,
+                guests: guestCount,
+                duration,
+                comment: comment.trim()||'',
+                arrivalTime: atTime||Date.now(),
+                timestamp: Date.now(),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            localStorage.setItem('pickleCourtUserName', userName);
+            localStorage.setItem('pickleCourtRating', userRating);
+            setShowForm(false); setArrivalTime(''); setShowLaterTime(false); setGuestCount(0); setFunnyMsg(''); setDurationFunny(''); setGuestFunny(''); setComment('');
+            // GroupMe notification
+            const newPlayingCount = ciStatus === 'active' ? nowTotal + 1 + guestCount : nowTotal;
+            const newLaterCount = ciStatus === 'later' ? laterTotal + 1 + guestCount : laterTotal;
+            const openC = courtData?.openCourts !== undefined ? courtData.openCourts : (courtData?.numberOfCourts||4);
+            const cName = courtData?.name||'the court';
+            const defaultMsg = buildCheckInMsg(userName, ciStatus, guestCount, cName, newPlayingCount, newLaterCount, openC, atTime);
+            fireGroupMeEvent(courtId, 'checkin', defaultMsg, {name:userName, court:cName, players:String(newPlayingCount), courts:String(openC)});
+        } catch(e) { alert('Check-in failed: '+e.message); }
+    };
+
+    const handleCheckOut = async () => {
+        if (!fbOk || !db) return;
+        const name = myCheckIn?.userName || userName;
+        const openC = courtData?.openCourts !== undefined ? courtData.openCourts : (courtData?.numberOfCourts||4);
+        const cName = courtData?.name||'the court';
+        const remainingPlaying = Math.max(0, nowTotal - 1 - (myCheckIn?.guests||0));
+        await deleteMyCheckIns();
+        if (name) {
+            const defaultMsg = buildCheckOutMsg(name, cName, remainingPlaying, laterTotal, openC);
+            fireGroupMeEvent(courtId, 'checkout', defaultMsg, {name, court:cName, players:String(remainingPlaying), courts:String(openC)});
+        }
+    };
+
+    const handleRatingChange = val => {
+        setUserRating(val);
+        if (val==='5plus') setFunnyMsg(FUNNY_5PLUS[Math.floor(Math.random()*FUNNY_5PLUS.length)]);
+        else setFunnyMsg('');
+    };
+
+    const handleDurationChange = val => {
+        setDuration(val);
+        const opt = DURATION_OPTIONS.find(d=>d.value===val);
+        setDurationFunny(opt?.funny||'');
+    };
+
+    const handleGuestChange = delta => {
+        const next = Math.max(0, Math.min(20, guestCount+delta));
+        setGuestCount(next);
+        if (next>4) {
+            const msgs = [`${next} guests?! 🎉 Better bring extra balls!`, `Wow, ${next} guests! The courts are nervous 😅`, `${next} people?! This is a TAKEOVER 🏟️`];
+            setGuestFunny(msgs[Math.floor(Math.random()*msgs.length)]);
+        } else setGuestFunny('');
+    };
+
+    // ── Derived state ─────────────────────────────────────────────────
+    if (loading) return (
+        <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh'}}>
+            <div style={{textAlign:'center'}}>
+                <div style={{width:42,height:42,border:'4px solid #e2e8f0',borderTop:'4px solid #059669',borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto 10px'}}/>
+                <div style={{color:'#64748b',fontSize:14}}>Loading court…</div>
+            </div>
+        </div>
+    );
+
+    if (!courtId || !courtData) return (
+        <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',flexDirection:'column',gap:12}}>
+            <div style={{fontSize:48}}>🏟️</div>
+            <div style={{fontSize:18,fontWeight:700,color:'#374151'}}>Court not found</div>
+            <a href="index.html" style={{color:'#059669',fontSize:14,fontWeight:600}}>← Back to courts</a>
+        </div>
+    );
+
+    const nowMs = Date.now();
+    const myCheckIn = checkIns.find(c => c.deviceId===deviceId);
+    const nowPlayers = checkIns.filter(c => c.status==='active' || (c.status==='later'&&c.arrivalTime&&nowMs>=c.arrivalTime));
+    const laterPlayers = checkIns.filter(c => c.status==='later'&&(!c.arrivalTime||nowMs<c.arrivalTime));
+    const nowTotal = headcount(nowPlayers), laterTotal = headcount(laterPlayers);
+    const schedule = groupByHour(laterPlayers);
+    const timeOpts = buildTimeOptions();
+    const total = courtData.numberOfCourts||4;
+    const open = courtData.openCourts!==undefined ? courtData.openCourts : total;
+    const openOpts = Array.from({length:total+1},(_,i)=>i);
+    const crowdColor = courtData.crowdLevel==='low'?'green':courtData.crowdLevel==='medium'?'yellow':'red';
+    const crowdEmoji = courtData.crowdLevel==='low'?'🟢':courtData.crowdLevel==='medium'?'🟡':'🔴';
+    const crowdNum = courtData.crowdLevel==='low'?'0–12':courtData.crowdLevel==='medium'?'12–24':'24+';
+    const condMap = {closed:{e:'🚫',l:'Closed',c:'red'},wet:{e:'💧',l:'Wet',c:'yellow'},hot:{e:'🥵',l:'Hot',c:'yellow'},windy:{e:'🌬️',l:'Windy',c:'yellow'}};
+
+    return (
+        <div style={{minHeight:'100vh',background:'#f1f5f9',display:'flex',flexDirection:'column'}}>
+            {/* ── NAV ── */}
+            <div className="nav">
+                <button onClick={()=>window.location.href='index.html'} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontSize:22,padding:'2px 6px',lineHeight:1}}>←</button>
+                <div className="fd" style={{fontSize:22,fontWeight:800,flex:1,cursor:'pointer'}} onClick={()=>window.location.href='index.html'}>
+                    <span style={{color:'white'}}>PICKLE</span><span style={{color:'#34d399'}}>CONNECT</span>
+                </div>
+            </div>
+
+            {/* ── HEADER ── */}
+            <div className="hero-bg" style={{padding:'15px 17px 13px'}}>
+                <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:10}}>
+                    <div>
+                        <div className="fd" style={{fontSize:24,fontWeight:800,color:'white',letterSpacing:.3,lineHeight:1.1}}>{courtData.name}</div>
+                        <div style={{fontSize:12,color:'#6ee7b7',marginTop:4,display:'flex',alignItems:'center',gap:6,overflow:'hidden'}}>
+                            <span className="live-dot" style={{flexShrink:0}}/> <span style={{whiteSpace:'nowrap'}}>Live ·</span> <a href={`https://maps.google.com/?q=${encodeURIComponent(courtData.address||courtData.name)}`} target="_blank" rel="noopener noreferrer" style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:'#6ee7b7',textDecoration:'none'}}>📍 {courtData.address}</a>
+                        </div>
+                        {courtData.amenities?.length>0 && (
+                            <div style={{display:'flex',gap:5,flexWrap:'wrap',marginTop:8}}>
+                                {courtData.amenities.slice(0,4).map(k => {
+                                    const a = {restrooms:'🚻',parking:'🅿️',lights:'💡',water:'💧',benches:'🪑',shade:'⛱️',indoor:'🏢',pro_shop:'🛒'};
+                                    return <span key={k} style={{fontSize:12,background:'rgba(255,255,255,.12)',borderRadius:6,padding:'2px 7px',color:'#e2e8f0'}}>{a[k]||k}</span>;
+                                })}
+                                {courtData.amenities.length>4 && <span style={{fontSize:12,color:'#6ee7b7'}}>+{courtData.amenities.length-4} more</span>}
+                            </div>
+                        )}
+                    </div>
+                    {/* address only, no weather corner widget */}
+                </div>
+
+                {/* Hourly forecast */}
+                {forecast.length>0&&(
+                    <div style={{background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.2)',borderRadius:10,overflow:'hidden',marginBottom:10}}>
+                        <div className="weather-strip">
+                            {forecast.map((h,i)=>(
+                                <div key={i} className={`weather-hour${i===0?' now':''}`}>
+                                    <div style={{fontSize:10,fontWeight:700,color:'#6ee7b7',marginBottom:1}}>{i===0?'Now':h.dt.toLocaleTimeString([],{hour:'numeric'})}</div>
+                                    <div style={{fontSize:13,lineHeight:1}}>{wIcon(h.temp,h.wind)}</div>
+                                    <div style={{fontSize:14,fontWeight:800,color:'white'}}>{h.temp}°</div>
+                                    <div style={{fontSize:10,display:'flex',alignItems:'center',gap:2}}><span>💨</span><span style={{color:'#7dd3fc',fontWeight:700}}>{h.wind}</span></div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Last update */}
+                {courtData.lastUpdate&&(
+                    <div style={{fontSize:10,color:'#6ee7b7',marginBottom:10,textAlign:'center'}}>
+                        Status updated: {new Date(courtData.lastUpdate.seconds*1000).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
+                    </div>
+                )}
+
+                {/* Flash banner */}
+                {flashMsg&&!flashDismissed&&(
+                    <div className="flash-banner" style={{borderRadius:10,marginBottom:10}}>
+                        <span style={{fontSize:18}}>📣</span>
+                        <div className="flash-banner-text">{flashMsg}</div>
+                        <button className="flash-banner-close" onClick={()=>setFlashDismissed(true)} title="Dismiss (only for you)">×</button>
+                    </div>
+                )}
+
+                {/* Status pills */}
+                <div className="status-bar">
+                    <div className={`status-pill ${nowTotal>0?'green':''}`}>
+                        👥
+                        <div><div className="pill-label">Playing</div><div className="pill-val">{nowTotal}</div></div>
+                    </div>
+                    <div className={`status-pill ${laterTotal>0?'green':''}`}>
+                        <span style={{fontSize:13}}>⏰</span>
+                        <div><div className="pill-label">Coming</div><div className="pill-val">{laterTotal}</div></div>
+                    </div>
+                    {courtData.condition&&courtData.condition!=='open'&&condMap[courtData.condition]&&(
+                        <div className={`status-pill ${condMap[courtData.condition].c}`}>
+                            <span style={{fontSize:13}}>{condMap[courtData.condition].e}</span>
+                            <div><div className="pill-label">Court</div><div className="pill-val">{condMap[courtData.condition].l}</div></div>
+                        </div>
+                    )}
+                    <div className={`status-pill ${crowdColor}`}>
+                        <span style={{fontSize:13}}>{crowdEmoji}</span>
+                        <div><div className="pill-label">Crowd</div><div className="pill-val">{crowdNum}</div></div>
+                    </div>
+                    <div className={`status-pill ${courtData.lightsOn?'dark':'yellow'}`}>
+                        <span style={{fontSize:13,color:courtData.lightsOn?'#fbbf24':''}}>{courtData.lightsOn?'💡':'🌙'}</span>
+                        <div><div className="pill-label" style={{color:courtData.lightsOn?'#94a3b8':''}}>Lights</div><div className="pill-val" style={{color:courtData.lightsOn?'white':''}}>{courtData.lightsOn?'ON':'OFF'}</div></div>
+                    </div>
+                    <div className={`status-pill ${open>0?'green':'red'}`} style={{flexShrink:0}}>
+                        <div style={{display:'flex',flexDirection:'column',gap:3}}>
+                            <div className="pill-label">Rotation</div>
+                            <div style={{display:'flex',gap:3,flexWrap:'wrap',maxWidth:120}}>
+                                {Array.from({length:Math.min(total,8)}).map((_,i)=>(
+                                    <div key={i} style={{
+                                        width:14,height:14,borderRadius:3,
+                                        background: i < open ? '#059669' : '#e2e8f0',
+                                        display:'flex',alignItems:'center',justifyContent:'center',
+                                        fontSize:8,lineHeight:1,transition:'background .2s'
+                                    }}>
+                                        {i < open ? '🎾' : ''}
+                                    </div>
+                                ))}
+                            </div>
+                            <div style={{fontSize:10,fontWeight:700,color: open>0?'#059669':'#ef4444'}}>{open}/{total} rotating</div>
+                        </div>
+                    </div>
+                    {courtData.restroom&&courtData.restroom!=='open'&&(
+                        <div className="status-pill red"><span style={{fontSize:13}}>🚫</span><div><div className="pill-label">Restroom</div><div className="pill-val">Closed</div></div></div>
+                    )}
+                    {courtData.parking&&courtData.parking==='full'&&(
+                        <div className="status-pill yellow"><span style={{fontSize:13}}>🚗</span><div><div className="pill-label">Parking</div><div className="pill-val">Full</div></div></div>
+                    )}
+                </div>
+            </div>
+
+            {/* ── BODY ── */}
+            <div style={{flex:1}}>
+                <div className="pg">
+                    <div className="tab-bar">
+                        <button className={`tab-btn${tab==='now'?' active':''}`} onClick={()=>setTab('now')}>👥 Now ({nowTotal})</button>
+                        <button className={`tab-btn${tab==='schedule'?' active':''}`} onClick={()=>setTab('schedule')}>📅 Schedule ({laterTotal})</button>
+                        <button className={`tab-btn${tab==='controls'?' active':''}`} onClick={()=>setTab('controls')}>⚙️ Controls</button>
+                        <button className={`tab-btn${tab==='info'?' active':''}`} onClick={()=>setTab('info')}>ℹ️ Info</button>
+                    </div>
+
+                    {/* ── TAB: NOW ── */}
+                    {tab==='now'&&(
+                        <div className="card">
+                            <div className="fd" style={{fontSize:19,fontWeight:800,color:'#0f172a',marginBottom:12}}>👥 WHO'S HERE?</div>
+                            {myCheckIn?(
+                                <div style={{background:'linear-gradient(135deg,#f0fdf4,#dcfce7)',border:'2px solid #10b981',borderRadius:12,padding:'12px 15px',marginBottom:14}}>
+                                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}}>
+                                        <div>
+                                            <div style={{fontSize:13,fontWeight:700,color:'#059669',marginBottom:3}}>
+                                                ✅ Checked in as <strong>{myCheckIn.userName}</strong>
+                                                {ratingInfo(myCheckIn.rating)&&<span className={`rating-badge ${ratingInfo(myCheckIn.rating).cls}`} style={{marginLeft:6}}>{ratingInfo(myCheckIn.rating).label}</span>}
+                                            </div>
+                                            <div style={{fontSize:12,color:'#047857'}}>
+                                                {(myCheckIn.status==='active'||(myCheckIn.status==='later'&&myCheckIn.arrivalTime&&nowMs>=myCheckIn.arrivalTime))
+                                                    ?'🎾 Playing':`⏰ Arriving ${new Date(myCheckIn.arrivalTime).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}`}
+                                            </div>
+                                        </div>
+                                        <button className="btn-red" onClick={handleCheckOut}>Check Out</button>
+                                    </div>
+                                </div>
+                            ):(
+                                !showForm?(
+                                    <div style={{background:'linear-gradient(135deg,#f8fafc,#f1f5f9)',border:'2px dashed #cbd5e1',borderRadius:12,padding:'18px',marginBottom:14,textAlign:'center'}}>
+                                        <div style={{fontSize:14,color:'#64748b',marginBottom:12}}>Let others know you're here!</div>
+                                        <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>
+                                            <button className="btn-g" onClick={()=>setShowForm(true)}>🏟️ Check In</button>
+                                        </div>
+                                    </div>
+                                ):(
+                                    <div style={{background:'#f8fafc',border:'2px solid #e2e8f0',borderRadius:12,padding:'16px',marginBottom:14}}>
+                                        <div style={{marginBottom:12}}>
+                                            <span className="flbl">Your Name *</span>
+                                            <input className="field" value={userName} onChange={e=>setUserName(e.target.value)} placeholder="Enter your name…"/>
+                                        </div>
+                                        <div style={{marginBottom:12}}>
+                                            <span className="flbl">Skill Level</span>
+                                            <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                                                {RATINGS.map(r=>(
+                                                    <button key={r.key} onClick={()=>handleRatingChange(r.key)}
+                                                        style={{padding:'6px 12px',borderRadius:8,border:`2px solid ${userRating===r.key?'#059669':'#e2e8f0'}`,background:userRating===r.key?'#f0fdf4':'white',fontFamily:'Outfit,sans-serif',fontSize:13,fontWeight:700,cursor:'pointer',color:userRating===r.key?'#059669':'#64748b'}}>
+                                                        {r.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            {funnyMsg&&<div className="funny-msg" style={{marginTop:8,background:'#fef3c7',border:'1px solid #fcd34d',borderRadius:8,padding:'8px 12px',fontSize:13,color:'#92400e'}}>{funnyMsg}</div>}
+                                        </div>
+                                        <div style={{marginBottom:12}}>
+                                            <span className="flbl">How Long?</span>
+                                            <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                                                {DURATION_OPTIONS.map(d=>(
+                                                    <button key={d.value} className={`dur-btn${duration===d.value?' active':''}`} onClick={()=>handleDurationChange(d.value)}>{d.label}</button>
+                                                ))}
+                                            </div>
+                                            {durationFunny&&<div className="funny-msg" style={{marginTop:8,background:'#f0fdf4',border:'1px solid #a7f3d0',borderRadius:8,padding:'8px 12px',fontSize:13,color:'#065f46'}}>{durationFunny}</div>}
+                                        </div>
+                                        <div style={{marginBottom:12}}>
+                                            <span className="flbl">Guests</span>
+                                            <div style={{display:'flex',alignItems:'center',gap:10}}>
+                                                <button onClick={()=>handleGuestChange(-1)} style={{width:34,height:34,background:'#f1f5f9',border:'2px solid #e2e8f0',borderRadius:8,fontSize:18,cursor:'pointer',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center'}}>−</button>
+                                                <span style={{fontSize:18,fontWeight:800,fontFamily:'Barlow Condensed,sans-serif',minWidth:24,textAlign:'center'}}>{guestCount}</span>
+                                                <button onClick={()=>handleGuestChange(1)} style={{width:34,height:34,background:'linear-gradient(135deg,#059669,#10b981)',border:'none',borderRadius:8,fontSize:18,cursor:'pointer',fontWeight:700,color:'white',display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
+                                            </div>
+                                            {guestFunny&&<div className="funny-msg" style={{marginTop:8,background:'#f3e8ff',border:'1px solid #c4b5fd',borderRadius:8,padding:'8px 12px',fontSize:13,color:'#4c1d95'}}>{guestFunny}</div>}
+                                        </div>
+                                        <div style={{marginBottom:14}}>
+                                            <span className="flbl">Comment <span style={{fontWeight:500,textTransform:'none',letterSpacing:0,color:'#94a3b8'}}>(optional)</span></span>
+                                            <div style={{position:'relative'}}>
+                                                <input className="field" value={comment} onChange={e=>setComment(e.target.value)} placeholder="e.g. looking for a 3rd or 4th…" maxLength={120}/>
+                                                <button onClick={()=>setComment(randFunnyComment())} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',fontSize:15,opacity:.5}} title="Surprise me">🎲</button>
+                                            </div>
+                                        </div>
+                                        {!showLaterTime?(
+                                            <div style={{display:'flex',gap:8}}>
+                                                <button className="btn-g" onClick={()=>submitCheckIn('now',null)} disabled={!userName.trim()} style={{flex:1}}>👥 Playing Now</button>
+                                                <button className="btn-out" onClick={()=>setShowLaterTime(true)} disabled={!userName.trim()}>⏰ Later</button>
+                                                <button onClick={()=>setShowForm(false)} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontFamily:'Outfit,sans-serif',fontSize:13,padding:'0 8px'}}>Cancel</button>
+                                            </div>
+                                        ):(
+                                            <div>
+                                                <span className="flbl">Arrival Time</span>
+                                                <select className="field" value={arrivalTime} onChange={e=>setArrivalTime(e.target.value)} style={{marginBottom:10}}>
+                                                    <option value="">Select time…</option>
+                                                    {timeOpts.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+                                                </select>
+                                                <div style={{display:'flex',gap:8}}>
+                                                    <button className="btn-g" onClick={()=>{if(!arrivalTime){alert('Select a time');return;}submitCheckIn('later',parseInt(arrivalTime));}} disabled={!userName.trim()||!arrivalTime} style={{flex:1}}>✓ Confirm</button>
+                                                    <button onClick={()=>setShowLaterTime(false)} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontFamily:'Outfit,sans-serif',fontSize:13,padding:'0 8px'}}>Back</button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )
+                            )}
+
+                            {nowPlayers.length>0?(
+                                nowPlayers.map(p=><PlayerRow key={p.id} p={p} isNow={true}/>)
+                            ):(
+                                <div style={{textAlign:'center',padding:'24px 0',color:'#94a3b8',fontSize:14}}>
+                                    No one here yet — be the first! 🎾
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ── TAB: SCHEDULE ── */}
+                    {tab==='schedule'&&(
+                        <div className="card">
+                            <div className="fd" style={{fontSize:19,fontWeight:800,color:'#0f172a',marginBottom:12}}>📅 COMING SOON ({laterTotal} players)</div>
+                            {schedule.length===0?(
+                                <div style={{textAlign:'center',padding:'24px 0',color:'#94a3b8',fontSize:14}}>Nobody scheduled yet.</div>
+                            ):(
+                                schedule.map(group=>(
+                                    <div key={group.ts} className={`hour-block has-players`}>
+                                        <div style={{fontSize:13,fontWeight:800,color:'#059669',marginBottom:8}}>
+                                            ⏰ {new Date(group.ts).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})} · {headcount(group.players)} coming
+                                        </div>
+                                        {group.players.map(p=><PlayerRow key={p.id} p={p} isNow={false}/>)}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
+
+                    {/* ── TAB: CONTROLS ── */}
+                    {tab==='controls'&&(
+                        <div>
+                            {/* Flash Announcement */}
+                            <div className="card" style={{marginBottom:12,borderLeft:'4px solid #7c3aed'}}>
+                                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
+                                    <div style={{width:36,height:36,borderRadius:10,background:'linear-gradient(135deg,#7c3aed,#a855f7)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>📣</div>
+                                    <div>
+                                        <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:16,fontWeight:800,color:'#0f172a',letterSpacing:.3}}>FLASH ANNOUNCEMENT</div>
+                                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,color:'#64748b'}}>Broadcast a message to all visitors</div>
+                                    </div>
+                                </div>
+                                {flashMsg&&(
+                                    <div style={{background:'linear-gradient(135deg,#f5f3ff,#ede9fe)',border:'1px solid #c4b5fd',borderRadius:10,padding:'10px 14px',fontSize:14,fontWeight:600,color:'#4c1d95',marginBottom:10,lineHeight:1.4,display:'flex',gap:8,alignItems:'flex-start'}}>
+                                        <span>📣</span><span style={{flex:1}}>{flashMsg}</span>
+                                    </div>
+                                )}
+                                <div style={{display:'flex',gap:8}}>
+                                    <input className="field" value={flashInput} onChange={e=>setFlashInput(e.target.value)} placeholder={flashMsg?'Update message…':'e.g. Court 3 is closed today'} style={{flex:1,fontSize:14}} onKeyDown={e=>{if(e.key==='Enter'&&flashInput.trim())saveFlashMsg();}}/>
+                                    <button className="btn-g" onClick={saveFlashMsg} disabled={!flashInput.trim()} style={{padding:'10px 16px',fontSize:13,flexShrink:0}}>{flashMsg?'Update':'Post'}</button>
+                                    {flashMsg&&<button onClick={clearFlashMsg} style={{padding:'10px 12px',borderRadius:9,border:'2px solid #e2e8f0',background:'white',color:'#94a3b8',fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'Outfit,sans-serif',flexShrink:0}} title="Remove announcement for everyone">🗑️ Remove</button>}
+                                </div>
+                            </div>
+
+                            {/* Status Grid */}
+                            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                                {/* Crowd Level */}
+                                <div className="card" style={{borderLeft:'4px solid '+(courtData.crowdLevel==='high'?'#ef4444':courtData.crowdLevel==='medium'?'#f59e0b':'#10b981'),marginBottom:0}}>
+                                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+                                        <span style={{fontSize:20}}>{courtData.crowdLevel==='high'?'🔴':courtData.crowdLevel==='medium'?'🟡':'🟢'}</span>
+                                        <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:14,fontWeight:800,color:'#0f172a',letterSpacing:.3}}>CROWD LEVEL</div>
+                                    </div>
+                                    <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                                        {[['low','🟢 Light','0–12 people'],['medium','🟡 Busy','12–24 people'],['high','🔴 Packed','24+ people']].map(([v,label,sub])=>(
+                                            <button key={v} onClick={()=>updateCourt('crowdLevel',v)} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',borderRadius:8,border:'2px solid '+(courtData.crowdLevel===v?'#059669':'#e2e8f0'),background:courtData.crowdLevel===v?'#f0fdf4':'white',cursor:'pointer',textAlign:'left',transition:'all .15s'}}>
+                                                <span style={{fontSize:14}}>{label.split(' ')[0]}</span>
+                                                <div style={{minWidth:0}}>
+                                                    <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,color:courtData.crowdLevel===v?'#059669':'#374151'}}>{label.slice(3)}</div>
+                                                    <div style={{fontFamily:'Outfit,sans-serif',fontSize:10,color:'#94a3b8'}}>{sub}</div>
+                                                </div>
+                                                {courtData.crowdLevel===v&&<span style={{marginLeft:'auto',color:'#059669',fontSize:14}}>✓</span>}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Court Condition */}
+                                <div className="card" style={{borderLeft:'4px solid '+(courtData.condition==='closed'?'#ef4444':courtData.condition&&courtData.condition!=='open'?'#f59e0b':'#10b981'),marginBottom:0}}>
+                                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+                                        <span style={{fontSize:20}}>{courtData.condition==='closed'?'🚫':courtData.condition==='wet'?'💧':courtData.condition==='hot'?'🥵':courtData.condition==='windy'?'🌬️':'✅'}</span>
+                                        <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:14,fontWeight:800,color:'#0f172a',letterSpacing:.3}}>CONDITION</div>
+                                    </div>
+                                    <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                                        {[['open','✅','Open'],['closed','🚫','Closed'],['wet','💧','Wet'],['hot','🥵','Hot'],['windy','🌬️','Windy']].map(([v,icon,label])=>(
+                                            <button key={v} onClick={()=>updateCourt('condition',v)} style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',borderRadius:8,border:'2px solid '+((courtData.condition||'open')===v?'#059669':'#e2e8f0'),background:(courtData.condition||'open')===v?'#f0fdf4':'white',cursor:'pointer',textAlign:'left',transition:'all .15s'}}>
+                                                <span style={{fontSize:14,flexShrink:0}}>{icon}</span>
+                                                <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,color:(courtData.condition||'open')===v?'#059669':'#374151',flex:1}}>{label}</div>
+                                                {(courtData.condition||'open')===v&&<span style={{color:'#059669',fontSize:14}}>✓</span>}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Courts in Rotation */}
+                            <div className="card" style={{marginBottom:10,borderLeft:'4px solid #3b82f6'}}>
+                                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
+                                    <div style={{width:36,height:36,borderRadius:10,background:'linear-gradient(135deg,#3b82f6,#60a5fa)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>🏟️</div>
+                                    <div style={{flex:1}}>
+                                        <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:16,fontWeight:800,color:'#0f172a',letterSpacing:.3}}>COURTS IN ROTATION</div>
+                                        <div style={{fontFamily:'Outfit,sans-serif',fontSize:12,color:'#64748b'}}>Courts currently active for play</div>
+                                    </div>
+                                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:28,fontWeight:800,color:'#3b82f6'}}>{open}<span style={{fontSize:16,color:'#94a3b8'}}>/{total}</span></div>
+                                </div>
+                                <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                                    {openOpts.map(n=>(
+                                        <button key={n} onClick={()=>updateCourt('openCourts',n)} style={{minWidth:48,padding:'9px 8px',border:'2px solid '+(open===n?'#3b82f6':'#e2e8f0'),borderRadius:8,background:open===n?'#eff6ff':'white',color:open===n?'#3b82f6':'#64748b',fontFamily:'Outfit,sans-serif',fontSize:14,fontWeight:700,cursor:'pointer',transition:'all .15s',textAlign:'center'}}>{n}</button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Total Courts + Lights + Restroom + Parking in a grid */}
+                            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                                {/* Total Courts */}
+                                <div className="card" style={{marginBottom:0,borderLeft:'4px solid #0f172a'}}>
+                                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:14,fontWeight:800,color:'#0f172a',letterSpacing:.3,marginBottom:8}}>🏗️ TOTAL COURTS</div>
+                                    {showTotalEdit?(
+                                        <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                                            <input type="number" min="1" max="30" className="field" value={newTotal} onChange={e=>setNewTotal(e.target.value)} style={{flex:1,padding:'8px 10px',fontSize:15}}/>
+                                            <button className="btn-g" onClick={handleTotalSave} style={{padding:'8px 12px',fontSize:13,flexShrink:0}}>✓</button>
+                                            <button onClick={()=>setShowTotalEdit(false)} style={{padding:'8px 10px',background:'none',border:'2px solid #e2e8f0',borderRadius:8,color:'#94a3b8',cursor:'pointer',fontFamily:'Outfit,sans-serif',fontSize:12,flexShrink:0}}>✕</button>
+                                        </div>
+                                    ):(
+                                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                                            <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:36,fontWeight:800,color:'#0f172a'}}>{total}</div>
+                                            <button onClick={()=>{setShowTotalEdit(true);setNewTotal(String(total));}} style={{background:'#f0fdf4',border:'1px solid #10b981',borderRadius:8,padding:'6px 12px',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:600,color:'#059669',cursor:'pointer'}}>✏️ Edit</button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Lights */}
+                                <div className="card" style={{marginBottom:0,borderLeft:'4px solid '+(courtData.lightsOn?'#f59e0b':'#94a3b8')}}>
+                                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:14,fontWeight:800,color:'#0f172a',letterSpacing:.3,marginBottom:8}}>💡 LIGHTS</div>
+                                    <div style={{display:'flex',border:'2px solid #e2e8f0',borderRadius:10,overflow:'hidden'}}>
+                                        <button onClick={()=>updateCourt('lightsOn',true)} style={{flex:1,padding:'10px 8px',background:courtData.lightsOn?'#f59e0b':'white',color:courtData.lightsOn?'white':'#94a3b8',border:'none',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',transition:'all .15s'}}>💡 ON</button>
+                                        <button onClick={()=>updateCourt('lightsOn',false)} style={{flex:1,padding:'10px 8px',background:!courtData.lightsOn?'#1e293b':'white',color:!courtData.lightsOn?'white':'#94a3b8',border:'none',borderLeft:'1px solid #e2e8f0',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',transition:'all .15s'}}>🌙 OFF</button>
+                                    </div>
+                                </div>
+
+                                {/* Restrooms */}
+                                <div className="card" style={{marginBottom:0,borderLeft:'4px solid '+((courtData.restroom||'open')==='open'?'#10b981':'#ef4444')}}>
+                                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:14,fontWeight:800,color:'#0f172a',letterSpacing:.3,marginBottom:8}}>🚻 RESTROOMS</div>
+                                    <div style={{display:'flex',border:'2px solid #e2e8f0',borderRadius:10,overflow:'hidden'}}>
+                                        <button onClick={()=>updateCourt('restroom','open')} style={{flex:1,padding:'10px 8px',background:(courtData.restroom||'open')==='open'?'#10b981':'white',color:(courtData.restroom||'open')==='open'?'white':'#94a3b8',border:'none',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',transition:'all .15s'}}>✅ Open</button>
+                                        <button onClick={()=>updateCourt('restroom','closed')} style={{flex:1,padding:'10px 8px',background:courtData.restroom==='closed'?'#ef4444':'white',color:courtData.restroom==='closed'?'white':'#94a3b8',border:'none',borderLeft:'1px solid #e2e8f0',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',transition:'all .15s'}}>🚫 Closed</button>
+                                    </div>
+                                </div>
+
+                                {/* Parking */}
+                                <div className="card" style={{marginBottom:0,borderLeft:'4px solid '+((courtData.parking||'available')==='available'?'#059669':'#ef4444')}}>
+                                    <div style={{fontFamily:'Barlow Condensed,sans-serif',fontSize:14,fontWeight:800,color:'#0f172a',letterSpacing:.3,marginBottom:8}}>🅿️ PARKING</div>
+                                    <div style={{display:'flex',border:'2px solid #e2e8f0',borderRadius:10,overflow:'hidden'}}>
+                                        <button onClick={()=>updateCourt('parking','available')} style={{flex:1,padding:'10px 8px',background:(courtData.parking||'available')==='available'?'#059669':'white',color:(courtData.parking||'available')==='available'?'white':'#94a3b8',border:'none',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',transition:'all .15s'}}>✅ Available</button>
+                                        <button onClick={()=>updateCourt('parking','full')} style={{flex:1,padding:'10px 8px',background:courtData.parking==='full'?'#ef4444':'white',color:courtData.parking==='full'?'white':'#94a3b8',border:'none',borderLeft:'1px solid #e2e8f0',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',transition:'all .15s'}}>🚗 Full</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── TAB: INFO ── */}
+                    {tab==='info'&&(
+                        <div className="card">
+                            <div className="fd" style={{fontSize:19,fontWeight:800,color:'#0f172a',marginBottom:16}}>ℹ️ COURT INFO</div>
+                            <div style={{marginBottom:14}}>
+                                <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:6}}>Location</div>
+                                <div style={{fontSize:15,color:'#1e293b',fontWeight:600}}>{courtData.name}</div>
+                                <div style={{fontSize:13,color:'#64748b'}}>{courtData.address}</div>
+                                <a href={`https://maps.google.com/?q=${encodeURIComponent(courtData.address)}`} target="_blank" rel="noopener noreferrer" style={{display:'inline-block',marginTop:8,color:'#059669',fontSize:13,fontWeight:600,textDecoration:'none'}}>
+                                    🗺️ Open in Google Maps →
+                                </a>
+                            </div>
+                            <div style={{marginBottom:14}}>
+                                <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:6}}>Courts</div>
+                                <div style={{fontSize:24,fontWeight:800,fontFamily:'Barlow Condensed,sans-serif',color:'#0f172a'}}>{total} courts</div>
+                            </div>
+                            {courtData.amenities?.length>0&&(
+                                <div style={{marginBottom:14}}>
+                                    <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:8}}>Amenities</div>
+                                    <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                                        {courtData.amenities.map(k=>{
+                                            const a = AMENITIES.find(x=>x.key===k);
+                                            return a ? <span key={k} style={{background:'#f0fdf4',border:'1px solid #a7f3d0',borderRadius:8,padding:'5px 11px',fontSize:13,fontWeight:600,color:'#059669'}}>{a.label}</span> : null;
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                            {courtData.courtRules&&(
+                                <div>
+                                    <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:6}}>Rules & Notes</div>
+                                    <div style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:10,padding:'12px',fontSize:14,color:'#374151',lineHeight:1.6,whiteSpace:'pre-wrap'}}>{courtData.courtRules}</div>
+                                </div>
+                            )}
+                            <button onClick={()=>setShowEdit(true)} className="btn-out" style={{marginTop:18,width:'100%'}}>✏️ Edit Court Info</button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{textAlign:'center',padding:'20px 16px 28px',fontSize:12,color:'#94a3b8',borderTop:'1px solid #e2e8f0',marginTop:8,background:'white'}}>
+                <a href="tournament.html" style={{display:'inline-flex',alignItems:'center',gap:8,background:'linear-gradient(135deg,#7c3aed,#a855f7)',color:'white',padding:'10px 20px',borderRadius:10,fontWeight:700,fontSize:13,textDecoration:'none',boxShadow:'0 4px 12px rgba(124,58,237,.3)',marginBottom:14}}>
+                    🏆 Open Tournament Generator
+                </a>
+                <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:12,flexWrap:'wrap',fontSize:12,color:'#94a3b8'}}>
+                    <span>© 2025 PickleConnect. All rights reserved.</span>
+                    <span>·</span>
+                    <span>Built for pickleball players</span>
+                    <span>·</span>
+                    <button onClick={()=>setShowFB(true)} style={{background:'none',border:'none',color:'#059669',fontFamily:'Outfit,sans-serif',fontSize:12,fontWeight:700,cursor:'pointer',padding:0}}>💬 Feedback</button>
+                </div>
+            </div>
+
+            {/* Edit modal */}
+            {showEdit&&<EditCourtModal court={courtData} onClose={()=>setShowEdit(false)} onSaved={c=>{setCourtData(c);setShowEdit(false);}}/> }
+            {showFB&&<FeedbackModal onClose={()=>setShowFB(false)} courtId={courtId}/>}
+            {showGroupMe&&<GroupMeSettingsModal onClose={()=>setShowGroupMe(false)}/>}
+        </div>
+    );
+}
+
+ReactDOM.render(<CourtPage/>, document.getElementById('root'));
+</script>
+<script src="nav.js"></script>
+</body>
+</html>
