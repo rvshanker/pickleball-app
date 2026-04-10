@@ -26,16 +26,31 @@
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes checkBounce{0%{transform:scale(0)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
-        @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
         @keyframes slideDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
 
         .live-dot{width:7px;height:7px;background:#10b981;border-radius:50%;animation:pulse 2s infinite;display:inline-block;}
+
+        /* Table styles */
+        .report-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;}
+        .report-table thead th{
+            text-align:left;padding:8px 10px;font-size:10px;font-weight:700;
+            color:#64748b;text-transform:uppercase;letter-spacing:.5px;
+            border-bottom:1px solid #334155;background:#0f172a;position:sticky;top:0;
+        }
+        .report-table tbody td{
+            padding:9px 10px;border-bottom:1px solid #1e293b;color:#cbd5e1;vertical-align:top;
+        }
+        .report-table tbody tr:last-child td{border-bottom:none;}
+        .report-table tbody tr:hover td{background:rgba(16,185,129,.05);}
+        .report-table .name-cell{font-weight:700;color:#e2e8f0;white-space:nowrap;}
+        .report-table .time-cell{color:#64748b;font-size:11px;white-space:nowrap;text-align:right;}
+        .report-table .comment-cell{color:#94a3b8;font-size:12px;font-style:italic;max-width:180px;}
     </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const {useState, useEffect, useRef, useCallback} = React;
+const {useState, useEffect, useRef} = React;
 
 // ── Firebase ──────────────────────────────────────────────────────────
 const FB = {
@@ -77,10 +92,39 @@ async function fireGroupMeCourtReport(courtId, message) {
     await postGroupMe(message, botCfg.botId);
 }
 
+// ── Constants ─────────────────────────────────────────────────────────
+const PLAYER_OPTIONS = [
+    { value: '0',     label: 'Empty',   emoji: '🏜️', desc: 'No one here' },
+    { value: '1-4',   label: '1–4',     emoji: '👤', desc: 'Light' },
+    { value: '5-8',   label: '5–8',     emoji: '👥', desc: 'Some games' },
+    { value: '9-12',  label: '9–12',    emoji: '🎾', desc: 'Busy' },
+    { value: '13-20', label: '13–20',   emoji: '🔥', desc: 'Packed' },
+    { value: '20+',   label: '20+',     emoji: '🤯', desc: 'Full house' },
+];
+
+const WIND_OPTIONS = [
+    { value: 'calm',        label: 'Calm',        emoji: '😌', desc: 'No wind' },
+    { value: 'light',       label: 'Light',       emoji: '🍃', desc: 'Barely noticeable' },
+    { value: 'moderate',    label: 'Moderate',    emoji: '💨', desc: 'Noticeable but playable' },
+    { value: 'strong',      label: 'Strong',      emoji: '🌬️', desc: 'Affecting play' },
+    { value: 'very_strong', label: 'Very Strong', emoji: '🌪️', desc: 'Hard to play' },
+];
+
+const QUICK_COMMENTS = [
+    "Courts are in great shape!",
+    "Nets need adjustment",
+    "Surface is wet/damp",
+    "Great vibe today!",
+    "Need more players!",
+    "Lines are faded",
+    "Puddles on some courts",
+    "Perfect playing conditions",
+];
+
 // ── Main App ──────────────────────────────────────────────────────────
 function App() {
     const courtId = getCourtId();
-    const [step, setStep] = useState(0); // 0=name, 1=players, 2=wind, 3=submitting, 4=done
+    const [step, setStep] = useState(0); // 0=name, 1=players, 2=wind, 3=comment, 4=submitting, 5=done
     const [courtData, setCourtData] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -88,18 +132,17 @@ function App() {
     const [name, setName] = useState('');
     const [playerCount, setPlayerCount] = useState(null);
     const [windCondition, setWindCondition] = useState(null);
+    const [comment, setComment] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [recentReports, setRecentReports] = useState([]);
 
     const nameRef = useRef(null);
 
-    // Restore name from localStorage
     useEffect(() => {
         const saved = localStorage.getItem('pickleCourtUserName');
         if (saved) setName(saved);
     }, []);
 
-    // Load court data
     useEffect(() => {
         if (!courtId || !fbOk || !db) { setLoading(false); return; }
         const unsub = db.collection('courts').doc(courtId).onSnapshot(doc => {
@@ -110,10 +153,9 @@ function App() {
         return () => unsub();
     }, [courtId]);
 
-    // Load recent reports (live)
     useEffect(() => {
         if (!courtId || !fbOk || !db) return;
-        const cutoff = Date.now() - 4 * 3600000; // last 4 hours
+        const cutoff = Date.now() - 4 * 3600000;
         const unsub = db.collection('courts').doc(courtId).collection('court_reports')
             .orderBy('timestamp','desc')
             .limit(10)
@@ -126,34 +168,16 @@ function App() {
         return () => unsub();
     }, [courtId]);
 
-    // Focus name input on mount
     useEffect(() => {
         if (step === 0 && nameRef.current && !name) {
             setTimeout(() => nameRef.current?.focus(), 300);
         }
     }, [step]);
 
-    const PLAYER_OPTIONS = [
-        { value: '0',     label: 'Empty',   emoji: '🏜️', desc: 'No one here' },
-        { value: '1-4',   label: '1–4',     emoji: '👤', desc: 'Light' },
-        { value: '5-8',   label: '5–8',     emoji: '👥', desc: 'Some games' },
-        { value: '9-12',  label: '9–12',    emoji: '🎾', desc: 'Busy' },
-        { value: '13-20', label: '13–20',   emoji: '🔥', desc: 'Packed' },
-        { value: '20+',   label: '20+',     emoji: '🤯', desc: 'Full house' },
-    ];
-
-    const WIND_OPTIONS = [
-        { value: 'calm',     label: 'Calm',      emoji: '😌', desc: 'No wind' },
-        { value: 'light',    label: 'Light',      emoji: '🍃', desc: 'Barely noticeable' },
-        { value: 'moderate',  label: 'Moderate',   emoji: '💨', desc: 'Noticeable but playable' },
-        { value: 'strong',   label: 'Strong',     emoji: '🌬️', desc: 'Affecting play' },
-        { value: 'very_strong', label: 'Very Strong', emoji: '🌪️', desc: 'Hard to play' },
-    ];
-
     const handleSubmit = async () => {
         if (!name.trim() || !playerCount || !windCondition) return;
         setSubmitting(true);
-        setStep(3);
+        setStep(4);
 
         try {
             const trimName = name.trim();
@@ -163,14 +187,13 @@ function App() {
                 reporterName: trimName,
                 playerCount,
                 windCondition,
+                comment: comment.trim() || '',
                 timestamp: Date.now(),
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            // Save to Firestore subcollection
             await db.collection('courts').doc(courtId).collection('court_reports').add(reportData);
 
-            // Update court doc with latest report snapshot
             await db.collection('courts').doc(courtId).update({
                 lastReport: reportData,
                 lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
@@ -180,20 +203,23 @@ function App() {
             const courtName = courtData?.name || 'the court';
             const playerOpt = PLAYER_OPTIONS.find(o => o.value === playerCount);
             const windOpt = WIND_OPTIONS.find(o => o.value === windCondition);
-            const gmMsg = [
+            const lines = [
                 `📋 Court Report from ${trimName}`,
                 `📍 ${courtName}`,
                 `👥 Players: ${playerOpt?.emoji} ${playerOpt?.label} (${playerOpt?.desc})`,
                 `🌬️ Wind: ${windOpt?.emoji} ${windOpt?.label} (${windOpt?.desc})`,
-                `🕐 ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}`
-            ].join('\n');
+            ];
+            if (comment.trim()) {
+                lines.push(`💬 "${comment.trim()}"`);
+            }
+            lines.push(`🕐 ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}`);
 
-            await fireGroupMeCourtReport(courtId, gmMsg);
+            await fireGroupMeCourtReport(courtId, lines.join('\n'));
 
-            setTimeout(() => setStep(4), 800);
+            setTimeout(() => setStep(5), 800);
         } catch(e) {
             alert('Report failed: ' + e.message);
-            setStep(2);
+            setStep(3);
             setSubmitting(false);
         }
     };
@@ -201,17 +227,18 @@ function App() {
     const goNext = () => {
         if (step === 0 && name.trim()) setStep(1);
         else if (step === 1 && playerCount) setStep(2);
+        else if (step === 2 && windCondition) setStep(3);
     };
 
     const goBack = () => {
-        if (step > 0 && step < 3) setStep(step - 1);
+        if (step > 0 && step < 4) setStep(step - 1);
     };
 
     const goHome = () => {
         window.location.href = `court.html?id=${courtId}`;
     };
 
-    // ── Loading ───────────────────────────────────────────────────────
+    // ── Loading / Not Found ───────────────────────────────────────
     if (loading) return (
         <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',background:'#0f172a'}}>
             <div style={{textAlign:'center'}}>
@@ -229,10 +256,10 @@ function App() {
         </div>
     );
 
-    // ── Step progress dots ────────────────────────────────────────────
+    // ── Progress Dots ─────────────────────────────────────────────
     const ProgressDots = () => (
         <div style={{display:'flex',justifyContent:'center',gap:8,marginBottom:28}}>
-            {[0,1,2].map(i => (
+            {[0,1,2,3].map(i => (
                 <div key={i} style={{
                     width: step === i ? 28 : 10,
                     height: 10,
@@ -244,13 +271,13 @@ function App() {
         </div>
     );
 
-    // ── Step 0: Name ──────────────────────────────────────────────────
+    // ── Step 0: Name ──────────────────────────────────────────────
     const StepName = () => (
         <div style={{animation:'fadeUp .4s ease'}}>
             <div style={{textAlign:'center',marginBottom:28}}>
                 <div style={{fontSize:48,marginBottom:8}}>👋</div>
                 <h2 className="fd" style={{fontSize:28,fontWeight:800,color:'white',letterSpacing:.3}}>Hey there!</h2>
-                <p style={{color:'#94a3b8',fontSize:14,marginTop:6}}>Quick court report — takes 10 seconds</p>
+                <p style={{color:'#94a3b8',fontSize:14,marginTop:6}}>Quick court report — takes 15 seconds</p>
             </div>
             <label style={{display:'block',fontSize:12,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:8}}>
                 Your Name
@@ -287,7 +314,7 @@ function App() {
         </div>
     );
 
-    // ── Step 1: Player Count ──────────────────────────────────────────
+    // ── Step 1: Player Count ──────────────────────────────────────
     const StepPlayers = () => (
         <div style={{animation:'fadeUp .4s ease'}}>
             <div style={{textAlign:'center',marginBottom:24}}>
@@ -323,7 +350,7 @@ function App() {
         </div>
     );
 
-    // ── Step 2: Wind ──────────────────────────────────────────────────
+    // ── Step 2: Wind ──────────────────────────────────────────────
     const StepWind = () => (
         <div style={{animation:'fadeUp .4s ease'}}>
             <div style={{textAlign:'center',marginBottom:24}}>
@@ -335,7 +362,7 @@ function App() {
                 {WIND_OPTIONS.map(opt => (
                     <button
                         key={opt.value}
-                        onClick={() => { setWindCondition(opt.value); }}
+                        onClick={() => { setWindCondition(opt.value); setTimeout(() => setStep(3), 200); }}
                         style={{
                             padding:'14px 16px', borderRadius:12, border:'2px solid',
                             borderColor: windCondition === opt.value ? '#10b981' : '#1e293b',
@@ -355,19 +382,73 @@ function App() {
                     </button>
                 ))}
             </div>
+            <button onClick={goBack} style={{
+                width:'100%', marginTop:16, padding:'12px', fontSize:14, fontWeight:600,
+                fontFamily:'Outfit,sans-serif', border:'none', borderRadius:10, cursor:'pointer',
+                background:'transparent', color:'#64748b',
+            }}>
+                ← Back
+            </button>
+        </div>
+    );
+
+    // ── Step 3: Comment (optional) ────────────────────────────────
+    const StepComment = () => (
+        <div style={{animation:'fadeUp .4s ease'}}>
+            <div style={{textAlign:'center',marginBottom:24}}>
+                <div style={{fontSize:48,marginBottom:8}}>💬</div>
+                <h2 className="fd" style={{fontSize:26,fontWeight:800,color:'white'}}>Anything else to share?</h2>
+                <p style={{color:'#94a3b8',fontSize:13,marginTop:4}}>Optional — tap a quick comment or type your own</p>
+            </div>
+
+            {/* Quick comment chips */}
+            <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:16}}>
+                {QUICK_COMMENTS.map(c => (
+                    <button
+                        key={c}
+                        onClick={() => setComment(prev => prev === c ? '' : c)}
+                        style={{
+                            padding:'8px 14px', borderRadius:20, fontSize:13, fontWeight:600,
+                            fontFamily:'Outfit,sans-serif', cursor:'pointer', transition:'all .15s',
+                            border: '2px solid',
+                            borderColor: comment === c ? '#10b981' : '#1e293b',
+                            background: comment === c ? 'rgba(16,185,129,.12)' : '#0f172a',
+                            color: comment === c ? '#34d399' : '#94a3b8',
+                        }}
+                    >
+                        {c}
+                    </button>
+                ))}
+            </div>
+
+            {/* Custom text */}
+            <textarea
+                value={comment}
+                onChange={e => setComment(e.target.value)}
+                placeholder="Or type your own comment…"
+                rows={3}
+                maxLength={200}
+                style={{
+                    width:'100%', padding:'12px 14px', fontSize:15, borderRadius:12,
+                    border:'2px solid #1e293b', background:'#0f172a', color:'white',
+                    fontFamily:'Outfit,sans-serif', outline:'none', transition:'border-color .2s',
+                    resize:'none',
+                }}
+                onFocus={e => e.target.style.borderColor='#10b981'}
+                onBlur={e => e.target.style.borderColor='#1e293b'}
+            />
+            <div style={{textAlign:'right',fontSize:11,color:'#475569',marginTop:4}}>{comment.length}/200</div>
+
             <button
                 onClick={handleSubmit}
-                disabled={!windCondition}
                 style={{
-                    width:'100%', marginTop:20, padding:'15px', fontSize:16, fontWeight:700,
+                    width:'100%', marginTop:12, padding:'15px', fontSize:16, fontWeight:700,
                     fontFamily:'Outfit,sans-serif', border:'none', borderRadius:12, cursor:'pointer',
-                    background: windCondition ? 'linear-gradient(135deg,#059669,#10b981)' : '#1e293b',
-                    color: windCondition ? 'white' : '#475569',
-                    boxShadow: windCondition ? '0 4px 16px rgba(16,185,129,.3)' : 'none',
-                    transition:'all .2s',
+                    background:'linear-gradient(135deg,#059669,#10b981)', color:'white',
+                    boxShadow:'0 4px 16px rgba(16,185,129,.3)', transition:'all .2s',
                 }}
             >
-                Submit Report 🎾
+                {comment.trim() ? 'Submit Report 🎾' : 'Skip & Submit 🎾'}
             </button>
             <button onClick={goBack} style={{
                 width:'100%', marginTop:10, padding:'12px', fontSize:14, fontWeight:600,
@@ -379,7 +460,7 @@ function App() {
         </div>
     );
 
-    // ── Step 3: Submitting ────────────────────────────────────────────
+    // ── Step 4: Submitting ────────────────────────────────────────
     const StepSubmitting = () => (
         <div style={{animation:'scaleIn .3s ease',textAlign:'center',padding:'40px 0'}}>
             <div style={{width:48,height:48,border:'4px solid #1e293b',borderTop:'4px solid #10b981',borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto 16px'}}/>
@@ -387,7 +468,7 @@ function App() {
         </div>
     );
 
-    // ── Step 4: Done ──────────────────────────────────────────────────
+    // ── Step 5: Done ──────────────────────────────────────────────
     const StepDone = () => {
         const playerOpt = PLAYER_OPTIONS.find(o => o.value === playerCount);
         const windOpt = WIND_OPTIONS.find(o => o.value === windCondition);
@@ -404,7 +485,6 @@ function App() {
                 <h2 className="fd" style={{fontSize:28,fontWeight:800,color:'white',marginBottom:6}}>Thanks, {name}!</h2>
                 <p style={{color:'#94a3b8',fontSize:14,marginBottom:24}}>Your court report has been shared</p>
 
-                {/* Report summary */}
                 <div style={{
                     background:'#1e293b',borderRadius:14,padding:'16px 18px',textAlign:'left',
                     border:'1px solid rgba(16,185,129,.2)',marginBottom:24,
@@ -413,7 +493,7 @@ function App() {
                         <span style={{fontSize:12,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px'}}>Your Report</span>
                         <span style={{fontSize:11,color:'#475569'}}>{new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}</span>
                     </div>
-                    <div style={{display:'flex',gap:16}}>
+                    <div style={{display:'flex',gap:16,marginBottom: comment.trim() ? 10 : 0}}>
                         <div>
                             <div style={{fontSize:11,color:'#64748b'}}>Players</div>
                             <div style={{fontSize:18,fontWeight:700,color:'white'}}>{playerOpt?.emoji} {playerOpt?.label}</div>
@@ -423,6 +503,11 @@ function App() {
                             <div style={{fontSize:18,fontWeight:700,color:'white'}}>{windOpt?.emoji} {windOpt?.label}</div>
                         </div>
                     </div>
+                    {comment.trim() && (
+                        <div style={{fontSize:13,color:'#94a3b8',fontStyle:'italic',borderTop:'1px solid #334155',paddingTop:8}}>
+                            💬 "{comment.trim()}"
+                        </div>
+                    )}
                 </div>
 
                 <button onClick={goHome} style={{
@@ -433,7 +518,7 @@ function App() {
                 }}>
                     View Court Details →
                 </button>
-                <button onClick={() => {setStep(0);setPlayerCount(null);setWindCondition(null);}} style={{
+                <button onClick={() => {setStep(0);setPlayerCount(null);setWindCondition(null);setComment('');}} style={{
                     width:'100%', marginTop:10, padding:'12px', fontSize:14, fontWeight:600,
                     fontFamily:'Outfit,sans-serif', border:'none', borderRadius:10, cursor:'pointer',
                     background:'transparent', color:'#64748b',
@@ -444,7 +529,7 @@ function App() {
         );
     };
 
-    // ── Recent Reports (visible on all steps) ─────────────────────────
+    // ── Recent Reports Table ──────────────────────────────────────
     const RecentReports = () => {
         if (recentReports.length === 0) return null;
         return (
@@ -452,35 +537,43 @@ function App() {
                 <div style={{fontSize:12,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:10,display:'flex',alignItems:'center',gap:6}}>
                     <span className="live-dot"/> Recent Reports
                 </div>
-                {recentReports.map(r => {
-                    const pOpt = PLAYER_OPTIONS.find(o => o.value === r.playerCount);
-                    const wOpt = WIND_OPTIONS.find(o => o.value === r.windCondition);
-                    const ago = Math.round((Date.now() - r.timestamp) / 60000);
-                    const agoText = ago < 1 ? 'Just now' : ago < 60 ? `${ago}m ago` : `${Math.round(ago/60)}h ago`;
-                    return (
-                        <div key={r.id} style={{
-                            background:'#1e293b', borderRadius:12, padding:'12px 14px',
-                            marginBottom:8, border:'1px solid #334155',
-                        }}>
-                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-                                <span style={{fontSize:14,fontWeight:700,color:'#e2e8f0'}}>{r.reporterName}</span>
-                                <span style={{fontSize:11,color:'#475569'}}>{agoText}</span>
-                            </div>
-                            <div style={{display:'flex',gap:14,fontSize:13}}>
-                                <span style={{color:'#94a3b8'}}>👥 {pOpt?.emoji} {pOpt?.label || r.playerCount}</span>
-                                <span style={{color:'#94a3b8'}}>🌬️ {wOpt?.emoji} {wOpt?.label || r.windCondition}</span>
-                            </div>
-                        </div>
-                    );
-                })}
+                <div style={{background:'#1e293b',borderRadius:14,border:'1px solid #334155',overflow:'auto'}}>
+                    <table className="report-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Players</th>
+                                <th>Wind</th>
+                                <th>Comment</th>
+                                <th style={{textAlign:'right'}}>When</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {recentReports.map(r => {
+                                const pOpt = PLAYER_OPTIONS.find(o => o.value === r.playerCount);
+                                const wOpt = WIND_OPTIONS.find(o => o.value === r.windCondition);
+                                const ago = Math.round((Date.now() - r.timestamp) / 60000);
+                                const agoText = ago < 1 ? 'Just now' : ago < 60 ? `${ago}m` : `${Math.round(ago/60)}h`;
+                                return (
+                                    <tr key={r.id}>
+                                        <td className="name-cell">{r.reporterName}</td>
+                                        <td>{pOpt ? `${pOpt.emoji} ${pOpt.label}` : r.playerCount}</td>
+                                        <td>{wOpt ? `${wOpt.emoji} ${wOpt.label}` : r.windCondition}</td>
+                                        <td className="comment-cell">{r.comment || '—'}</td>
+                                        <td className="time-cell">{agoText}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         );
     };
 
-    // ── Render ─────────────────────────────────────────────────────────
+    // ── Render ─────────────────────────────────────────────────────
     return (
         <div style={{minHeight:'100vh',background:'linear-gradient(180deg,#0f172a 0%,#1e3a2f 100%)',display:'flex',flexDirection:'column'}}>
-            {/* Nav */}
             <div style={{background:'rgba(15,23,42,.9)',backdropFilter:'blur(8px)',padding:'13px 18px',display:'flex',alignItems:'center',gap:12,position:'sticky',top:0,zIndex:100,borderBottom:'1px solid #1e293b'}}>
                 <button onClick={goHome} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontSize:22,padding:'2px 6px',lineHeight:1}}>←</button>
                 <div className="fd" style={{fontSize:22,fontWeight:800,flex:1,cursor:'pointer'}} onClick={goHome}>
@@ -488,27 +581,25 @@ function App() {
                 </div>
             </div>
 
-            {/* Court name banner */}
             <div style={{padding:'14px 20px 10px',textAlign:'center'}}>
                 <div style={{fontSize:11,fontWeight:700,color:'#059669',textTransform:'uppercase',letterSpacing:'1px'}}>Court Report</div>
                 <div className="fd" style={{fontSize:22,fontWeight:800,color:'white',marginTop:2}}>{courtData.name}</div>
                 {courtData.address && <div style={{fontSize:12,color:'#64748b',marginTop:3}}>📍 {courtData.address}</div>}
             </div>
 
-            {/* Main content */}
-            <div style={{flex:1,padding:'8px 20px 32px',maxWidth:480,width:'100%',margin:'0 auto'}}>
-                {step < 3 && <ProgressDots />}
+            <div style={{flex:1,padding:'8px 20px 32px',maxWidth:520,width:'100%',margin:'0 auto'}}>
+                {step < 4 && <ProgressDots />}
 
                 {step === 0 && <StepName />}
                 {step === 1 && <StepPlayers />}
                 {step === 2 && <StepWind />}
-                {step === 3 && <StepSubmitting />}
-                {step === 4 && <StepDone />}
+                {step === 3 && <StepComment />}
+                {step === 4 && <StepSubmitting />}
+                {step === 5 && <StepDone />}
 
                 <RecentReports />
             </div>
 
-            {/* Footer */}
             <div style={{textAlign:'center',padding:'16px',fontSize:11,color:'#475569'}}>
                 PickleConnect · Community Court Reports
             </div>
