@@ -1031,29 +1031,9 @@ function CourtDetailPage({courtId,onBack,user,profile}){
             </div>}
         </div>
 
-        {/* ── CARD 2: Court Status ── */}
+        {/* ── CARD 2: Court Report ── */}
         <div className="cd-section">
-            <div style={{display:'flex',gap:8,overflowX:'auto',WebkitOverflowScrolling:'touch',scrollbarWidth:'none',paddingBottom:4}} className="hide-scrollbar">
-                <div className={'cd-g-pill'+(nowTotal>0?' lit':'')} style={{flexShrink:0}}>
-                    <div className="cd-g-lbl">👥 Playing</div>
-                    <div className="cd-g-val">{nowTotal}</div>
-                </div>
-                <div className={'cd-g-pill'+(laterTotal>0?' lit':'')} style={{flexShrink:0}}>
-                    <div className="cd-g-lbl">⏰ Coming</div>
-                    <div className="cd-g-val">{laterTotal}</div>
-                </div>
-                <div className={'cd-g-pill'+(courtData.crowdLevel==='high'||courtData.crowdLevel==='medium'?' lit':'')} style={{flexShrink:0}}>
-                    <div className="cd-g-lbl">🎪 Crowd</div>
-                    <div className="cd-g-val">{courtData.crowdLevel==='high'?'Packed':courtData.crowdLevel==='medium'?'Busy':'Light'}</div>
-                </div>
-                <div className={'cd-g-pill'+(courtData.lightsOn?' lit':'')} style={{flexShrink:0}}>
-                    <div className="cd-g-lbl">{courtData.lightsOn?'💡':'🌙'} Lights</div>
-                    <div className="cd-g-val">{courtData.lightsOn?'ON':'OFF'}</div>
-                </div>
-                <div className={'cd-g-pill'+(open>0?' lit':'')} style={{flexShrink:0}}>
-                    <div className="cd-g-lbl">⚙️ Rotation</div>
-                    <div className="cd-g-val">{open}/{total}</div>
-                </div>
+            <div style={{display:'flex',gap:8,paddingBottom:4}}>
                 {courtReports.length>0?(()=>{
                     const r=courtReports[0];
                     const pL={'0':'Empty','1-4':'1–4','5-8':'5–8','9-12':'9–12','13-20':'13–20','20+':'20+'};
@@ -1061,21 +1041,29 @@ function CourtDetailPage({courtId,onBack,user,profile}){
                     const ago=Math.round((Date.now()-r.timestamp)/60000);
                     const agoT=ago<1?'now':ago<60?ago+'m':Math.round(ago/60)+'h';
                     return<>
-                        <div className="cd-g-pill lit" style={{flexShrink:0}}>
+                        <div className="cd-g-pill lit" style={{flex:1}}>
                             <div className="cd-g-lbl">👥 At Court</div>
                             <div className="cd-g-val">{pL[r.playerCount]||r.playerCount}</div>
                             <div style={{fontSize:'0.55rem',color:'var(--muted)',marginTop:1}}>{agoT} ago</div>
                         </div>
-                        <div className="cd-g-pill lit" style={{flexShrink:0}}>
+                        <div className="cd-g-pill lit" style={{flex:1}}>
                             <div className="cd-g-lbl">🌬️ Wind</div>
                             <div className="cd-g-val">{wL[r.windCondition]||r.windCondition}</div>
                             <div style={{fontSize:'0.55rem',color:'var(--muted)',marginTop:1}}>by {r.reporterName}</div>
                         </div>
                     </>;
-                })():null}
-                <a href={'courtreport.html?id='+courtId} className="cd-g-pill" style={{flexShrink:0,textDecoration:'none',cursor:'pointer',background:'rgba(5,150,105,0.15)',borderColor:'rgba(16,185,129,0.4)'}}>
-                    <div className="cd-g-lbl" style={{color:'var(--green)'}}>📋 Report</div>
-                    <div className="cd-g-val" style={{color:'var(--green)',fontSize:'0.7rem'}}>{courtReports.length>0?'Update':'Add'}</div>
+                })():<>
+                    <div className="cd-g-pill" style={{flex:1}}>
+                        <div className="cd-g-lbl">👥 At Court</div>
+                        <div className="cd-g-val" style={{fontSize:'0.7rem',color:'var(--muted)'}}>—</div>
+                    </div>
+                    <div className="cd-g-pill" style={{flex:1}}>
+                        <div className="cd-g-lbl">🌬️ Wind</div>
+                        <div className="cd-g-val" style={{fontSize:'0.7rem',color:'var(--muted)'}}>—</div>
+                    </div>
+                </>}
+                <a href={'courtreport.html?id='+courtId} className="cd-g-pill" style={{flex:1,textDecoration:'none',cursor:'pointer',background:'rgba(5,150,105,0.15)',borderColor:'rgba(16,185,129,0.4)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    <div className="cd-g-val" style={{color:'var(--green)',fontSize:'0.78rem',whiteSpace:'nowrap'}}>📋 Report</div>
                 </a>
             </div>
         </div>
