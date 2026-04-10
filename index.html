@@ -1054,37 +1054,29 @@ function CourtDetailPage({courtId,onBack,user,profile}){
                     <div className="cd-g-lbl">⚙️ Rotation</div>
                     <div className="cd-g-val">{open}/{total}</div>
                 </div>
-                <div className={'cd-g-pill'+((courtData.condition||'open')==='open'?' lit':'')} style={{flexShrink:0}}>
-                    <div className="cd-g-lbl">📋 Condition</div>
-                    <div className="cd-g-val">{condMap[courtData.condition]?.l||'Open'}</div>
-                </div>
-            </div>
-        </div>
-
-        {/* ── COURT REPORT STRIP ── */}
-        <div className="cd-section" style={{paddingTop:0}}>
-            <div style={{background:'var(--navy)',border:'1px solid var(--border)',borderRadius:10,padding:'10px 14px',display:'flex',alignItems:'center',gap:10}}>
                 {courtReports.length>0?(()=>{
                     const r=courtReports[0];
-                    const pL={'0':'🏜️ Empty','1-4':'👤 1–4','5-8':'👥 5–8','9-12':'🎾 9–12','13-20':'🔥 13–20','20+':'🤯 20+'};
-                    const wL={'calm':'😌 Calm','light':'🍃 Light','moderate':'💨 Moderate','strong':'🌬️ Strong','very_strong':'🌪️ V.Strong'};
+                    const pL={'0':'Empty','1-4':'1–4','5-8':'5–8','9-12':'9–12','13-20':'13–20','20+':'20+'};
+                    const wL={'calm':'Calm','light':'Light','moderate':'Moderate','strong':'Strong','very_strong':'V.Strong'};
                     const ago=Math.round((Date.now()-r.timestamp)/60000);
-                    const agoT=ago<1?'just now':ago<60?ago+'m ago':Math.round(ago/60)+'h ago';
+                    const agoT=ago<1?'now':ago<60?ago+'m':Math.round(ago/60)+'h';
                     return<>
-                        <div style={{flex:1,minWidth:0}}>
-                            <div style={{fontSize:'0.65rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:3}}>📋 Latest Report · {agoT}</div>
-                            <div style={{fontSize:'0.82rem',color:'var(--text)',fontWeight:600,display:'flex',gap:10,flexWrap:'wrap'}}>
-                                <span>{pL[r.playerCount]||r.playerCount}</span>
-                                <span>{wL[r.windCondition]||r.windCondition}</span>
-                                <span style={{color:'var(--muted)',fontWeight:400}}>— {r.reporterName}</span>
-                            </div>
+                        <div className="cd-g-pill lit" style={{flexShrink:0}}>
+                            <div className="cd-g-lbl">👥 At Court</div>
+                            <div className="cd-g-val">{pL[r.playerCount]||r.playerCount}</div>
+                            <div style={{fontSize:'0.55rem',color:'var(--muted)',marginTop:1}}>{agoT} ago</div>
                         </div>
-                        <a href={'courtreport.html?id='+courtId} style={{background:'var(--green)',color:'white',borderRadius:8,padding:'6px 12px',fontSize:'0.72rem',fontWeight:700,textDecoration:'none',whiteSpace:'nowrap',flexShrink:0}}>📋 Report</a>
+                        <div className="cd-g-pill lit" style={{flexShrink:0}}>
+                            <div className="cd-g-lbl">🌬️ Wind</div>
+                            <div className="cd-g-val">{wL[r.windCondition]||r.windCondition}</div>
+                            <div style={{fontSize:'0.55rem',color:'var(--muted)',marginTop:1}}>by {r.reporterName}</div>
+                        </div>
                     </>;
-                })():(
-                    <><div style={{flex:1,fontSize:'0.78rem',color:'var(--muted)'}}>📋 No recent court reports</div>
-                    <a href={'courtreport.html?id='+courtId} style={{background:'var(--green)',color:'white',borderRadius:8,padding:'6px 12px',fontSize:'0.72rem',fontWeight:700,textDecoration:'none',whiteSpace:'nowrap',flexShrink:0}}>📋 Report</a></>
-                )}
+                })():null}
+                <a href={'courtreport.html?id='+courtId} className="cd-g-pill" style={{flexShrink:0,textDecoration:'none',cursor:'pointer',background:'rgba(5,150,105,0.15)',borderColor:'rgba(16,185,129,0.4)'}}>
+                    <div className="cd-g-lbl" style={{color:'var(--green)'}}>📋 Report</div>
+                    <div className="cd-g-val" style={{color:'var(--green)',fontSize:'0.7rem'}}>{courtReports.length>0?'Update':'Add'}</div>
+                </a>
             </div>
         </div>
 
