@@ -813,7 +813,7 @@ function CourtPage() {
         if (!courtId || !fbOk || !db) return;
         const unsub = db.collection('courts').doc(courtId).collection('court_reports')
             .orderBy('timestamp','desc')
-            .limit(5)
+            .limit(3)
             .onSnapshot(snap => {
                 const cutoff = Date.now() - 4 * 3600000;
                 const list = snap.docs.map(d=>({id:d.id,...d.data()})).filter(r => r.timestamp > cutoff);
@@ -1285,7 +1285,6 @@ function CourtPage() {
                                             <th style={{textAlign:'left',padding:'6px 8px',fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px'}}>Name</th>
                                             <th style={{textAlign:'left',padding:'6px 8px',fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px'}}>Players</th>
                                             <th style={{textAlign:'left',padding:'6px 8px',fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px'}}>Wind</th>
-                                            <th style={{textAlign:'left',padding:'6px 8px',fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px'}}>Comment</th>
                                             <th style={{textAlign:'right',padding:'6px 8px',fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px'}}>When</th>
                                         </tr>
                                     </thead>
@@ -1298,9 +1297,8 @@ function CourtPage() {
                                             return (
                                                 <tr key={r.id} style={{borderBottom:'1px solid #f1f5f9'}}>
                                                     <td style={{padding:'8px',fontWeight:700,color:'#1e293b',whiteSpace:'nowrap'}}>{r.reporterName}</td>
-                                                    <td style={{padding:'8px',color:'#374151'}}>{pLabels[r.playerCount] || r.playerCount}</td>
-                                                    <td style={{padding:'8px',color:'#374151'}}>{wLabels[r.windCondition] || r.windCondition}</td>
-                                                    <td style={{padding:'8px',color:'#64748b',fontSize:12,fontStyle:r.comment?'italic':'normal',maxWidth:140}}>{r.comment || '—'}</td>
+                                                    <td style={{padding:'8px',color:'#374151',whiteSpace:'nowrap'}}>{pLabels[r.playerCount] || r.playerCount}</td>
+                                                    <td style={{padding:'8px',color:'#374151',whiteSpace:'nowrap'}}>{wLabels[r.windCondition] || r.windCondition}</td>
                                                     <td style={{padding:'8px',color:'#94a3b8',fontSize:11,textAlign:'right',whiteSpace:'nowrap'}}>{agoText}</td>
                                                 </tr>
                                             );
