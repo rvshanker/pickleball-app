@@ -808,7 +808,7 @@ function CourtPage() {
         return () => unsub();
     }, [courtId]);
 
-    // Load court reports (subcollection)
+    // Load court reports
     useEffect(() => {
         if (!courtId || !fbOk || !db) return;
         const unsub = db.collection('courts').doc(courtId).collection('court_reports')
@@ -1278,24 +1278,36 @@ function CourtPage() {
                                 <div className="fd" style={{fontSize:19,fontWeight:800,color:'#0f172a'}}>📋 COURT REPORTS</div>
                                 <a href={`courtreport.html?id=${courtId}`} style={{fontSize:12,fontWeight:700,color:'#059669',textDecoration:'none'}}>+ Add Report</a>
                             </div>
-                            {courtReports.map(r => {
-                                const pLabels = {'0':'🏜️ Empty','1-4':'👤 1–4','5-8':'👥 5–8','9-12':'🎾 9–12','13-20':'🔥 13–20','20+':'🤯 20+'};
-                                const wLabels = {'calm':'😌 Calm','light':'🍃 Light','moderate':'💨 Moderate','strong':'🌬️ Strong','very_strong':'🌪️ Very Strong'};
-                                const ago = Math.round((Date.now() - r.timestamp) / 60000);
-                                const agoText = ago < 1 ? 'Just now' : ago < 60 ? `${ago}m ago` : `${Math.round(ago/60)}h ago`;
-                                return (
-                                    <div key={r.id} style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:10,padding:'10px 13px',marginBottom:7}}>
-                                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
-                                            <span style={{fontSize:13,fontWeight:700,color:'#1e293b'}}>{r.reporterName}</span>
-                                            <span style={{fontSize:11,color:'#94a3b8'}}>{agoText}</span>
-                                        </div>
-                                        <div style={{display:'flex',gap:14,fontSize:12,color:'#64748b'}}>
-                                            <span>👥 {pLabels[r.playerCount] || r.playerCount}</span>
-                                            <span>🌬️ {wLabels[r.windCondition] || r.windCondition}</span>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                            <div style={{overflowX:'auto'}}>
+                                <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
+                                    <thead>
+                                        <tr style={{borderBottom:'2px solid #e2e8f0'}}>
+                                            <th style={{textAlign:'left',padding:'6px 8px',fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px'}}>Name</th>
+                                            <th style={{textAlign:'left',padding:'6px 8px',fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px'}}>Players</th>
+                                            <th style={{textAlign:'left',padding:'6px 8px',fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px'}}>Wind</th>
+                                            <th style={{textAlign:'left',padding:'6px 8px',fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px'}}>Comment</th>
+                                            <th style={{textAlign:'right',padding:'6px 8px',fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px'}}>When</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {courtReports.map(r => {
+                                            const pLabels = {'0':'🏜️ Empty','1-4':'👤 1–4','5-8':'👥 5–8','9-12':'🎾 9–12','13-20':'🔥 13–20','20+':'🤯 20+'};
+                                            const wLabels = {'calm':'😌 Calm','light':'🍃 Light','moderate':'💨 Moderate','strong':'🌬️ Strong','very_strong':'🌪️ Very Strong'};
+                                            const ago = Math.round((Date.now() - r.timestamp) / 60000);
+                                            const agoText = ago < 1 ? 'Just now' : ago < 60 ? `${ago}m` : `${Math.round(ago/60)}h`;
+                                            return (
+                                                <tr key={r.id} style={{borderBottom:'1px solid #f1f5f9'}}>
+                                                    <td style={{padding:'8px',fontWeight:700,color:'#1e293b',whiteSpace:'nowrap'}}>{r.reporterName}</td>
+                                                    <td style={{padding:'8px',color:'#374151'}}>{pLabels[r.playerCount] || r.playerCount}</td>
+                                                    <td style={{padding:'8px',color:'#374151'}}>{wLabels[r.windCondition] || r.windCondition}</td>
+                                                    <td style={{padding:'8px',color:'#64748b',fontSize:12,fontStyle:r.comment?'italic':'normal',maxWidth:140}}>{r.comment || '—'}</td>
+                                                    <td style={{padding:'8px',color:'#94a3b8',fontSize:11,textAlign:'right',whiteSpace:'nowrap'}}>{agoText}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     )}
 
