@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PickleConnect – Court Report</title>
+    <meta name="description" content="Quick court conditions report for PickleConnect pickleball courts.">
+    <meta name="theme-color" content="#059669">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23059669'/><circle cx='50' cy='50' r='28' fill='white' opacity='0.15'/><ellipse cx='50' cy='50' rx='20' ry='20' fill='none' stroke='white' stroke-width='3'/><line x1='30' y1='50' x2='70' y2='50' stroke='white' stroke-width='3'/><line x1='50' y1='30' x2='50' y2='70' stroke='white' stroke-width='3'/><circle cx='50' cy='50' r='6' fill='white'/></svg>" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Outfit',sans-serif;background:#0f172a;font-size:16px;-webkit-text-size-adjust:100%;min-height:100vh;overflow-x:hidden;}
+        .fd{font-family:'Barlow Condensed',sans-serif;}
+
+        @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes scaleIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes checkBounce{0%{transform:scale(0)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
+        @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+        @keyframes slideDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+
+        .live-dot{width:7px;height:7px;background:#10b981;border-radius:50%;animation:pulse 2s infinite;display:inline-block;}
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState, useEffect, useRef, useCallback} = React;
+
+// ── Firebase ──────────────────────────────────────────────────────────
+const FB = {
+    apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
+    authDomain:"pickleball-app-1bba7.firebaseapp.com",
+    projectId:"pickleball-app-1bba7",
+    storageBucket:"pickleball-app-1bba7.firebasestorage.app",
+    messagingSenderId:"645604154338",
+    appId:"1:645604154338:web:b92f87c2cd11d950b737bb"
+};
+let db = null, fbOk = false;
+try {
+    if (!firebase.apps.length) firebase.initializeApp(FB);
+    db = firebase.firestore();
+    fbOk = true;
+} catch(e) { console.error('Firebase:', e); }
+
+const getCourtId = () => new URLSearchParams(window.location.search).get('id');
+
+// ── GroupMe ───────────────────────────────────────────────────────────
+async function postGroupMe(text, botId) {
+    if (!botId) return;
+    try {
+        await fetch('https://api.groupme.com/v3/bots/post', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bot_id: botId, text })
+        });
+    } catch(e) {
+        console.warn('GroupMe post failed:', e);
+    }
+}
+
+async function fireGroupMeCourtReport(courtId, message) {
+    if (!fbOk || !db || !courtId) return;
+    const botDoc = await db.collection('groupme_bots').doc(courtId).get().catch(()=>null);
+    const botCfg = botDoc?.exists ? botDoc.data() : null;
+    if (!botCfg?.enabled || !botCfg?.botId) return;
+    await postGroupMe(message, botCfg.botId);
+}
+
+// ── Main App ──────────────────────────────────────────────────────────
+function App() {
+    const courtId = getCourtId();
+    const [step, setStep] = useState(0); // 0=name, 1=players, 2=wind, 3=submitting, 4=done
+    const [courtData, setCourtData] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    // Form state
+    const [name, setName] = useState('');
+    const [playerCount, setPlayerCount] = useState(null);
+    const [windCondition, setWindCondition] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
+    const [recentReports, setRecentReports] = useState([]);
+
+    const nameRef = useRef(null);
+
+    // Restore name from localStorage
+    useEffect(() => {
+        const saved = localStorage.getItem('pickleCourtUserName');
+        if (saved) setName(saved);
+    }, []);
+
+    // Load court data
+    useEffect(() => {
+        if (!courtId || !fbOk || !db) { setLoading(false); return; }
+        const unsub = db.collection('courts').doc(courtId).onSnapshot(doc => {
+            if (doc.exists) setCourtData({id:doc.id,...doc.data()});
+            else setCourtData(null);
+            setLoading(false);
+        }, () => setLoading(false));
+        return () => unsub();
+    }, [courtId]);
+
+    // Load recent reports (live)
+    useEffect(() => {
+        if (!courtId || !fbOk || !db) return;
+        const cutoff = Date.now() - 4 * 3600000; // last 4 hours
+        const unsub = db.collection('courts').doc(courtId).collection('court_reports')
+            .orderBy('timestamp','desc')
+            .limit(10)
+            .onSnapshot(snap => {
+                const list = snap.docs
+                    .map(d => ({id:d.id,...d.data()}))
+                    .filter(r => r.timestamp > cutoff);
+                setRecentReports(list);
+            }, () => {});
+        return () => unsub();
+    }, [courtId]);
+
+    // Focus name input on mount
+    useEffect(() => {
+        if (step === 0 && nameRef.current && !name) {
+            setTimeout(() => nameRef.current?.focus(), 300);
+        }
+    }, [step]);
+
+    const PLAYER_OPTIONS = [
+        { value: '0',     label: 'Empty',   emoji: '🏜️', desc: 'No one here' },
+        { value: '1-4',   label: '1–4',     emoji: '👤', desc: 'Light' },
+        { value: '5-8',   label: '5–8',     emoji: '👥', desc: 'Some games' },
+        { value: '9-12',  label: '9–12',    emoji: '🎾', desc: 'Busy' },
+        { value: '13-20', label: '13–20',   emoji: '🔥', desc: 'Packed' },
+        { value: '20+',   label: '20+',     emoji: '🤯', desc: 'Full house' },
+    ];
+
+    const WIND_OPTIONS = [
+        { value: 'calm',     label: 'Calm',      emoji: '😌', desc: 'No wind' },
+        { value: 'light',    label: 'Light',      emoji: '🍃', desc: 'Barely noticeable' },
+        { value: 'moderate',  label: 'Moderate',   emoji: '💨', desc: 'Noticeable but playable' },
+        { value: 'strong',   label: 'Strong',     emoji: '🌬️', desc: 'Affecting play' },
+        { value: 'very_strong', label: 'Very Strong', emoji: '🌪️', desc: 'Hard to play' },
+    ];
+
+    const handleSubmit = async () => {
+        if (!name.trim() || !playerCount || !windCondition) return;
+        setSubmitting(true);
+        setStep(3);
+
+        try {
+            const trimName = name.trim();
+            localStorage.setItem('pickleCourtUserName', trimName);
+
+            const reportData = {
+                reporterName: trimName,
+                playerCount,
+                windCondition,
+                timestamp: Date.now(),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            // Save to Firestore subcollection
+            await db.collection('courts').doc(courtId).collection('court_reports').add(reportData);
+
+            // Update court doc with latest report snapshot
+            await db.collection('courts').doc(courtId).update({
+                lastReport: reportData,
+                lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // Build GroupMe message
+            const courtName = courtData?.name || 'the court';
+            const playerOpt = PLAYER_OPTIONS.find(o => o.value === playerCount);
+            const windOpt = WIND_OPTIONS.find(o => o.value === windCondition);
+            const gmMsg = [
+                `📋 Court Report from ${trimName}`,
+                `📍 ${courtName}`,
+                `👥 Players: ${playerOpt?.emoji} ${playerOpt?.label} (${playerOpt?.desc})`,
+                `🌬️ Wind: ${windOpt?.emoji} ${windOpt?.label} (${windOpt?.desc})`,
+                `🕐 ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}`
+            ].join('\n');
+
+            await fireGroupMeCourtReport(courtId, gmMsg);
+
+            setTimeout(() => setStep(4), 800);
+        } catch(e) {
+            alert('Report failed: ' + e.message);
+            setStep(2);
+            setSubmitting(false);
+        }
+    };
+
+    const goNext = () => {
+        if (step === 0 && name.trim()) setStep(1);
+        else if (step === 1 && playerCount) setStep(2);
+    };
+
+    const goBack = () => {
+        if (step > 0 && step < 3) setStep(step - 1);
+    };
+
+    const goHome = () => {
+        window.location.href = `court.html?id=${courtId}`;
+    };
+
+    // ── Loading ───────────────────────────────────────────────────────
+    if (loading) return (
+        <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',background:'#0f172a'}}>
+            <div style={{textAlign:'center'}}>
+                <div style={{width:42,height:42,border:'4px solid #1e293b',borderTop:'4px solid #10b981',borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto 10px'}}/>
+                <div style={{color:'#64748b',fontSize:14}}>Loading…</div>
+            </div>
+        </div>
+    );
+
+    if (!courtId || !courtData) return (
+        <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',flexDirection:'column',gap:12,background:'#0f172a'}}>
+            <div style={{fontSize:48}}>🏟️</div>
+            <div style={{fontSize:18,fontWeight:700,color:'white'}}>Court not found</div>
+            <a href="index.html" style={{color:'#10b981',fontSize:14,fontWeight:600}}>← Back to courts</a>
+        </div>
+    );
+
+    // ── Step progress dots ────────────────────────────────────────────
+    const ProgressDots = () => (
+        <div style={{display:'flex',justifyContent:'center',gap:8,marginBottom:28}}>
+            {[0,1,2].map(i => (
+                <div key={i} style={{
+                    width: step === i ? 28 : 10,
+                    height: 10,
+                    borderRadius: 5,
+                    background: i < step ? '#10b981' : i === step ? '#34d399' : '#1e293b',
+                    transition: 'all .3s ease',
+                }}/>
+            ))}
+        </div>
+    );
+
+    // ── Step 0: Name ──────────────────────────────────────────────────
+    const StepName = () => (
+        <div style={{animation:'fadeUp .4s ease'}}>
+            <div style={{textAlign:'center',marginBottom:28}}>
+                <div style={{fontSize:48,marginBottom:8}}>👋</div>
+                <h2 className="fd" style={{fontSize:28,fontWeight:800,color:'white',letterSpacing:.3}}>Hey there!</h2>
+                <p style={{color:'#94a3b8',fontSize:14,marginTop:6}}>Quick court report — takes 10 seconds</p>
+            </div>
+            <label style={{display:'block',fontSize:12,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:8}}>
+                Your Name
+            </label>
+            <input
+                ref={nameRef}
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && goNext()}
+                placeholder="Enter your name"
+                style={{
+                    width:'100%', padding:'14px 16px', fontSize:17, borderRadius:12,
+                    border:'2px solid #1e293b', background:'#0f172a', color:'white',
+                    fontFamily:'Outfit,sans-serif', outline:'none', transition:'border-color .2s',
+                }}
+                onFocus={e => e.target.style.borderColor='#10b981'}
+                onBlur={e => e.target.style.borderColor='#1e293b'}
+            />
+            <button
+                onClick={goNext}
+                disabled={!name.trim()}
+                style={{
+                    width:'100%', marginTop:20, padding:'15px', fontSize:16, fontWeight:700,
+                    fontFamily:'Outfit,sans-serif', border:'none', borderRadius:12, cursor:'pointer',
+                    background: name.trim() ? 'linear-gradient(135deg,#059669,#10b981)' : '#1e293b',
+                    color: name.trim() ? 'white' : '#475569',
+                    boxShadow: name.trim() ? '0 4px 16px rgba(16,185,129,.3)' : 'none',
+                    transition:'all .2s',
+                }}
+            >
+                Next →
+            </button>
+        </div>
+    );
+
+    // ── Step 1: Player Count ──────────────────────────────────────────
+    const StepPlayers = () => (
+        <div style={{animation:'fadeUp .4s ease'}}>
+            <div style={{textAlign:'center',marginBottom:24}}>
+                <div style={{fontSize:48,marginBottom:8}}>👥</div>
+                <h2 className="fd" style={{fontSize:26,fontWeight:800,color:'white'}}>How many people playing?</h2>
+                <p style={{color:'#94a3b8',fontSize:13,marginTop:4}}>Approximate count on the courts right now</p>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                {PLAYER_OPTIONS.map(opt => (
+                    <button
+                        key={opt.value}
+                        onClick={() => { setPlayerCount(opt.value); setTimeout(() => setStep(2), 200); }}
+                        style={{
+                            padding:'16px 12px', borderRadius:14, border:'2px solid',
+                            borderColor: playerCount === opt.value ? '#10b981' : '#1e293b',
+                            background: playerCount === opt.value ? 'rgba(16,185,129,.12)' : '#0f172a',
+                            cursor:'pointer', textAlign:'center', transition:'all .15s',
+                        }}
+                    >
+                        <div style={{fontSize:28}}>{opt.emoji}</div>
+                        <div style={{fontSize:16,fontWeight:700,color:'white',marginTop:4}}>{opt.label}</div>
+                        <div style={{fontSize:11,color:'#64748b',marginTop:2}}>{opt.desc}</div>
+                    </button>
+                ))}
+            </div>
+            <button onClick={goBack} style={{
+                width:'100%', marginTop:16, padding:'12px', fontSize:14, fontWeight:600,
+                fontFamily:'Outfit,sans-serif', border:'none', borderRadius:10, cursor:'pointer',
+                background:'transparent', color:'#64748b',
+            }}>
+                ← Back
+            </button>
+        </div>
+    );
+
+    // ── Step 2: Wind ──────────────────────────────────────────────────
+    const StepWind = () => (
+        <div style={{animation:'fadeUp .4s ease'}}>
+            <div style={{textAlign:'center',marginBottom:24}}>
+                <div style={{fontSize:48,marginBottom:8}}>🌬️</div>
+                <h2 className="fd" style={{fontSize:26,fontWeight:800,color:'white'}}>Wind conditions?</h2>
+                <p style={{color:'#94a3b8',fontSize:13,marginTop:4}}>How's the wind feeling out there?</p>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                {WIND_OPTIONS.map(opt => (
+                    <button
+                        key={opt.value}
+                        onClick={() => { setWindCondition(opt.value); }}
+                        style={{
+                            padding:'14px 16px', borderRadius:12, border:'2px solid',
+                            borderColor: windCondition === opt.value ? '#10b981' : '#1e293b',
+                            background: windCondition === opt.value ? 'rgba(16,185,129,.12)' : '#0f172a',
+                            cursor:'pointer', display:'flex', alignItems:'center', gap:12,
+                            transition:'all .15s', textAlign:'left',
+                        }}
+                    >
+                        <span style={{fontSize:26,flexShrink:0}}>{opt.emoji}</span>
+                        <div>
+                            <div style={{fontSize:15,fontWeight:700,color:'white'}}>{opt.label}</div>
+                            <div style={{fontSize:12,color:'#64748b'}}>{opt.desc}</div>
+                        </div>
+                        {windCondition === opt.value && (
+                            <span style={{marginLeft:'auto',color:'#10b981',fontSize:18}}>✓</span>
+                        )}
+                    </button>
+                ))}
+            </div>
+            <button
+                onClick={handleSubmit}
+                disabled={!windCondition}
+                style={{
+                    width:'100%', marginTop:20, padding:'15px', fontSize:16, fontWeight:700,
+                    fontFamily:'Outfit,sans-serif', border:'none', borderRadius:12, cursor:'pointer',
+                    background: windCondition ? 'linear-gradient(135deg,#059669,#10b981)' : '#1e293b',
+                    color: windCondition ? 'white' : '#475569',
+                    boxShadow: windCondition ? '0 4px 16px rgba(16,185,129,.3)' : 'none',
+                    transition:'all .2s',
+                }}
+            >
+                Submit Report 🎾
+            </button>
+            <button onClick={goBack} style={{
+                width:'100%', marginTop:10, padding:'12px', fontSize:14, fontWeight:600,
+                fontFamily:'Outfit,sans-serif', border:'none', borderRadius:10, cursor:'pointer',
+                background:'transparent', color:'#64748b',
+            }}>
+                ← Back
+            </button>
+        </div>
+    );
+
+    // ── Step 3: Submitting ────────────────────────────────────────────
+    const StepSubmitting = () => (
+        <div style={{animation:'scaleIn .3s ease',textAlign:'center',padding:'40px 0'}}>
+            <div style={{width:48,height:48,border:'4px solid #1e293b',borderTop:'4px solid #10b981',borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto 16px'}}/>
+            <p style={{color:'#94a3b8',fontSize:15,fontWeight:600}}>Sending report…</p>
+        </div>
+    );
+
+    // ── Step 4: Done ──────────────────────────────────────────────────
+    const StepDone = () => {
+        const playerOpt = PLAYER_OPTIONS.find(o => o.value === playerCount);
+        const windOpt = WIND_OPTIONS.find(o => o.value === windCondition);
+        return (
+            <div style={{animation:'fadeUp .4s ease',textAlign:'center'}}>
+                <div style={{
+                    width:72,height:72,borderRadius:'50%',
+                    background:'linear-gradient(135deg,#059669,#10b981)',
+                    display:'flex',alignItems:'center',justifyContent:'center',
+                    margin:'0 auto 16px',animation:'checkBounce .5s ease',
+                }}>
+                    <span style={{fontSize:36,color:'white'}}>✓</span>
+                </div>
+                <h2 className="fd" style={{fontSize:28,fontWeight:800,color:'white',marginBottom:6}}>Thanks, {name}!</h2>
+                <p style={{color:'#94a3b8',fontSize:14,marginBottom:24}}>Your court report has been shared</p>
+
+                {/* Report summary */}
+                <div style={{
+                    background:'#1e293b',borderRadius:14,padding:'16px 18px',textAlign:'left',
+                    border:'1px solid rgba(16,185,129,.2)',marginBottom:24,
+                }}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+                        <span style={{fontSize:12,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px'}}>Your Report</span>
+                        <span style={{fontSize:11,color:'#475569'}}>{new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}</span>
+                    </div>
+                    <div style={{display:'flex',gap:16}}>
+                        <div>
+                            <div style={{fontSize:11,color:'#64748b'}}>Players</div>
+                            <div style={{fontSize:18,fontWeight:700,color:'white'}}>{playerOpt?.emoji} {playerOpt?.label}</div>
+                        </div>
+                        <div>
+                            <div style={{fontSize:11,color:'#64748b'}}>Wind</div>
+                            <div style={{fontSize:18,fontWeight:700,color:'white'}}>{windOpt?.emoji} {windOpt?.label}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onClick={goHome} style={{
+                    width:'100%', padding:'15px', fontSize:16, fontWeight:700,
+                    fontFamily:'Outfit,sans-serif', border:'none', borderRadius:12, cursor:'pointer',
+                    background:'linear-gradient(135deg,#059669,#10b981)', color:'white',
+                    boxShadow:'0 4px 16px rgba(16,185,129,.3)',
+                }}>
+                    View Court Details →
+                </button>
+                <button onClick={() => {setStep(0);setPlayerCount(null);setWindCondition(null);}} style={{
+                    width:'100%', marginTop:10, padding:'12px', fontSize:14, fontWeight:600,
+                    fontFamily:'Outfit,sans-serif', border:'none', borderRadius:10, cursor:'pointer',
+                    background:'transparent', color:'#64748b',
+                }}>
+                    Submit Another Report
+                </button>
+            </div>
+        );
+    };
+
+    // ── Recent Reports (visible on all steps) ─────────────────────────
+    const RecentReports = () => {
+        if (recentReports.length === 0) return null;
+        return (
+            <div style={{marginTop:32,animation:'slideDown .4s ease'}}>
+                <div style={{fontSize:12,fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:10,display:'flex',alignItems:'center',gap:6}}>
+                    <span className="live-dot"/> Recent Reports
+                </div>
+                {recentReports.map(r => {
+                    const pOpt = PLAYER_OPTIONS.find(o => o.value === r.playerCount);
+                    const wOpt = WIND_OPTIONS.find(o => o.value === r.windCondition);
+                    const ago = Math.round((Date.now() - r.timestamp) / 60000);
+                    const agoText = ago < 1 ? 'Just now' : ago < 60 ? `${ago}m ago` : `${Math.round(ago/60)}h ago`;
+                    return (
+                        <div key={r.id} style={{
+                            background:'#1e293b', borderRadius:12, padding:'12px 14px',
+                            marginBottom:8, border:'1px solid #334155',
+                        }}>
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                                <span style={{fontSize:14,fontWeight:700,color:'#e2e8f0'}}>{r.reporterName}</span>
+                                <span style={{fontSize:11,color:'#475569'}}>{agoText}</span>
+                            </div>
+                            <div style={{display:'flex',gap:14,fontSize:13}}>
+                                <span style={{color:'#94a3b8'}}>👥 {pOpt?.emoji} {pOpt?.label || r.playerCount}</span>
+                                <span style={{color:'#94a3b8'}}>🌬️ {wOpt?.emoji} {wOpt?.label || r.windCondition}</span>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
+    // ── Render ─────────────────────────────────────────────────────────
+    return (
+        <div style={{minHeight:'100vh',background:'linear-gradient(180deg,#0f172a 0%,#1e3a2f 100%)',display:'flex',flexDirection:'column'}}>
+            {/* Nav */}
+            <div style={{background:'rgba(15,23,42,.9)',backdropFilter:'blur(8px)',padding:'13px 18px',display:'flex',alignItems:'center',gap:12,position:'sticky',top:0,zIndex:100,borderBottom:'1px solid #1e293b'}}>
+                <button onClick={goHome} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontSize:22,padding:'2px 6px',lineHeight:1}}>←</button>
+                <div className="fd" style={{fontSize:22,fontWeight:800,flex:1,cursor:'pointer'}} onClick={goHome}>
+                    <span style={{color:'white'}}>PICKLE</span><span style={{color:'#34d399'}}>CONNECT</span>
+                </div>
+            </div>
+
+            {/* Court name banner */}
+            <div style={{padding:'14px 20px 10px',textAlign:'center'}}>
+                <div style={{fontSize:11,fontWeight:700,color:'#059669',textTransform:'uppercase',letterSpacing:'1px'}}>Court Report</div>
+                <div className="fd" style={{fontSize:22,fontWeight:800,color:'white',marginTop:2}}>{courtData.name}</div>
+                {courtData.address && <div style={{fontSize:12,color:'#64748b',marginTop:3}}>📍 {courtData.address}</div>}
+            </div>
+
+            {/* Main content */}
+            <div style={{flex:1,padding:'8px 20px 32px',maxWidth:480,width:'100%',margin:'0 auto'}}>
+                {step < 3 && <ProgressDots />}
+
+                {step === 0 && <StepName />}
+                {step === 1 && <StepPlayers />}
+                {step === 2 && <StepWind />}
+                {step === 3 && <StepSubmitting />}
+                {step === 4 && <StepDone />}
+
+                <RecentReports />
+            </div>
+
+            {/* Footer */}
+            <div style={{textAlign:'center',padding:'16px',fontSize:11,color:'#475569'}}>
+                PickleConnect · Community Court Reports
+            </div>
+        </div>
+    );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
