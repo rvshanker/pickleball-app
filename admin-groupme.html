@@ -106,9 +106,9 @@ function fmtTimeOnly(ts) {
 // ── Weather Report builder ───────────────────────────────────────────
 function getPlayability(wind, gust, rain) {
     let s = 0;
-    if (wind > 15) s += 3; else if (wind > 10) s += 1;
-    if (gust > 25) s += 3; else if (gust > 15) s += 1;
-    if (rain > 50) s += 3; else if (rain > 20) s += 1;
+    if (wind >= 15) s += 3; else if (wind >= 10) s += 1;
+    if (gust >= 25) s += 3; else if (gust >= 15) s += 1;
+    if (rain >= 50) s += 3; else if (rain >= 20) s += 1;
     if (s === 0) return { label:'Great', emoji:'🟢', tip:'Perfect conditions — get out there!' };
     if (s <= 2) return { label:'Okay', emoji:'🟡', tip:'Playable, but expect some wind effect on dinks.' };
     if (s <= 4) return { label:'Marginal', emoji:'🟠', tip:'Tough conditions — lobs will drift.' };
@@ -135,22 +135,17 @@ async function fetchWeatherReport(lat, lng, courtName) {
         return order.indexOf(getPlayability(a.wind,a.gust,a.rain).label) <= order.indexOf(getPlayability(b.wind,b.gust,b.rain).label) ? a : b;
     });
     const bestP = getPlayability(best.wind, best.gust, best.rain);
-    const bestTime = new Date(best.time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'});
+    const bestTime = new Date(best.time).toLocaleTimeString('en-US',{hour:'numeric',timeZone:'America/Chicago'});
     const lines = [
-        `🏓 ${courtName || 'Court'} — Weather Report`,
-        `📅 ${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',timeZone:'America/Chicago'})}`,
+        `🏓 ${courtName || 'Court'} — Weather`,
+        `${bestP.emoji} Best: ${bestP.label} at ${bestTime}`,
         ``,
-        `${bestP.emoji} Best Window: ${bestP.label} at ${bestTime}`,
-        `${bestP.tip}`,
-        ``,
-        `🌤 Next 5 Hours:`,
     ];
     hours.forEach(hr => {
-        const t = new Date(hr.time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'});
+        const t = new Date(hr.time).toLocaleTimeString('en-US',{hour:'numeric',timeZone:'America/Chicago'});
+        const pad = t.length < 4 ? ' ' : '';
         const p = getPlayability(hr.wind, hr.gust, hr.rain);
-        const dir = hr.windDeg != null ? ' '+windDir(hr.windDeg) : '';
-        lines.push(`${p.emoji} ${t}: ${p.label}`);
-        lines.push(`  🌡 ${hr.temp}°F  💨 ${hr.wind}mph${dir}  🌬 ${hr.gust}mph  🌧 ${hr.rain}%`);
+        lines.push(`${pad}${t} ${p.emoji} ${hr.temp}°F 💨${hr.wind} 🌬${hr.gust} 🌧${hr.rain}%`);
     });
     lines.push(``);
     lines.push(`🔗 pickleconnect.live`);
