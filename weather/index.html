@@ -112,21 +112,24 @@ function App() {
     try {
       const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,wind_gusts_10m,precipitation&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m,winddirection_10m,precipitation_probability&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_hours=12&timezone=auto`);
       const d = await r.json();
-      setWeather({
-        temp: Math.round(d.current.temperature_2m),
-        wind: Math.round(d.current.wind_speed_10m),
-        gust: Math.round(d.current.wind_gusts_10m || 0),
-        precip: d.current.precipitation || 0
-      });
       const now = new Date();
-      setForecast(d.hourly.time.map((t, i) => ({
+      const hourly = d.hourly.time.map((t, i) => ({
         dt: new Date(t),
         temp: Math.round(d.hourly.temperature_2m[i]),
         wind: Math.round(d.hourly.wind_speed_10m[i]),
         gust: Math.round(d.hourly.wind_gusts_10m?.[i] || 0),
         windDeg: d.hourly.winddirection_10m?.[i],
         rain: d.hourly.precipitation_probability?.[i] || 0
-      })).filter(h => h.dt >= now).slice(0, 9));
+      })).filter(h => h.dt >= now).slice(0, 9);
+      setForecast(hourly);
+      // Use first hourly point as "current" so the top card matches the first forecast row
+      const cur = hourly[0] || { temp: Math.round(d.current.temperature_2m), wind: Math.round(d.current.wind_speed_10m), gust: Math.round(d.current.wind_gusts_10m || 0) };
+      setWeather({
+        temp: cur.temp,
+        wind: cur.wind,
+        gust: cur.gust,
+        rain: cur.rain || 0
+      });
       setCoords({ lat, lng });
     } catch (e) {
       setError('Failed to fetch weather data. Please try again.');
