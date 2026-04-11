@@ -1207,42 +1207,99 @@ function CourtDetailPage({courtId,onBack,user,profile}){
           const best=forecast.length>0?forecast.reduce((a,b)=>{const o=['Great','Okay','Marginal','Skip It'];return o.indexOf(getPlayability(a.wind,a.gust,a.rain).l)<=o.indexOf(getPlayability(b.wind,b.gust,b.rain).l)?a:b;}):null;
           const bestP=best?getPlayability(best.wind,best.gust,best.rain):null;
           const bestTime=best?new Date(best.dt||best.time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'';
+          // Wind graph data
+          const maxWind=Math.max(...forecast.map(h=>Math.max(h.wind,h.gust)),20);
+          const graphH=100,graphW=forecast.length>0?(forecast.length-1)*60+40:300;
+          const windPts=forecast.map((h,i)=>({x:20+i*((graphW-40)/(forecast.length-1||1)),y:graphH-10-(h.wind/maxWind)*(graphH-25)}));
+          const gustPts=forecast.map((h,i)=>({x:20+i*((graphW-40)/(forecast.length-1||1)),y:graphH-10-(h.gust/maxWind)*(graphH-25)}));
+          const toPath=pts=>pts.map((p,i)=>`${i===0?'M':'L'}${p.x},${p.y}`).join(' ');
+          const toArea=pts=>{if(!pts.length)return'';return toPath(pts)+` L${pts[pts.length-1].x},${graphH-10} L${pts[0].x},${graphH-10} Z`;};
           return<div style={{position:'fixed',inset:0,background:'var(--navy)',zIndex:99999,overflowY:'auto',overflowX:'hidden'}}>
+            {/* Header */}
             <div style={{position:'sticky',top:0,zIndex:1,background:'var(--navy)',borderBottom:'1px solid var(--border)',padding:'14px 18px 12px',display:'flex',alignItems:'center',gap:12}}>
               <button onClick={()=>setShowWx(false)} style={{width:36,height:36,borderRadius:'50%',background:'var(--card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',cursor:'pointer',flexShrink:0,color:'var(--text)'}}>←</button>
               <div>
-                <div style={{fontFamily:'Syne',fontSize:'1.05rem',fontWeight:800}}>🏓 Court Weather</div>
+                <div style={{fontSize:'0.95rem',fontWeight:700}}>🏓 Court Weather</div>
                 <div style={{fontSize:'0.68rem',color:'var(--muted)'}}>📍 {courtData.name}</div>
               </div>
             </div>
             <div style={{maxWidth:480,margin:'0 auto',padding:'16px 16px 40px'}}>
-              {bestP&&<div style={{display:'flex',alignItems:'center',gap:14,background:bestP.c+'15',border:'1.5px solid '+bestP.c+'44',borderRadius:16,padding:'16px 18px',marginBottom:16}}>
-                <span style={{fontSize:'2.2rem'}}>{bestP.e}</span>
+              {/* Best window banner */}
+              {bestP&&<div style={{display:'flex',alignItems:'center',gap:12,background:bestP.c+'15',border:'1.5px solid '+bestP.c+'44',borderRadius:14,padding:'14px 16px',marginBottom:16}}>
+                <span style={{fontSize:'2rem'}}>{bestP.e}</span>
                 <div>
-                  <div style={{fontSize:'1rem',fontWeight:800,color:bestP.c}}>Best: <span style={{fontFamily:'Syne'}}>{bestP.l}</span> at {bestTime}</div>
-                  <div style={{fontSize:'0.82rem',color:'var(--muted)',marginTop:3}}>{bestP.tip}</div>
+                  <div style={{fontSize:'0.88rem',fontWeight:700,color:bestP.c}}>Best: {bestP.l} at {bestTime}</div>
+                  <div style={{fontSize:'0.75rem',color:'var(--muted)',marginTop:2}}>{bestP.tip}</div>
                 </div>
               </div>}
-              <div style={{display:'flex',flexDirection:'column',gap:10}}>
+
+              {/* Wind & Gusts Graph */}
+              {forecast.length>1&&<div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,padding:'14px 16px',marginBottom:16}}>
+                <div style={{fontSize:'0.65rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:10}}>💨 Wind & Gusts (mph)</div>
+                <div style={{overflowX:'auto',scrollbarWidth:'none',WebkitOverflowScrolling:'touch'}}>
+                  <svg width={Math.max(graphW,300)} height={graphH+18} style={{display:'block'}}>
+                    {/* Grid lines */}
+                    {[0,0.25,0.5,0.75,1].map((f,i)=>{const y=graphH-10-f*(graphH-25);const val=Math.round(f*maxWind);return<g key={i}><line x1={18} y1={y} x2={graphW} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth={1}/><text x={14} y={y+3} fill="var(--muted)" fontSize="8" textAnchor="end">{val}</text></g>;})}
+                    {/* Danger zone */}
+                    <rect x={18} y={graphH-10-(15/maxWind)*(graphH-25)} width={graphW-18} height={(15/maxWind)*(graphH-25)} fill="rgba(247,91,91,0.04)"/>
+                    <line x1={18} y1={graphH-10-(15/maxWind)*(graphH-25)} x2={graphW} y2={graphH-10-(15/maxWind)*(graphH-25)} stroke="rgba(247,91,91,0.25)" strokeWidth={1} strokeDasharray="4,3"/>
+                    {/* Gust area */}
+                    <path d={toArea(gustPts)} fill="rgba(247,201,72,0.08)"/>
+                    <path d={toPath(gustPts)} fill="none" stroke="var(--accent)" strokeWidth={1.5} strokeDasharray="4,3"/>
+                    {/* Wind line */}
+                    <path d={toArea(windPts)} fill="rgba(46,204,113,0.1)"/>
+                    <path d={toPath(windPts)} fill="none" stroke="var(--green)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"/>
+                    {/* Dots + labels */}
+                    {forecast.map((h,i)=>{const wp=windPts[i],gp=gustPts[i];const lbl=i===0?'Now':h.dt.toLocaleTimeString([],{hour:'numeric'});return<g key={i}>
+                      <circle cx={wp.x} cy={wp.y} r={3.5} fill="var(--green)" stroke="var(--navy)" strokeWidth={1.5}/>
+                      {h.gust>h.wind+3&&<circle cx={gp.x} cy={gp.y} r={2.5} fill="var(--accent)" stroke="var(--navy)" strokeWidth={1}/>}
+                      <text x={wp.x} y={graphH+12} fill="var(--muted)" fontSize="8" textAnchor="middle" fontWeight="600">{lbl}</text>
+                    </g>;})}
+                  </svg>
+                </div>
+                <div style={{display:'flex',gap:16,marginTop:8,fontSize:'0.65rem',color:'var(--muted)'}}>
+                  <span style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:14,height:3,background:'var(--green)',borderRadius:2,display:'inline-block'}}/>Wind</span>
+                  <span style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:14,height:2,background:'var(--accent)',borderRadius:2,display:'inline-block',borderTop:'1px dashed var(--accent)'}}/>Gusts</span>
+                  <span style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:14,height:2,background:'rgba(247,91,91,0.4)',borderRadius:2,display:'inline-block',borderTop:'1px dashed rgba(247,91,91,0.5)'}}/>15 mph threshold</span>
+                </div>
+              </div>}
+
+              {/* Hourly cards — calendar style */}
+              <div style={{fontSize:'0.65rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>Hourly Forecast</div>
+              <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:14,overflow:'hidden',marginBottom:16}}>
                 {forecast.map((h,i)=>{const hp=getPlayability(h.wind,h.gust,h.rain);const t=h.dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});const dir=h.windDeg!=null?windDir(h.windDeg):'';return(
-                  <div key={i} style={{background:hp.c+'10',border:'1.5px solid '+hp.c+'33',borderRadius:14,padding:'14px 16px'}}>
-                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-                      <span style={{fontSize:'1.3rem'}}>{hp.e}</span>
-                      <span style={{fontFamily:'Syne',fontSize:'1.15rem',fontWeight:800,color:hp.c}}>{hp.l}</span>
-                      <span style={{fontSize:'0.85rem',color:'var(--muted)',marginLeft:'auto',fontWeight:600}}>{i===0?'Now':t}</span>
+                  <div key={i} style={{padding:'12px 14px',borderBottom:i<forecast.length-1?'1px solid var(--border)':'none',borderLeft:'4px solid '+hp.c,background:i===0?'rgba(46,204,113,0.04)':'transparent'}}>
+                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+                      <span style={{fontSize:'1rem'}}>{hp.e}</span>
+                      <span style={{fontSize:'0.82rem',fontWeight:700,color:hp.c}}>{hp.l}</span>
+                      <span style={{fontSize:'0.78rem',color:'var(--muted)',marginLeft:'auto',fontWeight:600}}>{i===0?'Now':t}</span>
                     </div>
-                    <div style={{fontSize:'0.78rem',color:'var(--muted)',marginBottom:10}}>{hp.tip}</div>
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px 16px',fontSize:'0.92rem'}}>
-                      <div style={{display:'flex',alignItems:'center',gap:6}}><span>🌡</span><span style={{color:'var(--muted)',fontSize:'0.8rem'}}>Temp</span><span style={{fontWeight:700,marginLeft:'auto'}}>{h.temp}°F</span></div>
-                      <div style={{display:'flex',alignItems:'center',gap:6}}><span>💨</span><span style={{color:'var(--muted)',fontSize:'0.8rem'}}>Wind</span><span style={{fontWeight:700,color:h.wind>=15?'var(--yellow)':'var(--text)',marginLeft:'auto'}}>{h.wind} mph</span>{dir&&<span style={{fontSize:'0.72rem',color:'var(--muted)',marginLeft:2}}>{dir}</span>}</div>
-                      <div style={{display:'flex',alignItems:'center',gap:6}}><span>🌬</span><span style={{color:'var(--muted)',fontSize:'0.8rem'}}>Gusts</span><span style={{fontWeight:700,color:h.gust>=15?'var(--accent)':'var(--text)',marginLeft:'auto'}}>{h.gust} mph</span></div>
-                      <div style={{display:'flex',alignItems:'center',gap:6}}><span>🌧</span><span style={{color:'var(--muted)',fontSize:'0.8rem'}}>Rain</span><span style={{fontWeight:700,color:h.rain>=20?'#60a5fa':'var(--text)',marginLeft:'auto'}}>{h.rain}%</span></div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:6,fontSize:'0.78rem'}}>
+                      <div style={{textAlign:'center'}}>
+                        <div style={{fontSize:'0.55rem',color:'var(--muted)',fontWeight:600,marginBottom:2}}>Temp</div>
+                        <div style={{fontWeight:700}}>{h.temp}°F</div>
+                      </div>
+                      <div style={{textAlign:'center'}}>
+                        <div style={{fontSize:'0.55rem',color:'var(--muted)',fontWeight:600,marginBottom:2}}>Wind</div>
+                        <div style={{fontWeight:700,color:h.wind>=15?'var(--accent)':'var(--text)'}}>{h.wind} mph</div>
+                        {dir&&<div style={{fontSize:'0.55rem',color:'var(--muted)'}}>{dir}</div>}
+                      </div>
+                      <div style={{textAlign:'center'}}>
+                        <div style={{fontSize:'0.55rem',color:'var(--muted)',fontWeight:600,marginBottom:2}}>Gusts</div>
+                        <div style={{fontWeight:700,color:h.gust>=20?'var(--red)':h.gust>=15?'var(--accent)':'var(--text)'}}>{h.gust} mph</div>
+                      </div>
+                      <div style={{textAlign:'center'}}>
+                        <div style={{fontSize:'0.55rem',color:'var(--muted)',fontWeight:600,marginBottom:2}}>Rain</div>
+                        <div style={{fontWeight:700,color:h.rain>=30?'#60a5fa':'var(--text)'}}>{h.rain}%</div>
+                      </div>
                     </div>
                   </div>
                 );})}
               </div>
-              <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,padding:'14px 16px',marginTop:16,fontSize:'0.78rem',color:'var(--muted)'}}>
-                <div style={{fontWeight:700,marginBottom:8,color:'var(--text)',fontSize:'0.82rem'}}>Playability Thresholds</div>
+
+              {/* Thresholds */}
+              <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,padding:'14px 16px',fontSize:'0.75rem',color:'var(--muted)'}}>
+                <div style={{fontWeight:700,marginBottom:8,color:'var(--text)',fontSize:'0.78rem'}}>Playability Thresholds</div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4}}>
                   <span></span><span style={{fontWeight:600}}>Good</span><span style={{fontWeight:600}}>Bad</span>
                   <span>Wind</span><span>&lt; 10 mph</span><span>≥ 15 mph</span>
