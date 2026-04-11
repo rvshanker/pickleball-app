@@ -97,9 +97,9 @@ function haversine(lat1, lng1, lat2, lng2) {
 
 function getPlayability(wind, gust, rain) {
   let s = 0;
-  if (wind > 15) s += 3; else if (wind > 10) s += 1;
-  if (gust > 25) s += 3; else if (gust > 15) s += 1;
-  if (rain > 50) s += 3; else if (rain > 20) s += 1;
+  if (wind >= 15) s += 3; else if (wind >= 10) s += 1;
+  if (gust >= 25) s += 3; else if (gust >= 15) s += 1;
+  if (rain >= 50) s += 3; else if (rain >= 20) s += 1;
   if (s === 0) return { label: "Great", emoji: "🟢" };
   if (s <= 2) return { label: "Okay",  emoji: "🟡" };
   if (s <= 4) return { label: "Marginal", emoji: "🟠" };
@@ -273,8 +273,7 @@ async function buildDynamicMessage(courtId, courtName, includeWeather, passedLat
           const verdict = getPlayability(firstHour.wind, firstHour.gust, firstHour.rain);
           lines.push(``);
           lines.push(`${verdict.emoji} Playability: ${verdict.label}`);
-          lines.push(`🌤 Next 4 hours:`);
-          hours.forEach(h => lines.push(`  ${h.formatted}`));
+          hours.forEach(h => lines.push(h.formatted));
         } else {
           logger.warn(`Weather fetch returned no hours for lat=${lat} lng=${lng}`);
         }
@@ -331,14 +330,12 @@ function fetchHourlyWeather(lat, lng) {
 
             const tempEmoji = temp <= 32 ? "🥶" : temp <= 50 ? "🧣" : temp <= 70 ? "😊" : temp <= 85 ? "☀️" : "🥵";
             const p = getPlayability(wind, gust, rain);
-
-            let extras = "";
-            if (gust > 15) extras += ` 🌬${gust}mph`;
-            if (rain > 20) extras += ` 🌧${rain}%`;
+            const tShort = time.replace(':00 ', ' ').replace(' ', '');
+            const pad = tShort.length < 4 ? ' ' : '';
 
             return {
               wind, gust, rain,
-              formatted: `${time}: ${p.emoji} ${tempEmoji} ${temp}°F  💨${wind}mph${extras}`,
+              formatted: `${pad}${tShort} ${p.emoji} ${temp}°F 💨${wind} 🌬${gust} 🌧${rain}%`,
             };
           });
 
