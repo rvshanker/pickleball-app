@@ -857,7 +857,7 @@ const COURT_DURATIONS=[{label:'1 hr',value:60},{label:'2 hr',value:120},{label:'
 const courtRatingInfo=key=>COURT_RATINGS.find(r=>r.key===key);
 function courtHeadcount(players){return players.reduce((s,p)=>s+1+(p.guests||0),0);}
 const wxIcon=(temp,wind)=>wind>20?'🌬️':temp<32?'🥶':temp<50?'🧥':temp>88?'☀️':'⛅';
-const getPlayability=(wind,gust,rain)=>{let s=0;if(wind>15)s+=3;else if(wind>10)s+=1;if(gust>25)s+=3;else if(gust>15)s+=1;if(rain>50)s+=3;else if(rain>20)s+=1;if(s===0)return{l:'Great',c:'var(--green)',e:'🟢'};if(s<=2)return{l:'Okay',c:'var(--yellow)',e:'🟡'};if(s<=4)return{l:'Marginal',c:'var(--accent)',e:'🟠'};return{l:'Skip It',c:'var(--red, #ef4444)',e:'🔴'};};
+const getPlayability=(wind,gust,rain)=>{let s=0;if(wind>=15)s+=3;else if(wind>=10)s+=1;if(gust>=25)s+=3;else if(gust>=15)s+=1;if(rain>=50)s+=3;else if(rain>=20)s+=1;if(s===0)return{l:'Great',c:'var(--green)',e:'🟢'};if(s<=2)return{l:'Okay',c:'var(--yellow)',e:'🟡'};if(s<=4)return{l:'Marginal',c:'var(--accent)',e:'🟠'};return{l:'Skip It',c:'var(--red, #ef4444)',e:'🔴'};};
 
 function CourtPlayTimer({checkInTime,durationMins}){
     const[remaining,setRemaining]=useState(0);
@@ -1018,7 +1018,7 @@ function CourtDetailPage({courtId,onBack,user,profile}){
                         <div>
                             <div style={{fontSize:'0.55rem',color:'var(--muted)',fontWeight:600}}>Now</div>
                             <div style={{fontSize:'0.88rem',fontWeight:800,whiteSpace:'nowrap'}}>{weather.temp}°F</div>
-                            <div style={{fontSize:'0.72rem',color:weather.wind>15?'var(--yellow)':'var(--muted)',fontWeight:weather.wind>15?700:500,whiteSpace:'nowrap'}}>💨 {weather.wind} mph</div>
+                            <div style={{fontSize:'0.72rem',color:weather.wind>=15?'var(--yellow)':'var(--muted)',fontWeight:weather.wind>=15?700:500,whiteSpace:'nowrap'}}>💨 {weather.wind} mph</div>
                         </div>
                     </div>
                     {/* Next hours with gusts + rain */}
@@ -1028,8 +1028,8 @@ function CourtDetailPage({courtId,onBack,user,profile}){
                                 <div style={{fontSize:'0.52rem',color:'var(--muted)',fontWeight:600,whiteSpace:'nowrap'}}>{h.dt.toLocaleTimeString([],{hour:'numeric'})}</div>
                                 <div style={{fontSize:'0.6rem',marginTop:1}}>{hp.e}</div>
                                 <div style={{fontSize:'0.75rem',fontWeight:800,marginTop:1}}>{h.temp}°</div>
-                                <div style={{fontSize:'0.6rem',color:h.wind>15?'var(--yellow)':'var(--muted)',fontWeight:h.wind>15?700:500,marginTop:1}}>💨{h.wind}</div>
-                                {h.gust>15&&<div style={{fontSize:'0.55rem',color:'var(--accent)',fontWeight:700}}>🌬{h.gust}</div>}
+                                <div style={{fontSize:'0.6rem',color:h.wind>=15?'var(--yellow)':'var(--muted)',fontWeight:h.wind>=15?700:500,marginTop:1}}>💨{h.wind}</div>
+                                {h.gust>=15&&<div style={{fontSize:'0.55rem',color:'var(--accent)',fontWeight:700}}>🌬{h.gust}</div>}
                                 {h.rain>20&&<div style={{fontSize:'0.55rem',color:'#60a5fa',fontWeight:700}}>🌧{h.rain}%</div>}
                             </div>
                         );})}
