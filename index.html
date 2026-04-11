@@ -1182,52 +1182,52 @@ function CourtDetailPage({courtId,onBack,user,profile}){
                 <button className="btn btn-ghost" onClick={()=>setShowEdit(true)} style={{width:'100%'}}>✏️ Edit Court Info</button>
             </div>}
         </div>
-        {showWx&&weather&&(()=>{
+        {showWx&&weather&&ReactDOM.createPortal((()=>{
           const windDir=deg=>{const dirs=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];return dirs[Math.round(deg/22.5)%16];};
           const best=forecast.length>0?forecast.reduce((a,b)=>{const o=['Great','Okay','Marginal','Skip It'];return o.indexOf(getPlayability(a.wind,a.gust,a.rain).l)<=o.indexOf(getPlayability(b.wind,b.gust,b.rain).l)?a:b;}):null;
           const bestP=best?getPlayability(best.wind,best.gust,best.rain):null;
           const bestTime=best?new Date(best.dt||best.time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'';
-          return<div style={{position:'fixed',inset:0,background:'rgba(5,10,18,0.92)',backdropFilter:'blur(10px)',zIndex:9960,overflowY:'auto',animation:'fadeIn .18s'}} onClick={()=>setShowWx(false)}>
-            <div style={{maxWidth:480,margin:'0 auto',padding:'20px 16px 40px'}} onClick={e=>e.stopPropagation()}>
-              {/* Header */}
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-                <div>
-                  <div style={{fontFamily:'Syne',fontSize:'1.1rem',fontWeight:800}}>🏓 Court Weather</div>
-                  <div style={{fontSize:'0.72rem',color:'var(--muted)',marginTop:2}}>📍 {courtData.name}</div>
-                </div>
-                <button onClick={()=>setShowWx(false)} style={{width:36,height:36,borderRadius:'50%',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'var(--muted)',fontSize:'0.9rem'}}>✕</button>
+          return<div style={{position:'fixed',inset:0,background:'var(--navy)',zIndex:99999,overflowY:'auto',overflowX:'hidden'}}>
+            {/* Sticky header */}
+            <div style={{position:'sticky',top:0,zIndex:1,background:'var(--navy)',borderBottom:'1px solid var(--border)',padding:'14px 18px 12px',display:'flex',alignItems:'center',gap:12}}>
+              <button onClick={()=>setShowWx(false)} style={{width:36,height:36,borderRadius:'50%',background:'var(--card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',cursor:'pointer',flexShrink:0,color:'var(--text)'}}>←</button>
+              <div>
+                <div style={{fontFamily:'Syne',fontSize:'1.05rem',fontWeight:800}}>🏓 Court Weather</div>
+                <div style={{fontSize:'0.68rem',color:'var(--muted)'}}>📍 {courtData.name}</div>
               </div>
+            </div>
+            <div style={{maxWidth:480,margin:'0 auto',padding:'16px 16px 40px'}}>
               {/* Best window banner */}
-              {bestP&&<div style={{display:'flex',alignItems:'center',gap:14,background:bestP.c+'18',border:'1.5px solid '+bestP.c+'44',borderRadius:16,padding:'16px 18px',marginBottom:16}}>
+              {bestP&&<div style={{display:'flex',alignItems:'center',gap:14,background:bestP.c+'15',border:'1.5px solid '+bestP.c+'44',borderRadius:16,padding:'16px 18px',marginBottom:16}}>
                 <span style={{fontSize:'2.2rem'}}>{bestP.e}</span>
                 <div>
-                  <div style={{fontFamily:'Syne',fontSize:'1.1rem',fontWeight:800,color:bestP.c}}>Best: {bestP.l} at {bestTime}</div>
-                  <div style={{fontSize:'0.82rem',color:'var(--muted)',marginTop:2}}>{bestP.tip}</div>
+                  <div style={{fontSize:'1rem',fontWeight:800,color:bestP.c}}>Best: <span style={{fontFamily:'Syne'}}>{bestP.l}</span> at {bestTime}</div>
+                  <div style={{fontSize:'0.82rem',color:'var(--muted)',marginTop:3}}>{bestP.tip}</div>
                 </div>
               </div>}
               {/* Hour cards */}
               <div style={{display:'flex',flexDirection:'column',gap:10}}>
                 {forecast.map((h,i)=>{const hp=getPlayability(h.wind,h.gust,h.rain);const t=h.dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});const dir=h.windDeg!=null?windDir(h.windDeg):'';return(
-                  <div key={i} style={{background:hp.c+'12',border:'1.5px solid '+hp.c+'33',borderRadius:14,padding:'14px 16px'}}>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-                      <span style={{fontSize:'0.88rem',fontWeight:600,color:'var(--muted)'}}>{i===0?'Now':t}</span>
-                      <span style={{fontSize:'1.2rem'}}>{hp.e}</span>
+                  <div key={i} style={{background:hp.c+'10',border:'1.5px solid '+hp.c+'33',borderRadius:14,padding:'14px 16px'}}>
+                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                      <span style={{fontSize:'1.3rem'}}>{hp.e}</span>
+                      <span style={{fontFamily:'Syne',fontSize:'1.15rem',fontWeight:800,color:hp.c}}>{hp.l}</span>
+                      <span style={{fontSize:'0.85rem',color:'var(--muted)',marginLeft:'auto',fontWeight:600}}>{i===0?'Now':t}</span>
                     </div>
-                    <div style={{fontFamily:'Syne',fontSize:'1.3rem',fontWeight:800,color:hp.c,marginBottom:2}}>{hp.l}</div>
                     <div style={{fontSize:'0.78rem',color:'var(--muted)',marginBottom:10}}>{hp.tip}</div>
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'6px 16px',fontSize:'0.88rem'}}>
-                      <div style={{display:'flex',alignItems:'center',gap:5}}><span>🌡</span><span style={{color:'var(--muted)',fontSize:'0.78rem'}}>Temp</span><span style={{fontWeight:700}}>{h.temp}°F</span></div>
-                      <div style={{display:'flex',alignItems:'center',gap:5}}><span>💨</span><span style={{color:'var(--muted)',fontSize:'0.78rem'}}>Wind</span><span style={{fontWeight:700,color:h.wind>=15?'var(--yellow)':'var(--text)'}}>{h.wind} mph</span>{dir&&<span style={{fontSize:'0.72rem',color:'var(--muted)'}}>{dir}</span>}</div>
-                      <div style={{display:'flex',alignItems:'center',gap:5}}><span>🌬</span><span style={{color:'var(--muted)',fontSize:'0.78rem'}}>Gusts</span><span style={{fontWeight:700,color:h.gust>=15?'var(--accent)':'var(--text)'}}>{h.gust} mph</span></div>
-                      <div style={{display:'flex',alignItems:'center',gap:5}}><span>🌧</span><span style={{color:'var(--muted)',fontSize:'0.78rem'}}>Rain</span><span style={{fontWeight:700,color:h.rain>=20?'#60a5fa':'var(--text)'}}>{h.rain}%</span></div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px 16px',fontSize:'0.92rem'}}>
+                      <div style={{display:'flex',alignItems:'center',gap:6}}><span>🌡</span><span style={{color:'var(--muted)',fontSize:'0.8rem'}}>Temp</span><span style={{fontWeight:700,marginLeft:'auto'}}>{h.temp}°F</span></div>
+                      <div style={{display:'flex',alignItems:'center',gap:6}}><span>💨</span><span style={{color:'var(--muted)',fontSize:'0.8rem'}}>Wind</span><span style={{fontWeight:700,color:h.wind>=15?'var(--yellow)':'var(--text)',marginLeft:'auto'}}>{h.wind} mph</span>{dir&&<span style={{fontSize:'0.72rem',color:'var(--muted)',marginLeft:2}}>{dir}</span>}</div>
+                      <div style={{display:'flex',alignItems:'center',gap:6}}><span>🌬</span><span style={{color:'var(--muted)',fontSize:'0.8rem'}}>Gusts</span><span style={{fontWeight:700,color:h.gust>=15?'var(--accent)':'var(--text)',marginLeft:'auto'}}>{h.gust} mph</span></div>
+                      <div style={{display:'flex',alignItems:'center',gap:6}}><span>🌧</span><span style={{color:'var(--muted)',fontSize:'0.8rem'}}>Rain</span><span style={{fontWeight:700,color:h.rain>=20?'#60a5fa':'var(--text)',marginLeft:'auto'}}>{h.rain}%</span></div>
                     </div>
                   </div>
                 );})}
               </div>
               {/* Legend */}
-              <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:12,padding:'12px 16px',marginTop:16,fontSize:'0.75rem',color:'var(--muted)'}}>
-                <div style={{fontWeight:700,marginBottom:6,color:'var(--text)'}}>Playability Thresholds</div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:3}}>
+              <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,padding:'14px 16px',marginTop:16,fontSize:'0.78rem',color:'var(--muted)'}}>
+                <div style={{fontWeight:700,marginBottom:8,color:'var(--text)',fontSize:'0.82rem'}}>Playability Thresholds</div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4}}>
                   <span></span><span style={{fontWeight:600}}>Good</span><span style={{fontWeight:600}}>Bad</span>
                   <span>Wind</span><span>&lt; 10 mph</span><span>≥ 15 mph</span>
                   <span>Gusts</span><span>&lt; 15 mph</span><span>≥ 25 mph</span>
@@ -1236,7 +1236,7 @@ function CourtDetailPage({courtId,onBack,user,profile}){
               </div>
             </div>
           </div>;
-        })()}
+        })(),document.body)}
         {showEdit&&<EditCourtModal court={courtData} onClose={()=>setShowEdit(false)} onSaved={c=>{setCourtData(c);setShowEdit(false);}}/>}
     </div>);
 }
