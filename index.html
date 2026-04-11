@@ -857,7 +857,7 @@ const COURT_DURATIONS=[{label:'1 hr',value:60},{label:'2 hr',value:120},{label:'
 const courtRatingInfo=key=>COURT_RATINGS.find(r=>r.key===key);
 function courtHeadcount(players){return players.reduce((s,p)=>s+1+(p.guests||0),0);}
 const wxIcon=(temp,wind)=>wind>20?'🌬️':temp<32?'🥶':temp<50?'🧥':temp>88?'☀️':'⛅';
-const getPlayability=(wind,gust,rain)=>{let s=0;if(wind>=15)s+=3;else if(wind>=10)s+=1;if(gust>=25)s+=3;else if(gust>=15)s+=1;if(rain>=50)s+=3;else if(rain>=20)s+=1;if(s===0)return{l:'Great',c:'var(--green)',e:'🟢'};if(s<=2)return{l:'Okay',c:'var(--yellow)',e:'🟡'};if(s<=4)return{l:'Marginal',c:'var(--accent)',e:'🟠'};return{l:'Skip It',c:'var(--red, #ef4444)',e:'🔴'};};
+const getPlayability=(wind,gust,rain)=>{let s=0;if(wind>=15)s+=3;else if(wind>=10)s+=1;if(gust>=25)s+=3;else if(gust>=15)s+=1;if(rain>=50)s+=3;else if(rain>=20)s+=1;if(s===0)return{l:'Great',c:'var(--green)',e:'🟢',tip:'Perfect conditions — get out there!'};if(s<=2)return{l:'Okay',c:'var(--yellow)',e:'🟡',tip:'Playable, but expect some wind on dinks.'};if(s<=4)return{l:'Marginal',c:'var(--accent)',e:'🟠',tip:'Tough conditions — lobs will drift.'};return{l:'Skip It',c:'var(--red, #ef4444)',e:'🔴',tip:'Not worth it today.'};};
 
 function CourtPlayTimer({checkInTime,durationMins}){
     const[remaining,setRemaining]=useState(0);
@@ -956,7 +956,7 @@ function CourtDetailPage({courtId,onBack,user,profile}){
     const[userRating,setUserRating]=useState('');const[duration,setDuration]=useState(120);
     const[guestCount,setGuestCount]=useState(0);const[comment,setComment]=useState('');
     const[weather,setWeather]=useState(null);const[forecast,setForecast]=useState([]);
-    const[showEdit,setShowEdit]=useState(false);
+    const[showEdit,setShowEdit]=useState(false);const[showWx,setShowWx]=useState(false);
     const[courtReports,setCourtReports]=useState([]);
     const checkInsRef=useRef([]);
     // Use Firebase UID as deviceId for logged-in users (enables push notifications to find them)
@@ -972,7 +972,7 @@ function CourtDetailPage({courtId,onBack,user,profile}){
     useEffect(()=>{if(!courtId||!fbOk)return;const u=db.collection('courts').doc(courtId).collection('checkins').onSnapshot(snap=>{const now=Date.now(),cut=now-24*3600000;snap.docs.forEach(d=>{if(d.data().status==='checked-out')d.ref.delete().catch(()=>{});});const list=snap.docs.map(d=>({id:d.id,...d.data()})).filter(c=>c.status!=='checked-out'&&c.timestamp>cut).sort((a,b)=>(a.arrivalTime||a.timestamp)-(b.arrivalTime||b.timestamp));checkInsRef.current=list;setCheckIns(list);},e=>console.warn('CI:',e.message));return()=>u();},[courtId]);
     useEffect(()=>{if(!courtId||!fbOk)return;const u=db.collection('courts').doc(courtId).collection('court_reports').orderBy('timestamp','desc').limit(1).onSnapshot(snap=>{const cut=Date.now()-4*3600000;const list=snap.docs.map(d=>({id:d.id,...d.data()})).filter(r=>r.timestamp>cut);setCourtReports(list);},()=>{});return()=>u();},[courtId]);
     useEffect(()=>{if(!courtId||!fbOk)return;const tick=async()=>{const now=Date.now(),list=checkInsRef.current;for(const c of list){const st=c.status==='active'?c.timestamp:c.arrivalTime;if(c.status==='active'&&c.duration&&st&&now>st+c.duration*60000){await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).delete().catch(()=>{});}if(c.status==='later'&&c.arrivalTime&&now>=c.arrivalTime){await db.collection('courts').doc(courtId).collection('checkins').doc(c.id).update({status:'active',timestamp:now}).catch(()=>{});}}};tick();const t=setInterval(tick,15000);return()=>clearInterval(t);},[courtId]);
-    useEffect(()=>{if(!courtData?.lat||!courtData?.lng)return;const fx=async(la,ln)=>{try{const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+la+'&longitude='+ln+'&current=temperature_2m,wind_speed_10m,wind_gusts_10m&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m,precipitation_probability&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_hours=6&timezone=America/Chicago');const d=await r.json();setWeather({temp:Math.round(d.current.temperature_2m),wind:Math.round(d.current.wind_speed_10m),gust:Math.round(d.current.wind_gusts_10m||0)});const now=new Date();setForecast(d.hourly.time.map((t,i)=>({dt:new Date(t),temp:Math.round(d.hourly.temperature_2m[i]),wind:Math.round(d.hourly.wind_speed_10m[i]),gust:Math.round(d.hourly.wind_gusts_10m?.[i]||0),rain:d.hourly.precipitation_probability?.[i]||0})).filter(h=>h.dt>=now).slice(0,5));}catch(e){}};fx(courtData.lat,courtData.lng);},[courtData?.lat,courtData?.lng]);
+    useEffect(()=>{if(!courtData?.lat||!courtData?.lng)return;const fx=async(la,ln)=>{try{const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+la+'&longitude='+ln+'&current=temperature_2m,wind_speed_10m,wind_gusts_10m&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m,winddirection_10m,precipitation_probability&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_hours=9&timezone=America/Chicago');const d=await r.json();setWeather({temp:Math.round(d.current.temperature_2m),wind:Math.round(d.current.wind_speed_10m),gust:Math.round(d.current.wind_gusts_10m||0)});const now=new Date();setForecast(d.hourly.time.map((t,i)=>({dt:new Date(t),temp:Math.round(d.hourly.temperature_2m[i]),wind:Math.round(d.hourly.wind_speed_10m[i]),gust:Math.round(d.hourly.wind_gusts_10m?.[i]||0),windDeg:d.hourly.winddirection_10m?.[i],rain:d.hourly.precipitation_probability?.[i]||0})).filter(h=>h.dt>=now).slice(0,8));}catch(e){}};fx(courtData.lat,courtData.lng);},[courtData?.lat,courtData?.lng]);
     const updateCourt=async(field,value)=>{if(!fbOk||!courtId)return;await db.collection('courts').doc(courtId).update({[field]:value}).catch(console.error);};
     const deleteMyCheckIns=async()=>{const snap=await db.collection('courts').doc(courtId).collection('checkins').get();await Promise.all(snap.docs.filter(d=>d.data().deviceId===deviceId).map(d=>d.ref.delete()));};
     const submitCheckIn=async(status,atTime)=>{if(!fbOk||!userName.trim()){alert(!userName.trim()?'Enter your name':'DB error');return;}try{await deleteMyCheckIns();const ciStatus=status==='now'?'active':'later';await db.collection('courts').doc(courtId).collection('checkins').add({userName,deviceId,rating:userRating||null,status:ciStatus,guests:guestCount,duration,comment:comment.trim()||'',arrivalTime:atTime||Date.now(),timestamp:Date.now()});localStorage.setItem('pickleCourtUserName',userName);localStorage.setItem('pickleCourtRating',userRating);setShowForm(false);setShowLater(false);setArrivalTime('');setGuestCount(0);setComment('');}catch(e){alert('Check-in failed: '+e.message);}};
@@ -1006,8 +1006,8 @@ function CourtDetailPage({courtId,onBack,user,profile}){
             </div>
             {courtData.flashAnnouncement&&<div style={{marginTop:8,background:'rgba(247,201,72,0.12)',border:'1px solid rgba(247,201,72,0.3)',borderRadius:8,padding:'6px 10px',fontSize:'0.72rem',color:'var(--accent)',fontWeight:600}}>📢 {courtData.flashAnnouncement}</div>}
 
-            {/* Weather row */}
-            {weather&&<div style={{marginTop:12}}>
+            {/* Weather row — tap to expand */}
+            {weather&&<div style={{marginTop:12,cursor:'pointer'}} onClick={()=>setShowWx(true)}>
                 {(()=>{const p=getPlayability(weather.wind,weather.gust,forecast[0]?.rain||0);return<div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8,background:p.c+'18',border:'1px solid '+p.c+'33',borderRadius:10,padding:'5px 10px'}}>
                   <span style={{fontSize:'1rem'}}>{p.e}</span>
                   <span style={{fontSize:'0.75rem',fontWeight:800,color:p.c}}>{p.l} to Play</span>
@@ -1037,6 +1037,7 @@ function CourtDetailPage({courtId,onBack,user,profile}){
                         );})}
                     </div>
                 </div>
+                <div style={{fontSize:'0.6rem',color:'var(--green)',textAlign:'center',marginTop:4,fontWeight:600}}>Tap for full weather report ›</div>
             </div>}
         </div>
 
@@ -1201,6 +1202,57 @@ function CourtDetailPage({courtId,onBack,user,profile}){
             </div>}
         </div>
         {showEdit&&<EditCourtModal court={courtData} onClose={()=>setShowEdit(false)} onSaved={c=>{setCourtData(c);setShowEdit(false);}}/>}
+        {showWx&&weather&&ReactDOM.createPortal((()=>{
+          const windDir=deg=>{const dirs=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];return dirs[Math.round(deg/22.5)%16];};
+          const best=forecast.length>0?forecast.reduce((a,b)=>{const o=['Great','Okay','Marginal','Skip It'];return o.indexOf(getPlayability(a.wind,a.gust,a.rain).l)<=o.indexOf(getPlayability(b.wind,b.gust,b.rain).l)?a:b;}):null;
+          const bestP=best?getPlayability(best.wind,best.gust,best.rain):null;
+          const bestTime=best?new Date(best.dt||best.time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'';
+          return<div style={{position:'fixed',inset:0,background:'var(--navy)',zIndex:99999,overflowY:'auto',overflowX:'hidden'}}>
+            <div style={{position:'sticky',top:0,zIndex:1,background:'var(--navy)',borderBottom:'1px solid var(--border)',padding:'14px 18px 12px',display:'flex',alignItems:'center',gap:12}}>
+              <button onClick={()=>setShowWx(false)} style={{width:36,height:36,borderRadius:'50%',background:'var(--card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',cursor:'pointer',flexShrink:0,color:'var(--text)'}}>←</button>
+              <div>
+                <div style={{fontFamily:'Syne',fontSize:'1.05rem',fontWeight:800}}>🏓 Court Weather</div>
+                <div style={{fontSize:'0.68rem',color:'var(--muted)'}}>📍 {courtData.name}</div>
+              </div>
+            </div>
+            <div style={{maxWidth:480,margin:'0 auto',padding:'16px 16px 40px'}}>
+              {bestP&&<div style={{display:'flex',alignItems:'center',gap:14,background:bestP.c+'15',border:'1.5px solid '+bestP.c+'44',borderRadius:16,padding:'16px 18px',marginBottom:16}}>
+                <span style={{fontSize:'2.2rem'}}>{bestP.e}</span>
+                <div>
+                  <div style={{fontSize:'1rem',fontWeight:800,color:bestP.c}}>Best: <span style={{fontFamily:'Syne'}}>{bestP.l}</span> at {bestTime}</div>
+                  <div style={{fontSize:'0.82rem',color:'var(--muted)',marginTop:3}}>{bestP.tip}</div>
+                </div>
+              </div>}
+              <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                {forecast.map((h,i)=>{const hp=getPlayability(h.wind,h.gust,h.rain);const t=h.dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});const dir=h.windDeg!=null?windDir(h.windDeg):'';return(
+                  <div key={i} style={{background:hp.c+'10',border:'1.5px solid '+hp.c+'33',borderRadius:14,padding:'14px 16px'}}>
+                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                      <span style={{fontSize:'1.3rem'}}>{hp.e}</span>
+                      <span style={{fontFamily:'Syne',fontSize:'1.15rem',fontWeight:800,color:hp.c}}>{hp.l}</span>
+                      <span style={{fontSize:'0.85rem',color:'var(--muted)',marginLeft:'auto',fontWeight:600}}>{i===0?'Now':t}</span>
+                    </div>
+                    <div style={{fontSize:'0.78rem',color:'var(--muted)',marginBottom:10}}>{hp.tip}</div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px 16px',fontSize:'0.92rem'}}>
+                      <div style={{display:'flex',alignItems:'center',gap:6}}><span>🌡</span><span style={{color:'var(--muted)',fontSize:'0.8rem'}}>Temp</span><span style={{fontWeight:700,marginLeft:'auto'}}>{h.temp}°F</span></div>
+                      <div style={{display:'flex',alignItems:'center',gap:6}}><span>💨</span><span style={{color:'var(--muted)',fontSize:'0.8rem'}}>Wind</span><span style={{fontWeight:700,color:h.wind>=15?'var(--yellow)':'var(--text)',marginLeft:'auto'}}>{h.wind} mph</span>{dir&&<span style={{fontSize:'0.72rem',color:'var(--muted)',marginLeft:2}}>{dir}</span>}</div>
+                      <div style={{display:'flex',alignItems:'center',gap:6}}><span>🌬</span><span style={{color:'var(--muted)',fontSize:'0.8rem'}}>Gusts</span><span style={{fontWeight:700,color:h.gust>=15?'var(--accent)':'var(--text)',marginLeft:'auto'}}>{h.gust} mph</span></div>
+                      <div style={{display:'flex',alignItems:'center',gap:6}}><span>🌧</span><span style={{color:'var(--muted)',fontSize:'0.8rem'}}>Rain</span><span style={{fontWeight:700,color:h.rain>=20?'#60a5fa':'var(--text)',marginLeft:'auto'}}>{h.rain}%</span></div>
+                    </div>
+                  </div>
+                );})}
+              </div>
+              <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:12,padding:'14px 16px',marginTop:16,fontSize:'0.78rem',color:'var(--muted)'}}>
+                <div style={{fontWeight:700,marginBottom:8,color:'var(--text)',fontSize:'0.82rem'}}>Playability Thresholds</div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4}}>
+                  <span></span><span style={{fontWeight:600}}>Good</span><span style={{fontWeight:600}}>Bad</span>
+                  <span>Wind</span><span>&lt; 10 mph</span><span>≥ 15 mph</span>
+                  <span>Gusts</span><span>&lt; 15 mph</span><span>≥ 25 mph</span>
+                  <span>Rain</span><span>&lt; 20%</span><span>≥ 50%</span>
+                </div>
+              </div>
+            </div>
+          </div>;
+        })(),document.body)}
     </div>);
 }
 
