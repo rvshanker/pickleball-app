@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PickleConnect – Pickleball Weather</title>
+<meta name="description" content="Real-time pickleball weather and playability forecast. Check wind, gusts, rain, and court conditions before you play.">
+<meta name="keywords" content="pickleball weather, pickleball wind, pickleball conditions, pickleball forecast, court weather, outdoor pickleball">
+<meta name="author" content="PickleConnect">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://pickleconnect.live/weather.html">
+<meta property="og:title" content="PickleConnect – Pickleball Weather">
+<meta property="og:description" content="Real-time pickleball weather and playability forecast. Check wind, gusts, rain, and court conditions before you play.">
+<meta property="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://pickleconnect.live/weather.html">
+<meta name="theme-color" content="#0D1B2A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-8VE2FTD711"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-8VE2FTD711');
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%232ECC71'/><circle cx='50' cy='50' r='28' fill='white' opacity='0.15'/><circle cx='50' cy='50' r='6' fill='white'/></svg>" type="image/svg+xml">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --green:#2ECC71;--green-dark:#27AE60;--green-dim:rgba(46,204,113,0.12);
+  --navy:#0D1B2A;--navy2:#142232;--card:#1A2B3C;--card2:#1F3347;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#F0F4F8;--muted:#7A9BB5;--muted2:rgba(122,155,181,0.5);
+  --accent:#F7C948;--blue:#5B9BF7;--red:#F75B5B;
+}
+html{height:100%;}
+body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);font-size:15px;-webkit-text-size-adjust:100%;min-height:100vh;}
+
+/* Nav */
+.nav{position:sticky;top:0;z-index:100;background:rgba(13,27,42,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:12px 18px;display:flex;align-items:center;gap:12px;}
+.nav-logo{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--green);letter-spacing:-0.02em;cursor:pointer;text-decoration:none;}
+.nav-logo span{color:var(--text);}
+.nav-title{font-size:0.82rem;font-weight:600;color:var(--muted);margin-left:auto;}
+
+/* Search */
+.search-wrap{max-width:520px;margin:0 auto;padding:20px 16px 0;}
+.search-row{display:flex;gap:8px;}
+.search-input{flex:1;padding:12px 14px 12px 38px;background:var(--card);border:1.5px solid var(--border2);border-radius:12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.9rem;outline:none;transition:border-color .15s;}
+.search-input:focus{border-color:rgba(46,204,113,0.5);}
+.search-input::placeholder{color:var(--muted2);}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:0.9rem;}
+.loc-btn{width:46px;height:46px;border-radius:12px;background:var(--card);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;color:var(--text);transition:all .15s;flex-shrink:0;}
+.loc-btn:hover{border-color:rgba(46,204,113,0.5);background:var(--green-dim);}
+.loc-btn.active{border-color:var(--green);background:var(--green-dim);color:var(--green);}
+
+/* Content */
+.content{max-width:520px;margin:0 auto;padding:16px;}
+
+/* Cards */
+.wx-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;}
+.wx-card-header{padding:14px 16px;font-size:0.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+
+/* Footer */
+.footer{text-align:center;padding:24px 16px 32px;font-size:0.72rem;color:var(--muted);}
+.footer a{color:var(--green);text-decoration:none;font-weight:600;}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fade-in{animation:fadeIn .25s ease;}
+.fade-up{animation:fadeUp .35s ease;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState, useEffect, useRef} = React;
+
+const wxIcon = (temp, wind) => wind > 20 ? '🌬️' : temp < 32 ? '🥶' : temp < 50 ? '🧥' : temp > 88 ? '☀️' : '⛅';
+const getPlayability = (wind, gust, rain) => {
+  let s = 0;
+  if (wind >= 15) s += 3; else if (wind >= 10) s += 1;
+  if (gust >= 25) s += 3; else if (gust >= 15) s += 1;
+  if (rain >= 50) s += 3; else if (rain >= 20) s += 1;
+  if (s === 0) return { l: 'Great', c: '#2ECC71', e: '🟢', tip: 'Perfect conditions — get out there!' };
+  if (s <= 2) return { l: 'Okay', c: '#F7C948', e: '🟡', tip: 'Playable, but expect some wind on dinks.' };
+  if (s <= 4) return { l: 'Marginal', c: '#F7943E', e: '🟠', tip: 'Tough conditions — lobs will drift.' };
+  return { l: 'Skip It', c: '#F75B5B', e: '🔴', tip: 'Not worth it today.' };
+};
+const windDir = deg => { const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW']; return dirs[Math.round(deg / 22.5) % 16]; };
+
+function App() {
+  const [weather, setWeather] = useState(null);
+  const [forecast, setForecast] = useState([]);
+  const [locationName, setLocationName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [searchVal, setSearchVal] = useState('');
+  const [usingGps, setUsingGps] = useState(false);
+  const [coords, setCoords] = useState(null);
+  const inputRef = useRef(null);
+
+  const fetchWeather = async (lat, lng) => {
+    setLoading(true); setError(null);
+    try {
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,wind_gusts_10m,precipitation&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m,winddirection_10m,precipitation_probability&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_hours=12&timezone=auto`);
+      const d = await r.json();
+      setWeather({
+        temp: Math.round(d.current.temperature_2m),
+        wind: Math.round(d.current.wind_speed_10m),
+        gust: Math.round(d.current.wind_gusts_10m || 0),
+        precip: d.current.precipitation || 0
+      });
+      const now = new Date();
+      setForecast(d.hourly.time.map((t, i) => ({
+        dt: new Date(t),
+        temp: Math.round(d.hourly.temperature_2m[i]),
+        wind: Math.round(d.hourly.wind_speed_10m[i]),
+        gust: Math.round(d.hourly.wind_gusts_10m?.[i] || 0),
+        windDeg: d.hourly.winddirection_10m?.[i],
+        rain: d.hourly.precipitation_probability?.[i] || 0
+      })).filter(h => h.dt >= now).slice(0, 9));
+      setCoords({ lat, lng });
+    } catch (e) {
+      setError('Failed to fetch weather data. Please try again.');
+    }
+    setLoading(false);
+  };
+
+  const geocodeSearch = async (query) => {
+    if (!query.trim()) return;
+    setLoading(true); setError(null); setUsingGps(false);
+    try {
+      const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`);
+      const d = await r.json();
+      if (d.results?.length > 0) {
+        const loc = d.results[0];
+        setLocationName(`${loc.name}${loc.admin1 ? ', ' + loc.admin1 : ''}${loc.country_code ? ' ' + loc.country_code : ''}`);
+        await fetchWeather(loc.latitude, loc.longitude);
+      } else {
+        // Try as zip code via nominatim
+        const r2 = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=us`);
+        const d2 = await r2.json();
+        if (d2.length > 0) {
+          setLocationName(d2[0].display_name.split(',').slice(0, 2).join(','));
+          await fetchWeather(parseFloat(d2[0].lat), parseFloat(d2[0].lon));
+        } else {
+          setError('Location not found. Try a city name or US zip code.');
+          setLoading(false);
+        }
+      }
+    } catch (e) {
+      setError('Search failed. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const useMyLocation = () => {
+    if (!navigator.geolocation) { setError('Geolocation not supported by your browser.'); return; }
+    setLoading(true); setError(null); setUsingGps(true); setSearchVal('');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        // Reverse geocode
+        try {
+          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`);
+          const d = await r.json();
+          const parts = [d.address?.city || d.address?.town || d.address?.village, d.address?.state];
+          setLocationName(parts.filter(Boolean).join(', ') || 'Your Location');
+        } catch { setLocationName('Your Location'); }
+        await fetchWeather(lat, lng);
+      },
+      () => { setError('Location access denied. Try searching by zip code.'); setLoading(false); setUsingGps(false); },
+      { timeout: 10000 }
+    );
+  };
+
+  // Auto-detect on load
+  useEffect(() => { useMyLocation(); }, []);
+
+  const handleSearch = (e) => {
+    e?.preventDefault();
+    if (searchVal.trim()) geocodeSearch(searchVal.trim());
+  };
+
+  // Computed
+  const p = weather ? getPlayability(weather.wind, weather.gust, forecast[0]?.rain || 0) : null;
+  const best = forecast.length > 0 ? forecast.reduce((a, b) => {
+    const o = ['Great', 'Okay', 'Marginal', 'Skip It'];
+    return o.indexOf(getPlayability(a.wind, a.gust, a.rain).l) <= o.indexOf(getPlayability(b.wind, b.gust, b.rain).l) ? a : b;
+  }) : null;
+  const bestP = best ? getPlayability(best.wind, best.gust, best.rain) : null;
+  const bestTime = best ? new Date(best.dt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
+
+  // Graph
+  const maxWind = forecast.length > 0 ? Math.max(...forecast.map(h => Math.max(h.wind, h.gust)), 20) : 20;
+  const graphH = 110, graphW = forecast.length > 1 ? (forecast.length - 1) * 55 + 50 : 340;
+  const windPts = forecast.map((h, i) => ({ x: 25 + i * ((graphW - 50) / (forecast.length - 1 || 1)), y: graphH - 14 - (h.wind / maxWind) * (graphH - 30) }));
+  const gustPts = forecast.map((h, i) => ({ x: 25 + i * ((graphW - 50) / (forecast.length - 1 || 1)), y: graphH - 14 - (h.gust / maxWind) * (graphH - 30) }));
+  const toPath = pts => pts.map((pt, i) => `${i === 0 ? 'M' : 'L'}${pt.x},${pt.y}`).join(' ');
+  const toArea = pts => { if (!pts.length) return ''; return toPath(pts) + ` L${pts[pts.length - 1].x},${graphH - 14} L${pts[0].x},${graphH - 14} Z`; };
+
+  return (
+    <div>
+      {/* Nav */}
+      <div className="nav">
+        <a href="https://pickleconnect.live" className="nav-logo"><span>Pickle</span>Connect</a>
+        <div className="nav-title">🏓 Pickleball Weather</div>
+      </div>
+
+      {/* Search */}
+      <div className="search-wrap">
+        <form className="search-row" onSubmit={handleSearch}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <span className="search-icon">🔍</span>
+            <input
+              ref={inputRef}
+              className="search-input"
+              value={searchVal}
+              onChange={e => setSearchVal(e.target.value)}
+              placeholder="City, zip code, or location…"
+              onKeyDown={e => e.key === 'Enter' && handleSearch()}
+            />
+          </div>
+          <button type="button" onClick={useMyLocation} className={`loc-btn ${usingGps ? 'active' : ''}`} title="Use my location">📍</button>
+        </form>
+        {locationName && !loading && (
+          <div style={{ fontSize: '0.75rem', color: 'var(--green)', marginTop: 8, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
+            {usingGps && <span>📍</span>}
+            {locationName}
+          </div>
+        )}
+      </div>
+
+      <div className="content">
+        {/* Loading */}
+        {loading && (
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ width: 36, height: 36, border: '3px solid var(--border)', borderTop: '3px solid var(--green)', borderRadius: '50%', animation: 'spin .7s linear infinite', margin: '0 auto 12px' }} />
+            <div style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>Fetching weather…</div>
+          </div>
+        )}
+
+        {/* Error */}
+        {error && !loading && (
+          <div style={{ background: 'rgba(247,91,91,0.1)', border: '1px solid rgba(247,91,91,0.25)', borderRadius: 12, padding: '14px 16px', marginBottom: 14, fontSize: '0.82rem', color: '#FF8A80' }}>
+            ⚠️ {error}
+          </div>
+        )}
+
+        {/* Weather content */}
+        {weather && !loading && (
+          <div className="fade-up">
+            {/* Current + Playability */}
+            <div className="wx-card">
+              <div style={{ padding: '18px 18px 14px', display: 'flex', alignItems: 'center', gap: 14, background: p.c + '12', borderBottom: '1px solid ' + p.c + '22' }}>
+                <div style={{ fontSize: '2.8rem', lineHeight: 1 }}>{wxIcon(weather.temp, weather.wind)}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '2rem', fontWeight: 800, lineHeight: 1, letterSpacing: '-0.02em' }}>{weather.temp}°F</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--muted)', marginTop: 4 }}>
+                    Wind {weather.wind} mph · Gusts {weather.gust} mph
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                  <div style={{ fontSize: '1.6rem' }}>{p.e}</div>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: p.c, marginTop: 2 }}>{p.l}</div>
+                </div>
+              </div>
+              <div style={{ padding: '10px 18px', fontSize: '0.78rem', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ color: p.c }}>💡</span> {p.tip}
+              </div>
+            </div>
+
+            {/* Best Window */}
+            {bestP && (
+              <div className="wx-card" style={{ background: bestP.c + '10', borderColor: bestP.c + '33' }}>
+                <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: '1.8rem' }}>{bestP.e}</span>
+                  <div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: bestP.c }}>Best Window: {bestP.l} at {bestTime}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: 2 }}>{bestP.tip}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Wind & Gusts Graph */}
+            {forecast.length > 1 && (
+              <div className="wx-card">
+                <div className="wx-card-header">💨 Wind & Gusts (mph)</div>
+                <div style={{ padding: '0 12px 12px', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+                  <svg width={Math.max(graphW, 300)} height={graphH + 20} style={{ display: 'block' }}>
+                    {/* Grid */}
+                    {[0, 0.25, 0.5, 0.75, 1].map((f, i) => {
+                      const y = graphH - 14 - f * (graphH - 30); const val = Math.round(f * maxWind);
+                      return <g key={i}><line x1={22} y1={y} x2={graphW} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth={1} /><text x={18} y={y + 3} fill="var(--muted)" fontSize="8" textAnchor="end" fontFamily="DM Sans">{val}</text></g>;
+                    })}
+                    {/* 15mph threshold */}
+                    <rect x={22} y={graphH - 14 - (15 / maxWind) * (graphH - 30)} width={graphW - 22} height={(15 / maxWind) * (graphH - 30)} fill="rgba(247,91,91,0.03)" />
+                    <line x1={22} y1={graphH - 14 - (15 / maxWind) * (graphH - 30)} x2={graphW} y2={graphH - 14 - (15 / maxWind) * (graphH - 30)} stroke="rgba(247,91,91,0.3)" strokeWidth={1} strokeDasharray="4,3" />
+                    {/* Gust area + line */}
+                    <path d={toArea(gustPts)} fill="rgba(247,201,72,0.06)" />
+                    <path d={toPath(gustPts)} fill="none" stroke="var(--accent)" strokeWidth={1.5} strokeDasharray="4,3" />
+                    {/* Wind area + line */}
+                    <path d={toArea(windPts)} fill="rgba(46,204,113,0.08)" />
+                    <path d={toPath(windPts)} fill="none" stroke="var(--green)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                    {/* Dots + labels */}
+                    {forecast.map((h, i) => {
+                      const wp = windPts[i], gp = gustPts[i];
+                      const lbl = i === 0 ? 'Now' : h.dt.toLocaleTimeString([], { hour: 'numeric' });
+                      return <g key={i}>
+                        <circle cx={wp.x} cy={wp.y} r={3.5} fill="var(--green)" stroke="var(--navy)" strokeWidth={1.5} />
+                        {h.gust > h.wind + 3 && <circle cx={gp.x} cy={gp.y} r={2.5} fill="var(--accent)" stroke="var(--navy)" strokeWidth={1} />}
+                        <text x={wp.x} y={graphH + 12} fill="var(--muted)" fontSize="9" textAnchor="middle" fontWeight="600" fontFamily="DM Sans">{lbl}</text>
+                      </g>;
+                    })}
+                  </svg>
+                </div>
+                <div style={{ padding: '0 16px 12px', display: 'flex', gap: 16, fontSize: '0.65rem', color: 'var(--muted)' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 14, height: 3, background: 'var(--green)', borderRadius: 2, display: 'inline-block' }} />Wind</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 14, height: 2, background: 'var(--accent)', borderRadius: 2, display: 'inline-block' }} />Gusts</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 14, height: 1, background: 'rgba(247,91,91,0.5)', display: 'inline-block' }} />15 mph</span>
+                </div>
+              </div>
+            )}
+
+            {/* Hourly Forecast */}
+            <div className="wx-card">
+              <div className="wx-card-header">Hourly Forecast</div>
+              {forecast.map((h, i) => {
+                const hp = getPlayability(h.wind, h.gust, h.rain);
+                const t = h.dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                const dir = h.windDeg != null ? windDir(h.windDeg) : '';
+                return (
+                  <div key={i} style={{
+                    padding: '12px 14px',
+                    borderBottom: i < forecast.length - 1 ? '1px solid var(--border)' : 'none',
+                    borderLeft: '4px solid ' + hp.c,
+                    background: i === 0 ? 'rgba(46,204,113,0.03)' : 'transparent'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <span style={{ fontSize: '0.95rem' }}>{hp.e}</span>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: hp.c }}>{hp.l}</span>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--muted)', marginLeft: 'auto', fontWeight: 600 }}>{i === 0 ? 'Now' : t}</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, fontSize: '0.78rem' }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.55rem', color: 'var(--muted)', fontWeight: 600, marginBottom: 2 }}>Temp</div>
+                        <div style={{ fontWeight: 700 }}>{h.temp}°F</div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.55rem', color: 'var(--muted)', fontWeight: 600, marginBottom: 2 }}>Wind</div>
+                        <div style={{ fontWeight: 700, color: h.wind >= 15 ? 'var(--accent)' : 'var(--text)' }}>{h.wind} mph</div>
+                        {dir && <div style={{ fontSize: '0.55rem', color: 'var(--muted)' }}>{dir}</div>}
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.55rem', color: 'var(--muted)', fontWeight: 600, marginBottom: 2 }}>Gusts</div>
+                        <div style={{ fontWeight: 700, color: h.gust >= 20 ? 'var(--red)' : h.gust >= 15 ? 'var(--accent)' : 'var(--text)' }}>{h.gust} mph</div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.55rem', color: 'var(--muted)', fontWeight: 600, marginBottom: 2 }}>Rain</div>
+                        <div style={{ fontWeight: 700, color: h.rain >= 30 ? '#60a5fa' : 'var(--text)' }}>{h.rain}%</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Playability Guide */}
+            <div className="wx-card">
+              <div className="wx-card-header">Playability Guide</div>
+              <div style={{ padding: '0 16px 14px' }}>
+                {[
+                  { e: '🟢', l: 'Great', tip: 'Wind < 10, Gusts < 15, Rain < 20%', c: '#2ECC71' },
+                  { e: '🟡', l: 'Okay', tip: 'Wind 10–14, Gusts 15–24, Rain 20–49%', c: '#F7C948' },
+                  { e: '🟠', l: 'Marginal', tip: 'Wind 15+, Gusts 25+, or Rain 50%+', c: '#F7943E' },
+                  { e: '🔴', l: 'Skip It', tip: 'Multiple bad conditions at once', c: '#F75B5B' },
+                ].map((r, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < 3 ? '1px solid var(--border)' : 'none' }}>
+                    <span style={{ fontSize: '1rem' }}>{r.e}</span>
+                    <div>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: r.c }}>{r.l}</div>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--muted)' }}>{r.tip}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* CTA */}
+            <div style={{ background: 'var(--green-dim)', border: '1px solid rgba(46,204,113,0.25)', borderRadius: 14, padding: '18px', textAlign: 'center', marginBottom: 14 }}>
+              <div style={{ fontSize: '1.1rem', marginBottom: 4 }}>🏓</div>
+              <div style={{ fontSize: '0.88rem', fontWeight: 700, marginBottom: 4 }}>Check in & find players</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--muted)', marginBottom: 12 }}>See who's playing at courts near you</div>
+              <a href="https://pickleconnect.live" style={{
+                display: 'inline-block', background: 'linear-gradient(135deg,#2ECC71,#27AE60)', color: 'white',
+                padding: '10px 24px', borderRadius: 10, fontSize: '0.82rem', fontWeight: 700, textDecoration: 'none',
+                boxShadow: '0 4px 14px rgba(46,204,113,0.35)'
+              }}>Open PickleConnect</a>
+            </div>
+          </div>
+        )}
+
+        {/* Empty state before load */}
+        {!weather && !loading && !error && (
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ fontSize: '3rem', marginBottom: 12 }}>🌤️</div>
+            <div style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: 6 }}>Pickleball Weather</div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--muted)', lineHeight: 1.5 }}>Search a location or use GPS to see<br />if conditions are good for playing</div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="footer">
+        <a href="https://pickleconnect.live">pickleconnect.live</a> · Pickleball Weather<br />
+        Data from <a href="https://open-meteo.com" target="_blank" rel="noopener noreferrer">Open-Meteo</a>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
