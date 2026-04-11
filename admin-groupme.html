@@ -103,6 +103,60 @@ function fmtTimeOnly(ts) {
     return new Date(ts).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
 }
 
+// ── Weather Report builder ───────────────────────────────────────────
+function getPlayability(wind, gust, rain) {
+    let s = 0;
+    if (wind > 15) s += 3; else if (wind > 10) s += 1;
+    if (gust > 25) s += 3; else if (gust > 15) s += 1;
+    if (rain > 50) s += 3; else if (rain > 20) s += 1;
+    if (s === 0) return { label:'Great', emoji:'🟢', tip:'Perfect conditions — get out there!' };
+    if (s <= 2) return { label:'Okay', emoji:'🟡', tip:'Playable, but expect some wind effect on dinks.' };
+    if (s <= 4) return { label:'Marginal', emoji:'🟠', tip:'Tough conditions — lobs will drift.' };
+    return { label:'Skip It', emoji:'🔴', tip:'Not worth it today.' };
+}
+function windDir(deg) {
+    const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+    return dirs[Math.round(deg / 22.5) % 16];
+}
+async function fetchWeatherReport(lat, lng, courtName) {
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,windspeed_10m,windgusts_10m,winddirection_10m,precipitation_probability&temperature_unit=fahrenheit&windspeed_unit=mph&forecast_hours=6&timezone=America/Chicago`);
+    const d = await r.json();
+    const h = d.hourly;
+    if (!h || !h.time || !h.time.length) return null;
+    const hours = h.time.slice(0, 5).map((t, i) => ({
+        time: t, temp: Math.round(h.temperature_2m[i]),
+        wind: Math.round(h.windspeed_10m[i]),
+        gust: Math.round(h.windgusts_10m?.[i] || 0),
+        windDeg: h.winddirection_10m?.[i],
+        rain: h.precipitation_probability?.[i] || 0,
+    }));
+    const best = hours.reduce((a, b) => {
+        const order = ['Great','Okay','Marginal','Skip It'];
+        return order.indexOf(getPlayability(a.wind,a.gust,a.rain).label) <= order.indexOf(getPlayability(b.wind,b.gust,b.rain).label) ? a : b;
+    });
+    const bestP = getPlayability(best.wind, best.gust, best.rain);
+    const bestTime = new Date(best.time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'});
+    const lines = [
+        `🏓 ${courtName || 'Court'} — Weather Report`,
+        `📅 ${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',timeZone:'America/Chicago'})}`,
+        ``,
+        `${bestP.emoji} Best Window: ${bestP.label} at ${bestTime}`,
+        `${bestP.tip}`,
+        ``,
+        `🌤 Next 5 Hours:`,
+    ];
+    hours.forEach(hr => {
+        const t = new Date(hr.time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'});
+        const p = getPlayability(hr.wind, hr.gust, hr.rain);
+        const dir = hr.windDeg != null ? ' '+windDir(hr.windDeg) : '';
+        lines.push(`${p.emoji} ${t}: ${p.label}`);
+        lines.push(`  🌡 ${hr.temp}°F  💨 ${hr.wind}mph${dir}  🌬 ${hr.gust}mph  🌧 ${hr.rain}%`);
+    });
+    lines.push(``);
+    lines.push(`🔗 pickleconnect.live`);
+    return lines.join('\n');
+}
+
 // ── Compose Schedule Summary message ─────────────────────────────────
 function buildScheduleSummary(court, checkins, courtData) {
     const now = Date.now();
@@ -311,8 +365,8 @@ function ComposeModal({court, botConfig, courtData, checkins, existingEventRules
                 {type === 'onetime' && (
                     <div>
                         <div style={{borderBottom:'1px solid #e2e8f0',marginBottom:14,display:'flex',gap:0}}>
-                            {[['compose','✏️ Compose'],['summary','📋 Court Summary']].map(([v,l])=>(
-                                <button key={v} className={`tab${tab===v?' on':''}`} onClick={()=>{setTab(v);if(v==='summary')setMsg(summaryPreview);}}>{l}</button>
+                            {[['compose','✏️ Compose'],['summary','📋 Court Summary'],['weather','🌤 Weather']].map(([v,l])=>(
+                                <button key={v} className={`tab${tab===v?' on':''}`} onClick={async()=>{setTab(v);if(v==='summary')setMsg(summaryPreview);if(v==='weather'){setMsg('');setSending(true);try{const wx=await fetchWeatherReport(courtData?.lat,courtData?.lng,court.name);setMsg(wx||'⚠️ No weather data — check court lat/lng');}catch(e){setMsg('⚠️ Weather fetch failed: '+e.message);}setSending(false);}}}>{l}</button>
                             ))}
                         </div>
                         <label className="flbl">Message</label>
