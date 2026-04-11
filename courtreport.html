@@ -583,6 +583,7 @@ function App() {
                 <div style={{fontSize:11,fontWeight:700,color:'#059669',textTransform:'uppercase',letterSpacing:'1px'}}>Court Report</div>
                 <div className="fd" style={{fontSize:22,fontWeight:800,color:'white',marginTop:2}}>{courtData.name}</div>
                 {courtData.address && <div style={{fontSize:12,color:'#64748b',marginTop:3}}>📍 {courtData.address}</div>}
+                <a href="https://pickleconnect.live/weather/" style={{display:'inline-flex',alignItems:'center',gap:4,marginTop:6,fontSize:11,fontWeight:600,color:'#34d399',textDecoration:'none',background:'rgba(16,185,129,0.1)',padding:'4px 10px',borderRadius:8}}>🌤️ Check Weather Conditions</a>
             </div>
 
             <div style={{flex:1,padding:'8px 20px 32px',maxWidth:520,width:'100%',margin:'0 auto'}}>
@@ -599,7 +600,7 @@ function App() {
             </div>
 
             <div style={{textAlign:'center',padding:'16px',fontSize:11,color:'#475569'}}>
-                PickleConnect · Community Court Reports
+                <a href="https://pickleconnect.live/weather/" style={{color:'#34d399',textDecoration:'none'}}>🌤️ Weather</a> · PickleConnect · Court Reports
             </div>
         </div>
     );
