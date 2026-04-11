@@ -92,6 +92,21 @@ function haversine(lat1, lng1, lat2, lng2) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PLAYABILITY HELPER (shared between weather display + GroupMe messages)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getPlayability(wind, gust, rain) {
+  let s = 0;
+  if (wind > 15) s += 3; else if (wind > 10) s += 1;
+  if (gust > 25) s += 3; else if (gust > 15) s += 1;
+  if (rain > 50) s += 3; else if (rain > 20) s += 1;
+  if (s === 0) return { label: "Great", emoji: "🟢" };
+  if (s <= 2) return { label: "Okay",  emoji: "🟡" };
+  if (s <= 4) return { label: "Marginal", emoji: "🟠" };
+  return { label: "Skip It", emoji: "🔴" };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // FCM PUSH HELPER
 // Reads fcm-tokens/{uid} + notifPrefs/{uid}, respects quiet hours & prefs
 // ─────────────────────────────────────────────────────────────────────────────
@@ -125,8 +140,6 @@ async function sendPushToUser(uid, { title, body, data = {} }) {
     if (prefKey && prefs[prefKey] === false) return;
 
     // ── Always write to notifications collection ──────────────────
-    // This powers the bell icon + sound in nav.js regardless of
-    // whether the FCM push is received (web or native)
     await db.collection("notifications").add({
       toUid:     uid,
       fromUid:   data.fromUid || "system",
@@ -145,7 +158,6 @@ async function sendPushToUser(uid, { title, body, data = {} }) {
     const token     = tokenData.token;
     if (!token) return;
 
-    // Detect if this is a native Capacitor token (different format)
     const isNative = tokenData.platform === "ios-native" || tokenData.platform === "android-native";
 
     const message = {
@@ -155,7 +167,6 @@ async function sendPushToUser(uid, { title, body, data = {} }) {
     };
 
     if (isNative) {
-      // APNs config for native iOS
       message.apns = {
         payload: {
           aps: {
@@ -166,7 +177,6 @@ async function sendPushToUser(uid, { title, body, data = {} }) {
         },
       };
     } else {
-      // Web push config
       message.webpush = {
         notification: {
           icon:     "/icon-192.png",
@@ -193,7 +203,7 @@ async function sendPushToUser(uid, { title, body, data = {} }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DYNAMIC MESSAGE BUILDER (existing — unchanged)
+// DYNAMIC MESSAGE BUILDER (existing — unchanged except weather lines)
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function buildDynamicMessage(courtId, courtName, includeWeather, passedLat, passedLng) {
@@ -258,8 +268,13 @@ async function buildDynamicMessage(courtId, courtName, includeWeather, passedLat
       try {
         const hours = await fetchHourlyWeather(lat, lng);
         if (hours && hours.length > 0) {
+          // Show overall playability verdict first
+          const firstHour = hours[0];
+          const verdict = getPlayability(firstHour.wind, firstHour.gust, firstHour.rain);
+          lines.push(``);
+          lines.push(`${verdict.emoji} Playability: ${verdict.label}`);
           lines.push(`🌤 Next 4 hours:`);
-          hours.forEach(h => lines.push(`  ${h}`));
+          hours.forEach(h => lines.push(`  ${h.formatted}`));
         } else {
           logger.warn(`Weather fetch returned no hours for lat=${lat} lng=${lng}`);
         }
@@ -278,59 +293,72 @@ async function buildDynamicMessage(courtId, courtName, includeWeather, passedLat
   }
 }
 
-function fetchHourlyWeather(lat, lng) {
-  const get = (url) => new Promise((resolve) => {
-    const req = https.get(
-      url,
-      { headers: { "User-Agent": "PickleConnect/1.0 (contact@pickleconnect.live)", "Accept": "application/geo+json" } },
-      (res) => {
-        logger.info(`weather.gov response: ${res.statusCode} for ${url.substring(0, 80)}`);
-        let data = "";
-        res.on("data", c => { data += c; });
-        res.on("end", () => {
-          if (res.statusCode !== 200) {
-            logger.warn(`weather.gov non-200: ${res.statusCode} — body: ${data.substring(0, 200)}`);
-            resolve(null); return;
-          }
-          try { resolve(JSON.parse(data)); }
-          catch (e) { logger.warn(`weather.gov JSON parse failed: ${e.message}`); resolve(null); }
-        });
-      }
-    );
-    req.on("error", (e) => { logger.warn(`weather.gov request error: ${e.message}`); resolve(null); });
-    req.setTimeout(8000, () => {
-      logger.warn(`weather.gov request timed out for ${url.substring(0, 80)}`);
-      req.destroy(); resolve(null);
-    });
-  });
+// ─────────────────────────────────────────────────────────────────────────────
+// WEATHER — switched from weather.gov to Open-Meteo (no API key, single call,
+// now includes wind gusts + precipitation probability + playability)
+// ─────────────────────────────────────────────────────────────────────────────
 
-  return get(`https://api.weather.gov/points/${parseFloat(lat).toFixed(4)},${parseFloat(lng).toFixed(4)}`).then(json => {
-    if (!json) { logger.warn("weather.gov /points returned null"); return null; }
-    const forecastUrl = json?.properties?.forecastHourly;
-    if (!forecastUrl) {
-      logger.warn(`weather.gov /points missing forecastHourly — keys: ${Object.keys(json?.properties || {}).join(", ")}`);
-      return null;
-    }
-    logger.info(`weather.gov forecastHourly URL: ${forecastUrl}`);
-    return get(forecastUrl).then(json2 => {
-      if (!json2) { logger.warn("weather.gov hourly forecast returned null"); return null; }
-      const periods = json2?.properties?.periods?.slice(0, 4) || [];
-      if (!periods.length) { logger.warn("weather.gov hourly forecast returned 0 periods"); return null; }
-      logger.info(`weather.gov got ${periods.length} periods OK`);
-      return periods.map(p => {
-        const time = new Date(p.startTime).toLocaleTimeString("en-US", {
-          hour: "numeric", minute: "2-digit", timeZone: "America/Chicago"
-        });
-        const temp      = p.temperature;
-        const unit      = p.temperatureUnit || "F";
-        const tempEmoji = temp <= 32 ? "🥶" : temp <= 50 ? "🧣" : temp <= 70 ? "😊" : temp <= 85 ? "☀️" : "🥵";
-        const windSpeed = p.windSpeed ? p.windSpeed.replace(/[^0-9].*/g, "") : "0";
-        return `${time}: ${tempEmoji} ${temp}°${unit}  💨 ${windSpeed}mph`;
+function fetchHourlyWeather(lat, lng) {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${parseFloat(lat).toFixed(4)}&longitude=${parseFloat(lng).toFixed(4)}&hourly=temperature_2m,windspeed_10m,windgusts_10m,precipitation_probability&temperature_unit=fahrenheit&windspeed_unit=mph&forecast_hours=5&timezone=America/Chicago`;
+
+  return new Promise((resolve) => {
+    const req = https.get(url, (res) => {
+      let data = "";
+      res.on("data", (c) => { data += c; });
+      res.on("end", () => {
+        if (res.statusCode !== 200) {
+          logger.warn(`Open-Meteo non-200: ${res.statusCode} — body: ${data.substring(0, 200)}`);
+          resolve(null);
+          return;
+        }
+        try {
+          const json = JSON.parse(data);
+          const h = json.hourly;
+          if (!h || !h.time || !h.time.length) {
+            logger.warn("Open-Meteo returned no hourly data");
+            resolve(null);
+            return;
+          }
+
+          const results = h.time.slice(0, 4).map((t, i) => {
+            const time = new Date(t).toLocaleTimeString("en-US", {
+              hour: "numeric", minute: "2-digit", timeZone: "America/Chicago",
+            });
+            const temp = Math.round(h.temperature_2m[i]);
+            const wind = Math.round(h.windspeed_10m[i]);
+            const gust = Math.round(h.windgusts_10m?.[i] || 0);
+            const rain = h.precipitation_probability?.[i] || 0;
+
+            const tempEmoji = temp <= 32 ? "🥶" : temp <= 50 ? "🧣" : temp <= 70 ? "😊" : temp <= 85 ? "☀️" : "🥵";
+            const p = getPlayability(wind, gust, rain);
+
+            let extras = "";
+            if (gust > 15) extras += ` 🌬${gust}mph`;
+            if (rain > 20) extras += ` 🌧${rain}%`;
+
+            return {
+              wind, gust, rain,
+              formatted: `${time}: ${p.emoji} ${tempEmoji} ${temp}°F  💨${wind}mph${extras}`,
+            };
+          });
+
+          logger.info(`Open-Meteo got ${results.length} hours OK`);
+          resolve(results);
+        } catch (e) {
+          logger.warn(`Open-Meteo JSON parse failed: ${e.message}`);
+          resolve(null);
+        }
       });
     });
-  }).catch((e) => {
-    logger.warn(`fetchHourlyWeather uncaught error: ${e.message}`);
-    return null;
+    req.on("error", (e) => {
+      logger.warn(`Open-Meteo request error: ${e.message}`);
+      resolve(null);
+    });
+    req.setTimeout(8000, () => {
+      logger.warn("Open-Meteo request timed out");
+      req.destroy();
+      resolve(null);
+    });
   });
 }
 
@@ -531,12 +559,10 @@ exports.onCheckinCreated = onDocumentCreated(
     }
 
     // ── NEW: Push notification to other checked-in players at this court ──
-    // Only notifies REGISTERED users (uid-based deviceId) whose check-in time overlaps
     try {
       const courtDoc  = await db.collection("courts").doc(courtId).get();
       const courtName = courtDoc.exists ? (courtDoc.data().name || "the court") : "the court";
 
-      // Get all other active/later check-ins at this court
       const othersSnap = await db.collection("courts").doc(courtId).collection("checkins")
         .where("status", "in", ["active", "later"])
         .get();
@@ -544,25 +570,17 @@ exports.onCheckinCreated = onDocumentCreated(
       const sends = [];
       const thisDeviceId = checkin.deviceId;
 
-      // Determine the new check-in's active time window
       const newStart = checkin.status === "active"
         ? (checkin.timestamp || Date.now())
         : (checkin.arrivalTime || Date.now());
       const newEnd = checkin.duration
         ? newStart + checkin.duration * 60000
-        : newStart + 480 * 60000; // default 8-hr window if no duration
+        : newStart + 480 * 60000;
 
       othersSnap.forEach((doc) => {
         const other = doc.data();
-        // Skip the person who just checked in
         if (!other.deviceId || other.deviceId === thisDeviceId) return;
 
-        // Skip guest users — only notify registered users (uid-based deviceIds)
-        // Guest deviceIds are random strings; registered users have Firebase Auth UIDs
-        // We check if an fcm-tokens doc exists for this deviceId (done via sendPushToUser)
-        // but also skip obviously random device IDs (no Firebase UID format)
-
-        // Check time overlap: other's active window must intersect with new check-in's window
         const otherStart = other.status === "active"
           ? (other.timestamp || 0)
           : (other.arrivalTime || other.timestamp || 0);
@@ -570,7 +588,6 @@ exports.onCheckinCreated = onDocumentCreated(
           ? otherStart + other.duration * 60000
           : otherStart + 480 * 60000;
 
-        // No overlap → skip
         if (newStart >= otherEnd || newEnd <= otherStart) return;
 
         sends.push(sendPushToUser(other.deviceId, {
@@ -760,9 +777,6 @@ exports.onGameUpdated = onDocumentUpdated(
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FIXED — Direct message received
-// Was: messages/{conversationId}/msgs/{msgId} (wrong path)
-// Now: chatMessages/{msgId} (matches client-side code)
-// Client writes: { convoId: "uid1__uid2", senderUid, senderName, text, timestamp }
 // ─────────────────────────────────────────────────────────────────────────────
 
 exports.onMessageCreated = onDocumentCreated(
@@ -771,7 +785,6 @@ exports.onMessageCreated = onDocumentCreated(
     const msg = event.data.data();
     if (!msg || !msg.senderUid || !msg.convoId) return;
 
-    // convoId is "uid1__uid2" sorted — extract recipient
     const [uid1, uid2] = msg.convoId.split("__");
     const recipientUid = msg.senderUid === uid1 ? uid2 : uid1;
     if (!recipientUid || recipientUid === msg.senderUid) return;
