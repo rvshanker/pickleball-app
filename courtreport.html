@@ -589,13 +589,12 @@ function App() {
             <div style={{flex:1,padding:'8px 20px 32px',maxWidth:520,width:'100%',margin:'0 auto'}}>
                 {step < 4 && <ProgressDots />}
 
-                {step === 0 && <StepName />}
-                {step === 1 && <StepPlayers />}
-                {step === 2 && <StepWind />}
-                {step === 3 && <StepComment />}
-                {step === 4 && <StepSubmitting />}
-                {step === 5 && <StepDone />}
-
+                {step === 0 && StepName()}
+                {step === 1 && StepPlayers()}
+                {step === 2 && StepWind()}
+                {step === 3 && StepComment()}
+                {step === 4 && StepSubmitting()}
+                {step === 5 && StepDone()}
                 <RecentReports />
             </div>
 
