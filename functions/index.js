@@ -284,7 +284,7 @@ async function buildDynamicMessage(courtId, courtName, includeWeather, passedLat
       logger.warn(`includeWeather=true but no lat/lng available for court ${courtId}`);
     }
 
-    lines.push(`🔗 pickleconnect.live`);
+    lines.push(`🔗 pickleconnect.live/weather`);
     return lines.join("\n");
   } catch (e) {
     logger.error("buildDynamicMessage failed:", e.message);
