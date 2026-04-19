@@ -67,6 +67,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);f
 .wx-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;}
 .wx-card-header{padding:14px 16px;font-size:0.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
 
+/* Graph-specific */
+.graph-svg{display:block;width:100%;height:auto;touch-action:pan-y;cursor:crosshair;user-select:none;-webkit-user-select:none;}
+
 /* Footer */
 .footer{text-align:center;padding:24px 16px 32px;font-size:0.72rem;color:var(--muted);}
 .footer a{color:var(--green);text-decoration:none;font-weight:600;}
@@ -96,8 +99,6 @@ const getPlayability = (wind, gust, rain) => {
 };
 const windDir = deg => { const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW']; return dirs[Math.round(deg / 22.5) % 16]; };
 const windArrow = deg => {
-  // Return an arrow character pointing in the direction the wind is going TO
-  // Wind direction is where it comes FROM, so arrow points opposite
   if (deg == null) return '↑';
   const d = (deg + 180) % 360;
   const arrows = ['↑','↗','→','↘','↓','↙','←','↖'];
@@ -113,12 +114,13 @@ function App() {
   const [searchVal, setSearchVal] = useState('');
   const [usingGps, setUsingGps] = useState(false);
   const [coords, setCoords] = useState(null);
+  const [scrubX, setScrubX] = useState(null);
   const inputRef = useRef(null);
 
   const fetchWeather = async (lat, lng) => {
     setLoading(true); setError(null);
     try {
-      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,wind_gusts_10m,precipitation&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m,winddirection_10m,precipitation_probability&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_hours=12&timezone=auto`);
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,wind_gusts_10m,precipitation&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m,winddirection_10m,precipitation_probability&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_hours=25&timezone=auto`);
       const d = await r.json();
       const now = new Date();
       const hourly = d.hourly.time.map((t, i) => ({
@@ -128,7 +130,7 @@ function App() {
         gust: Math.round(d.hourly.wind_gusts_10m?.[i] || 0),
         windDeg: d.hourly.winddirection_10m?.[i],
         rain: d.hourly.precipitation_probability?.[i] || 0
-      })).filter(h => h.dt >= now).slice(0, 9);
+      })).filter(h => h.dt >= new Date(now.getTime() - 60 * 60 * 1000)).slice(0, 24);
       setForecast(hourly);
       const cur = hourly[0] || { temp: Math.round(d.current.temperature_2m), wind: Math.round(d.current.wind_speed_10m), gust: Math.round(d.current.wind_gusts_10m || 0) };
       setWeather({
@@ -200,16 +202,19 @@ function App() {
   // Computed
   const p = weather ? getPlayability(weather.wind, weather.gust, forecast[0]?.rain || 0) : null;
 
-  // Graph — Y-axis in increments of 5
+  // === GRAPH SETUP (Apple Weather-style responsive) ===
+  // Y-axis in increments of 5
   const rawMax = forecast.length > 0 ? Math.max(...forecast.map(h => Math.max(h.wind, h.gust)), 20) : 20;
-  const maxWind = Math.ceil(rawMax / 5) * 5; // round up to nearest 5
+  const maxWind = Math.ceil(rawMax / 5) * 5;
   const yTicks = [];
   for (let v = 0; v <= maxWind; v += 5) yTicks.push(v);
 
-  const graphH = 140, padL = 30, padR = 16, padT = 28, padB = 24;
-  const plotH = graphH - padT - padB;
-  const graphW = forecast.length > 1 ? Math.max((forecast.length - 1) * 55 + padL + padR, 300) : 340;
-  const plotW = graphW - padL - padR;
+  // Fixed viewBox - SVG scales via width="100%"
+  const GRAPH_W = 480;
+  const GRAPH_H = 180;
+  const padL = 28, padR = 14, padT = 32, padB = 26;
+  const plotW = GRAPH_W - padL - padR;
+  const plotH = GRAPH_H - padT - padB;
 
   const px = (i) => padL + (forecast.length > 1 ? i * (plotW / (forecast.length - 1)) : plotW / 2);
   const py = (val) => padT + plotH - (val / maxWind) * plotH;
@@ -241,6 +246,52 @@ function App() {
     const baseline = padT + plotH;
     return toSmoothPath(pts) + ` L${pts[pts.length - 1].x},${baseline} L${pts[0].x},${baseline} Z`;
   };
+
+  // Which indices get x-axis labels / arrows (every 6 hours)
+  const tickIndices = forecast.reduce((acc, h, i) => {
+    if (i === 0) acc.push(i);
+    else if (h.dt.getHours() % 6 === 0) acc.push(i);
+    return acc;
+  }, []);
+
+  // === SCRUBBER: interpolate wind/gust/temp at any x-position ===
+  const scrubData = (() => {
+    if (scrubX == null || forecast.length < 2) return null;
+    const frac = ((scrubX - padL) / plotW) * (forecast.length - 1);
+    const clamped = Math.max(0, Math.min(frac, forecast.length - 1));
+    const i0 = Math.floor(clamped);
+    const i1 = Math.min(i0 + 1, forecast.length - 1);
+    const t = clamped - i0;
+    const a = forecast[i0], b = forecast[i1];
+    const lerp = (x, y) => x + (y - x) * t;
+    const wind = lerp(a.wind, b.wind);
+    const gust = lerp(a.gust, b.gust);
+    const temp = lerp(a.temp, b.temp);
+    const rain = lerp(a.rain, b.rain);
+    const time = new Date(a.dt.getTime() + (b.dt.getTime() - a.dt.getTime()) * t);
+    return {
+      x: padL + (clamped / (forecast.length - 1)) * plotW,
+      wind: Math.round(wind),
+      gust: Math.round(gust),
+      temp: Math.round(temp),
+      rain: Math.round(rain),
+      time,
+      windY: py(wind),
+      gustY: py(gust),
+      playability: getPlayability(wind, gust, rain)
+    };
+  })();
+
+  // Convert pointer event → SVG viewBox x-coordinate
+  const handleScrubMove = (e) => {
+    const svg = e.currentTarget;
+    const rect = svg.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const xPx = clientX - rect.left;
+    const scale = GRAPH_W / rect.width;
+    setScrubX(xPx * scale);
+  };
+  const handleScrubEnd = () => setScrubX(null);
 
   return (
     <div>
@@ -313,63 +364,115 @@ function App() {
               </div>
             </div>
 
-            {/* Wind & Gusts Graph */}
+            {/* Wind & Gusts 24h Graph */}
             {forecast.length > 1 && (
               <div className="wx-card">
-                <div className="wx-card-header">💨 Wind & Gusts (mph)</div>
-                <div style={{ padding: '0 12px 12px', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
-                  <svg width={Math.max(graphW, 300)} height={graphH + 20} style={{ display: 'block' }}>
+                <div className="wx-card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>💨 Wind & Gusts · Next 24h</span>
+                  <span style={{ fontSize: '0.6rem', color: 'var(--muted2)', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>Drag across to scrub</span>
+                </div>
+                <div style={{ padding: '0 10px 10px' }}>
+                  <svg
+                    viewBox={`0 0 ${GRAPH_W} ${GRAPH_H}`}
+                    preserveAspectRatio="none"
+                    className="graph-svg"
+                    style={{ height: 200 }}
+                    onMouseMove={handleScrubMove}
+                    onMouseLeave={handleScrubEnd}
+                    onTouchStart={handleScrubMove}
+                    onTouchMove={handleScrubMove}
+                    onTouchEnd={handleScrubEnd}
+                  >
                     <defs>
                       <linearGradient id="windFill" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#2ECC71" stopOpacity="0.35" />
                         <stop offset="100%" stopColor="#2ECC71" stopOpacity="0.05" />
                       </linearGradient>
                       <linearGradient id="gustFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#F7C948" stopOpacity="0.15" />
+                        <stop offset="0%" stopColor="#F7C948" stopOpacity="0.18" />
                         <stop offset="100%" stopColor="#F7C948" stopOpacity="0.02" />
                       </linearGradient>
                     </defs>
 
-                    {/* Wind direction arrows row */}
-                    {forecast.map((h, i) => (
-                      <text key={'arr'+i} x={px(i)} y={12} fill="var(--muted)" fontSize="10" textAnchor="middle" fontFamily="DM Sans">{windArrow(h.windDeg)}</text>
+                    {/* Wind direction arrows — every 6h only */}
+                    {tickIndices.map(i => (
+                      <text key={'arr'+i} x={px(i)} y={14} fill="var(--muted)" fontSize="10" textAnchor="middle" fontFamily="DM Sans">
+                        {windArrow(forecast[i].windDeg)}
+                      </text>
                     ))}
 
                     {/* Grid lines at every 5 mph */}
                     {yTicks.map((val, i) => {
                       const y = py(val);
                       return <g key={i}>
-                        <line x1={padL - 4} y1={y} x2={graphW - padR} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth={1} />
-                        <text x={padL - 8} y={y + 3} fill="var(--muted)" fontSize="9" textAnchor="end" fontFamily="DM Sans">{val}</text>
+                        <line x1={padL - 3} y1={y} x2={GRAPH_W - padR} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
+                        <text x={padL - 6} y={y + 3} fill="var(--muted)" fontSize="8.5" textAnchor="end" fontFamily="DM Sans">{val}</text>
                       </g>;
                     })}
 
                     {/* 15mph threshold */}
                     {maxWind >= 15 && (
-                      <line x1={padL} y1={py(15)} x2={graphW - padR} y2={py(15)} stroke="rgba(247,91,91,0.35)" strokeWidth={1} strokeDasharray="4,3" />
+                      <line x1={padL} y1={py(15)} x2={GRAPH_W - padR} y2={py(15)} stroke="rgba(247,91,91,0.3)" strokeWidth={1} strokeDasharray="3,3" />
                     )}
 
                     {/* Gust area + line (behind wind) */}
                     <path d={toSmoothArea(gustPts)} fill="url(#gustFill)" />
-                    <path d={toSmoothPath(gustPts)} fill="none" stroke="var(--accent)" strokeWidth={2} strokeOpacity={0.7} />
+                    <path d={toSmoothPath(gustPts)} fill="none" stroke="var(--accent)" strokeWidth={1.6} strokeOpacity={0.75} />
 
                     {/* Wind area + line */}
                     <path d={toSmoothArea(windPts)} fill="url(#windFill)" />
-                    <path d={toSmoothPath(windPts)} fill="none" stroke="var(--green)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                    <path d={toSmoothPath(windPts)} fill="none" stroke="var(--green)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
 
-                    {/* Dots + time labels */}
-                    {forecast.map((h, i) => {
-                      const wp = windPts[i], gp = gustPts[i];
-                      const lbl = i === 0 ? 'Now' : h.dt.toLocaleTimeString([], { hour: 'numeric' });
-                      return <g key={i}>
-                        <circle cx={wp.x} cy={wp.y} r={3} fill="var(--green)" stroke="var(--navy)" strokeWidth={1.5} />
-                        {h.gust > h.wind + 3 && <circle cx={gp.x} cy={gp.y} r={2} fill="var(--accent)" stroke="var(--navy)" strokeWidth={1} />}
-                        <text x={wp.x} y={graphH + 12} fill="var(--muted)" fontSize="9" textAnchor="middle" fontWeight="600" fontFamily="DM Sans">{lbl}</text>
-                      </g>;
+                    {/* X-axis labels — every 6h only */}
+                    {tickIndices.map(i => {
+                      const lbl = i === 0 ? 'Now' : forecast[i].dt.toLocaleTimeString([], { hour: 'numeric' });
+                      return <text key={'lbl'+i} x={px(i)} y={GRAPH_H - 8} fill="var(--muted)" fontSize="9" textAnchor="middle" fontWeight="600" fontFamily="DM Sans">{lbl}</text>;
                     })}
+
+                    {/* Tick marks for label positions */}
+                    {tickIndices.map(i => (
+                      <circle key={'tick'+i} cx={px(i)} cy={padT + plotH} r={1.5} fill="var(--muted)" opacity={0.5} />
+                    ))}
+
+                    {/* === SCRUBBER === */}
+                    {scrubData && (
+                      <g style={{ pointerEvents: 'none' }}>
+                        {/* Vertical line */}
+                        <line
+                          x1={scrubData.x} y1={padT}
+                          x2={scrubData.x} y2={padT + plotH}
+                          stroke="rgba(255,255,255,0.5)" strokeWidth={1} strokeDasharray="2,2"
+                        />
+                        {/* Dots at scrub position */}
+                        <circle cx={scrubData.x} cy={scrubData.gustY} r={3} fill="var(--accent)" stroke="var(--card)" strokeWidth={1.5} />
+                        <circle cx={scrubData.x} cy={scrubData.windY} r={3.5} fill="var(--green)" stroke="var(--card)" strokeWidth={1.5} />
+
+                        {/* Tooltip bubble */}
+                        {(() => {
+                          const tw = 110, th = 44;
+                          // Keep tooltip inside plot area
+                          let tx = scrubData.x - tw / 2;
+                          if (tx < padL - 4) tx = padL - 4;
+                          if (tx + tw > GRAPH_W - padR + 4) tx = GRAPH_W - padR + 4 - tw;
+                          const ty = padT - 2;
+                          const timeLbl = scrubData.time.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                          return (
+                            <g>
+                              <rect x={tx} y={ty} width={tw} height={th} rx={6} fill="rgba(13,27,42,0.95)" stroke="var(--border2)" strokeWidth={1} />
+                              <text x={tx + 8} y={ty + 14} fill="var(--text)" fontSize="9.5" fontWeight="700" fontFamily="DM Sans">{timeLbl}</text>
+                              <text x={tx + tw - 8} y={ty + 14} fill={scrubData.playability.c} fontSize="9" fontWeight="700" textAnchor="end" fontFamily="DM Sans">{scrubData.playability.l}</text>
+                              <text x={tx + 8} y={ty + 27} fill="var(--green)" fontSize="9" fontFamily="DM Sans">● Wind</text>
+                              <text x={tx + tw - 8} y={ty + 27} fill="var(--text)" fontSize="9" fontWeight="700" textAnchor="end" fontFamily="DM Sans">{scrubData.wind} mph</text>
+                              <text x={tx + 8} y={ty + 39} fill="var(--accent)" fontSize="9" fontFamily="DM Sans">● Gusts</text>
+                              <text x={tx + tw - 8} y={ty + 39} fill="var(--text)" fontSize="9" fontWeight="700" textAnchor="end" fontFamily="DM Sans">{scrubData.gust} mph</text>
+                            </g>
+                          );
+                        })()}
+                      </g>
+                    )}
                   </svg>
                 </div>
-                <div style={{ padding: '0 16px 12px', display: 'flex', gap: 16, fontSize: '0.65rem', color: 'var(--muted)' }}>
+                <div style={{ padding: '0 16px 12px', display: 'flex', gap: 14, fontSize: '0.65rem', color: 'var(--muted)', flexWrap: 'wrap' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 14, height: 3, background: 'var(--green)', borderRadius: 2, display: 'inline-block' }} />Wind</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 14, height: 2, background: 'var(--accent)', borderRadius: 2, display: 'inline-block' }} />Gusts</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 14, height: 1, background: 'rgba(247,91,91,0.5)', display: 'inline-block' }} />15 mph</span>
@@ -377,17 +480,17 @@ function App() {
               </div>
             )}
 
-            {/* Hourly Forecast */}
+            {/* Hourly Forecast — next 12h */}
             <div className="wx-card">
-              <div className="wx-card-header">Hourly Forecast</div>
-              {forecast.map((h, i) => {
+              <div className="wx-card-header">Hourly Forecast · Next 12h</div>
+              {forecast.slice(0, 12).map((h, i) => {
                 const hp = getPlayability(h.wind, h.gust, h.rain);
                 const t = h.dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
                 const dir = h.windDeg != null ? windDir(h.windDeg) : '';
                 return (
                   <div key={i} style={{
                     padding: '12px 14px',
-                    borderBottom: i < forecast.length - 1 ? '1px solid var(--border)' : 'none',
+                    borderBottom: i < 11 ? '1px solid var(--border)' : 'none',
                     borderLeft: '4px solid ' + hp.c,
                     background: i === 0 ? 'rgba(46,204,113,0.03)' : 'transparent'
                   }}>
