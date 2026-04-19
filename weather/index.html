@@ -209,10 +209,11 @@ function App() {
   const yTicks = [];
   for (let v = 0; v <= maxWind; v += 5) yTicks.push(v);
 
-  // Fixed viewBox - SVG scales via width="100%"
-  const GRAPH_W = 480;
-  const GRAPH_H = 180;
-  const padL = 28, padR = 14, padT = 32, padB = 26;
+  // Fixed viewBox - SVG scales via width="100%" with aspect ratio preserved
+  // Aspect ~1.82 matches typical mobile width / desired chart height so text stays crisp
+  const GRAPH_W = 400;
+  const GRAPH_H = 220;
+  const padL = 26, padR = 14, padT = 36, padB = 30;
   const plotW = GRAPH_W - padL - padR;
   const plotH = GRAPH_H - padT - padB;
 
@@ -374,9 +375,7 @@ function App() {
                 <div style={{ padding: '0 10px 10px' }}>
                   <svg
                     viewBox={`0 0 ${GRAPH_W} ${GRAPH_H}`}
-                    preserveAspectRatio="none"
                     className="graph-svg"
-                    style={{ height: 200 }}
                     onMouseMove={handleScrubMove}
                     onMouseLeave={handleScrubEnd}
                     onTouchStart={handleScrubMove}
@@ -396,7 +395,7 @@ function App() {
 
                     {/* Wind direction arrows — every 6h only */}
                     {tickIndices.map(i => (
-                      <text key={'arr'+i} x={px(i)} y={14} fill="var(--muted)" fontSize="10" textAnchor="middle" fontFamily="DM Sans">
+                      <text key={'arr'+i} x={px(i)} y={18} fill="var(--muted)" fontSize="12" textAnchor="middle" fontFamily="DM Sans">
                         {windArrow(forecast[i].windDeg)}
                       </text>
                     ))}
@@ -406,7 +405,7 @@ function App() {
                       const y = py(val);
                       return <g key={i}>
                         <line x1={padL - 3} y1={y} x2={GRAPH_W - padR} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
-                        <text x={padL - 6} y={y + 3} fill="var(--muted)" fontSize="8.5" textAnchor="end" fontFamily="DM Sans">{val}</text>
+                        <text x={padL - 6} y={y + 3.5} fill="var(--muted)" fontSize="10" textAnchor="end" fontFamily="DM Sans">{val}</text>
                       </g>;
                     })}
 
@@ -426,7 +425,7 @@ function App() {
                     {/* X-axis labels — every 6h only */}
                     {tickIndices.map(i => {
                       const lbl = i === 0 ? 'Now' : forecast[i].dt.toLocaleTimeString([], { hour: 'numeric' });
-                      return <text key={'lbl'+i} x={px(i)} y={GRAPH_H - 8} fill="var(--muted)" fontSize="9" textAnchor="middle" fontWeight="600" fontFamily="DM Sans">{lbl}</text>;
+                      return <text key={'lbl'+i} x={px(i)} y={GRAPH_H - 10} fill="var(--muted)" fontSize="11" textAnchor="middle" fontWeight="600" fontFamily="DM Sans">{lbl}</text>;
                     })}
 
                     {/* Tick marks for label positions */}
