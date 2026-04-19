@@ -449,22 +449,22 @@ function App() {
 
                         {/* Tooltip bubble */}
                         {(() => {
-                          const tw = 110, th = 44;
+                          const tw = 150, th = 62;
                           // Keep tooltip inside plot area
                           let tx = scrubData.x - tw / 2;
                           if (tx < padL - 4) tx = padL - 4;
                           if (tx + tw > GRAPH_W - padR + 4) tx = GRAPH_W - padR + 4 - tw;
-                          const ty = padT - 2;
+                          const ty = padT - 4;
                           const timeLbl = scrubData.time.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
                           return (
                             <g>
-                              <rect x={tx} y={ty} width={tw} height={th} rx={6} fill="rgba(13,27,42,0.95)" stroke="var(--border2)" strokeWidth={1} />
-                              <text x={tx + 8} y={ty + 14} fill="var(--text)" fontSize="9.5" fontWeight="700" fontFamily="DM Sans">{timeLbl}</text>
-                              <text x={tx + tw - 8} y={ty + 14} fill={scrubData.playability.c} fontSize="9" fontWeight="700" textAnchor="end" fontFamily="DM Sans">{scrubData.playability.l}</text>
-                              <text x={tx + 8} y={ty + 27} fill="var(--green)" fontSize="9" fontFamily="DM Sans">● Wind</text>
-                              <text x={tx + tw - 8} y={ty + 27} fill="var(--text)" fontSize="9" fontWeight="700" textAnchor="end" fontFamily="DM Sans">{scrubData.wind} mph</text>
-                              <text x={tx + 8} y={ty + 39} fill="var(--accent)" fontSize="9" fontFamily="DM Sans">● Gusts</text>
-                              <text x={tx + tw - 8} y={ty + 39} fill="var(--text)" fontSize="9" fontWeight="700" textAnchor="end" fontFamily="DM Sans">{scrubData.gust} mph</text>
+                              <rect x={tx} y={ty} width={tw} height={th} rx={7} fill="rgba(13,27,42,0.96)" stroke="var(--border2)" strokeWidth={1} />
+                              <text x={tx + 10} y={ty + 18} fill="var(--text)" fontSize="13" fontWeight="700" fontFamily="DM Sans">{timeLbl}</text>
+                              <text x={tx + tw - 10} y={ty + 18} fill={scrubData.playability.c} fontSize="12" fontWeight="700" textAnchor="end" fontFamily="DM Sans">{scrubData.playability.l}</text>
+                              <text x={tx + 10} y={ty + 37} fill="var(--green)" fontSize="12" fontFamily="DM Sans">● Wind</text>
+                              <text x={tx + tw - 10} y={ty + 37} fill="var(--text)" fontSize="12" fontWeight="700" textAnchor="end" fontFamily="DM Sans">{scrubData.wind} mph</text>
+                              <text x={tx + 10} y={ty + 54} fill="var(--accent)" fontSize="12" fontFamily="DM Sans">● Gusts</text>
+                              <text x={tx + tw - 10} y={ty + 54} fill="var(--text)" fontSize="12" fontWeight="700" textAnchor="end" fontFamily="DM Sans">{scrubData.gust} mph</text>
                             </g>
                           );
                         })()}
