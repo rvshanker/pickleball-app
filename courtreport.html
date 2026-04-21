@@ -205,7 +205,7 @@ function App() {
             const windOpt = WIND_OPTIONS.find(o => o.value === windCondition);
             const lines = [
                 `# of Players: ${playerOpt?.emoji} ${playerOpt?.label} (${playerOpt?.desc})`,
-                `🌬️ Wind: ${windOpt?.emoji} ${windOpt?.label} (${windOpt?.desc})`,
+                `Wind: ${windOpt?.emoji} ${windOpt?.label} (${windOpt?.desc})`,
             ];
             if (comment.trim()) {
                 lines.push(`💬 "${comment.trim()}"`);
