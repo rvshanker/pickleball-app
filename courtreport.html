@@ -204,16 +204,12 @@ function App() {
             const playerOpt = PLAYER_OPTIONS.find(o => o.value === playerCount);
             const windOpt = WIND_OPTIONS.find(o => o.value === windCondition);
             const lines = [
-                `📋 Court Report from ${trimName}`,
-                `📍 ${courtName}`,
-                `👥 Players: ${playerOpt?.emoji} ${playerOpt?.label} (${playerOpt?.desc})`,
+                `# of Players: ${playerOpt?.emoji} ${playerOpt?.label} (${playerOpt?.desc})`,
                 `🌬️ Wind: ${windOpt?.emoji} ${windOpt?.label} (${windOpt?.desc})`,
             ];
             if (comment.trim()) {
                 lines.push(`💬 "${comment.trim()}"`);
             }
-            lines.push(`🕐 ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}`);
-
             await fireGroupMeCourtReport(courtId, lines.join('\n'));
 
             setTimeout(() => setStep(5), 800);
