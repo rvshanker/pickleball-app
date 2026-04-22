@@ -171,56 +171,48 @@ function parsePage(html) {
   $("tr").each((_, tr) => {
     const $tr = $(tr);
     const tds = $tr.find("td").toArray();
-    if (tds.length < 9) return; // skip header rows, empty rows, pagination
+    if (tds.length < 9) return;
 
     const constituency = $(tds[0]).text().trim();
-    const constNoTxt = $(tds[1]).text().trim();
-    const constNo = parseInt(constNoTxt, 10);
+    const constNo = parseInt($(tds[1]).text().trim(), 10);
     if (!constituency || !Number.isFinite(constNo)) return;
 
     const leaderName  = $(tds[2]).text().trim();
     const leaderParty = extractPartyName($, tds[3]);
     const trailName   = $(tds[4]).text().trim();
     const trailParty  = extractPartyName($, tds[5]);
-    const marginTxt   = $(tds[6]).text().trim();
-    const margin      = parseInt(marginTxt.replace(/[^0-9]/g, ""), 10) || 0;
-    const round       = $(tds[7]).text().trim();
-    const statusRaw   = $(tds[8]).text().trim();
 
-    const status = /declared/i.test(statusRaw) ? "declared"
-                  : /leading/i.test(statusRaw)  ? "leading"
-                  : margin > 0                  ? "leading"
-                  : "pending";
+    // Margin — strip everything except digits; takes the biggest number
+    // in the cell (handles "35,680" and "+ 35,680" both)
+    const marginTxt = $(tds[6]).text();
+    const marginMatches = marginTxt.match(/[\d,]+/g) || [];
+    const margin = marginMatches.length
+      ? parseInt(marginMatches[0].replace(/,/g, ""), 10) || 0
+      : 0;
+
+    const round     = $(tds[7]).text().trim();
+    const statusRaw = $(tds[8]).text().trim().toLowerCase();
+
+    // Status — "Result Declared" / "Declared" / "Won" → declared;
+    // "Leading" or any non-empty margin → leading; else pending
+    const status = /declared|result|won/.test(statusRaw) ? "declared"
+                 : /leading/.test(statusRaw)             ? "leading"
+                 : margin > 0                            ? "leading"
+                 : "pending";
 
     const lp = lookupParty(leaderParty);
     const tp = lookupParty(trailParty);
 
     rows.push({
-      no: constNo,
-      name: constituency,
-      leader: {
-        name: leaderName,
-        party: lp.short,
-        partyFull: leaderParty,
-        alliance: lp.alliance,
-        votes: 0,              // not on statewise page; per-constituency fetch needed
-        margin,
-      },
-      runnerUp: {
-        name: trailName,
-        party: tp.short,
-        partyFull: trailParty,
-        alliance: tp.alliance,
-        votes: 0,
-      },
-      round,
-      status,
+      no: constNo, name: constituency,
+      leader:   { name:leaderName, party:lp.short, partyFull:leaderParty, alliance:lp.alliance, votes:0, margin },
+      runnerUp: { name:trailName,  party:tp.short, partyFull:trailParty,  alliance:tp.alliance, votes:0 },
+      round, status,
     });
   });
 
   return rows;
 }
-
 // ─────────────────────────────────────────────────────────────
 // Main aggregator — fetches all pages in parallel, merges, tallies
 // ─────────────────────────────────────────────────────────────
