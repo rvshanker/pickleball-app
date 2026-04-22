@@ -1,72 +1,55 @@
 // functions/tnResults.js
 //
-// Proxies the ECI state-wise results pages into a clean JSON feed.
-// ECI paginates the constituency list across ~13 pages per state; this
-// function fetches them all in parallel, parses the table rows, maps
-// parties to alliances, and returns one clean JSON object.
+// Two endpoints in one function:
+//   GET /tnResults            → state-wise summary (all constituencies, tallies)
+//   GET /tnResults?ac=187     → one constituency's full candidate list with votes
 //
-// MODE = "bihar"  → live test against Bihar Nov-2025 (real data, today)
-// MODE = "tn"     → Tamil Nadu May-2026 (empty until May 4)
-//
-// Flip MODE, redeploy this one function — hosting doesn't need to change.
+// MODE = "bihar"  → live test against Bihar Nov-2025
+// MODE = "tn"     → Tamil Nadu May-2026
 
 const functions = require("firebase-functions");
 const cheerio = require("cheerio");
-// Node 18+ on Firebase Functions v2 provides `fetch` globally.
 
 // ─────────────────────────────────────────────────────────────
-// MODE — switch this one line
+// MODE
 // ─────────────────────────────────────────────────────────────
 const MODE = "bihar"; // "bihar" | "tn"
 
 const TARGETS = {
-  bihar: {
-    prefix: "ResultAcGenNov2025",
-    stateCode: "S04",
-    label: "Bihar · 2025",
-    totalSeats: 243,
-    majority: 122,
-  },
-  tn: {
-    // Verify on May 3 evening once ECI publishes the TN landing page.
-    prefix: "ResultAcGenMay2026",
-    stateCode: "S22",         // Tamil Nadu (ECI alphabetical ordering: S04=Bihar, S22=TN)
-    label: "Tamil Nadu · 2026",
-    totalSeats: 234,
-    majority: 118,
-  },
+  bihar: { prefix: "ResultAcGenNov2025", stateCode: "S04", label: "Bihar · 2025", totalSeats: 243, majority: 122 },
+  tn:    { prefix: "ResultAcGenMay2026", stateCode: "S22", label: "Tamil Nadu · 2026", totalSeats: 234, majority: 118 },
 };
 
 const TARGET = TARGETS[MODE];
 const BASE = `https://results.eci.gov.in/${TARGET.prefix}`;
 
 // ─────────────────────────────────────────────────────────────
-// Party lookup — full ECI name → { short code, alliance id }
-// Alliance groupings chosen to match the political narrative.
+// Parties & alliances
 // ─────────────────────────────────────────────────────────────
 const PARTIES_BIHAR = {
-  "Bharatiya Janata Party":                                          { short:"BJP",    alliance:"nda" },
-  "Janata Dal (United)":                                              { short:"JD(U)",  alliance:"nda" },
-  "Lok Janshakti Party(Ram Vilas)":                                   { short:"LJPRV",  alliance:"nda" },
-  "Lok Janshakti Party (Ram Vilas)":                                  { short:"LJPRV",  alliance:"nda" },
-  "Hindustani Awam Morcha (Secular)":                                 { short:"HAMS",   alliance:"nda" },
-  "Rashtriya Lok Morcha":                                             { short:"RLM",    alliance:"nda" },
-  "Rashtriya Janata Dal":                                             { short:"RJD",    alliance:"ind" },
-  "Indian National Congress":                                         { short:"INC",    alliance:"ind" },
-  "Communist Party of India (Marxist-Leninist) (Liberation)":         { short:"CPI(ML)",alliance:"ind" },
-  "Communist Party of India  (Marxist)":                              { short:"CPI(M)", alliance:"ind" },
-  "Communist Party of India (Marxist)":                               { short:"CPI(M)", alliance:"ind" },
-  "Communist Party of India":                                         { short:"CPI",    alliance:"ind" },
-  "Vikassheel Insaan Party":                                          { short:"VIP",    alliance:"others" },
-  "All India Majlis-E-Ittehadul Muslimeen":                           { short:"AIMIM",  alliance:"aimim" },
-  "Independent":                                                      { short:"IND",    alliance:"others" },
+  "Bharatiya Janata Party":                                      { short:"BJP",    alliance:"nda" },
+  "Janata Dal (United)":                                          { short:"JD(U)",  alliance:"nda" },
+  "Lok Janshakti Party(Ram Vilas)":                               { short:"LJPRV",  alliance:"nda" },
+  "Lok Janshakti Party (Ram Vilas)":                              { short:"LJPRV",  alliance:"nda" },
+  "Hindustani Awam Morcha (Secular)":                             { short:"HAMS",   alliance:"nda" },
+  "Rashtriya Lok Morcha":                                         { short:"RLM",    alliance:"nda" },
+  "Rashtriya Janata Dal":                                         { short:"RJD",    alliance:"ind" },
+  "Indian National Congress":                                     { short:"INC",    alliance:"ind" },
+  "Communist Party of India (Marxist-Leninist) (Liberation)":     { short:"CPI(ML)",alliance:"ind" },
+  "Communist Party of India (Marxist)":                           { short:"CPI(M)", alliance:"ind" },
+  "Communist Party of India":                                     { short:"CPI",    alliance:"ind" },
+  "Vikassheel Insaan Party":                                      { short:"VIP",    alliance:"others" },
+  "Jan Suraaj Party":                                             { short:"JSP",    alliance:"others" },
+  "All India Majlis-E-Ittehadul Muslimeen":                       { short:"AIMIM",  alliance:"aimim" },
+  "Independent":                                                  { short:"IND",    alliance:"others" },
+  "None of the Above":                                            { short:"NOTA",   alliance:"others" },
 };
 
 const ALLIANCES_BIHAR = [
   { id:"nda",    name:"NDA",         parties:["BJP","JD(U)","LJPRV","HAMS","RLM"], color:"#E65100" },
   { id:"ind",    name:"INDIA bloc",  parties:["RJD","INC","CPI(ML)","CPI","CPI(M)"], color:"#2E7D32" },
   { id:"aimim",  name:"AIMIM",       parties:["AIMIM"], color:"#1E3A8A" },
-  { id:"others", name:"Others",      parties:["IND","VIP"], color:"#6B6B6B" },
+  { id:"others", name:"Others",      parties:["IND","VIP","JSP"], color:"#6B6B6B" },
 ];
 
 const PARTIES_TN = {
@@ -86,6 +69,7 @@ const PARTIES_TN = {
   "Tamilaga Vettri Kazhagam":                         { short:"TVK",    alliance:"tvk" },
   "Naam Tamilar Katchi":                              { short:"NTK",    alliance:"others" },
   "Independent":                                      { short:"IND",    alliance:"others" },
+  "None of the Above":                                { short:"NOTA",   alliance:"others" },
 };
 
 const ALLIANCES_TN = [
@@ -98,73 +82,57 @@ const ALLIANCES_TN = [
 const PARTIES   = MODE === "bihar" ? PARTIES_BIHAR   : PARTIES_TN;
 const ALLIANCES = MODE === "bihar" ? ALLIANCES_BIHAR : ALLIANCES_TN;
 
-// Fuzzy match in case ECI's full name has stray whitespace or punctuation
 function lookupParty(fullName) {
   if (!fullName) return { short:"—", alliance:"others" };
   const trimmed = fullName.replace(/\s+/g, " ").trim();
   if (PARTIES[trimmed]) return PARTIES[trimmed];
-
-  // Substring match on a normalized key
   const norm = trimmed.toLowerCase();
   for (const [key, val] of Object.entries(PARTIES)) {
     const kNorm = key.toLowerCase();
     if (kNorm === norm || norm.includes(kNorm) || kNorm.includes(norm)) return val;
   }
-
-  // Try initials: "All India Anna Dravida Munnetra Kazhagam" → AIADMK
-  const initials = trimmed
-    .replace(/[()]/g, " ")
-    .split(/\s+/).filter(w => w.length>0 && /^[A-Z]/.test(w))
+  const initials = trimmed.replace(/[()]/g, " ").split(/\s+/)
+    .filter(w => w.length>0 && /^[A-Z]/.test(w))
     .map(w => w[0]).join("");
   return { short: initials || trimmed.slice(0,8).toUpperCase(), alliance:"others" };
 }
 
 // ─────────────────────────────────────────────────────────────
-// Caching
+// Caches — separate caches for summary and per-AC pages
 // ─────────────────────────────────────────────────────────────
-let cache = { at: 0, data: null };
+let summaryCache = { at: 0, data: null };
+const acCache = new Map(); // ac -> { at, data }
 const CACHE_MS = 60_000;
 
 // ─────────────────────────────────────────────────────────────
-// Fetch one paginated state-wise page
+// Extract party name from state-wise table cell (with embedded tooltip)
+// Takes raw HTML, cuts at first nested tag — that gives us just the party text.
 // ─────────────────────────────────────────────────────────────
-async function fetchPage(pageNum) {
-  const url = `${BASE}/statewise${TARGET.stateCode}${pageNum}.htm`;
-  try {
-    const r = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0 (PickleConnect Election Tracker)" },
-    });
-    if (!r.ok) return { ok:false, status:r.status, url };
-    const html = await r.text();
-    return { ok:true, html, url };
-  } catch (e) {
-    return { ok:false, error:e.message, url };
-  }
-}
-
-// Extract a clean party name from a <td> that also contains an
-// embedded "Party Wise State Trends" tooltip table.
 function extractPartyName($, cell) {
-  // Strategy: take only the first direct text node of the cell,
-  // before any nested elements (tables, divs, tooltips).
   const $c = $(cell);
-  // Get raw HTML, cut at the first opening tag after the party name
   const html = $c.html() || "";
-  // Everything before first "<" tag (other than whitespace) is the party name
   let txt = html.split(/<[^>]+>/)[0];
   if (!txt || !txt.trim()) {
-    // Fallback — take all text, cut at tooltip marker
     txt = $c.text().split(/\bi\s*Party\s+Wise/i)[0];
   }
   return txt.replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
 }
 
 // ─────────────────────────────────────────────────────────────
-// Parse one state-wise page's HTML table
-// Columns: Constituency | Const.No | Leading Candidate | Leading Party
-//          | Trailing Candidate | Trailing Party | Margin | Round | Status
+// STATE-WISE summary — fetch paginated pages in parallel
 // ─────────────────────────────────────────────────────────────
-function parsePage(html) {
+async function fetchStatewisePage(pageNum) {
+  const url = `${BASE}/statewise${TARGET.stateCode}${pageNum}.htm`;
+  try {
+    const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (PickleConnect)" } });
+    if (!r.ok) return { ok:false, status:r.status, url };
+    return { ok:true, html: await r.text(), url };
+  } catch (e) {
+    return { ok:false, error:e.message, url };
+  }
+}
+
+function parseStatewisePage(html) {
   const $ = cheerio.load(html);
   const rows = [];
 
@@ -182,8 +150,7 @@ function parsePage(html) {
     const trailName   = $(tds[4]).text().trim();
     const trailParty  = extractPartyName($, tds[5]);
 
-    // Margin — strip everything except digits; takes the biggest number
-    // in the cell (handles "35,680" and "+ 35,680" both)
+    // Margin — take the first integer-like number in the cell
     const marginTxt = $(tds[6]).text();
     const marginMatches = marginTxt.match(/[\d,]+/g) || [];
     const margin = marginMatches.length
@@ -193,11 +160,9 @@ function parsePage(html) {
     const round     = $(tds[7]).text().trim();
     const statusRaw = $(tds[8]).text().trim().toLowerCase();
 
-    // Status — "Result Declared" / "Declared" / "Won" → declared;
-    // "Leading" or any non-empty margin → leading; else pending
-    const status = /declared|result|won/.test(statusRaw) ? "declared"
-                 : /leading/.test(statusRaw)             ? "leading"
-                 : margin > 0                            ? "leading"
+    const status = /declared|result|\bwon\b/.test(statusRaw) ? "declared"
+                 : /leading/.test(statusRaw)                 ? "leading"
+                 : margin > 0                                ? "leading"
                  : "pending";
 
     const lp = lookupParty(leaderParty);
@@ -205,22 +170,19 @@ function parsePage(html) {
 
     rows.push({
       no: constNo, name: constituency,
-      leader:   { name:leaderName, party:lp.short, partyFull:leaderParty, alliance:lp.alliance, votes:0, margin },
-      runnerUp: { name:trailName,  party:tp.short, partyFull:trailParty,  alliance:tp.alliance, votes:0 },
+      leader:   { name:leaderName, party:lp.short, partyFull:leaderParty, alliance:lp.alliance, margin },
+      runnerUp: { name:trailName,  party:tp.short, partyFull:trailParty,  alliance:tp.alliance },
       round, status,
     });
   });
 
   return rows;
 }
-// ─────────────────────────────────────────────────────────────
-// Main aggregator — fetches all pages in parallel, merges, tallies
-// ─────────────────────────────────────────────────────────────
-async function fetchAll() {
-  // Kick off pages 1..15 in parallel. ECI typically has 12–13.
+
+async function fetchStatewise() {
   const maxPages = 15;
   const results = await Promise.all(
-    Array.from({ length: maxPages }, (_, i) => fetchPage(i + 1))
+    Array.from({ length: maxPages }, (_, i) => fetchStatewisePage(i + 1))
   );
 
   const allRows = [];
@@ -230,16 +192,13 @@ async function fetchAll() {
       if (r.status && r.status !== 404) errors.push(`page ${i+1}: HTTP ${r.status}`);
       return;
     }
-    const rows = parsePage(r.html);
-    allRows.push(...rows);
+    allRows.push(...parseStatewisePage(r.html));
   });
 
-  // Dedupe by constituency number (in case pagination overlaps)
   const byNo = new Map();
   allRows.forEach(row => byNo.set(row.no, row));
   const constituencies = Array.from(byNo.values()).sort((a, b) => a.no - b.no);
 
-  // Alliance tallies
   const tallies = Object.fromEntries(ALLIANCES.map(a => [a.id, { won:0, leading:0 }]));
   constituencies.forEach(c => {
     const t = tallies[c.leader.alliance];
@@ -248,9 +207,7 @@ async function fetchAll() {
     else if (c.status === "leading") t.leading++;
   });
 
-  const alliances = ALLIANCES.map(a => ({
-    ...a, won: tallies[a.id].won, leading: tallies[a.id].leading,
-  }));
+  const alliances = ALLIANCES.map(a => ({ ...a, won: tallies[a.id].won, leading: tallies[a.id].leading }));
 
   const totals = {
     declared: constituencies.filter(c => c.status === "declared").length,
@@ -261,14 +218,71 @@ async function fetchAll() {
   };
 
   return {
-    mode: MODE,
-    label: TARGET.label,
+    mode: MODE, label: TARGET.label,
     updatedAt: new Date().toISOString(),
     totals, alliances, constituencies,
-    _meta: {
-      pagesFetched: results.filter(r => r.ok).length,
-      errors: errors.length ? errors : undefined,
-    },
+    _meta: { pagesFetched: results.filter(r => r.ok).length, errors: errors.length ? errors : undefined },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────
+// CONSTITUENCY detail — one AC, all candidates with vote totals
+// Page format: ConstituencywiseS04187.htm
+// Columns: S.N. | Candidate | Party | EVM | Postal | Total | %
+// ─────────────────────────────────────────────────────────────
+async function fetchConstituency(ac) {
+  const url = `${BASE}/Constituencywise${TARGET.stateCode}${ac}.htm`;
+  const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (PickleConnect)" } });
+  if (!r.ok) return { error: `HTTP ${r.status}`, url };
+  const html = await r.text();
+  const $ = cheerio.load(html);
+
+  // Constituency name from heading: "Assembly Constituency 187 - MANER (Bihar)"
+  const heading = $("h2, h3").filter((_, el) => /Assembly Constituency/i.test($(el).text())).first().text().trim();
+  const m = heading.match(/Constituency\s+(\d+)\s*[-–]\s*([^(]+)/i);
+  const no = m ? parseInt(m[1], 10) : ac;
+  const name = m ? m[2].trim() : "";
+
+  // Status / round, e.g. "Status as on Round, 31/31"
+  const statusText = $("*:contains('Status as on')").first().text().trim();
+  const round = (statusText.match(/Round,?\s*([\d\/]+)/i) || [])[1] || "";
+
+  // Parse candidate table — 7 cols
+  const candidates = [];
+  $("tr").each((_, tr) => {
+    const tds = $(tr).find("td").toArray();
+    if (tds.length < 7) return;
+    const sn = $(tds[0]).text().trim();
+    if (!/^\d+$/.test(sn)) return; // skip header & total rows
+    const candName = $(tds[1]).text().trim();
+    const party    = $(tds[2]).text().trim();
+    const evm      = parseInt($(tds[3]).text().replace(/[^0-9]/g, ""), 10) || 0;
+    const postal   = parseInt($(tds[4]).text().replace(/[^0-9]/g, ""), 10) || 0;
+    const total    = parseInt($(tds[5]).text().replace(/[^0-9]/g, ""), 10) || 0;
+    const pctTxt   = $(tds[6]).text().trim();
+    const pct      = parseFloat(pctTxt) || 0;
+
+    const lp = lookupParty(party);
+    candidates.push({
+      sn: parseInt(sn, 10),
+      name: candName,
+      party: lp.short,
+      partyFull: party,
+      alliance: lp.alliance,
+      evm, postal, total, pct,
+    });
+  });
+
+  // Sort by total votes desc
+  candidates.sort((a, b) => b.total - a.total);
+
+  const totalValidVotes = candidates.reduce((s, c) => s + c.total, 0);
+
+  return {
+    no, name, round,
+    candidates,
+    totalVotes: totalValidVotes,
+    updatedAt: new Date().toISOString(),
   };
 }
 
@@ -282,33 +296,45 @@ exports.tnResults = functions
     const allowed = [
       "https://pickleconnect.live",
       "https://www.pickleconnect.live",
-      "https://skipq.app",
-      "https://skipq.vip",
-      "http://localhost:3000",
-      "http://localhost:5173",
-      "http://localhost:8080",
+      "https://skipq.app", "https://skipq.vip",
+      "http://localhost:3000", "http://localhost:5173", "http://localhost:8080",
     ];
     if (allowed.includes(origin)) res.set("Access-Control-Allow-Origin", origin);
-    else res.set("Access-Control-Allow-Origin", "*"); // loose while testing
+    else res.set("Access-Control-Allow-Origin", "*");
     res.set("Vary", "Origin");
     res.set("Cache-Control", "public, max-age=60, s-maxage=60");
 
     if (req.method === "OPTIONS") { res.status(204).send(""); return; }
 
     try {
+      const ac = parseInt(req.query.ac, 10);
       const now = Date.now();
-      if (cache.data && now - cache.at < CACHE_MS) {
-        res.json({ ...cache.data, _cached: true });
+
+      // Per-constituency mode
+      if (Number.isFinite(ac) && ac > 0) {
+        const cached = acCache.get(ac);
+        if (cached && now - cached.at < CACHE_MS) {
+          res.json({ ...cached.data, _cached: true });
+          return;
+        }
+        const data = await fetchConstituency(ac);
+        if (data.candidates && data.candidates.length) {
+          acCache.set(ac, { at: now, data });
+        }
+        res.json(data);
         return;
       }
 
-      const parsed = await fetchAll();
-
+      // State-wise summary
+      if (summaryCache.data && now - summaryCache.at < CACHE_MS) {
+        res.json({ ...summaryCache.data, _cached: true });
+        return;
+      }
+      const parsed = await fetchStatewise();
       if (parsed.constituencies.length > 0) {
-        cache = { at: now, data: parsed };
+        summaryCache = { at: now, data: parsed };
         res.json(parsed);
       } else {
-        // Pre-counting (all 404s) — return empty-but-valid payload
         res.json({
           mode: MODE, label: TARGET.label,
           updatedAt: new Date().toISOString(),
