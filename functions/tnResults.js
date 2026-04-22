@@ -145,13 +145,18 @@ async function fetchPage(pageNum) {
 // Extract a clean party name from a <td> that also contains an
 // embedded "Party Wise State Trends" tooltip table.
 function extractPartyName($, cell) {
-  const $c = $(cell).clone();
-  $c.find("table, .trends-box, .tooltip, [class*='tooltip'], [class*='trend']").remove();
-  // After removing tooltip tables, take the first non-empty line.
-  const txt = $c.text().replace(/\s+/g, " ").trim();
-  // The tooltip's "i" icon leaves stray text sometimes; cut at "i Party Wise"
-  const cut = txt.split(/\bi\s+Party\s+Wise/i)[0];
-  return cut.replace(/\s+/g, " ").trim();
+  // Strategy: take only the first direct text node of the cell,
+  // before any nested elements (tables, divs, tooltips).
+  const $c = $(cell);
+  // Get raw HTML, cut at the first opening tag after the party name
+  const html = $c.html() || "";
+  // Everything before first "<" tag (other than whitespace) is the party name
+  let txt = html.split(/<[^>]+>/)[0];
+  if (!txt || !txt.trim()) {
+    // Fallback — take all text, cut at tooltip marker
+    txt = $c.text().split(/\bi\s*Party\s+Wise/i)[0];
+  }
+  return txt.replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
 }
 
 // ─────────────────────────────────────────────────────────────
