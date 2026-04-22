@@ -4,12 +4,12 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>Tamil Nadu 2026 · Live Results</title>
-<meta name="description" content="Live tracking of the 2026 Tamil Nadu Legislative Assembly election. 234 seats. Counting May 4, 2026." />
-<meta name="theme-color" content="#1A1817" />
+<meta name="description" content="Live 2026 Tamil Nadu Legislative Assembly election results. 234 seats. Counting May 4, 2026." />
+<meta name="theme-color" content="#111111" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -18,191 +18,123 @@
 
 <style>
   :root{
-    --cream:#FAF6EE;
-    --cream-2:#F2EADA;
-    --ink:#1A1817;
-    --ink-2:#3A3532;
-    --ink-3:#6B625C;
-    --rule:#D9CFBA;
-    --accent:#8B1818;
-    --dmk:#C8352F;
-    --aiadmk:#2E7D32;
-    --tvk:#E65100;
-    --bjp:#EE8A2E;
-    --others:#6B6B6B;
+    --bg:#FBFAF7;
+    --card:#FFFFFF;
+    --ink:#111111;
+    --ink-2:#444444;
+    --ink-3:#8A8680;
+    --rule:#E7E3DA;
+    --accent:#C23A2B;
   }
-  html,body{background:var(--cream);color:var(--ink);}
-  body{font-family:"IBM Plex Sans",system-ui,sans-serif;font-feature-settings:"ss01","cv11";}
-  .serif{font-family:"Fraunces",Georgia,serif;font-optical-sizing:auto;}
-  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;}
+  html,body{background:var(--bg);color:var(--ink);}
+  body{font-family:"Inter",system-ui,sans-serif;font-feature-settings:"ss01","cv11";}
+  .display{font-family:"Fraunces",Georgia,serif;font-optical-sizing:auto;letter-spacing:-.015em;}
   .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;}
 
-  /* subtle grain + paper feel */
-  body::before{
-    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
-    background-image:
-      radial-gradient(1200px 600px at 10% -10%, rgba(139,24,24,.05), transparent 60%),
-      radial-gradient(900px 500px at 110% 10%, rgba(30,40,60,.04), transparent 60%);
-  }
-  .grain{
-    position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.35;mix-blend-mode:multiply;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.09  0 0 0 0 0.08  0 0 0 0 0.07  0 0 0 0.12 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  }
-  main{position:relative;z-index:2;}
-
-  .rule{border-color:var(--rule);}
-  .pulse-dot{position:relative;width:9px;height:9px;border-radius:999px;background:#D32F2F;}
+  .pulse-dot{position:relative;width:8px;height:8px;border-radius:999px;background:#D32F2F;display:inline-block;}
   .pulse-dot::after{content:"";position:absolute;inset:-4px;border-radius:999px;border:1px solid #D32F2F;animation:pulse 1.6s ease-out infinite;}
-  @keyframes pulse{0%{transform:scale(.7);opacity:.9}100%{transform:scale(1.8);opacity:0}}
+  @keyframes pulse{0%{transform:scale(.7);opacity:.9}100%{transform:scale(1.9);opacity:0}}
 
-  .tile{width:14px;height:14px;border-radius:3px;background:#E7DFCE;transition:transform .15s ease;}
-  .tile:hover{transform:scale(1.25);}
-  .tile-dmk{background:var(--dmk);}
-  .tile-aiadmk{background:var(--aiadmk);}
-  .tile-tvk{background:var(--tvk);}
-  .tile-others{background:var(--others);}
-  .tile-leading{opacity:.55;}
+  .card{background:var(--card);border:1px solid var(--rule);border-radius:14px;}
+  .chip{display:inline-flex;align-items:center;gap:.35rem;padding:.1rem .5rem;border-radius:999px;font-size:11px;font-weight:500;}
 
-  .chip{display:inline-flex;align-items:center;gap:.4rem;padding:.12rem .5rem;border-radius:999px;font-size:11px;letter-spacing:.02em;}
+  .bar{position:relative;height:44px;background:#EEE9DC;border-radius:8px;overflow:hidden;border:1px solid var(--rule);}
+  .bar-majority{position:absolute;top:-6px;bottom:-6px;border-left:2px dashed var(--ink);}
+  .bar-majority::after{content:"majority · 118";position:absolute;left:8px;top:-20px;font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--ink);white-space:nowrap;letter-spacing:.04em;}
 
-  .majority-line{position:absolute;top:-6px;bottom:-6px;border-left:2px dashed var(--ink-2);}
-  .majority-line::after{content:"118 · majority";position:absolute;left:8px;top:-22px;font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--ink-2);white-space:nowrap;letter-spacing:.04em;}
+  .alli{position:relative;border-radius:14px;padding:18px 20px;color:#fff;overflow:hidden;}
+  .alli::after{content:"";position:absolute;inset:0;background:linear-gradient(140deg, rgba(255,255,255,.15), rgba(0,0,0,.12));pointer-events:none;}
+  .alli .lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.9;font-weight:600;}
+  .alli .big{font-family:"Fraunces",serif;font-weight:700;font-size:64px;line-height:.95;letter-spacing:-.02em;margin-top:6px;}
+  .alli .sub{font-size:12px;opacity:.92;margin-top:6px;font-family:"IBM Plex Mono",monospace;}
 
-  .drop::first-letter{font-family:"Fraunces",serif;font-weight:800;font-size:3.4em;line-height:.85;float:left;padding:4px 8px 0 0;color:var(--accent);}
-
-  /* table */
   tbody tr{border-top:1px solid var(--rule);}
-  tbody tr:hover{background:rgba(139,24,24,.04);}
+  tbody tr:hover{background:#F7F3E9;}
 
-  /* scrollbar niceties */
   ::-webkit-scrollbar{width:10px;height:10px}
-  ::-webkit-scrollbar-thumb{background:#C8BDA3;border-radius:999px}
+  ::-webkit-scrollbar-thumb{background:#D6CFBE;border-radius:999px}
   ::-webkit-scrollbar-track{background:transparent}
 
-  details>summary{list-style:none;cursor:pointer}
-  details>summary::-webkit-details-marker{display:none}
+  .link{color:var(--accent);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;}
 </style>
 </head>
 <body>
-<div class="grain"></div>
-<main>
 <div id="root"></div>
-</main>
 
 <script type="text/babel" data-presets="env,react">
 const { useState, useEffect, useMemo, useRef } = React;
 
-/* ──────────────────────────────────────────────────────────
-   CONFIG
-   ────────────────────────────────────────────────────────── */
+// ─────────────────────────────────────────────────────────
+// CONFIG — paste your Cloud Function URL below
+// ─────────────────────────────────────────────────────────
+const PROXY_URL = ""; // e.g. "https://us-central1-<project>.cloudfunctions.net/tnResults"
 
-// Point this at your proxy once it's up. The proxy should fetch
-// results.eci.gov.in on the server and return JSON in the shape below.
-// For local / pre-counting day testing, leave it blank to use fixtures.
-const PROXY_URL = ""; // e.g. "https://skipq.app/api/tn-results"
-
-// Counting begins Monday, May 4, 2026 at 08:00 IST.
 const COUNTING_START = new Date("2026-05-04T02:30:00Z"); // 08:00 IST
-
-// Auto-refresh interval (ms) while counting is active
 const REFRESH_MS = 120_000;
+const TITLE = "Tamil Nadu · 2026";
+const SUBTITLE = "17th Legislative Assembly · 234 seats";
+const MAJORITY = 118;
 
-/* Expected JSON shape from PROXY_URL:
-{
-  "updatedAt": "2026-05-04T06:12:00Z",
-  "totals": { "declared": 34, "leading": 180, "pending": 20, "total": 234 },
-  "alliances": [
-    { "id":"spa",    "name":"DMK-led SPA",     "parties":["DMK","INC","VCK","CPI","CPI(M)"],
-      "won":0, "leading":0, "color":"#C8352F" },
-    { "id":"nda",    "name":"AIADMK+BJP front","parties":["AIADMK","BJP","PMK","AMMK","DMDK"],
-      "won":0, "leading":0, "color":"#2E7D32" },
-    { "id":"tvk",    "name":"Tamilaga Vettri Kazhagam", "parties":["TVK"],
-      "won":0, "leading":0, "color":"#E65100" },
-    { "id":"others", "name":"Others / Indep.", "parties":["PMK(R)","AIPMMK","NTK","IND"],
-      "won":0, "leading":0, "color":"#6B6B6B" }
-  ],
-  "constituencies":[
-    { "no":1, "name":"Gummidipoondi", "district":"Tiruvallur",
-      "leader":{ "name":"—", "party":"DMK", "alliance":"spa", "votes":0, "margin":0 },
-      "runnerUp":{ "name":"—", "party":"AIADMK", "alliance":"nda", "votes":0 },
-      "status":"pending"   // "declared" | "leading" | "pending"
-    }
-  ]
-}
-*/
-
-/* ──────────────────────────────────────────────────────────
-   FIXTURE (demo data while PROXY_URL is blank)
-   ────────────────────────────────────────────────────────── */
+// ─────────────────────────────────────────────────────────
+// FIXTURE (used until PROXY_URL is set)
+// ─────────────────────────────────────────────────────────
 const FIXTURE = (() => {
-  // 234 plausible constituency names — short list cycled for demo
-  const names = ["Gummidipoondi","Ponneri","Tiruttani","Thiruvallur","Poonamallee","Avadi","Maduravoyal","Ambattur","Madhavaram","Thiruvottiyur","Royapuram","Harbour","Chepauk-Triplicane","Thousand Lights","Anna Nagar","Egmore","Mylapore","Velachery","Saidapet","T. Nagar","Tambaram","Chengalpattu","Thiruporur","Cheyyur","Madurantakam","Uthiramerur","Kancheepuram","Arakkonam","Sholinghur","Katpadi","Vellore","Anaicut","Kilvaithinankuppam","Gudiyatham","Vaniyambadi","Ambur","Jolarpet","Tirupattur","Uthangarai","Bargur","Krishnagiri","Veppanahalli","Hosur","Thalli","Palacodu","Pennagaram","Dharmapuri","Pappireddipatti","Harur","Chengam","Tiruvannamalai","Kilpennathur","Kalasapakkam","Polur","Arani","Cheyyar","Vandavasi","Gingee","Mailam","Tindivanam","Vanur","Villupuram","Vikravandi","Tirukkoyilur","Ulundurpet","Rishivandiyam","Sankarapuram","Kallakurichi","Gangavalli","Attur","Yercaud","Omalur","Mettur","Edappadi","Sankari","Salem West","Salem North","Salem South","Veerapandi","Rasipuram","Senthamangalam","Namakkal","Paramathi-Velur","Tiruchengode","Kumarapalayam","Erode East","Erode West","Modakkurichi","Perundurai","Bhavani","Anthiyur","Gobichettipalayam","Bhavanisagar","Udhagamandalam","Gudalur","Coonoor","Mettupalayam","Avinashi","Tiruppur North","Tiruppur South","Palladam","Sulur","Kavundampalayam","Coimbatore North","Thondamuthur","Coimbatore South","Singanallur","Kinathukadavu","Pollachi","Valparai","Udumalaipettai","Madathukulam","Dharapuram","Kangayam","Palani","Oddanchatram","Athoor","Nilakottai","Natham","Dindigul","Vedasandur","Aravakurichi","Karur","Krishnarayapuram","Kulithalai","Manapparai","Srirangam","Tiruchirappalli West","Tiruchirappalli East","Thiruverumbur","Lalgudi","Manachanallur","Musiri","Thuraiyur","Perambalur","Kunnam","Ariyalur","Jayankondam","Tittagudi","Vriddhachalam","Neyveli","Panruti","Cuddalore","Kurinjipadi","Bhuvanagiri","Chidambaram","Kattumannarkoil","Sirkazhi","Mayiladuthurai","Poompuhar","Thiruvidaimarudur","Kumbakonam","Papanasam","Thiruvaiyaru","Thanjavur","Orathanadu","Pattukkottai","Peravurani","Gandarvakottai","Viralimalai","Pudukkottai","Thirumayam","Alangudi","Aranthangi","Karaikudi","Tiruppattur","Sivaganga","Manamadurai","Melur","Madurai East","Sholavandan","Madurai North","Madurai South","Madurai Central","Madurai West","Thiruparankundram","Thirumangalam","Usilampatti","Andipatti","Periyakulam","Bodinayakanur","Cumbum","Rajapalayam","Srivilliputhur","Sattur","Sivakasi","Virudhunagar","Aruppukkottai","Tiruchuli","Paramakudi","Tiruvadanai","Ramanathapuram","Mudhukulathur","Vilathikulam","Thoothukudi","Tiruchendur","Srivaikuntam","Ottapidaram","Kovilpatti","Sankarankovil","Vasudevanallur","Kadayanallur","Tenkasi","Alangulam","Tirunelveli","Ambasamudram","Palayamkottai","Nanguneri","Radhapuram","Kanniyakumari","Nagercoil","Colachel","Padmanabhapuram","Vilavancode","Killiyoor","Thousand Lights","Perambur","Kolathur","Villivakkam","Thiru-Vi-Ka-Nagar","Sholinganallur","Pallavaram","Alandur","Maduravoyal","Dr. Radhakrishnan Nagar","Virugampakkam","Kaundampalayam","Nagapattinam","Kilvelur","Vedaranyam","Thiruthuraipoondi","Mannargudi","Thiruvarur","Nannilam","Needamangalam","Valangaiman","Alanganallur","Melakkal"];
-
   const alliances = [
-    { id:"spa",    name:"DMK-led SPA",      parties:["DMK","INC","VCK","CPI","CPI(M)"], won:0, leading:0, color:"#C8352F" },
-    { id:"nda",    name:"AIADMK+BJP front", parties:["AIADMK","BJP","PMK","AMMK","DMDK"], won:0, leading:0, color:"#2E7D32" },
-    { id:"tvk",    name:"TVK (Vijay)",      parties:["TVK"], won:0, leading:0, color:"#E65100" },
-    { id:"others", name:"Others / Indep.",  parties:["PMK(R)","AIPMMK","NTK","IND"], won:0, leading:0, color:"#6B6B6B" },
+    { id:"spa",    name:"DMK-led SPA",      parties:["DMK","INC","VCK","CPI","CPI(M)"], color:"#C8352F" },
+    { id:"nda",    name:"AIADMK+BJP front", parties:["AIADMK","BJP","PMK","AMMK"], color:"#2E7D32" },
+    { id:"tvk",    name:"TVK",              parties:["TVK"], color:"#E65100" },
+    { id:"others", name:"Others",           parties:["NTK","IND","PMK(R)"], color:"#6B6B6B" },
   ];
-
-  // deterministic pseudo-distribution for the 234 seats (demo only)
-  const allianceSeq = [];
-  for (let i=0;i<234;i++){
-    const r = (Math.sin(i*12.9898)+Math.cos(i*78.233)+2)/4;
-    if (r < 0.48) allianceSeq.push("spa");
-    else if (r < 0.87) allianceSeq.push("nda");
-    else if (r < 0.95) allianceSeq.push("tvk");
-    else allianceSeq.push("others");
-  }
+  const names = ["Gummidipoondi","Ponneri","Tiruttani","Thiruvallur","Poonamallee","Avadi","Ambattur","Madhavaram","Thiruvottiyur","Royapuram","Harbour","Chepauk-Triplicane","Thousand Lights","Anna Nagar","Egmore","Mylapore","Velachery","Saidapet","T. Nagar","Tambaram","Chengalpattu","Thiruporur","Cheyyur","Madurantakam","Uthiramerur","Kancheepuram","Arakkonam","Sholinghur","Katpadi","Vellore","Anaicut","Gudiyatham","Vaniyambadi","Ambur","Jolarpet","Tirupattur","Uthangarai","Krishnagiri","Hosur","Palacodu","Dharmapuri","Harur","Chengam","Tiruvannamalai","Polur","Arani","Cheyyar","Vandavasi","Gingee","Tindivanam"];
+  const partyOf = { spa:"DMK", nda:"AIADMK", tvk:"TVK", others:"IND" };
+  const rivalOf = { spa:"AIADMK", nda:"DMK", tvk:"DMK", others:"DMK" };
+  const rivalAll = { spa:"nda", nda:"spa", tvk:"spa", others:"spa" };
 
   const cons = Array.from({length:234}, (_,i)=>{
-    const a = allianceSeq[i];
-    const decl = i < 34;
-    const status = decl ? "declared" : (i < 214 ? "leading" : "pending");
-    const partyFromAlliance = { spa:"DMK", nda:"AIADMK", tvk:"TVK", others:"NTK" }[a];
-    const rival = { spa:"AIADMK", nda:"DMK", tvk:"DMK", others:"DMK" }[a];
-    const rivalAll = { spa:"nda", nda:"spa", tvk:"spa", others:"spa" }[a];
+    const r = (Math.sin(i*12.9898)+Math.cos(i*78.233)+2)/4;
+    const a = r < 0.48 ? "spa" : r < 0.87 ? "nda" : r < 0.95 ? "tvk" : "others";
+    const status = i < 34 ? "declared" : (i < 214 ? "leading" : "pending");
     return {
-      no:i+1,
-      name: names[i % names.length],
-      district: "—",
-      leader: { name:"Candidate "+(i+1), party:partyFromAlliance, alliance:a, votes:0, margin: status==="pending"?0:Math.floor(500+Math.random()*42000) },
-      runnerUp:{ name:"Opponent "+(i+1), party:rival, alliance:rivalAll, votes:0 },
-      status
+      no: i+1, name: names[i % names.length],
+      leader: {
+        name: "Candidate "+(i+1),
+        party: partyOf[a], alliance: a,
+        votes: status==="pending" ? 0 : Math.floor(30000 + Math.random()*90000),
+        margin: status==="pending" ? 0 : Math.floor(500 + Math.random()*42000),
+      },
+      runnerUp: { name:"Opponent "+(i+1), party:rivalOf[a], alliance:rivalAll[a], votes:0 },
+      status,
     };
   });
 
+  const tallies = Object.fromEntries(alliances.map(a=>[a.id,{won:0,leading:0}]));
   cons.forEach(c=>{
-    if (c.status!=="pending"){
-      const al = alliances.find(a=>a.id===c.leader.alliance);
-      if (c.status==="declared") al.won++; else al.leading++;
-    }
+    const t = tallies[c.leader.alliance]; if (!t) return;
+    if (c.status==="declared") t.won++; else if (c.status==="leading") t.leading++;
   });
 
   return {
     updatedAt: new Date().toISOString(),
     totals: {
       declared: cons.filter(c=>c.status==="declared").length,
-      leading:  cons.filter(c=>c.status==="leading").length,
-      pending:  cons.filter(c=>c.status==="pending").length,
-      total: 234
+      leading: cons.filter(c=>c.status==="leading").length,
+      pending: cons.filter(c=>c.status==="pending").length,
+      total: 234,
     },
-    alliances,
+    alliances: alliances.map(a=>({...a, won:tallies[a.id].won, leading:tallies[a.id].leading})),
     constituencies: cons,
-    __demo: true
+    __demo: true,
   };
 })();
 
-/* ──────────────────────────────────────────────────────────
-   HOOKS
-   ────────────────────────────────────────────────────────── */
-function useNow(intervalMs=1000){
-  const [now,setNow]=useState(()=>new Date());
-  useEffect(()=>{
-    const id=setInterval(()=>setNow(new Date()),intervalMs);
-    return ()=>clearInterval(id);
-  },[intervalMs]);
-  return now;
+// ─────────────────────────────────────────────────────────
+// HOOKS
+// ─────────────────────────────────────────────────────────
+function useNow(ms=1000){
+  const [n,setN]=useState(()=>new Date());
+  useEffect(()=>{const id=setInterval(()=>setN(new Date()),ms);return()=>clearInterval(id);},[ms]);
+  return n;
 }
 
 function useResults(){
@@ -210,7 +142,7 @@ function useResults(){
   const [err,setErr]=useState(null);
   const [loading,setLoading]=useState(!!PROXY_URL);
   const [lastFetch,setLastFetch]=useState(null);
-  const timer = useRef(null);
+  const t = useRef(null);
 
   async function load(){
     if (!PROXY_URL){ setData(FIXTURE); setLastFetch(new Date()); return; }
@@ -226,34 +158,45 @@ function useResults(){
 
   useEffect(()=>{
     load();
-    // only poll once counting is in progress
-    const startPolling = () => {
-      if (timer.current) clearInterval(timer.current);
-      timer.current = setInterval(load, REFRESH_MS);
+    const startPolling = ()=>{
+      if (t.current) clearInterval(t.current);
+      t.current = setInterval(load, REFRESH_MS);
     };
-    const now = new Date();
-    if (now >= COUNTING_START) startPolling();
+    if (new Date() >= COUNTING_START) startPolling();
     else {
-      const delay = COUNTING_START - now;
-      const t = setTimeout(()=>{ load(); startPolling(); }, Math.min(delay, 2_147_483_000));
-      return ()=> { clearTimeout(t); if (timer.current) clearInterval(timer.current); };
+      const delay = COUNTING_START - new Date();
+      const tid = setTimeout(()=>{ load(); startPolling(); }, Math.min(delay, 2_147_483_000));
+      return ()=>{ clearTimeout(tid); if (t.current) clearInterval(t.current); };
     }
-    return ()=> { if (timer.current) clearInterval(timer.current); };
+    return ()=>{ if (t.current) clearInterval(t.current); };
   // eslint-disable-next-line
   },[]);
 
   return { data, err, loading, lastFetch, reload: load };
 }
 
-/* ──────────────────────────────────────────────────────────
-   SMALL UI PIECES
-   ────────────────────────────────────────────────────────── */
-function Stat({ label, value, sub }){
+// ─────────────────────────────────────────────────────────
+// COMPONENTS
+// ─────────────────────────────────────────────────────────
+
+function Header({ lastFetch, countingStarted, demo, err }){
   return (
-    <div className="flex flex-col">
-      <div className="text-[10px] uppercase tracking-[.18em] text-[var(--ink-3)]">{label}</div>
-      <div className="serif text-4xl md:text-5xl leading-none mt-1 num">{value}</div>
-      {sub && <div className="mono text-[11px] text-[var(--ink-3)] mt-1">{sub}</div>}
+    <div className="border-b border-[var(--rule)] bg-white/60 backdrop-blur sticky top-0 z-10">
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <span className="display font-bold text-lg">{TITLE}</span>
+          <span className="mono text-[11px] text-[var(--ink-3)] hidden sm:inline">· {SUBTITLE}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          {countingStarted
+            ? <><span className="pulse-dot"></span><span className="mono text-[11px]">LIVE</span></>
+            : <span className="mono text-[11px] text-[var(--ink-3)]">Counting May 4 · 8:00 IST</span>
+          }
+          {lastFetch && <span className="mono text-[11px] text-[var(--ink-3)] hidden sm:inline">Updated {lastFetch.toLocaleTimeString()}</span>}
+          {demo && <span className="chip" style={{background:"#FEF3C7",color:"#92400E"}}>Demo data</span>}
+          {err  && <span className="chip" style={{background:"#FEE2E2",color:"#991B1B"}}>Error</span>}
+        </div>
+      </div>
     </div>
   );
 }
@@ -265,110 +208,169 @@ function Countdown({ target }){
   const h = Math.floor(diff/3600000)%24;
   const m = Math.floor(diff/60000)%60;
   const s = Math.floor(diff/1000)%60;
-  const parts = [
-    { v:d, l:"days" },
-    { v:h.toString().padStart(2,"0"), l:"hrs" },
-    { v:m.toString().padStart(2,"0"), l:"min" },
-    { v:s.toString().padStart(2,"0"), l:"sec" },
-  ];
+  const pad = n => String(n).padStart(2,"0");
   return (
-    <div className="flex items-end gap-5 md:gap-7">
-      {parts.map((p,i)=>(
-        <div key={i} className="flex flex-col items-start">
-          <div className="serif text-5xl md:text-6xl leading-none num">{p.v}</div>
-          <div className="mono text-[10px] uppercase tracking-[.2em] text-[var(--ink-3)] mt-1">{p.l}</div>
+    <div className="flex items-end gap-5">
+      {[[d,"days"],[pad(h),"hrs"],[pad(m),"min"],[pad(s),"sec"]].map(([v,l])=>(
+        <div key={l}>
+          <div className="display text-5xl md:text-6xl leading-none num">{v}</div>
+          <div className="mono text-[10px] uppercase tracking-[.18em] text-[var(--ink-3)] mt-1">{l}</div>
         </div>
       ))}
     </div>
   );
 }
 
-function AllianceBar({ alliances, total=234 }){
-  const totalSeats = alliances.reduce((s,a)=>s + a.won + a.leading, 0);
-  const pct = n => total ? (n/total)*100 : 0;
-  const majorityPct = (118/total)*100;
+function LeadSummary({ alliances }){
+  if (!alliances || alliances.length===0) return null;
+  const sorted = [...alliances].map(a=>({...a, total:a.won+a.leading})).sort((a,b)=>b.total-a.total);
+  const first = sorted[0];
+  const second = sorted[1] || { total:0, name:"" };
+  const gap = first.total - second.total;
+  const pastMajority = first.total >= MAJORITY;
+  const diff = first.total - MAJORITY;
+
+  let verdictLine;
+  if (first.total === 0) verdictLine = "Counting hasn't started.";
+  else if (pastMajority) verdictLine = `${first.name} has crossed the halfway mark — ${diff} seat${diff!==1?"s":""} above majority.`;
+  else if (gap >= 30) verdictLine = `${first.name} is comfortably ahead — ${gap} seats clear of ${second.name}.`;
+  else if (gap >= 10) verdictLine = `${first.name} is leading, ${gap} seats ahead of ${second.name}.`;
+  else if (gap > 0)   verdictLine = `Close race — ${first.name} narrowly ahead of ${second.name} by ${gap}.`;
+  else                verdictLine = "Neck and neck.";
+
   return (
     <div>
-      <div className="flex items-baseline justify-between mb-2">
-        <div className="text-[10px] uppercase tracking-[.18em] text-[var(--ink-3)]">Seats · out of 234</div>
-        <div className="mono text-[11px] text-[var(--ink-3)]">{totalSeats} decided / leading</div>
+      <div className="text-[11px] uppercase tracking-[.16em] text-[var(--ink-3)] font-medium">Who's leading</div>
+      <div className="display font-bold text-3xl md:text-[38px] leading-[1.1] mt-2 tracking-tight">
+        <span style={{color:first.color}}>{first.name}</span>{" "}
+        <span className="num">{first.total}</span>
+        <span className="text-[var(--ink-3)]"> / 234</span>
       </div>
-      <div className="relative h-9 rule border rounded-sm bg-[var(--cream-2)] overflow-hidden">
+      <div className="text-[15px] md:text-base text-[var(--ink-2)] mt-2">{verdictLine}</div>
+    </div>
+  );
+}
+
+function AllianceCards({ alliances }){
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
+      {alliances.map(a=>{
+        const total = a.won + a.leading;
+        return (
+          <div key={a.id} className="alli" style={{ background:a.color }}>
+            <div className="lbl">{a.name}</div>
+            <div className="big num">{total}</div>
+            <div className="sub">won {a.won} · leading {a.leading}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SeatBar({ alliances, total=234 }){
+  return (
+    <div className="mt-6">
+      <div className="flex items-center justify-between mb-2 text-[11px] mono text-[var(--ink-3)]">
+        <span>Seat distribution</span>
+        <span>{total} seats · majority {MAJORITY}</span>
+      </div>
+      <div className="bar">
         <div className="absolute inset-0 flex">
           {alliances.map(a=>{
-            const w = pct(a.won + a.leading);
-            if (w===0) return null;
+            const pct = ((a.won+a.leading)/total)*100;
+            if (pct===0) return null;
             return (
-              <div key={a.id} className="relative h-full flex items-center justify-center text-white text-[11px] mono"
-                   style={{ width:`${w}%`, background:a.color, minWidth: w>0?"2px":"0" }}>
-                {w > 6 && <span className="px-1 truncate">{a.won + a.leading}</span>}
+              <div key={a.id} className="relative h-full flex items-center justify-center text-white"
+                   style={{ width:`${pct}%`, background:a.color }}>
+                {pct>7 && <span className="mono text-[12px] font-medium drop-shadow">{a.won+a.leading}</span>}
               </div>
             );
           })}
         </div>
-        <div className="majority-line" style={{ left:`${majorityPct}%` }}></div>
-      </div>
-      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-        {alliances.map(a=>(
-          <div key={a.id} className="flex items-start gap-2">
-            <span className="mt-[6px] inline-block w-3 h-3 rounded-sm" style={{ background:a.color }}></span>
-            <div className="min-w-0">
-              <div className="text-[13px] font-semibold leading-tight">{a.name}</div>
-              <div className="mono text-[11px] text-[var(--ink-3)] truncate">{a.parties.join(" · ")}</div>
-              <div className="mt-1">
-                <span className="serif text-2xl num">{a.won + a.leading}</span>
-                <span className="mono text-[11px] text-[var(--ink-3)] ml-2">won {a.won} · lead {a.leading}</span>
-              </div>
-            </div>
-          </div>
-        ))}
+        <div className="bar-majority" style={{ left:`${(MAJORITY/total)*100}%` }}></div>
       </div>
     </div>
   );
 }
 
-function SeatGrid({ constituencies }){
-  // 234 tiles in a wall; color by leader alliance, faded if "leading" not yet declared
+function PartyTable({ constituencies, alliances }){
+  const byParty = {};
+  constituencies.forEach(c=>{
+    const p = c.leader.party || "—";
+    if (!byParty[p]) byParty[p] = { party:p, alliance:c.leader.alliance, won:0, leading:0 };
+    if (c.status==="declared") byParty[p].won++;
+    else if (c.status==="leading") byParty[p].leading++;
+  });
+  const rows = Object.values(byParty)
+    .map(r=>({ ...r, total:r.won+r.leading }))
+    .filter(r=>r.total>0)
+    .sort((a,b)=>b.total-a.total);
+
+  const colorByAlliance = Object.fromEntries((alliances||[]).map(a=>[a.id,a.color]));
+
+  if (rows.length===0) return <div className="text-sm text-[var(--ink-3)] py-4">No party data yet.</div>;
+
   return (
-    <div className="grid gap-[3px]" style={{ gridTemplateColumns:"repeat(26, minmax(0, 1fr))" }}>
-      {constituencies.map(c=>{
-        const cls = ["tile", `tile-${c.leader.alliance}`];
-        if (c.status==="leading") cls.push("tile-leading");
-        if (c.status==="pending") cls[1] = "";
-        return <div key={c.no} title={`${c.no}. ${c.name} — ${c.leader.party} (${c.status})`} className={cls.join(" ")}></div>;
-      })}
-    </div>
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="text-left text-[10px] uppercase tracking-[.14em] text-[var(--ink-3)]">
+          <th className="py-2 pr-3">Party</th>
+          <th className="py-2 pr-3 text-right">Won</th>
+          <th className="py-2 pr-3 text-right">Leading</th>
+          <th className="py-2 pr-3 text-right">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map(r=>(
+          <tr key={r.party}>
+            <td className="py-2.5 pr-3">
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{background:colorByAlliance[r.alliance]||"#999"}}></span>
+                <span className="font-medium">{r.party}</span>
+              </span>
+            </td>
+            <td className="py-2.5 pr-3 text-right num">{r.won}</td>
+            <td className="py-2.5 pr-3 text-right num text-[var(--ink-3)]">{r.leading}</td>
+            <td className="py-2.5 pr-3 text-right num font-semibold">{r.total}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
 function ConstituencyTable({ constituencies, alliances }){
   const [q,setQ] = useState("");
   const [filter,setFilter] = useState("all");
+  const [sort,setSort] = useState("number");
   const colorByAlliance = Object.fromEntries(alliances.map(a=>[a.id,a.color]));
-  const labelByAlliance = Object.fromEntries(alliances.map(a=>[a.id,a.name]));
 
   const rows = useMemo(()=>{
     const needle = q.trim().toLowerCase();
-    return constituencies.filter(c=>{
+    let list = constituencies.filter(c=>{
+      if (filter==="close") return c.status!=="pending" && c.leader.margin>0 && c.leader.margin<3000;
       if (filter!=="all" && c.status!==filter) return false;
       if (!needle) return true;
       return (c.name+" "+c.leader.party+" "+c.leader.name+" "+c.no).toLowerCase().includes(needle);
     });
-  },[q,filter,constituencies]);
+    if (sort==="margin-asc")  list = [...list].sort((a,b)=>(a.leader.margin||999999)-(b.leader.margin||999999));
+    if (sort==="margin-desc") list = [...list].sort((a,b)=>(b.leader.margin||0)-(a.leader.margin||0));
+    return list;
+  },[q,filter,sort,constituencies]);
 
   return (
     <div>
       <div className="flex flex-col md:flex-row md:items-center gap-3 mb-4">
-        <div className="relative flex-1">
-          <input
-            value={q} onChange={e=>setQ(e.target.value)}
-            placeholder="Search constituency, candidate, party…"
-            className="w-full bg-transparent rule border rounded-sm px-3 py-2 text-sm outline-none focus:border-[var(--ink)]" />
-        </div>
-        <div className="flex gap-1 mono text-[11px]">
-          {[["all","All"],["declared","Declared"],["leading","Leading"],["pending","Pending"]].map(([k,l])=>(
+        <input
+          value={q} onChange={e=>setQ(e.target.value)}
+          placeholder="Search constituency, candidate, or party…"
+          className="flex-1 bg-white border border-[var(--rule)] rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[var(--ink)] transition" />
+        <div className="flex gap-1 overflow-x-auto">
+          {[["all","All"],["declared","Won"],["leading","Leading"],["close","Close"],["pending","Pending"]].map(([k,l])=>(
             <button key={k} onClick={()=>setFilter(k)}
-              className={"px-3 py-1.5 rounded-sm border rule " + (filter===k?"bg-[var(--ink)] text-[var(--cream)] border-[var(--ink)]":"")}>
+              className={"mono text-[11px] px-3 py-1.5 rounded-md border transition whitespace-nowrap " +
+                (filter===k ? "bg-[var(--ink)] text-white border-[var(--ink)]" : "border-[var(--rule)] text-[var(--ink-2)] hover:border-[var(--ink)]")}>
               {l}
             </button>
           ))}
@@ -377,189 +379,141 @@ function ConstituencyTable({ constituencies, alliances }){
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-[10px] uppercase tracking-[.16em] text-[var(--ink-3)]">
+            <tr className="text-left text-[10px] uppercase tracking-[.14em] text-[var(--ink-3)]">
               <th className="py-2 pr-3 w-10">#</th>
               <th className="py-2 pr-3">Constituency</th>
               <th className="py-2 pr-3">Leader</th>
               <th className="py-2 pr-3">Party</th>
-              <th className="py-2 pr-3 text-right">Margin</th>
+              <th className="py-2 pr-3 text-right num">Votes</th>
+              <th className="py-2 pr-3 text-right cursor-pointer hover:text-[var(--ink)]"
+                  onClick={()=>setSort(sort==="margin-asc"?"margin-desc":sort==="margin-desc"?"number":"margin-asc")}>
+                Margin {sort==="margin-asc"?"↑":sort==="margin-desc"?"↓":""}
+              </th>
               <th className="py-2 pr-3">Status</th>
             </tr>
           </thead>
           <tbody>
-            {rows.slice(0,80).map(c=>(
-              <tr key={c.no}>
-                <td className="py-2 pr-3 mono text-[var(--ink-3)]">{c.no}</td>
-                <td className="py-2 pr-3 font-medium">{c.name}</td>
-                <td className="py-2 pr-3">{c.leader.name}</td>
-                <td className="py-2 pr-3">
-                  <span className="chip" style={{ background:"rgba(0,0,0,.04)", color:colorByAlliance[c.leader.alliance] }}>
-                    <span className="inline-block w-2 h-2 rounded-sm" style={{ background: colorByAlliance[c.leader.alliance] }}></span>
-                    {c.leader.party}
-                  </span>
-                </td>
-                <td className="py-2 pr-3 text-right mono num">{c.leader.margin ? c.leader.margin.toLocaleString("en-IN") : "—"}</td>
-                <td className="py-2 pr-3">
-                  <span className="mono text-[11px] text-[var(--ink-3)] capitalize">{c.status}</span>
-                </td>
-              </tr>
-            ))}
+            {rows.slice(0,120).map(c=>{
+              const chip = c.status==="declared"
+                ? { bg:"#DCFCE7", fg:"#166534", label:"Won" }
+                : c.status==="leading"
+                ? { bg:"#FEF3C7", fg:"#92400E", label:"Leading" }
+                : { bg:"#F3F4F6", fg:"#6B7280", label:"Pending" };
+              return (
+                <tr key={c.no}>
+                  <td className="py-2.5 pr-3 mono text-[var(--ink-3)]">{c.no}</td>
+                  <td className="py-2.5 pr-3 font-medium">{c.name}</td>
+                  <td className="py-2.5 pr-3">{c.leader.name}</td>
+                  <td className="py-2.5 pr-3">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{background:colorByAlliance[c.leader.alliance]||"#999"}}></span>
+                      <span>{c.leader.party}</span>
+                    </span>
+                  </td>
+                  <td className="py-2.5 pr-3 text-right num">{c.leader.votes ? c.leader.votes.toLocaleString("en-IN") : "—"}</td>
+                  <td className="py-2.5 pr-3 text-right num">{c.leader.margin ? c.leader.margin.toLocaleString("en-IN") : "—"}</td>
+                  <td className="py-2.5 pr-3">
+                    <span className="chip" style={{background:chip.bg, color:chip.fg}}>{chip.label}</span>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
-        {rows.length > 80 && (
-          <div className="mono text-[11px] text-[var(--ink-3)] mt-3">Showing first 80 of {rows.length}. Refine your search to narrow.</div>
-        )}
-        {rows.length === 0 && (
-          <div className="mono text-[11px] text-[var(--ink-3)] py-6 text-center">No matches.</div>
-        )}
+        {rows.length>120 && <div className="mono text-[11px] text-[var(--ink-3)] mt-3">Showing first 120 of {rows.length}. Search to narrow.</div>}
+        {rows.length===0 && <div className="text-sm text-[var(--ink-3)] py-8 text-center">No matches.</div>}
       </div>
     </div>
   );
 }
 
-/* ──────────────────────────────────────────────────────────
-   APP
-   ────────────────────────────────────────────────────────── */
+// ─────────────────────────────────────────────────────────
+// APP
+// ─────────────────────────────────────────────────────────
 function App(){
   const { data, err, loading, lastFetch, reload } = useResults();
   const now = useNow(1000);
   const countingStarted = now >= COUNTING_START;
+  const hasLiveNumbers = (data?.totals?.declared || 0) + (data?.totals?.leading || 0) > 0;
 
   return (
-    <div className="min-h-screen pb-16">
-      {/* Top bar */}
-      <div className="border-b rule">
-        <div className="max-w-6xl mx-auto px-5 md:px-8 py-3 flex items-center justify-between">
-          <div className="mono text-[11px] tracking-wider uppercase text-[var(--ink-3)]">
-            Tamil Nadu · 17th Legislative Assembly · 2026
+    <div className="min-h-screen pb-20">
+      <Header lastFetch={lastFetch} countingStarted={countingStarted} demo={data?.__demo} err={err} />
+
+      {!countingStarted && !hasLiveNumbers && (
+        <section className="max-w-6xl mx-auto px-4 md:px-6 pt-10 md:pt-14">
+          <div className="card p-6 md:p-10">
+            <div className="text-[11px] uppercase tracking-[.18em] text-[var(--ink-3)]">Counting begins in</div>
+            <div className="mt-4"><Countdown target={COUNTING_START} /></div>
+            <div className="mt-6 text-[15px] text-[var(--ink-2)] max-w-xl">
+              Polling is on Thursday, April 23. Counting begins Monday, May 4 at 8:00 AM IST.
+              This page will show live alliance totals, party breakdown, and every constituency result as ECI publishes them.
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            {countingStarted && <span className="pulse-dot"></span>}
-            <span className="mono text-[11px] text-[var(--ink-3)]">
-              {countingStarted ? "LIVE" : "Pre-counting"}
-            </span>
+        </section>
+      )}
+
+      {data?.alliances && hasLiveNumbers && (
+        <section className="max-w-6xl mx-auto px-4 md:px-6 pt-6 md:pt-10">
+          <div className="card p-5 md:p-7">
+            <LeadSummary alliances={data.alliances} />
+            <AllianceCards alliances={data.alliances} />
+            <SeatBar alliances={data.alliances} />
+            <div className="mt-5 grid grid-cols-3 gap-3 max-w-md">
+              <div>
+                <div className="text-[10px] uppercase tracking-[.14em] text-[var(--ink-3)]">Won</div>
+                <div className="display text-3xl font-bold num mt-1">{data.totals?.declared ?? "—"}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-[.14em] text-[var(--ink-3)]">Leading</div>
+                <div className="display text-3xl font-bold num mt-1">{data.totals?.leading ?? "—"}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-[.14em] text-[var(--ink-3)]">Pending</div>
+                <div className="display text-3xl font-bold num mt-1 text-[var(--ink-3)]">{data.totals?.pending ?? "—"}</div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
+      )}
 
-      {/* Masthead */}
-      <header className="max-w-6xl mx-auto px-5 md:px-8 pt-10 md:pt-14 pb-8">
-        <div className="serif text-[13px] uppercase tracking-[.25em] text-[var(--accent)] mb-4">The Count · மே 4</div>
-        <h1 className="serif text-[46px] md:text-[82px] leading-[.95] tracking-tight">
-          Two hundred<br/>
-          and thirty-four <em className="italic text-[var(--accent)]">seats</em>.
-        </h1>
-        <p className="serif italic text-xl md:text-2xl text-[var(--ink-2)] mt-5 max-w-3xl">
-          Polling day · Thursday, 23 April 2026. Counting · Monday, 4 May 2026, from 8:00 IST.
-          Five crore seventy lakh voters. One hundred and eighteen seats decide who governs.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-4 mono text-[11px] text-[var(--ink-3)]">
-          <div>Source · results.eci.gov.in</div>
-          <div>Refresh · every {REFRESH_MS/60000} min during counting</div>
-          <div>Last update · {lastFetch ? lastFetch.toLocaleTimeString() : "—"}</div>
-          {data?.__demo && <div className="text-[var(--accent)]">Demo data (proxy not configured)</div>}
-          {err && <div className="text-[var(--accent)]">Error · {err}</div>}
-        </div>
-      </header>
+      {data?.constituencies && data.constituencies.length > 0 && (
+        <section className="max-w-6xl mx-auto px-4 md:px-6 mt-6">
+          <div className="card p-5 md:p-7">
+            <div className="flex items-baseline justify-between">
+              <h2 className="display text-2xl md:text-3xl font-bold">Party-wise results</h2>
+              <span className="mono text-[11px] text-[var(--ink-3)]">234 total</span>
+            </div>
+            <div className="mt-3"><PartyTable constituencies={data.constituencies} alliances={data.alliances} /></div>
+          </div>
+        </section>
+      )}
 
-      <div className="border-t rule"></div>
+      {data?.constituencies && data.constituencies.length > 0 && (
+        <section className="max-w-6xl mx-auto px-4 md:px-6 mt-6">
+          <div className="card p-5 md:p-7">
+            <div className="flex items-baseline justify-between mb-4">
+              <h2 className="display text-2xl md:text-3xl font-bold">Every constituency</h2>
+              <span className="mono text-[11px] text-[var(--ink-3)] hidden md:inline">Tap Margin to sort</span>
+            </div>
+            <ConstituencyTable constituencies={data.constituencies} alliances={data.alliances} />
+          </div>
+        </section>
+      )}
 
-      {/* Pre-counting hero OR live totals */}
-      {!countingStarted ? (
-        <section className="max-w-6xl mx-auto px-5 md:px-8 py-12 md:py-16 grid md:grid-cols-2 gap-10 items-center border-b rule">
+      <footer className="max-w-6xl mx-auto px-4 md:px-6 mt-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] mono text-[var(--ink-3)]">
           <div>
-            <div className="text-[10px] uppercase tracking-[.2em] text-[var(--ink-3)] mb-4">Counting begins in</div>
-            <Countdown target={COUNTING_START} />
-            <p className="serif italic text-lg text-[var(--ink-2)] mt-8 max-w-md">
-              "The verdict of the Tamil electorate — delivered the way it always is: through the queue, the ink, and the long wait that follows."
-            </p>
-          </div>
-          <div className="border-l rule pl-8 hidden md:block">
-            <div className="text-[10px] uppercase tracking-[.2em] text-[var(--ink-3)] mb-4">On the ballot</div>
-            <div className="grid grid-cols-2 gap-5">
-              {(data?.alliances||[]).map(a=>(
-                <div key={a.id} className="flex items-start gap-2">
-                  <span className="mt-[6px] inline-block w-3 h-3 rounded-sm" style={{ background:a.color }}></span>
-                  <div>
-                    <div className="text-sm font-semibold">{a.name}</div>
-                    <div className="mono text-[11px] text-[var(--ink-3)]">{a.parties.join(" · ")}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : (
-        <section className="max-w-6xl mx-auto px-5 md:px-8 py-10 md:py-12 border-b rule">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
-            <Stat label="Declared" value={data?.totals?.declared ?? "—"} sub="officially called" />
-            <Stat label="Leading"  value={data?.totals?.leading ?? "—"}  sub="ahead, not declared" />
-            <Stat label="Pending"  value={data?.totals?.pending ?? "—"}  sub="awaiting trend" />
-            <Stat label="Total"    value={data?.totals?.total ?? 234}    sub="assembly seats" />
-          </div>
-          {data?.alliances && <AllianceBar alliances={data.alliances} />}
-        </section>
-      )}
-
-      {/* Seat wall */}
-      {data?.constituencies && (
-        <section className="max-w-6xl mx-auto px-5 md:px-8 py-12">
-          <div className="flex items-end justify-between mb-6">
-            <div>
-              <div className="text-[10px] uppercase tracking-[.2em] text-[var(--ink-3)]">The Wall</div>
-              <h2 className="serif text-3xl md:text-4xl mt-1">Every seat. One tile.</h2>
-            </div>
-            <div className="mono text-[10px] text-[var(--ink-3)] hidden md:block">Hover a tile for detail</div>
-          </div>
-          <SeatGrid constituencies={data.constituencies} />
-          <div className="mt-5 flex flex-wrap gap-4 mono text-[10px] text-[var(--ink-3)]">
-            <span className="flex items-center gap-1.5"><span className="tile tile-dmk"></span> DMK alliance</span>
-            <span className="flex items-center gap-1.5"><span className="tile tile-aiadmk"></span> AIADMK alliance</span>
-            <span className="flex items-center gap-1.5"><span className="tile tile-tvk"></span> TVK</span>
-            <span className="flex items-center gap-1.5"><span className="tile tile-others"></span> Others</span>
-            <span className="flex items-center gap-1.5"><span className="tile"></span> Pending</span>
-            <span className="flex items-center gap-1.5"><span className="tile tile-dmk tile-leading"></span> Faded · leading, not declared</span>
-          </div>
-        </section>
-      )}
-
-      <div className="border-t rule"></div>
-
-      {/* Constituencies table */}
-      {data?.constituencies && (
-        <section className="max-w-6xl mx-auto px-5 md:px-8 py-12">
-          <div className="mb-6">
-            <div className="text-[10px] uppercase tracking-[.2em] text-[var(--ink-3)]">Constituencies</div>
-            <h2 className="serif text-3xl md:text-4xl mt-1">Who's winning where.</h2>
-          </div>
-          <ConstituencyTable constituencies={data.constituencies} alliances={data.alliances} />
-        </section>
-      )}
-
-      <div className="border-t rule"></div>
-
-      {/* Notes / drop cap */}
-      <section className="max-w-3xl mx-auto px-5 md:px-8 py-14">
-        <p className="serif drop text-[17px] leading-[1.7] text-[var(--ink-2)]">
-          Data is pulled from the Election Commission of India's public counting portal at results.eci.gov.in
-          through a small server-side proxy. Numbers lag television channels' private feeds by a few minutes.
-          A "leading" seat is not a win — the Returning Officer's declaration is. Margins shown are provisional
-          until the final round of counting concludes in each constituency.
-        </p>
-        <div className="mt-8 mono text-[11px] text-[var(--ink-3)]">
-          Not affiliated with the Election Commission. Results are advisory until officially notified.
-        </div>
-      </section>
-
-      <footer className="border-t rule">
-        <div className="max-w-6xl mx-auto px-5 md:px-8 py-6 flex items-center justify-between">
-          <div className="mono text-[11px] text-[var(--ink-3)]">
-            © 2026 · Served on skipq.app
+            Source · <a className="link" href="https://results.eci.gov.in" target="_blank" rel="noreferrer">results.eci.gov.in</a>
+            {" · "}Refresh every {REFRESH_MS/60000} min during counting
           </div>
           <button onClick={reload}
-            className="mono text-[11px] uppercase tracking-[.18em] px-3 py-2 border rule rounded-sm hover:bg-[var(--ink)] hover:text-[var(--cream)] hover:border-[var(--ink)] transition">
-            {loading ? "Refreshing…" : "Refresh now"}
+            className="px-3 py-1.5 rounded-md border border-[var(--rule)] hover:bg-[var(--ink)] hover:text-white hover:border-[var(--ink)] transition uppercase tracking-[.14em]">
+            {loading ? "Refreshing…" : "Refresh"}
           </button>
+        </div>
+        <div className="mt-3 text-[11px] mono text-[var(--ink-3)]">
+          Not affiliated with the Election Commission. Leading ≠ declared. Results advisory until officially notified (Form-20).
         </div>
       </footer>
     </div>
