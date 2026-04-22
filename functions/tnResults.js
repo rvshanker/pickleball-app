@@ -1,102 +1,106 @@
 // functions/tnResults.js
 //
-// Firebase Cloud Function — proxies & parses the Tamil Nadu state-wise
-// results page from results.eci.gov.in into the JSON shape the
-// tn-results.html page expects.
+// Proxies the ECI state-wise results page into a clean JSON feed for
+// your results page. Supports two targets via a single constant:
 //
-// Add to functions/index.js:
-//   exports.tnResults = require("./tnResults").tnResults;
+//   MODE = "bihar"   → live test against Bihar Nov-2025 (real data, today)
+//   MODE = "tn"      → Tamil Nadu May-2026 (empty until May 4)
 //
-// Install deps once:
-//   cd functions && npm i cheerio node-fetch@2
-//
-// Deploy:
-//   firebase deploy --only functions:tnResults
-//
-// The function URL becomes:
-//   https://us-central1-<your-project>.cloudfunctions.net/tnResults
-// Put that into PROXY_URL at the top of tn-results.html.
+// Flip MODE to "bihar" now to see everything wired end-to-end with
+// real ECI numbers. Flip back to "tn" on May 3 evening or May 4 morning.
 
 const functions = require("firebase-functions");
-const fetch = require("node-fetch");
 const cheerio = require("cheerio");
+// Node 18+ on Firebase Functions v2 provides `fetch` globally.
 
 // ─────────────────────────────────────────────────────────────
-// CONFIG — verify on counting-day morning (May 4, 2026)
+// MODE  — switch this one line
 // ─────────────────────────────────────────────────────────────
+const MODE = "bihar"; // "bihar" | "tn"
 
-// ECI creates a new path prefix for each election cycle.
-// On May 3 evening or May 4 ~7:30 AM IST, visit results.eci.gov.in,
-// click through to Tamil Nadu, and copy the exact prefix.
-// Past examples: "ResultAcGenFeb2025", "PcResultGenJune2024"
-const ECI_PREFIX = process.env.ECI_PREFIX || "ResultAcGenMay2026";
+const TARGETS = {
+  bihar: {
+    prefix: "ResultAcGenNov2025",
+    stateCode: "S04",   // Bihar
+    label: "Bihar · 2025",
+  },
+  tn: {
+    // Verify on May 3–4. Past examples: "ResultAcGenFeb2025", "PcResultGenJune2024".
+    // If ECI uses a different prefix, update here and redeploy.
+    prefix: "ResultAcGenMay2026",
+    stateCode: "S33",   // Tamil Nadu (verify on counting day — some sources list S22)
+    label: "Tamil Nadu · 2026",
+  },
+};
 
-// Tamil Nadu state code in ECI's system. Don't change.
-const TN_CODE = "S33";
+const TARGET = TARGETS[MODE];
+const STATE_URL = `https://results.eci.gov.in/${TARGET.prefix}/statewise${TARGET.stateCode}.htm`;
 
-const STATE_URL = `https://results.eci.gov.in/${ECI_PREFIX}/statewiseS33.htm`;
-
-// In-memory cache (per function instance). 60s is polite to ECI
-// and cheap on Firebase invocations.
+// ─────────────────────────────────────────────────────────────
+// Caching — be nice to ECI
+// ─────────────────────────────────────────────────────────────
 let cache = { at: 0, data: null };
 const CACHE_MS = 60_000;
 
-// Alliance assignment — edit if party lineups shift before polling.
-const ALLIANCE_MAP = {
-  // DMK-led Secular Progressive Alliance
-  "DMK":"spa","INC":"spa","VCK":"spa","CPI":"spa","CPI(M)":"spa",
-  "CPM":"spa","MDMK":"spa","IUML":"spa","KMDK":"spa",
-  // AIADMK-led front
+// ─────────────────────────────────────────────────────────────
+// Alliance assignment
+// ─────────────────────────────────────────────────────────────
+const ALLIANCE_MAP_TN = {
+  "DMK":"spa","INC":"spa","VCK":"spa","CPI":"spa","CPI(M)":"spa","CPM":"spa","IUML":"spa","MDMK":"spa","KMDK":"spa",
   "AIADMK":"nda","ADMK":"nda","BJP":"nda","PMK":"nda","AMMK":"nda","DMDK":"nda",
-  // TVK (Vijay)
   "TVK":"tvk",
-  // Everything else → others
 };
 
-const ALLIANCES = [
+const ALLIANCE_MAP_BIHAR = {
+  "BJP":"nda","JD(U)":"nda","JDU":"nda","LJPRV":"nda","LJP":"nda","HAM":"nda","HAMS":"nda","RLM":"nda",
+  "RJD":"ind","INC":"ind","CPI":"ind","CPI(M)":"ind","CPM":"ind","CPI(ML)":"ind","CPIML":"ind",
+  "AIMIM":"left",
+};
+
+const ALLIANCES_TN = [
   { id:"spa",    name:"DMK-led SPA",      parties:["DMK","INC","VCK","CPI","CPI(M)"], color:"#C8352F" },
-  { id:"nda",    name:"AIADMK+BJP front", parties:["AIADMK","BJP","PMK","AMMK","DMDK"], color:"#2E7D32" },
-  { id:"tvk",    name:"TVK (Vijay)",      parties:["TVK"], color:"#E65100" },
-  { id:"others", name:"Others / Indep.",  parties:["PMK(R)","AIPMMK","NTK","IND"], color:"#6B6B6B" },
+  { id:"nda",    name:"AIADMK+BJP front", parties:["AIADMK","BJP","PMK","AMMK"], color:"#2E7D32" },
+  { id:"tvk",    name:"TVK",              parties:["TVK"], color:"#E65100" },
+  { id:"others", name:"Others",           parties:["NTK","IND","PMK(R)"], color:"#6B6B6B" },
 ];
 
-// ─────────────────────────────────────────────────────────────
-// PARSER
-// ─────────────────────────────────────────────────────────────
+const ALLIANCES_BIHAR = [
+  { id:"nda",    name:"NDA",         parties:["BJP","JD(U)","LJPRV","HAMS","RLM"], color:"#E65100" },
+  { id:"ind",    name:"INDIA bloc",  parties:["RJD","INC","CPI(ML)","CPI","CPI(M)"], color:"#2E7D32" },
+  { id:"left",   name:"AIMIM",       parties:["AIMIM"], color:"#1E3A8A" },
+  { id:"others", name:"Others",      parties:["IND"], color:"#6B6B6B" },
+];
 
+const ALLIANCE_MAP = MODE === "bihar" ? ALLIANCE_MAP_BIHAR : ALLIANCE_MAP_TN;
+const ALLIANCES    = MODE === "bihar" ? ALLIANCES_BIHAR    : ALLIANCES_TN;
+const TOTAL_SEATS  = MODE === "bihar" ? 243 : 234;
+
+// ─────────────────────────────────────────────────────────────
+// PARSER — defensive; ECI markup varies slightly per election
+// ─────────────────────────────────────────────────────────────
 function parseStatePage(html) {
   const $ = cheerio.load(html);
-
-  // ECI's state-wise pages historically render a table per constituency,
-  // with headers like "1 - Gummidipoondi" and rows for each candidate.
-  // Structure shifts election-to-election; verify & tweak selectors
-  // on May 4 morning once the real page is live.
-
   const constituencies = [];
 
-  // Primary selector — each constituency block is typically a div with
-  // class "cand-box" or similar. Try a few known patterns.
-  const blocks = $(".cand-box, .const-box, div[id^='ac']").toArray();
+  // Each constituency typically rendered as a card with a heading
+  // like "1 - Gummidipoondi" followed by a short candidate table.
+  const blocks = $(".cand-box, .const-box, div[id^='ac'], div[id^='Ac']").toArray();
 
   blocks.forEach((el) => {
     const $el = $(el);
-    const header = $el.find("h2, h3, .const-head").first().text().trim();
-    // e.g. "1 - Gummidipoondi (GEN)"
+    const header = $el.find("h2, h3, .const-head, .const-name").first().text().trim();
     const m = header.match(/^(\d+)\s*[-–]\s*([^()]+?)(?:\s*\(.*\))?$/);
     if (!m) return;
     const no = parseInt(m[1], 10);
     const name = m[2].trim();
 
-    // Candidate rows — typically ordered by votes desc.
     const cands = $el.find("tr, .cand-row").toArray()
       .map((r) => {
-        const $r = $(r);
-        const cells = $r.find("td, .cell").toArray().map((c) => $(c).text().trim());
+        const cells = $(r).find("td, .cell").toArray().map((c) => $(c).text().trim());
         if (cells.length < 3) return null;
-        // Common pattern: [candidate name, party, votes, margin?]
         return {
           name: cells[0] || "",
-          party: (cells[1] || "").toUpperCase().replace(/[^A-Z()]/g, "") || "IND",
+          party: (cells[1] || "").toUpperCase().replace(/\s+/g, "").replace(/[^A-Z()\-]/g, "") || "IND",
           votes: parseInt((cells[2] || "0").replace(/[^0-9]/g, ""), 10) || 0,
           margin: parseInt((cells[3] || "0").replace(/[^0-9]/g, ""), 10) || 0,
         };
@@ -106,16 +110,15 @@ function parseStatePage(html) {
 
     if (cands.length === 0) return;
 
-    const leader = cands[0];
+    const leader   = cands[0];
     const runnerUp = cands[1] || { name:"—", party:"—", votes:0 };
+    const statusText = $el.text().toLowerCase();
     const status =
-      /\bdeclared\b|\bwon\b/i.test($el.text()) ? "declared" :
+      /declared|won|winner/.test(statusText) ? "declared" :
       leader.votes > 0 ? "leading" : "pending";
 
     constituencies.push({
-      no,
-      name,
-      district: "",
+      no, name, district: "",
       leader: {
         name: leader.name,
         party: leader.party,
@@ -124,8 +127,7 @@ function parseStatePage(html) {
         margin: leader.margin || Math.max(0, leader.votes - runnerUp.votes),
       },
       runnerUp: {
-        name: runnerUp.name,
-        party: runnerUp.party,
+        name: runnerUp.name, party: runnerUp.party,
         alliance: ALLIANCE_MAP[runnerUp.party] || "others",
         votes: runnerUp.votes,
       },
@@ -133,56 +135,53 @@ function parseStatePage(html) {
     });
   });
 
-  // Sort by constituency number
   constituencies.sort((a, b) => a.no - b.no);
 
-  // Alliance tallies
   const tallies = Object.fromEntries(ALLIANCES.map((a) => [a.id, { won:0, leading:0 }]));
   constituencies.forEach((c) => {
-    const a = c.leader.alliance;
-    if (!tallies[a]) return;
-    if (c.status === "declared") tallies[a].won++;
-    else if (c.status === "leading") tallies[a].leading++;
+    const t = tallies[c.leader.alliance];
+    if (!t) return;
+    if (c.status === "declared") t.won++;
+    else if (c.status === "leading") t.leading++;
   });
 
   const alliances = ALLIANCES.map((a) => ({
-    ...a,
-    won: tallies[a.id].won,
-    leading: tallies[a.id].leading,
+    ...a, won: tallies[a.id].won, leading: tallies[a.id].leading,
   }));
 
   const totals = {
     declared: constituencies.filter((c) => c.status === "declared").length,
     leading:  constituencies.filter((c) => c.status === "leading").length,
     pending:  constituencies.filter((c) => c.status === "pending").length,
-    total: 234,
+    total: TOTAL_SEATS,
   };
 
   return {
+    mode: MODE,
+    label: TARGET.label,
     updatedAt: new Date().toISOString(),
-    totals,
-    alliances,
-    constituencies,
+    totals, alliances, constituencies,
   };
 }
 
 // ─────────────────────────────────────────────────────────────
 // HANDLER
 // ─────────────────────────────────────────────────────────────
-
 exports.tnResults = functions
   .runWith({ memory: "256MB", timeoutSeconds: 30 })
   .https.onRequest(async (req, res) => {
-    // CORS — allow both sites in case you host on skipq.app later.
     const origin = req.headers.origin || "";
     const allowed = [
       "https://pickleconnect.live",
+      "https://www.pickleconnect.live",
       "https://skipq.app",
       "https://skipq.vip",
       "http://localhost:3000",
       "http://localhost:5173",
+      "http://localhost:8080",
     ];
     if (allowed.includes(origin)) res.set("Access-Control-Allow-Origin", origin);
+    else res.set("Access-Control-Allow-Origin", "*"); // loose while testing
     res.set("Vary", "Origin");
     res.set("Cache-Control", "public, max-age=60, s-maxage=60");
 
@@ -197,37 +196,38 @@ exports.tnResults = functions
 
       const r = await fetch(STATE_URL, {
         headers: { "User-Agent": "Mozilla/5.0 (PickleConnect TN Tracker)" },
-        timeout: 15_000,
       });
 
       if (!r.ok) {
-        // Before counting day, the URL doesn't exist yet — return an
-        // empty-but-valid payload so the page shows the countdown cleanly.
+        // Pre-counting: page doesn't exist yet → return empty but valid
         if (r.status === 404) {
           res.json({
+            mode: MODE, label: TARGET.label,
             updatedAt: new Date().toISOString(),
-            totals: { declared:0, leading:0, pending:234, total:234 },
+            totals: { declared:0, leading:0, pending:TOTAL_SEATS, total:TOTAL_SEATS },
             alliances: ALLIANCES.map((a) => ({ ...a, won:0, leading:0 })),
             constituencies: [],
-            _note: "ECI page not yet live — showing empty state.",
+            _note: `ECI page not yet live at ${STATE_URL}`,
           });
           return;
         }
-        throw new Error(`ECI returned ${r.status}`);
+        throw new Error(`ECI returned ${r.status} for ${STATE_URL}`);
       }
 
       const html = await r.text();
       const parsed = parseStatePage(html);
 
-      // Only cache if parsing found something useful; otherwise a bad
-      // parse would get locked in for 60s.
       if (parsed.constituencies.length > 0) {
         cache = { at: now, data: parsed };
+      } else {
+        // Parse found nothing — include diagnostic so we can debug
+        parsed._warn = "Parser returned 0 constituencies — selectors may need adjustment";
+        parsed._sampleHtml = html.substring(0, 500);
       }
 
       res.json(parsed);
     } catch (e) {
       console.error("tnResults error:", e);
-      res.status(500).json({ error: String(e.message || e) });
+      res.status(500).json({ error: String(e.message || e), url: STATE_URL });
     }
   });
