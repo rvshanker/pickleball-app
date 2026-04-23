@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>TN 2026 · The Count</title>
-<meta name="theme-color" content="#F4EFE1" />
+<meta name="theme-color" content="#0E1A24" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,29 +15,31 @@
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
 <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js"></script>
+<script src="https://unpkg.com/d3@7/dist/d3.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
 <style>
   :root{
-    --bg:#F4EFE1;
-    --bg-2:#FBF7EB;
-    --bg-3:#EDE5D1;
-    --ink:#1A1814;
-    --ink-2:#4D4740;
-    --ink-3:#8A8272;
-    --rule:#D9CDB0;
-    --rule-2:#C4B697;
-    --accent:#9B2C1F;
-    --accent-2:#C25A2E;
-    --gold:#B0892A;
-    --grid:rgba(26,24,20,0.05);
+    --bg:#0E1A24;
+    --bg-2:#172533;
+    --bg-3:#1F303F;
+    --bg-4:#283D4F;
+    --ink:#F0E9D6;
+    --ink-2:#A8B0BA;
+    --ink-3:#6E7A87;
+    --rule:#283D4F;
+    --rule-2:#3B5163;
+    --accent:#D4A848;
+    --accent-2:#E76F51;
+    --teal:#4ABFB0;
+    --rust:#C8553D;
   }
   html,body{background:var(--bg);color:var(--ink);}
   body{
     font-family:"Inter",system-ui,sans-serif;
     background-image:
-      radial-gradient(900px 500px at 10% -5%, rgba(155,44,31,.05), transparent 55%),
-      radial-gradient(700px 400px at 95% 5%, rgba(176,137,42,.06), transparent 55%);
+      radial-gradient(1200px 600px at 10% -5%, rgba(212,168,72,.05), transparent 55%),
+      radial-gradient(900px 500px at 95% 5%, rgba(74,191,176,.05), transparent 55%);
     background-attachment:fixed;min-height:100vh;
   }
   .serif{font-family:"Fraunces",Georgia,serif;letter-spacing:-.02em;}
@@ -45,87 +47,82 @@
   .num{font-variant-numeric:tabular-nums;}
 
   body::before{
-    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.4;mix-blend-mode:multiply;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.4  0 0 0 0 0.3  0 0 0 0 0.15  0 0 0 0.08 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.35;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   }
   main{position:relative;z-index:2;}
 
-  .card{
-    background:linear-gradient(180deg, var(--bg-2), rgba(251,247,235,.7));
-    border:1px solid var(--rule);
-    border-radius:14px;
-    box-shadow:0 1px 0 rgba(26,24,20,.02), 0 2px 20px rgba(26,24,20,.03);
-  }
+  .card{background:var(--bg-2);border:1px solid var(--rule);border-radius:16px;}
+  .card-deep{background:var(--bg-3);border:1px solid var(--rule);border-radius:16px;}
 
   .chip{display:inline-flex;align-items:center;gap:.35rem;padding:.15rem .55rem;border-radius:999px;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;}
 
-  .pulse-dot{position:relative;width:7px;height:7px;border-radius:999px;background:var(--accent);display:inline-block;}
-  .pulse-dot::after{content:"";position:absolute;inset:-5px;border-radius:999px;border:1px solid var(--accent);animation:pulse 1.6s ease-out infinite;}
+  .pulse-dot{position:relative;width:7px;height:7px;border-radius:999px;background:var(--accent-2);display:inline-block;}
+  .pulse-dot::after{content:"";position:absolute;inset:-5px;border-radius:999px;border:1px solid var(--accent-2);animation:pulse 1.6s ease-out infinite;}
   @keyframes pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2);opacity:0}}
 
-  .topbar-loader{position:fixed;top:0;left:0;right:0;height:3px;z-index:100;overflow:hidden;background:rgba(155,44,31,.08);}
+  .topbar-loader{position:fixed;top:0;left:0;right:0;height:3px;z-index:100;overflow:hidden;background:rgba(212,168,72,.1);}
   .topbar-loader-inner{position:absolute;top:0;bottom:0;left:-30%;width:30%;background:linear-gradient(90deg, transparent, var(--accent), transparent);animation:loaderSlide 1.2s ease-in-out infinite;}
   @keyframes loaderSlide {0%{left:-30%}100%{left:100%}}
 
-  .skeleton{background:linear-gradient(90deg, var(--bg-3) 25%, rgba(237,229,209,.5) 50%, var(--bg-3) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px;}
+  .skeleton{background:linear-gradient(90deg, var(--bg-3) 25%, var(--bg-4) 50%, var(--bg-3) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px;}
   @keyframes shimmer {0%{background-position:-200% 0}100%{background-position:200% 0}}
 
   @keyframes ticker {0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
   .ticker-track{animation:ticker 40s linear infinite;will-change:transform;}
 
   tbody tr.row-btn{cursor:pointer;transition:background .15s;}
-  tbody tr.row-btn:hover{background:rgba(155,44,31,.05);}
-  tbody tr.row-btn.expanded{background:rgba(155,44,31,.08);}
+  tbody tr.row-btn:hover{background:rgba(212,168,72,.06);}
+  tbody tr.row-btn.expanded{background:rgba(212,168,72,.10);}
   tbody tr{border-top:1px solid var(--rule);}
 
-  .detail-row td{padding:0;background:#FAF5E5;border-top:1px solid var(--rule);}
+  .detail-row td{padding:0;background:var(--bg-3);border-top:1px solid var(--rule);}
   .detail-inner{padding:22px 24px;}
-  .vote-bar{position:relative;height:26px;background:rgba(26,24,20,.05);border-radius:6px;overflow:hidden;}
+  .vote-bar{position:relative;height:26px;background:rgba(255,255,255,.05);border-radius:6px;overflow:hidden;}
   .vote-bar-fill{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;padding:0 10px;color:#fff;font-size:11px;font-weight:700;}
 
-  .alli-tile{position:relative;border-radius:14px;padding:22px;overflow:hidden;background:var(--bg-2);border:1px solid var(--rule);transition:transform .3s, border-color .3s;}
+  .alli-tile{position:relative;border-radius:14px;padding:18px;overflow:hidden;background:var(--bg-3);border:1px solid var(--rule);transition:transform .25s, border-color .25s;}
   .alli-tile:hover{transform:translateY(-2px);border-color:var(--rule-2);}
-  .alli-tile .swatch{position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;filter:blur(36px);opacity:.32;pointer-events:none;}
-  .alli-tile.leader{border-color:var(--accent);}
-  .alli-tile.leader::after{content:"LEADING";position:absolute;top:14px;right:14px;font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.15em;color:var(--accent);font-weight:700;}
+  .alli-tile .swatch{position:absolute;right:0;top:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .alli-tile .num-big{font-family:"Fraunces",serif;font-weight:700;font-size:46px;line-height:1;}
 
-  .seat-grid{display:grid;gap:3px;grid-template-columns:repeat(26, minmax(0, 1fr));}
-  .seat{aspect-ratio:1;border-radius:3px;background:#E3D8BB;transition:transform .15s, box-shadow .15s;cursor:pointer;position:relative;}
-  .seat:hover{transform:scale(1.6);z-index:5;box-shadow:0 4px 20px rgba(0,0,0,.25);}
-  .seat.leading{opacity:.55;}
-
-  .seat-tip{position:fixed;z-index:1000;pointer-events:none;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;font-family:"JetBrains Mono",monospace;font-size:11px;box-shadow:0 12px 40px rgba(0,0,0,.3);transform:translate(-50%, -100%) translateY(-12px);max-width:240px;}
+  .seat-tip{position:fixed;z-index:1000;pointer-events:none;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;font-family:"JetBrains Mono",monospace;font-size:11px;box-shadow:0 12px 40px rgba(0,0,0,.5);transform:translate(-50%, -100%) translateY(-12px);max-width:240px;}
   .seat-tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--ink);}
   .seat-tip .tip-title{font-family:"Fraunces",serif;font-weight:700;font-size:14px;color:var(--bg);margin-bottom:3px;}
-  .seat-tip .tip-row{color:var(--bg);opacity:.75;}
+  .seat-tip .tip-row{color:var(--bg);opacity:.7;}
   .seat-tip .tip-swatch{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle;}
 
   .ticker{display:flex;overflow:hidden;white-space:nowrap;}
 
   ::-webkit-scrollbar{width:10px;height:10px}
-  ::-webkit-scrollbar-thumb{background:#C4B697;border-radius:999px}
+  ::-webkit-scrollbar-thumb{background:var(--rule-2);border-radius:999px}
   ::-webkit-scrollbar-track{background:transparent}
 
-  .input{background:var(--bg-2);border:1px solid var(--rule);color:var(--ink);border-radius:10px;padding:.65rem .9rem;font-size:14px;width:100%;}
-  .input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(155,44,31,.08);}
+  .input{background:var(--bg-3);border:1px solid var(--rule);color:var(--ink);border-radius:10px;padding:.65rem .9rem;font-size:14px;width:100%;}
+  .input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(212,168,72,.12);}
   .input::placeholder{color:var(--ink-3);}
 
-  .pill{font-family:"JetBrains Mono",monospace;font-size:11px;padding:.45rem .8rem;border-radius:8px;border:1px solid var(--rule);color:var(--ink-2);background:var(--bg-2);transition:all .15s;white-space:nowrap;cursor:pointer;}
-  .pill:hover{border-color:var(--ink-2);color:var(--ink);}
-  .pill.active{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:700;}
+  .pill{font-family:"JetBrains Mono",monospace;font-size:11px;padding:.45rem .8rem;border-radius:8px;border:1px solid var(--rule);color:var(--ink-2);background:var(--bg-3);transition:all .15s;white-space:nowrap;cursor:pointer;}
+  .pill:hover{border-color:var(--rule-2);color:var(--ink);}
+  .pill.active{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:700;}
 
-  .stripe{background:linear-gradient(90deg, var(--accent) 0%, var(--gold) 50%, var(--accent) 100%);background-size:200% 100%;animation:stripeShimmer 6s linear infinite;height:3px;border-radius:999px;}
-  @keyframes stripeShimmer {0%{background-position:0% 50%}100%{background-position:200% 50%}}
+  .ornaments{position:absolute;right:0;top:0;bottom:0;width:55%;opacity:.07;pointer-events:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='200' viewBox='0 0 400 200'><g fill='none' stroke='%23F0E9D6' stroke-width='1.5'><circle cx='100' cy='100' r='40'/><circle cx='100' cy='100' r='30'/><circle cx='100' cy='100' r='20'/><path d='M 70 100 L 130 100 M 100 70 L 100 130 M 78 78 L 122 122 M 122 78 L 78 122'/><path d='M 200 60 Q 220 30 240 60 Q 260 30 280 60 Q 300 30 320 60' /><path d='M 200 140 Q 220 170 240 140 Q 260 170 280 140 Q 300 170 320 140' /><circle cx='240' cy='100' r='15'/><circle cx='280' cy='100' r='15'/><path d='M 340 80 L 360 100 L 340 120 M 380 80 L 360 100 L 380 120' stroke-width='2'/></g></svg>");background-repeat:repeat;background-size:400px;}
 
-  .dropcap::first-letter{font-family:"Fraunces",serif;font-weight:900;font-size:4em;line-height:.78;float:left;padding:6px 12px 0 0;color:var(--accent);}
+  .err-box{padding:30px;background:#3D1A1A;border:1px solid #6B2A2A;border-radius:14px;color:#F0C2C2;margin:30px;font-family:"JetBrains Mono",monospace;font-size:13px;}
 
-  .err-box{padding:30px;background:#FFF5F5;border:1px solid #F5C2C2;border-radius:14px;color:#7A1F1F;margin:30px;font-family:"JetBrains Mono",monospace;font-size:13px;}
+  /* Map styling */
+  .tn-map path, .tn-hex { transition: opacity .15s; cursor: pointer; }
+  .tn-map path:hover, .tn-hex:hover { opacity: 0.75; stroke: var(--ink); stroke-width: 1.5; }
+
+  /* Donut chart */
+  .donut-segment { transition: opacity .15s; }
+  .donut-segment:hover { opacity: 0.75; }
 </style>
 </head>
 <body>
 <div id="root"></div>
 
-<script type="text/babel" data-type="module" data-presets="env,react">
+<script type="text/babel" data-presets="env,react">
 'use strict';
 
 var useState = React.useState;
@@ -133,7 +130,6 @@ var useEffect = React.useEffect;
 var useMemo = React.useMemo;
 var useRef = React.useRef;
 
-// Defensive: Recharts may or may not be loaded.
 var RC = window.Recharts || {};
 var ResponsiveContainer = RC.ResponsiveContainer;
 var BarChart = RC.BarChart;
@@ -142,9 +138,9 @@ var XAxis = RC.XAxis;
 var YAxis = RC.YAxis;
 var Tooltip = RC.Tooltip;
 var Cell = RC.Cell;
-var RadialBarChart = RC.RadialBarChart;
-var RadialBar = RC.RadialBar;
 var hasRecharts = !!(ResponsiveContainer && BarChart && Bar);
+
+var hasD3 = !!window.d3;
 
 // CONFIG
 var PROXY_URL = "https://us-central1-pickleball-app-1bba7.cloudfunctions.net/tnResults";
@@ -153,6 +149,16 @@ var REFRESH_MS = 120000;
 var TITLE = "Tamil Nadu";
 var YEAR = "2026";
 var MAJORITY = 118;
+
+// Region mapping — rough geographic grouping by AC number
+function regionFor(no) {
+  if (no <= 30) return "Chennai & North";
+  if (no <= 75) return "North-Central";
+  if (no <= 130) return "Western";
+  if (no <= 180) return "Southern";
+  return "Coastal & Delta";
+}
+var REGIONS = ["Chennai & North", "North-Central", "Western", "Southern", "Coastal & Delta"];
 
 // Hooks
 function useNow(ms) {
@@ -203,71 +209,53 @@ function useResults() {
   return { data: data, err: err, loading: loading, initialLoad: initialLoad, lastFetch: lastFetch, reload: load };
 }
 
-// Components
-function Masthead(props) {
+// Components ──────────────────────────────────────────────
+
+function Header(props) {
   var lastFetch = props.lastFetch, countingStarted = props.countingStarted, err = props.err, loading = props.loading;
   return (
-    <header className="relative">
-      <div className="max-w-7xl mx-auto px-5 md:px-8 pt-6 pb-3 relative">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="mono text-[10px] tracking-[.3em] text-[var(--ink-3)] uppercase">The Count</div>
-            <div className="h-[14px] w-px bg-[var(--rule-2)]"></div>
-            <div className="mono text-[10px] tracking-[.2em] text-[var(--ink-3)]">
-              {(lastFetch || new Date()).toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {loading ? <span className="mono text-[10px] text-[var(--gold)] tracking-[.15em] uppercase animate-pulse">Fetching…</span> : null}
-            {countingStarted
-              ? <span className="inline-flex items-center gap-2"><span className="pulse-dot"></span><span className="mono text-[10px] tracking-[.2em] text-[var(--accent)]">LIVE</span></span>
-              : <span className="chip" style={{ background: "rgba(176,137,42,.15)", color: "var(--gold)" }}>Pre-counting</span>
-            }
-            {lastFetch ? <span className="mono text-[10px] text-[var(--ink-3)] hidden md:inline">Updated {lastFetch.toLocaleTimeString("en-IN")}</span> : null}
-            {err ? <span className="chip" style={{ background: "rgba(155,44,31,.15)", color: "var(--accent)" }}>Error</span> : null}
+    <div className="border-b border-[var(--rule)]">
+      <div className="max-w-7xl mx-auto px-5 md:px-8 py-3 flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="mono text-[10px] tracking-[.3em] text-[var(--ink-3)] uppercase">The Count</div>
+          <span className="text-[var(--rule-2)]">|</span>
+          <div className="mono text-[10px] tracking-[.2em] text-[var(--ink-3)]">
+            {(lastFetch || new Date()).toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}
           </div>
         </div>
-
-        <div className="stripe mt-4"></div>
-
-        <div className="mt-6 flex items-end justify-between gap-6 flex-wrap">
-          <div>
-            <h1 className="serif font-black text-[54px] md:text-[92px] lg:text-[116px] leading-[.85] tracking-[-.03em]">
-              <span className="block">{TITLE}.</span>
-              <span className="block" style={{ color: "var(--accent)" }}>{YEAR}.</span>
-            </h1>
-          </div>
-          <div className="mb-2">
-            <div className="mono text-[10px] tracking-[.25em] text-[var(--ink-3)] uppercase mb-1">17th Assembly</div>
-            <div className="serif italic text-[var(--ink-2)] text-lg md:text-xl max-w-xs">
-              234 seats. 5.67 crore voters. One hundred and eighteen for a majority.
-            </div>
-          </div>
+        <div className="flex items-center gap-3">
+          {loading ? <span className="mono text-[10px] text-[var(--accent)] tracking-[.15em] uppercase animate-pulse">Fetching…</span> : null}
+          {countingStarted
+            ? <span className="inline-flex items-center gap-2"><span className="pulse-dot"></span><span className="mono text-[10px] tracking-[.2em] text-[var(--accent-2)]">LIVE COUNTING</span></span>
+            : <span className="chip" style={{ background: "rgba(212,168,72,.15)", color: "var(--accent)" }}>Pre-counting</span>
+          }
+          {lastFetch ? <span className="mono text-[10px] text-[var(--ink-3)] hidden md:inline">Updated {lastFetch.toLocaleTimeString("en-IN")}</span> : null}
+          {err ? <span className="chip" style={{ background: "rgba(231,111,81,.15)", color: "var(--accent-2)" }}>Error</span> : null}
         </div>
       </div>
-    </header>
+    </div>
   );
 }
 
-function TickerBar(props) {
-  var alliances = props.alliances;
-  if (!alliances || !alliances.length) return null;
-  var items = alliances.concat(alliances);
+function Masthead() {
   return (
-    <div className="border-y border-[var(--rule)] overflow-hidden" style={{ background: "rgba(237,229,209,.4)" }}>
-      <div className="ticker py-3">
-        <div className="ticker-track inline-flex gap-10 items-center">
-          {items.map(function (a, i) {
-            return (
-              <div key={i} className="inline-flex items-center gap-3 shrink-0">
-                <span className="inline-block w-2 h-2 rounded-sm" style={{ background: a.color }}></span>
-                <span className="mono text-[11px] tracking-[.12em] uppercase text-[var(--ink-2)]">{a.name}</span>
-                <span className="serif text-2xl font-bold num" style={{ color: a.color }}>{a.won + a.leading}</span>
-                <span className="mono text-[10px] text-[var(--ink-3)]">won {a.won} · lead {a.leading}</span>
-                <span className="text-[var(--ink-3)] mx-2">·</span>
-              </div>
-            );
-          })}
+    <div className="relative overflow-hidden border-b border-[var(--rule)]">
+      <div className="ornaments"></div>
+      <div className="max-w-7xl mx-auto px-5 md:px-8 py-7 relative">
+        <div className="flex items-end justify-between gap-6 flex-wrap">
+          <div>
+            <h1 className="serif font-black text-[40px] md:text-[56px] leading-[.95] tracking-[-.03em]">
+              <span className="block">{TITLE}.</span>
+              <span className="block" style={{ color: "var(--teal)" }}>{YEAR}.</span>
+            </h1>
+            <div className="serif italic text-2xl md:text-3xl font-bold mt-3" style={{ color: "var(--teal)" }}>Historic Mandate</div>
+          </div>
+          <div className="mb-1 max-w-xs">
+            <div className="mono text-[10px] tracking-[.25em] text-[var(--ink-3)] uppercase mb-1">17th Assembly</div>
+            <div className="text-sm text-[var(--ink-2)] leading-relaxed">
+              234 seats. 5.67 crore voters. One hundred and eighteen for a majority.
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -297,8 +285,9 @@ function Countdown(props) {
   );
 }
 
+// THE PERFECT — the big editorial verdict
 function VerdictHero(props) {
-  var alliances = props.alliances;
+  var alliances = props.alliances, totals = props.totals;
   if (!alliances || !alliances.length) return null;
   var sorted = alliances.map(function (a) { return Object.assign({}, a, { total: a.won + a.leading }); }).sort(function (a, b) { return b.total - a.total; });
   var first = sorted[0];
@@ -308,34 +297,58 @@ function VerdictHero(props) {
 
   var topLine, subLine;
   if (first.total === 0) { topLine = "Awaiting first numbers"; subLine = "Counting has not begun."; }
+  else if (pastMajority && first.total >= MAJORITY + 30) {
+    topLine = first.name + " returns to power with absolute majority";
+    subLine = "A historic mandate · " + (first.total - MAJORITY) + " seats above majority threshold.";
+  }
   else if (pastMajority) {
-    topLine = first.name + " forms government";
-    var d = first.total - MAJORITY;
-    subLine = "Past the halfway mark by " + d + " seat" + (d !== 1 ? "s" : "") + ".";
-  } else if (gap >= 30) { topLine = first.name + " sweeping"; subLine = "A commanding lead — " + gap + " seats clear of " + second.name + "."; }
+    topLine = first.name + " forms the government";
+    subLine = "Past the halfway mark by " + (first.total - MAJORITY) + " seats.";
+  }
+  else if (gap >= 30) { topLine = first.name + " sweeping"; subLine = "Commanding lead — " + gap + " seats clear of " + second.name + "."; }
   else if (gap >= 10) { topLine = first.name + " leading"; subLine = "Holding " + gap + " seats over " + second.name + "."; }
   else if (gap > 0) { topLine = first.name + " narrowly ahead"; subLine = "Razor-thin " + gap + "-seat lead over " + second.name + "."; }
   else { topLine = "Neck and neck"; subLine = "A deadlocked night."; }
 
+  var totalSeats = (totals && totals.total) || 234;
+
   return (
-    <div className="relative">
-      <div className="mono text-[10px] tracking-[.3em] text-[var(--ink-3)] uppercase">The Verdict</div>
-      <h2 className="serif font-bold text-4xl md:text-6xl lg:text-7xl leading-[.95] mt-3 tracking-tight" style={{ color: first.color }}>{topLine}</h2>
-      <div className="serif italic text-[var(--ink-2)] text-xl md:text-2xl mt-4 max-w-2xl">{subLine}</div>
-      <div className="mt-6 flex items-baseline gap-6 flex-wrap">
-        <div>
-          <div className="mono text-[10px] tracking-[.18em] text-[var(--ink-3)] uppercase">Seats</div>
-          <div className="serif font-black text-7xl md:text-8xl num leading-none mt-1" style={{ color: first.color }}>{first.total}</div>
+    <div className="grid md:grid-cols-[1fr_320px] gap-8 items-stretch">
+      <div className="card p-7 md:p-9 relative overflow-hidden">
+        <div className="absolute -top-20 -right-20 w-[300px] h-[300px] rounded-full" style={{ background: "radial-gradient(circle, " + first.color + "22, transparent 70%)" }}></div>
+        <div className="relative">
+          <div className="mono text-[10px] tracking-[.28em] text-[var(--ink-3)] uppercase">The Verdict</div>
+          <h2 className="serif font-bold text-3xl md:text-5xl leading-[1.05] mt-3 tracking-tight">
+            <span style={{ color: first.color }}>{topLine}</span>
+          </h2>
+          <div className="text-[var(--ink-2)] text-base md:text-lg mt-4 max-w-2xl">{subLine}</div>
+          <div className="mt-7 flex items-baseline gap-5 flex-wrap">
+            <div>
+              <div className="mono text-[9px] tracking-[.18em] text-[var(--ink-3)] uppercase">Total Seats</div>
+              <div className="serif font-bold text-5xl num leading-none mt-1" style={{ color: "var(--teal)" }}>{totalSeats}</div>
+            </div>
+            <div className="text-[var(--ink-3)] serif text-3xl">·</div>
+            <div>
+              <div className="mono text-[9px] tracking-[.18em] text-[var(--ink-3)] uppercase">Majority</div>
+              <div className="serif font-bold text-5xl num leading-none mt-1">{MAJORITY}</div>
+            </div>
+          </div>
         </div>
-        <div className="text-[var(--ink-3)] serif text-5xl leading-none">/</div>
+      </div>
+
+      <div className="card p-6 flex flex-col justify-between">
         <div>
-          <div className="mono text-[10px] tracking-[.18em] text-[var(--ink-3)] uppercase">Total</div>
-          <div className="serif font-bold text-5xl num leading-none mt-1 text-[var(--ink-2)]">234</div>
+          <div className="mono text-[9px] tracking-[.22em] text-[var(--ink-3)] uppercase text-center">To Majority</div>
+          <div className="serif font-black num text-center leading-none mt-3" style={{ color: first.color, fontSize: 84 }}>{first.total}</div>
+          <div className="mono text-[10px] text-[var(--ink-3)] text-center mt-2">at this rate</div>
         </div>
-        <div className="text-[var(--ink-3)] serif text-5xl leading-none">·</div>
-        <div>
-          <div className="mono text-[10px] tracking-[.18em] text-[var(--ink-3)] uppercase">Majority</div>
-          <div className="serif font-bold text-5xl num leading-none mt-1">{MAJORITY}</div>
+        <div className="mt-5">
+          <div className="h-3 rounded-full overflow-hidden" style={{ background: "var(--bg-4)" }}>
+            <div style={{ width: Math.min(100, (first.total / MAJORITY) * 100) + "%", height: "100%", background: first.color, transition: "width .8s cubic-bezier(.2,.9,.2,1)" }}></div>
+          </div>
+          <div className="flex justify-between mono text-[9px] text-[var(--ink-3)] mt-2">
+            <span>0</span><span>majority {MAJORITY}</span><span>{totalSeats}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -345,27 +358,20 @@ function VerdictHero(props) {
 function AllianceTiles(props) {
   var alliances = props.alliances;
   var sorted = alliances.slice().sort(function (a, b) { return (b.won + b.leading) - (a.won + a.leading); });
-  var leader = sorted[0];
+  var iconFor = { spa: "✱", nda: "❋", tvk: "✦", others: "◇", nda_b: "❋", ind: "✱", aimim: "◆" };
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {sorted.map(function (a, i) {
+      {sorted.map(function (a) {
         var total = a.won + a.leading;
-        var pct = ((total / 234) * 100).toFixed(1);
-        var cls = "alli-tile" + (a.id === leader.id && total > 0 ? " leader" : "");
         return (
-          <div key={a.id} className={cls}>
-            <div className="swatch" style={{ background: a.color }}></div>
-            <div className="relative">
-              <div className="mono text-[10px] tracking-[.15em] uppercase text-[var(--ink-3)] font-semibold">{a.name}</div>
-              <div className="flex items-baseline gap-2 mt-3">
-                <div className="serif font-bold num text-6xl leading-none" style={{ color: a.color }}>{total}</div>
-                <div className="mono text-[11px] text-[var(--ink-3)] mb-1">{pct}%</div>
-              </div>
-              <div className="mt-4 flex items-center gap-3 text-[11px] mono text-[var(--ink-2)]">
-                <span>won <span className="text-[var(--ink)] font-semibold num">{a.won}</span></span>
-                <span className="text-[var(--ink-3)]">·</span>
-                <span>lead <span className="text-[var(--ink)] font-semibold num">{a.leading}</span></span>
-              </div>
+          <div key={a.id} className="alli-tile">
+            <div className="swatch" style={{ color: a.color }}>{iconFor[a.id] || "✦"}</div>
+            <div className="mono text-[10px] tracking-[.15em] uppercase text-[var(--ink-3)] font-semibold">{a.name}</div>
+            <div className="num-big mt-2" style={{ color: a.color }}>{total}</div>
+            <div className="mt-3 flex items-center gap-2 text-[10px] mono text-[var(--ink-3)]">
+              <span>WON {a.won}</span>
+              <span>·</span>
+              <span>LEAD {a.leading}</span>
             </div>
           </div>
         );
@@ -388,16 +394,16 @@ function SeatBar(props) {
             var pct = ((a.won + a.leading) / total) * 100;
             if (pct === 0) return null;
             return (
-              <div key={a.id} className="relative h-full flex items-center justify-center transition-all duration-500"
-                   style={{ width: pct + "%", background: a.color }}>
+              <div key={a.id} className="relative h-full flex items-center justify-center"
+                   style={{ width: pct + "%", background: a.color, transition: "width .8s cubic-bezier(.2,.9,.2,1)" }}>
                 {pct > 6 ? <span className="mono text-[13px] font-bold text-white num">{a.won + a.leading}</span> : null}
               </div>
             );
           })}
         </div>
         <div className="absolute top-0 bottom-0" style={{ left: ((MAJORITY / total) * 100) + "%" }}>
-          <div className="h-full w-px bg-[var(--ink)] opacity-80"></div>
-          <div className="absolute -top-5 left-1 mono text-[9px] tracking-[.15em] text-[var(--ink)] whitespace-nowrap">MAJORITY ↓</div>
+          <div className="h-full w-px bg-[var(--ink)] opacity-90"></div>
+          <div className="absolute -top-5 left-1 mono text-[9px] tracking-[.15em] text-[var(--ink)] whitespace-nowrap">MAJORITY {MAJORITY} ↓</div>
         </div>
       </div>
     </div>
@@ -406,7 +412,6 @@ function SeatBar(props) {
 
 function PartyChart(props) {
   var constituencies = props.constituencies, alliances = props.alliances;
-
   var data = useMemo(function () {
     var byParty = {};
     constituencies.forEach(function (c) {
@@ -432,9 +437,9 @@ function PartyChart(props) {
           var w = max > 0 ? (d.total / max) * 100 : 0;
           return (
             <div key={d.name} className="flex items-center gap-3">
-              <div className="w-16 text-right mono text-[12px] font-semibold">{d.name}</div>
+              <div className="w-20 text-right mono text-[12px] font-semibold text-[var(--ink-2)]">{d.name}</div>
               <div className="flex-1 h-7 rounded bg-[var(--bg-3)] relative overflow-hidden">
-                <div style={{ width: w + "%", background: colorByAlliance[d.alliance] || "#8A8272", height: "100%" }}></div>
+                <div style={{ width: w + "%", background: colorByAlliance[d.alliance] || "#6E7A87", height: "100%" }}></div>
               </div>
               <div className="w-10 text-right num font-bold text-[14px]">{d.total}</div>
             </div>
@@ -444,19 +449,19 @@ function PartyChart(props) {
     );
   }
 
-  var height = Math.max(220, data.length * 32 + 40);
+  var height = Math.max(280, data.length * 30 + 40);
   return (
     <div style={{ width: "100%", height: height }}>
       <ResponsiveContainer>
-        <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, bottom: 5, left: 10 }}>
-          <XAxis type="number" stroke="#8A8272" fontSize={11} tick={{ fill: "#4D4740" }} />
-          <YAxis type="category" dataKey="name" stroke="#8A8272" fontSize={12} tick={{ fill: "#1A1814", fontWeight: 600 }} width={70} />
-          <Tooltip cursor={{ fill: "rgba(155,44,31,.06)" }}
-            contentStyle={{ background: "#1A1814", border: "1px solid #4D4740", borderRadius: 8, color: "#F4EFE1", fontSize: 12, fontFamily: "JetBrains Mono" }}
+        <BarChart data={data} layout="vertical" margin={{ top: 5, right: 40, bottom: 5, left: 10 }}>
+          <XAxis type="number" stroke="#6E7A87" fontSize={11} tick={{ fill: "#A8B0BA" }} />
+          <YAxis type="category" dataKey="name" stroke="#6E7A87" fontSize={12} tick={{ fill: "#F0E9D6", fontWeight: 600 }} width={80} />
+          <Tooltip cursor={{ fill: "rgba(212,168,72,.06)" }}
+            contentStyle={{ background: "#0E1A24", border: "1px solid #283D4F", borderRadius: 8, color: "#F0E9D6", fontSize: 12, fontFamily: "JetBrains Mono" }}
             formatter={function (v) { return [v, "Seats"]; }}
           />
-          <Bar dataKey="total" radius={[0, 6, 6, 0]}>
-            {data.map(function (d, i) { return <Cell key={i} fill={colorByAlliance[d.alliance] || "#8A8272"} />; })}
+          <Bar dataKey="total" radius={[0, 6, 6, 0]} label={{ position: "right", fill: "#F0E9D6", fontSize: 12, fontWeight: 700, fontFamily: "JetBrains Mono" }}>
+            {data.map(function (d, i) { return <Cell key={i} fill={colorByAlliance[d.alliance] || "#6E7A87"} />; })}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -464,78 +469,117 @@ function PartyChart(props) {
   );
 }
 
-function MajorityGauge(props) {
-  var alliances = props.alliances;
-  var sorted = alliances.slice().sort(function (a, b) { return (b.won + b.leading) - (a.won + a.leading); });
-  var leader = sorted[0] || { won: 0, leading: 0, color: "#8A8272", name: "—" };
-  var total = (leader.won || 0) + (leader.leading || 0);
-  var pct = Math.min(100, (total / MAJORITY) * 100);
-  var data = [{ name: leader.name, value: pct, fill: leader.color }];
+// Tamil Nadu constituency map
+function TNMap(props) {
+  var constituencies = props.constituencies, alliances = props.alliances;
+  var ref = useRef(null);
+  var s1 = useState(null); var geo = s1[0]; var setGeo = s1[1];
+  var s2 = useState(null); var loadErr = s2[0]; var setLoadErr = s2[1];
+  var s3 = useState(null); var tip = s3[0]; var setTip = s3[1];
 
-  if (!hasRecharts) {
+  // Try to fetch real TN constituency hex map
+  useEffect(function () {
+    var url = "https://raw.githubusercontent.com/baskicanvas/tamilnadu-assembly-constituency-maps/main/tn_ac_2021_hex_map.geojson";
+    fetch(url)
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (j) { setGeo(j); })
+      .catch(function (e) { setLoadErr(e.message); });
+  }, []);
+
+  var byNo = {};
+  constituencies.forEach(function (c) { byNo[c.no] = c; });
+  var colorByAlliance = {};
+  alliances.forEach(function (a) { colorByAlliance[a.id] = a.color; });
+
+  function colorFor(no) {
+    var c = byNo[no];
+    if (!c) return "#283D4F";
+    if (c.status === "pending") return "#283D4F";
+    return colorByAlliance[c.leader.alliance] || "#6E7A87";
+  }
+
+  // D3 render
+  useEffect(function () {
+    if (!geo || !hasD3 || !ref.current) return;
+    var svg = window.d3.select(ref.current);
+    svg.selectAll("*").remove();
+    var width = ref.current.clientWidth;
+    var height = 540;
+    svg.attr("viewBox", "0 0 " + width + " " + height);
+
+    // Detect AC number key — in baskicanvas/tn the key is "ac_no"
+    var firstFeat = geo.features && geo.features[0];
+    var props = firstFeat && firstFeat.properties;
+    var acKey = "ac_no";
+    if (props) {
+      var keys = Object.keys(props);
+      // Pick first numeric-looking key
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i].toLowerCase();
+        if (k.indexOf("ac") >= 0 || k.indexOf("no") >= 0 || k.indexOf("num") >= 0 || k.indexOf("code") >= 0) {
+          acKey = keys[i]; break;
+        }
+      }
+    }
+
+    var projection = window.d3.geoMercator().fitSize([width, height], geo);
+    var path = window.d3.geoPath().projection(projection);
+
+    svg.append("g").selectAll("path")
+      .data(geo.features)
+      .enter().append("path")
+      .attr("d", path)
+      .attr("fill", function (d) {
+        var no = +d.properties[acKey];
+        return colorFor(no);
+      })
+      .attr("stroke", "#0E1A24")
+      .attr("stroke-width", 0.6)
+      .attr("class", "tn-hex")
+      .on("mouseenter", function (event, d) {
+        var no = +d.properties[acKey];
+        var c = byNo[no];
+        if (!c) return;
+        setTip({ x: event.clientX, y: event.clientY, c: c });
+      })
+      .on("mousemove", function (event, d) {
+        var no = +d.properties[acKey];
+        var c = byNo[no];
+        if (!c) return;
+        setTip({ x: event.clientX, y: event.clientY, c: c });
+      })
+      .on("mouseleave", function () { setTip(null); });
+  }, [geo, constituencies]);
+
+  // Fallback: hex grid
+  if (loadErr || (!geo && Date.now() > 0)) {
+    // Show fallback only if loadErr or after a delay
+  }
+
+  if (loadErr) {
     return (
-      <div className="flex flex-col items-center justify-center" style={{ minHeight: 220 }}>
-        <div className="mono text-[9px] tracking-[.25em] text-[var(--ink-3)] uppercase">To Majority</div>
-        <div className="serif font-black num leading-none mt-3" style={{ color: leader.color, fontSize: 72 }}>{total}</div>
-        <div className="mono text-[10px] text-[var(--ink-3)] mt-2">of {MAJORITY} needed</div>
-        <div className="w-full mt-6 h-3 rounded-full bg-[var(--bg-3)] overflow-hidden">
-          <div style={{ width: pct + "%", height: "100%", background: leader.color }}></div>
-        </div>
+      <div className="text-sm text-[var(--ink-3)] py-12 text-center">
+        <div>Map not available</div>
+        <div className="mono text-[10px] mt-2 opacity-60">{loadErr}</div>
+      </div>
+    );
+  }
+  if (!geo) {
+    return (
+      <div className="py-12">
+        <div className="skeleton h-[400px]"></div>
+        <div className="mono text-[10px] text-[var(--ink-3)] text-center mt-3">Loading constituency map…</div>
       </div>
     );
   }
 
   return (
-    <div className="relative" style={{ width: "100%", height: 220 }}>
-      <ResponsiveContainer>
-        <RadialBarChart innerRadius="72%" outerRadius="100%" data={data} startAngle={90} endAngle={-270}>
-          <RadialBar minAngle={15} background={{ fill: "#EDE5D1" }} clockWise dataKey="value" cornerRadius={8} />
-        </RadialBarChart>
-      </ResponsiveContainer>
-      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <div className="mono text-[9px] tracking-[.25em] text-[var(--ink-3)] uppercase">To Majority</div>
-        <div className="serif font-black num leading-none mt-1" style={{ color: leader.color, fontSize: 56 }}>{total}</div>
-        <div className="mono text-[10px] text-[var(--ink-3)] mt-1">of {MAJORITY} needed</div>
-      </div>
-    </div>
-  );
-}
-
-function SeatWall(props) {
-  var constituencies = props.constituencies, alliances = props.alliances;
-  var tipState = useState(null); var tip = tipState[0]; var setTip = tipState[1];
-  var colorByAlliance = {};
-  alliances.forEach(function (a) { colorByAlliance[a.id] = a.color; });
-
-  function onEnter(e, c) {
-    var rect = e.currentTarget.getBoundingClientRect();
-    setTip({ x: rect.left + rect.width / 2, y: rect.top, c: c });
-  }
-  function onLeave() { setTip(null); }
-
-  if (!constituencies || !constituencies.length) return null;
-
-  return (
     <React.Fragment>
-      <div className="seat-grid">
-        {constituencies.map(function (c) {
-          var bg = colorByAlliance[c.leader.alliance] || "#8A8272";
-          var isPending = c.status === "pending";
-          var cls = "seat" + (c.status === "leading" ? " leading" : "");
-          return (
-            <div key={c.no}
-              className={cls}
-              style={{ background: isPending ? "#E3D8BB" : bg }}
-              onMouseEnter={function (e) { onEnter(e, c); }}
-              onMouseLeave={onLeave}
-            ></div>
-          );
-        })}
-      </div>
+      <svg ref={ref} className="tn-map w-full" style={{ height: 540 }}></svg>
       {tip ? (
         <div className="seat-tip" style={{ left: tip.x + "px", top: tip.y + "px" }}>
           <div className="tip-title">
-            <span className="tip-swatch" style={{ background: colorByAlliance[tip.c.leader.alliance] || "#8A8272" }}></span>
+            <span className="tip-swatch" style={{ background: colorByAlliance[tip.c.leader.alliance] || "#6E7A87" }}></span>
             {tip.c.no}. {tip.c.name}
           </div>
           <div className="tip-row">{tip.c.leader.name}</div>
@@ -544,6 +588,68 @@ function SeatWall(props) {
         </div>
       ) : null}
     </React.Fragment>
+  );
+}
+
+// SVG donut chart
+function DonutChart(props) {
+  var data = props.data, total = props.total, label = props.label;
+  if (!data || !data.length || total === 0) {
+    return <div className="text-sm text-[var(--ink-3)] py-12 text-center">No data yet</div>;
+  }
+  var size = 240, cx = size / 2, cy = size / 2, r = 95, ir = 60;
+  var cumulative = 0;
+  var segments = data.map(function (d) {
+    var startAngle = (cumulative / total) * 2 * Math.PI - Math.PI / 2;
+    cumulative += d.value;
+    var endAngle = (cumulative / total) * 2 * Math.PI - Math.PI / 2;
+    var x1 = cx + r * Math.cos(startAngle);
+    var y1 = cy + r * Math.sin(startAngle);
+    var x2 = cx + r * Math.cos(endAngle);
+    var y2 = cy + r * Math.sin(endAngle);
+    var x3 = cx + ir * Math.cos(endAngle);
+    var y3 = cy + ir * Math.sin(endAngle);
+    var x4 = cx + ir * Math.cos(startAngle);
+    var y4 = cy + ir * Math.sin(startAngle);
+    var largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
+    var path = ["M", x1, y1, "A", r, r, 0, largeArc, 1, x2, y2, "L", x3, y3, "A", ir, ir, 0, largeArc, 0, x4, y4, "Z"].join(" ");
+    var midAngle = (startAngle + endAngle) / 2;
+    var labelR = (r + ir) / 2;
+    var labelX = cx + labelR * Math.cos(midAngle);
+    var labelY = cy + labelR * Math.sin(midAngle);
+    var pct = (d.value / total) * 100;
+    return { d: d, path: path, labelX: labelX, labelY: labelY, pct: pct };
+  });
+
+  return (
+    <div className="flex items-center gap-5 flex-wrap">
+      <svg width={size} height={size} viewBox={"0 0 " + size + " " + size}>
+        {segments.map(function (s, i) {
+          return (
+            <g key={i}>
+              <path d={s.path} fill={s.d.color} className="donut-segment" stroke="#0E1A24" strokeWidth={1} />
+              {s.pct > 5 ? <text x={s.labelX} y={s.labelY} textAnchor="middle" dominantBaseline="middle" fill="#fff" fontSize="11" fontWeight="700" fontFamily="JetBrains Mono">{s.pct.toFixed(0)}%</text> : null}
+            </g>
+          );
+        })}
+        <text x={cx} y={cy - 6} textAnchor="middle" fill="#A8B0BA" fontSize="9" fontFamily="JetBrains Mono" letterSpacing="2" textTransform="uppercase">{label || "TOTAL"}</text>
+        <text x={cx} y={cy + 14} textAnchor="middle" fill="#F0E9D6" fontSize="22" fontWeight="700" fontFamily="Fraunces" className="num">{total}</text>
+      </svg>
+      <div className="flex-1 min-w-0 space-y-2">
+        {data.map(function (d, i) {
+          var pct = ((d.value / total) * 100).toFixed(1);
+          return (
+            <div key={i} className="flex items-center justify-between gap-3 text-[12px]">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="inline-block w-3 h-3 rounded-sm shrink-0" style={{ background: d.color }}></span>
+                <span className="text-[var(--ink-2)] truncate">{d.name}</span>
+              </div>
+              <div className="mono text-[var(--ink)] num font-semibold shrink-0">{d.value} <span className="text-[var(--ink-3)]">· {pct}%</span></div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -572,7 +678,7 @@ function ConstituencyDetail(props) {
       </div>
     );
   }
-  if (state.err) return <div className="detail-inner mono text-[12px]" style={{ color: "var(--accent)" }}>Couldn't load · {state.err}</div>;
+  if (state.err) return <div className="detail-inner mono text-[12px]" style={{ color: "var(--accent-2)" }}>Couldn't load · {state.err}</div>;
 
   var d = state.data;
   if (!d || !d.candidates || !d.candidates.length) return <div className="detail-inner mono text-[12px] text-[var(--ink-3)]">No candidate data available yet.</div>;
@@ -595,9 +701,9 @@ function ConstituencyDetail(props) {
       <div className="space-y-2.5">
         {d.candidates.slice(0, 10).map(function (c, i) {
           var w = maxVotes > 0 ? Math.max(2, (c.total / maxVotes) * 100) : 0;
-          var color = colorByAlliance[c.alliance] || "#8A8272";
+          var color = colorByAlliance[c.alliance] || "#6E7A87";
           var isWinner = i === 0;
-          var nameCls = "text-[13px] truncate " + (isWinner ? "font-bold" : "font-medium text-[var(--ink-2)]");
+          var nameCls = "text-[13px] truncate " + (isWinner ? "font-bold text-[var(--ink)]" : "font-medium text-[var(--ink-2)]");
           return (
             <div key={c.sn} className="grid grid-cols-12 gap-3 items-center">
               <div className="col-span-5 md:col-span-4 min-w-0">
@@ -686,10 +792,10 @@ function ConstituencyTable(props) {
           <tbody>
             {rows.slice(0, 120).map(function (c) {
               var chip = c.status === "declared"
-                ? { bg: "rgba(46,125,50,.15)", fg: "#1F5C22", label: "Won" }
+                ? { bg: "rgba(74,191,176,.18)", fg: "var(--teal)", label: "Declared" }
                 : c.status === "leading"
-                ? { bg: "rgba(176,137,42,.18)", fg: "var(--gold)", label: "Leading" }
-                : { bg: "rgba(138,130,114,.15)", fg: "var(--ink-3)", label: "Pending" };
+                ? { bg: "rgba(212,168,72,.18)", fg: "var(--accent)", label: "Leading" }
+                : { bg: "rgba(110,122,135,.15)", fg: "var(--ink-3)", label: "Pending" };
               var expanded = expandedAc === c.no;
               var rowCls = "row-btn" + (expanded ? " expanded" : "");
               return (
@@ -705,7 +811,7 @@ function ConstituencyTable(props) {
                     <td className="py-3 pr-3 text-[var(--ink-2)]">{c.leader.name}</td>
                     <td className="py-3 pr-3">
                       <span className="inline-flex items-center gap-1.5">
-                        <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: colorByAlliance[c.leader.alliance] || "#8A8272" }}></span>
+                        <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: colorByAlliance[c.leader.alliance] || "#6E7A87" }}></span>
                         <span className="font-medium">{c.leader.party}</span>
                       </span>
                     </td>
@@ -738,13 +844,13 @@ function InitialLoadingState() {
   return (
     <section className="max-w-7xl mx-auto px-5 md:px-8 pt-8 pb-12">
       <div className="card p-7 md:p-10">
-        <div className="mono text-[10px] tracking-[.2em] text-[var(--gold)] uppercase animate-pulse">Fetching latest results from ECI…</div>
+        <div className="mono text-[10px] tracking-[.2em] text-[var(--accent)] uppercase animate-pulse">Fetching latest results from ECI…</div>
         <div className="mt-6 space-y-3">
-          <div className="skeleton h-16" style={{ width: "75%" }}></div>
+          <div className="skeleton h-12" style={{ width: "75%" }}></div>
           <div className="skeleton h-8" style={{ width: "50%" }}></div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
-          {[1, 2, 3, 4].map(function (i) { return <div key={i} className="skeleton h-32"></div>; })}
+          {[1, 2, 3, 4].map(function (i) { return <div key={i} className="skeleton h-28"></div>; })}
         </div>
       </div>
     </section>
@@ -762,13 +868,71 @@ function App() {
   var hasLiveNumbers = (declared + leadingCount) > 0;
   var totalSeats = (data && data.totals && data.totals.total) || 234;
 
+  // Regional analysis
+  var regionalData = useMemo(function () {
+    if (!data || !data.constituencies) return null;
+    var byRegion = {};
+    REGIONS.forEach(function (r) { byRegion[r] = { name: r, value: 0, color: "#6E7A87", parties: {} }; });
+    data.constituencies.forEach(function (c) {
+      var reg = regionFor(c.no);
+      if (c.status === "pending") return;
+      byRegion[reg].value++;
+      var p = c.leader.party;
+      byRegion[reg].parties[p] = (byRegion[reg].parties[p] || 0) + 1;
+    });
+    // Color each region by its dominant alliance
+    var colorByAlliance = {};
+    if (data.alliances) data.alliances.forEach(function (a) { colorByAlliance[a.id] = a.color; });
+    Object.keys(byRegion).forEach(function (reg) {
+      var topParty = null, topCount = 0, topAlliance = null;
+      data.constituencies.forEach(function (c) {
+        if (regionFor(c.no) !== reg || c.status === "pending") return;
+        var parties = byRegion[reg].parties;
+        if (parties[c.leader.party] > topCount) {
+          topCount = parties[c.leader.party];
+          topParty = c.leader.party;
+          topAlliance = c.leader.alliance;
+        }
+      });
+      byRegion[reg].color = colorByAlliance[topAlliance] || "#6E7A87";
+    });
+    return Object.keys(byRegion).map(function (k) { return byRegion[k]; }).filter(function (r) { return r.value > 0; });
+  }, [data]);
+
+  // Margin distribution (instead of vote share — we don't have all candidate votes at state level)
+  var marginData = useMemo(function () {
+    if (!data || !data.constituencies) return null;
+    var buckets = [
+      { name: "Landslide (50k+)", value: 0, color: "#4ABFB0", min: 50000, max: Infinity },
+      { name: "Strong (20–50k)", value: 0, color: "#D4A848", min: 20000, max: 50000 },
+      { name: "Comfortable (10–20k)", value: 0, color: "#C8553D", min: 10000, max: 20000 },
+      { name: "Narrow (3–10k)", value: 0, color: "#E76F51", min: 3000, max: 10000 },
+      { name: "Razor-thin (<3k)", value: 0, color: "#F4A261", min: 0, max: 3000 },
+    ];
+    data.constituencies.forEach(function (c) {
+      if (c.status === "pending") return;
+      var m = c.leader.margin || 0;
+      // If margin is 0 (data missing), treat as unknown — skip
+      if (m === 0) return;
+      for (var i = 0; i < buckets.length; i++) {
+        if (m >= buckets[i].min && m < buckets[i].max) {
+          buckets[i].value++;
+          break;
+        }
+      }
+    });
+    return buckets.filter(function (b) { return b.value > 0; });
+  }, [data]);
+
+  var regionalTotal = regionalData ? regionalData.reduce(function (s, r) { return s + r.value; }, 0) : 0;
+  var marginTotal = marginData ? marginData.reduce(function (s, b) { return s + b.value; }, 0) : 0;
+
   return (
     <div>
       {loading ? <div className="topbar-loader"><div className="topbar-loader-inner"></div></div> : null}
 
-      <Masthead lastFetch={lastFetch} countingStarted={countingStarted} err={err} loading={loading} />
-
-      {data && data.alliances && hasLiveNumbers ? <TickerBar alliances={data.alliances} /> : null}
+      <Header lastFetch={lastFetch} countingStarted={countingStarted} err={err} loading={loading} />
+      <Masthead />
 
       <main>
         {initialLoad ? <InitialLoadingState /> : null}
@@ -776,14 +940,10 @@ function App() {
         {!initialLoad && !countingStarted && !hasLiveNumbers ? (
           <section className="max-w-7xl mx-auto px-5 md:px-8 pt-8 pb-12">
             <div className="card p-7 md:p-12 relative overflow-hidden">
-              <div className="absolute -top-20 -right-20 w-[400px] h-[400px] rounded-full" style={{ background: "radial-gradient(circle, rgba(155,44,31,.08), transparent 70%)" }}></div>
-              <div className="relative">
-                <div className="mono text-[10px] tracking-[.3em] text-[var(--accent)] uppercase">The Count Begins In</div>
-                <div className="mt-6"><Countdown target={COUNTING_START} /></div>
-                <div className="mt-10 max-w-2xl serif italic text-lg md:text-xl text-[var(--ink-2)] leading-relaxed">
-                  Polling, Thursday the 23rd of April. Counting, the 4th of May at eight in the morning IST.
-                  Every constituency, every candidate, every vote — as the Election Commission publishes them.
-                </div>
+              <div className="mono text-[10px] tracking-[.3em] text-[var(--accent)] uppercase">The Count Begins In</div>
+              <div className="mt-6"><Countdown target={COUNTING_START} /></div>
+              <div className="mt-10 max-w-2xl serif italic text-lg md:text-xl text-[var(--ink-2)] leading-relaxed">
+                Polling, Thursday the 23rd of April. Counting, the 4th of May at eight in the morning IST.
               </div>
             </div>
           </section>
@@ -791,98 +951,91 @@ function App() {
 
         {data && data.alliances && hasLiveNumbers ? (
           <React.Fragment>
-            <section className="max-w-7xl mx-auto px-5 md:px-8 pt-10 pb-10">
-              <div className="grid md:grid-cols-[1fr_360px] gap-8 items-center">
-                <div><VerdictHero alliances={data.alliances} /></div>
-                <div className="card p-5"><MajorityGauge alliances={data.alliances} /></div>
-              </div>
+            {/* THE PERFECT — verdict hero */}
+            <section className="max-w-7xl mx-auto px-5 md:px-8 pt-7 pb-7">
+              <VerdictHero alliances={data.alliances} totals={data.totals} />
             </section>
 
-            <section className="max-w-7xl mx-auto px-5 md:px-8 pb-10">
+            {/* Alliance tiles */}
+            <section className="max-w-7xl mx-auto px-5 md:px-8 pb-7">
               <AllianceTiles alliances={data.alliances} />
             </section>
 
-            <section className="max-w-7xl mx-auto px-5 md:px-8 pb-12">
+            {/* Distribution bar */}
+            <section className="max-w-7xl mx-auto px-5 md:px-8 pb-10">
               <div className="card p-6 md:p-8"><SeatBar alliances={data.alliances} total={totalSeats} /></div>
             </section>
 
+            {/* Party Breakdown + TN Map */}
             <section className="max-w-7xl mx-auto px-5 md:px-8 pb-10">
-              <div className="grid md:grid-cols-[1.5fr_1fr] gap-6">
+              <div className="grid md:grid-cols-2 gap-6">
                 <div className="card p-6 md:p-8">
                   <div className="flex items-baseline justify-between mb-5 flex-wrap gap-2">
                     <div>
-                      <div className="mono text-[10px] tracking-[.22em] text-[var(--ink-3)] uppercase">Breakdown</div>
-                      <h3 className="serif font-bold text-2xl md:text-3xl mt-1">By the party</h3>
+                      <div className="mono text-[10px] tracking-[.22em] text-[var(--ink-3)] uppercase">By Parties</div>
+                      <h3 className="serif font-bold text-2xl md:text-3xl mt-1">Leading Party Breakdown</h3>
                     </div>
                     <div className="mono text-[10px] text-[var(--ink-3)]">Top 12 · by seats</div>
                   </div>
                   <PartyChart constituencies={data.constituencies} alliances={data.alliances} />
                 </div>
-                <div className="card p-6 md:p-8 flex flex-col justify-between">
-                  <div>
-                    <div className="mono text-[10px] tracking-[.22em] text-[var(--ink-3)] uppercase">Status</div>
-                    <h3 className="serif font-bold text-2xl md:text-3xl mt-1">As of now</h3>
+                <div className="card p-6 md:p-8">
+                  <div className="mb-5">
+                    <div className="mono text-[10px] tracking-[.22em] text-[var(--ink-3)] uppercase">Map</div>
+                    <h3 className="serif font-bold text-2xl md:text-3xl mt-1">Constituency Map</h3>
+                    <div className="mono text-[10px] text-[var(--ink-3)] mt-1">Hover any constituency for details</div>
                   </div>
-                  <div className="mt-6 space-y-5">
-                    {[
-                      { label: "Declared", value: declared, color: "#1F5C22", sub: "Officially called" },
-                      { label: "Leading", value: leadingCount, color: "var(--gold)", sub: "Ahead, not declared" },
-                      { label: "Pending", value: (data.totals && data.totals.pending) || 0, color: "var(--ink-3)", sub: "Awaiting first trend" }
-                    ].map(function (r) {
-                      return (
-                        <div key={r.label} className="flex items-baseline justify-between pb-4 border-b border-[var(--rule)] last:border-b-0 last:pb-0">
-                          <div>
-                            <div className="mono text-[10px] tracking-[.18em] text-[var(--ink-3)] uppercase">{r.label}</div>
-                            <div className="text-[11px] text-[var(--ink-3)] mt-0.5">{r.sub}</div>
-                          </div>
-                          <div className="serif font-bold text-5xl num leading-none" style={{ color: r.color }}>{r.value}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <TNMap constituencies={data.constituencies} alliances={data.alliances} />
                 </div>
               </div>
             </section>
 
+            {/* Constituency table */}
             <section className="max-w-7xl mx-auto px-5 md:px-8 pb-12">
               <div className="card p-6 md:p-8">
                 <div className="flex items-baseline justify-between mb-5 flex-wrap gap-2">
                   <div>
-                    <div className="mono text-[10px] tracking-[.22em] text-[var(--ink-3)] uppercase">The Wall</div>
-                    <h3 className="serif font-bold text-2xl md:text-3xl mt-1">Every seat, one tile</h3>
-                    <div className="mono text-[10px] text-[var(--ink-3)] mt-1">Hover for details · Solid = declared · Faded = leading</div>
-                  </div>
-                </div>
-                <SeatWall constituencies={data.constituencies} alliances={data.alliances} />
-              </div>
-            </section>
-
-            <section className="max-w-7xl mx-auto px-5 md:px-8 pb-16">
-              <div className="card p-6 md:p-8">
-                <div className="flex items-baseline justify-between mb-5 flex-wrap gap-2">
-                  <div>
                     <div className="mono text-[10px] tracking-[.22em] text-[var(--ink-3)] uppercase">The Map</div>
-                    <h3 className="serif font-bold text-2xl md:text-3xl mt-1">Every constituency</h3>
+                    <h3 className="serif font-bold text-2xl md:text-3xl mt-1">Constituency &amp; Candidate View</h3>
                     <div className="mono text-[10px] text-[var(--ink-3)] mt-1">Tap a row to see full candidate vote totals</div>
                   </div>
                 </div>
                 <ConstituencyTable constituencies={data.constituencies} alliances={data.alliances} />
               </div>
             </section>
+
+            {/* Regional + Margin analysis */}
+            <section className="max-w-7xl mx-auto px-5 md:px-8 pb-16">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="card p-6 md:p-8">
+                  <div className="mb-5">
+                    <div className="mono text-[10px] tracking-[.22em] text-[var(--ink-3)] uppercase">Regional Analysis</div>
+                    <h3 className="serif font-bold text-2xl md:text-3xl mt-1">By Region</h3>
+                    <div className="mono text-[10px] text-[var(--ink-3)] mt-1">Each segment colored by region's leading alliance</div>
+                  </div>
+                  {regionalData && regionalTotal > 0
+                    ? <DonutChart data={regionalData} total={regionalTotal} label="DECIDED" />
+                    : <div className="text-sm text-[var(--ink-3)] py-12 text-center">No regional data yet</div>
+                  }
+                </div>
+                <div className="card p-6 md:p-8">
+                  <div className="mb-5">
+                    <div className="mono text-[10px] tracking-[.22em] text-[var(--ink-3)] uppercase">Margin Distribution</div>
+                    <h3 className="serif font-bold text-2xl md:text-3xl mt-1">How Decisive?</h3>
+                    <div className="mono text-[10px] text-[var(--ink-3)] mt-1">Seats grouped by victory margin size</div>
+                  </div>
+                  {marginData && marginTotal > 0
+                    ? <DonutChart data={marginData} total={marginTotal} label="WITH DATA" />
+                    : <div className="text-sm text-[var(--ink-3)] py-12 text-center">Margin data pending — showing once first wins are declared</div>
+                  }
+                </div>
+              </div>
+            </section>
           </React.Fragment>
         ) : null}
 
-        <section className="max-w-3xl mx-auto px-5 md:px-8 pb-16">
-          <p className="serif dropcap text-[var(--ink-2)] text-[16px] leading-[1.85]">
-            Data streams from the Election Commission of India's public counting portal at results.eci.gov.in,
-            mirrored through a small proxy that refreshes every two minutes. A "leading" seat is not a win — the
-            Returning Officer's declaration is. Margins shown are provisional until the final round of counting
-            concludes in each constituency.
-          </p>
-        </section>
-
         <footer className="border-t border-[var(--rule)]">
-          <div className="max-w-7xl mx-auto px-5 md:px-8 py-8 flex items-center justify-between flex-wrap gap-4">
+          <div className="max-w-7xl mx-auto px-5 md:px-8 py-7 flex items-center justify-between flex-wrap gap-4">
             <div className="mono text-[10px] text-[var(--ink-3)] tracking-[.1em]">
               Source · results.eci.gov.in · Refresh every {REFRESH_MS / 60000} minutes
             </div>
@@ -891,7 +1044,7 @@ function App() {
               {loading ? "Refreshing…" : "Refresh now"}
             </button>
           </div>
-          <div className="max-w-7xl mx-auto px-5 md:px-8 pb-6 mono text-[9px] text-[var(--ink-3)] tracking-[.05em]">
+          <div className="max-w-7xl mx-auto px-5 md:px-8 pb-5 mono text-[9px] text-[var(--ink-3)] tracking-[.05em]">
             Not affiliated with the Election Commission. Results advisory until officially notified (Form-20).
           </div>
         </footer>
@@ -900,7 +1053,6 @@ function App() {
   );
 }
 
-// Mount with try/catch so any error shows up visibly
 try {
   ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 } catch (e) {
