@@ -207,7 +207,8 @@
 
 <script type="text/babel" data-presets="env,react">
 const { useState, useEffect, useMemo, useRef } = React;
-const { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, RadialBarChart, RadialBar } = window.Recharts;
+const Recharts = window.Recharts || {};
+const { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, RadialBarChart, RadialBar } = Recharts;
 
 // ─────────────────────────────────────────────────────────
 const PROXY_URL = "https://us-central1-pickleball-app-1bba7.cloudfunctions.net/tnResults";
