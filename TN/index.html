@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>TN 2026 · The Count</title>
 <meta name="description" content="Live 2026 Tamil Nadu Legislative Assembly election results. 234 seats. Counting May 4." />
-<meta name="theme-color" content="#0B0B0D" />
+<meta name="theme-color" content="#F4EFE1" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,157 +14,187 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
 <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
 
 <style>
   :root{
-    --bg:#0B0B0D;
-    --bg-2:#131319;
-    --bg-3:#1A1A22;
-    --ink:#F5F1E8;
-    --ink-2:#B8B2A3;
-    --ink-3:#6F6A5E;
-    --rule:#26242B;
-    --accent:#E8C547;
-    --accent-2:#FF4D2E;
-    --grid:rgba(245,241,232,0.06);
+    --bg:#F4EFE1;
+    --bg-2:#FBF7EB;
+    --bg-3:#EDE5D1;
+    --ink:#1A1814;
+    --ink-2:#4D4740;
+    --ink-3:#8A8272;
+    --rule:#D9CDB0;
+    --rule-2:#C4B697;
+    --accent:#9B2C1F;     /* oxblood */
+    --accent-2:#C25A2E;   /* burnt sienna */
+    --gold:#B0892A;       /* dark gold */
+    --grid:rgba(26,24,20,0.05);
   }
   html,body{background:var(--bg);color:var(--ink);}
   body{
     font-family:"Syne","Inter",system-ui,sans-serif;
     font-feature-settings:"ss01","cv11";
     background-image:
-      radial-gradient(1200px 600px at 15% -5%, rgba(232,197,71,.08), transparent 55%),
-      radial-gradient(900px 500px at 100% 10%, rgba(255,77,46,.07), transparent 55%),
-      linear-gradient(var(--bg), var(--bg));
-    background-attachment: fixed;
-    min-height:100vh;
+      radial-gradient(900px 500px at 10% -5%, rgba(155,44,31,.05), transparent 55%),
+      radial-gradient(700px 400px at 95% 5%, rgba(176,137,42,.06), transparent 55%);
+    background-attachment:fixed;min-height:100vh;
   }
   .serif{font-family:"Fraunces",Georgia,serif;font-optical-sizing:auto;letter-spacing:-.02em;}
   .mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;}
   .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
 
-  /* grain overlay */
+  /* Paper grain */
   body::before{
-    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.4;mix-blend-mode:overlay;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.08 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.45;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.4  0 0 0 0 0.3  0 0 0 0 0.15  0 0 0 0.08 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   }
   main{position:relative;z-index:2;}
 
-  /* Grid backdrop */
   .gridlines{
     position:absolute;inset:0;pointer-events:none;z-index:0;
     background-image:
       linear-gradient(var(--grid) 1px, transparent 1px),
       linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-    background-size: 48px 48px;
-    mask-image: linear-gradient(180deg, rgba(0,0,0,.9), rgba(0,0,0,0));
+    background-size:48px 48px;
+    mask-image:linear-gradient(180deg, rgba(0,0,0,.8), rgba(0,0,0,0));
   }
 
   .card{
-    background:linear-gradient(180deg, var(--bg-2), rgba(19,19,25,.7));
+    background:linear-gradient(180deg, var(--bg-2), rgba(251,247,235,.7));
     border:1px solid var(--rule);
-    border-radius:18px;
-    backdrop-filter:blur(8px);
+    border-radius:14px;
+    box-shadow:0 1px 0 rgba(26,24,20,.02), 0 2px 20px rgba(26,24,20,.03);
   }
-  .card-dark{background:var(--bg-3);border:1px solid var(--rule);border-radius:14px;}
 
   .chip{display:inline-flex;align-items:center;gap:.35rem;padding:.15rem .55rem;border-radius:999px;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;}
 
-  /* Pulse live dot */
-  .pulse-dot{position:relative;width:7px;height:7px;border-radius:999px;background:#FF4D2E;display:inline-block;}
-  .pulse-dot::after{content:"";position:absolute;inset:-5px;border-radius:999px;border:1px solid #FF4D2E;animation:pulse 1.6s ease-out infinite;}
+  .pulse-dot{position:relative;width:7px;height:7px;border-radius:999px;background:var(--accent);display:inline-block;}
+  .pulse-dot::after{content:"";position:absolute;inset:-5px;border-radius:999px;border:1px solid var(--accent);animation:pulse 1.6s ease-out infinite;}
   @keyframes pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2);opacity:0}}
 
-  /* Ticker animation */
-  @keyframes ticker {
-    0% { transform:translateX(0); }
-    100% { transform:translateX(-50%); }
+  /* Top progress bar loader */
+  .topbar-loader{
+    position:fixed;top:0;left:0;right:0;height:3px;z-index:100;overflow:hidden;
+    background:rgba(155,44,31,.08);
   }
+  .topbar-loader-inner{
+    position:absolute;top:0;bottom:0;left:-30%;width:30%;
+    background:linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation:loaderSlide 1.2s ease-in-out infinite;
+  }
+  @keyframes loaderSlide {
+    0% { left:-30%; } 100% { left:100%; }
+  }
+
+  /* Skeleton loading state */
+  .skeleton{
+    background:linear-gradient(90deg, var(--bg-3) 25%, rgba(237,229,209,.5) 50%, var(--bg-3) 75%);
+    background-size:200% 100%;
+    animation:shimmer 1.5s infinite;
+    border-radius:8px;
+  }
+  @keyframes shimmer { 0% { background-position:-200% 0; } 100% { background-position:200% 0; } }
+
+  /* Ticker */
+  @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
   .ticker-track{animation:ticker 40s linear infinite;will-change:transform;}
 
-  /* Hero number count-up effect */
   @keyframes countIn {
-    from { opacity:0; transform:translateY(20px) scale(.92); letter-spacing:.1em; filter:blur(10px); }
-    to   { opacity:1; transform:translateY(0) scale(1); letter-spacing:-.02em; filter:blur(0); }
+    from{opacity:0;transform:translateY(20px) scale(.92);letter-spacing:.1em;filter:blur(10px);}
+    to  {opacity:1;transform:translateY(0) scale(1);letter-spacing:-.02em;filter:blur(0);}
   }
   .count-in{animation:countIn .9s cubic-bezier(.2,.9,.2,1) both;}
 
-  /* Row hover */
   tbody tr.row-btn{cursor:pointer;transition:background .15s;}
-  tbody tr.row-btn:hover{background:rgba(232,197,71,.05);}
-  tbody tr.row-btn.expanded{background:rgba(232,197,71,.08);}
+  tbody tr.row-btn:hover{background:rgba(155,44,31,.05);}
+  tbody tr.row-btn.expanded{background:rgba(155,44,31,.08);}
   tbody tr{border-top:1px solid var(--rule);}
 
-  /* Detail row */
-  .detail-row td{padding:0;background:#0F0F14;border-top:1px solid var(--rule);}
+  .detail-row td{padding:0;background:#FAF5E5;border-top:1px solid var(--rule);}
   .detail-inner{padding:22px 24px;}
-  .vote-bar{position:relative;height:26px;background:rgba(245,241,232,.04);border-radius:6px;overflow:hidden;}
-  .vote-bar-fill{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;padding:0 10px;color:#fff;font-size:11px;font-weight:700;letter-spacing:.02em;transition:width .6s cubic-bezier(.2,.9,.2,1);}
-
-  /* Big alliance tiles */
-  .alli-tile{
-    position:relative;border-radius:16px;padding:24px;overflow:hidden;
-    background:var(--bg-3);border:1px solid var(--rule);
-    transition:transform .3s cubic-bezier(.2,.9,.2,1), border-color .3s;
+  .vote-bar{position:relative;height:26px;background:rgba(26,24,20,.05);border-radius:6px;overflow:hidden;}
+  .vote-bar-fill{
+    position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;padding:0 10px;
+    color:#fff;font-size:11px;font-weight:700;letter-spacing:.02em;
+    transition:width .6s cubic-bezier(.2,.9,.2,1);
   }
-  .alli-tile:hover{transform:translateY(-2px);}
+
+  .alli-tile{
+    position:relative;border-radius:14px;padding:22px;overflow:hidden;
+    background:var(--bg-2);border:1px solid var(--rule);
+    transition:transform .3s cubic-bezier(.2,.9,.2,1), border-color .3s;
+    box-shadow:0 1px 0 rgba(26,24,20,.02);
+  }
+  .alli-tile:hover{transform:translateY(-2px);border-color:var(--rule-2);}
   .alli-tile .swatch{
     position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;
-    filter:blur(40px);opacity:.55;pointer-events:none;
+    filter:blur(36px);opacity:.32;pointer-events:none;
   }
-  .alli-tile.leader{border-color:var(--accent);}
-  .alli-tile.leader::after{content:"LEADING";position:absolute;top:14px;right:14px;font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.15em;color:var(--accent);}
+  .alli-tile.leader{border-color:var(--accent);background:linear-gradient(180deg, #FDFAEF, var(--bg-2));}
+  .alli-tile.leader::after{content:"LEADING";position:absolute;top:14px;right:14px;font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.15em;color:var(--accent);font-weight:700;}
 
   /* Seat wall tiles */
   .seat-grid{display:grid;gap:3px;grid-template-columns:repeat(26, minmax(0, 1fr));}
-  .seat{aspect-ratio:1;border-radius:3px;background:#1F1E24;transition:transform .15s;}
-  .seat:hover{transform:scale(1.4);z-index:2;position:relative;}
+  .seat{
+    aspect-ratio:1;border-radius:3px;background:#E3D8BB;
+    transition:transform .15s, box-shadow .15s;
+    cursor:pointer;position:relative;
+  }
+  .seat:hover{transform:scale(1.6);z-index:5;box-shadow:0 4px 20px rgba(0,0,0,.25);}
   .seat.leading{opacity:.55;}
 
-  /* Marquee / ticker */
+  /* Seat tooltip */
+  .seat-tip{
+    position:fixed;z-index:1000;pointer-events:none;
+    background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;
+    font-family:"JetBrains Mono",monospace;font-size:11px;
+    box-shadow:0 12px 40px rgba(0,0,0,.3);
+    transform:translate(-50%, -100%) translateY(-12px);
+    max-width:240px;
+  }
+  .seat-tip::after{
+    content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
+    border:6px solid transparent;border-top-color:var(--ink);
+  }
+  .seat-tip .tip-title{font-family:"Fraunces",serif;font-weight:700;font-size:14px;color:var(--bg);letter-spacing:-.01em;margin-bottom:3px;}
+  .seat-tip .tip-row{color:var(--ink-3);opacity:.9;}
+  .seat-tip .tip-swatch{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle;}
+
   .ticker{
     display:flex;overflow:hidden;white-space:nowrap;
     -webkit-mask:linear-gradient(90deg, transparent, #000 80px, #000 calc(100% - 80px), transparent);
     mask:linear-gradient(90deg, transparent, #000 80px, #000 calc(100% - 80px), transparent);
   }
 
-  /* Scrollbar */
   ::-webkit-scrollbar{width:10px;height:10px}
-  ::-webkit-scrollbar-thumb{background:#2E2C34;border-radius:999px}
+  ::-webkit-scrollbar-thumb{background:#C4B697;border-radius:999px}
   ::-webkit-scrollbar-track{background:transparent}
 
-  /* Drop cap */
   .dropcap::first-letter{
     font-family:"Fraunces",serif;font-weight:900;font-size:4em;line-height:.78;
     float:left;padding:6px 12px 0 0;color:var(--accent);
   }
 
-  /* Input */
-  .input{background:var(--bg-3);border:1px solid var(--rule);color:var(--ink);border-radius:10px;padding:.65rem .9rem;font-size:14px;}
-  .input:focus{outline:none;border-color:var(--accent);}
+  .input{background:var(--bg-2);border:1px solid var(--rule);color:var(--ink);border-radius:10px;padding:.65rem .9rem;font-size:14px;}
+  .input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(155,44,31,.08);}
   .input::placeholder{color:var(--ink-3);}
 
-  /* Filter pills */
   .pill{
     font-family:"JetBrains Mono",monospace;font-size:11px;padding:.45rem .8rem;
-    border-radius:8px;border:1px solid var(--rule);color:var(--ink-2);
+    border-radius:8px;border:1px solid var(--rule);color:var(--ink-2);background:var(--bg-2);
     transition:all .15s;white-space:nowrap;cursor:pointer;
   }
   .pill:hover{border-color:var(--ink-2);color:var(--ink);}
-  .pill.active{background:var(--accent);color:#121212;border-color:var(--accent);font-weight:700;}
+  .pill.active{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:700;}
 
-  /* Hero masthead stripe */
   .stripe{
-    background:linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 50%, var(--accent) 100%);
+    background:linear-gradient(90deg, var(--accent) 0%, var(--gold) 50%, var(--accent) 100%);
     background-size:200% 100%;animation:shimmer 6s linear infinite;
     height:3px;border-radius:999px;
   }
-  @keyframes shimmer { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
 
-  /* Staggered reveal */
   .reveal{opacity:0;transform:translateY(8px);animation:reveal .8s cubic-bezier(.2,.9,.2,1) forwards;}
   .reveal-1{animation-delay:.05s;} .reveal-2{animation-delay:.12s;}
   .reveal-3{animation-delay:.2s;}  .reveal-4{animation-delay:.28s;}
@@ -177,20 +207,16 @@
 
 <script type="text/babel" data-presets="env,react">
 const { useState, useEffect, useMemo, useRef } = React;
-const { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, PieChart, Pie, RadialBarChart, RadialBar, Legend } = window.Recharts;
+const { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, RadialBarChart, RadialBar } = window.Recharts;
 
 // ─────────────────────────────────────────────────────────
-// CONFIG
-// ─────────────────────────────────────────────────────────
 const PROXY_URL = "https://us-central1-pickleball-app-1bba7.cloudfunctions.net/tnResults";
-const COUNTING_START = new Date("2026-05-04T02:30:00Z"); // 08:00 IST
+const COUNTING_START = new Date("2026-05-04T02:30:00Z");
 const REFRESH_MS = 120_000;
 const TITLE = "Tamil Nadu";
 const YEAR  = "2026";
 const MAJORITY = 118;
 
-// ─────────────────────────────────────────────────────────
-// HOOKS
 // ─────────────────────────────────────────────────────────
 function useNow(ms=1000){
   const [n,setN]=useState(()=>new Date());
@@ -202,11 +228,12 @@ function useResults(){
   const [data,setData]=useState(null);
   const [err,setErr]=useState(null);
   const [loading,setLoading]=useState(true);
+  const [initialLoad,setInitialLoad]=useState(true);
   const [lastFetch,setLastFetch]=useState(null);
   const t = useRef(null);
 
   async function load(){
-    if (!PROXY_URL){ setLoading(false); return; }
+    if (!PROXY_URL){ setLoading(false); setInitialLoad(false); return; }
     try{
       setLoading(true);
       const r = await fetch(PROXY_URL, { cache:"no-store" });
@@ -214,7 +241,7 @@ function useResults(){
       const j = await r.json();
       setData(j); setErr(null); setLastFetch(new Date());
     }catch(e){ setErr(e.message||"Fetch failed"); }
-    finally{ setLoading(false); }
+    finally{ setLoading(false); setInitialLoad(false); }
   }
 
   useEffect(()=>{
@@ -233,14 +260,14 @@ function useResults(){
   // eslint-disable-next-line
   },[]);
 
-  return { data, err, loading, lastFetch, reload: load };
+  return { data, err, loading, initialLoad, lastFetch, reload: load };
 }
 
 // ─────────────────────────────────────────────────────────
-// UI PIECES
+// UI
 // ─────────────────────────────────────────────────────────
 
-function Masthead({ lastFetch, countingStarted, err, label }){
+function Masthead({ lastFetch, countingStarted, err, loading }){
   return (
     <header className="relative">
       <div className="gridlines"></div>
@@ -248,16 +275,17 @@ function Masthead({ lastFetch, countingStarted, err, label }){
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="mono text-[10px] tracking-[.3em] text-[var(--ink-3)] uppercase">The Count</div>
-            <div className="h-[14px] w-px bg-[var(--rule)]"></div>
+            <div className="h-[14px] w-px bg-[var(--rule-2)]"></div>
             <div className="mono text-[10px] tracking-[.2em] text-[var(--ink-3)]">{(lastFetch||new Date()).toLocaleDateString("en-IN",{weekday:"short",day:"2-digit",month:"short",year:"numeric"})}</div>
           </div>
           <div className="flex items-center gap-3">
+            {loading && <span className="mono text-[10px] text-[var(--gold)] tracking-[.15em] uppercase animate-pulse">Fetching…</span>}
             {countingStarted
-              ? <span className="inline-flex items-center gap-2"><span className="pulse-dot"></span><span className="mono text-[10px] tracking-[.2em] text-[var(--accent-2)]">LIVE</span></span>
-              : <span className="chip" style={{background:"rgba(232,197,71,.12)",color:"var(--accent)"}}>Pre-counting</span>
+              ? <span className="inline-flex items-center gap-2"><span className="pulse-dot"></span><span className="mono text-[10px] tracking-[.2em] text-[var(--accent)]">LIVE</span></span>
+              : <span className="chip" style={{background:"rgba(176,137,42,.15)",color:"var(--gold)"}}>Pre-counting</span>
             }
             {lastFetch && <span className="mono text-[10px] text-[var(--ink-3)] hidden md:inline">Updated {lastFetch.toLocaleTimeString("en-IN")}</span>}
-            {err && <span className="chip" style={{background:"rgba(255,77,46,.15)",color:"#FF7A5C"}}>Error</span>}
+            {err && <span className="chip" style={{background:"rgba(155,44,31,.15)",color:"var(--accent)"}}>Error</span>}
           </div>
         </div>
 
@@ -284,9 +312,9 @@ function Masthead({ lastFetch, countingStarted, err, label }){
 
 function TickerBar({ alliances }){
   if (!alliances || !alliances.length) return null;
-  const items = [...alliances, ...alliances]; // duplicated for seamless loop
+  const items = [...alliances, ...alliances];
   return (
-    <div className="border-y border-[var(--rule)] bg-[var(--bg-2)]/60 backdrop-blur-sm overflow-hidden">
+    <div className="border-y border-[var(--rule)] bg-[var(--bg-3)]/40 backdrop-blur-sm overflow-hidden">
       <div className="ticker py-3">
         <div className="ticker-track inline-flex gap-10 items-center">
           {items.map((a,i)=>(
@@ -405,7 +433,6 @@ function AllianceTiles({ alliances }){
   );
 }
 
-// Horizontal bar of alliance shares, with a majority marker
 function SeatBar({ alliances, total }){
   return (
     <div>
@@ -426,7 +453,6 @@ function SeatBar({ alliances, total }){
             );
           })}
         </div>
-        {/* Majority tick */}
         <div className="absolute top-0 bottom-0" style={{ left:`${(MAJORITY/total)*100}%` }}>
           <div className="h-full w-px bg-[var(--ink)] opacity-80"></div>
           <div className="absolute -top-5 left-1 mono text-[9px] tracking-[.15em] text-[var(--ink)] whitespace-nowrap">MAJORITY ↓</div>
@@ -436,7 +462,6 @@ function SeatBar({ alliances, total }){
   );
 }
 
-// Recharts bar chart of parties (top N)
 function PartyChart({ constituencies, alliances }){
   const data = useMemo(()=>{
     const byParty = {};
@@ -451,22 +476,21 @@ function PartyChart({ constituencies, alliances }){
   },[constituencies]);
 
   const colorByAlliance = Object.fromEntries(alliances.map(a=>[a.id, a.color]));
-
   if (!data.length) return <div className="text-sm text-[var(--ink-3)] py-6">Party data pending…</div>;
 
   return (
     <div style={{ width:"100%", height: Math.max(220, data.length * 32 + 40) }}>
       <ResponsiveContainer>
         <BarChart data={data} layout="vertical" margin={{ top:5, right:30, bottom:5, left:10 }}>
-          <XAxis type="number" stroke="#6F6A5E" fontSize={11} tick={{fill:"#B8B2A3"}} />
-          <YAxis type="category" dataKey="name" stroke="#6F6A5E" fontSize={12} tick={{fill:"#F5F1E8", fontWeight:600}} width={70} />
+          <XAxis type="number" stroke="#8A8272" fontSize={11} tick={{fill:"#4D4740"}} />
+          <YAxis type="category" dataKey="name" stroke="#8A8272" fontSize={12} tick={{fill:"#1A1814", fontWeight:600}} width={70} />
           <Tooltip
-            cursor={{fill:"rgba(232,197,71,.05)"}}
-            contentStyle={{background:"#131319", border:"1px solid #26242B", borderRadius:8, color:"#F5F1E8", fontSize:12, fontFamily:"JetBrains Mono"}}
-            formatter={(v, n)=> [v, n === "total" ? "Total" : n]}
+            cursor={{fill:"rgba(155,44,31,.06)"}}
+            contentStyle={{background:"#1A1814", border:"1px solid #4D4740", borderRadius:8, color:"#F4EFE1", fontSize:12, fontFamily:"JetBrains Mono"}}
+            formatter={(v)=>[v, "Seats"]}
           />
           <Bar dataKey="total" radius={[0,6,6,0]}>
-            {data.map((d,i)=> <Cell key={i} fill={colorByAlliance[d.alliance] || "#6F6A5E"} />)}
+            {data.map((d,i)=> <Cell key={i} fill={colorByAlliance[d.alliance] || "#8A8272"} />)}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -474,10 +498,9 @@ function PartyChart({ constituencies, alliances }){
   );
 }
 
-// Radial progress chart showing lead vs majority
 function MajorityGauge({ alliances }){
   const sorted = [...alliances].sort((a,b)=>(b.won+b.leading)-(a.won+a.leading));
-  const leader = sorted[0] || { won:0, leading:0, color:"#6F6A5E", name:"—" };
+  const leader = sorted[0] || { won:0, leading:0, color:"#8A8272", name:"—" };
   const total = (leader.won || 0) + (leader.leading || 0);
   const pct = Math.min(100, (total / MAJORITY) * 100);
   const data = [{ name: leader.name, value: pct, fill: leader.color }];
@@ -486,7 +509,7 @@ function MajorityGauge({ alliances }){
     <div className="relative" style={{width:"100%", height:220}}>
       <ResponsiveContainer>
         <RadialBarChart innerRadius="72%" outerRadius="100%" data={data} startAngle={90} endAngle={-270}>
-          <RadialBar minAngle={15} background={{fill:"#1F1E24"}} clockWise dataKey="value" cornerRadius={8} />
+          <RadialBar minAngle={15} background={{fill:"#EDE5D1"}} clockWise dataKey="value" cornerRadius={8} />
         </RadialBarChart>
       </ResponsiveContainer>
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -498,32 +521,58 @@ function MajorityGauge({ alliances }){
   );
 }
 
-// Seat-wall: every seat as a tile
-function SeatWall({ constituencies }){
+// Seat wall with real floating tooltip
+function SeatWall({ constituencies, alliances }){
+  const [tip, setTip] = useState(null);
+  const colorByAlliance = Object.fromEntries(alliances.map(a=>[a.id,a.color]));
+
+  function onEnter(e, c){
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTip({
+      x: rect.left + rect.width/2,
+      y: rect.top,
+      c,
+    });
+  }
+  function onLeave(){ setTip(null); }
+
   if (!constituencies?.length) return null;
-  // Pad to 234 so the grid always looks complete
-  const tiles = [...constituencies];
-  const colorByAlliance = {}; // filled in by component below via context not needed; inline fallback below
+
   return (
-    <div className="seat-grid">
-      {tiles.map(c=>{
-        const bg =
-          c.leader.alliance === "spa"    ? "#C8352F" :
-          c.leader.alliance === "nda"    ? "#2E7D32" :
-          c.leader.alliance === "tvk"    ? "#E65100" :
-          c.leader.alliance === "ind"    ? "#2E7D32" :
-          c.leader.alliance === "aimim"  ? "#1E3A8A" :
-          c.status === "pending"         ? "#1F1E24" : "#6F6A5E";
-        const cls = "seat" + (c.status === "leading" ? " leading" : "");
-        const title = `${c.no}. ${c.name} — ${c.leader.party} (${c.status})`;
-        return <div key={c.no} title={title} className={cls} style={{background: bg}}></div>;
-      })}
-    </div>
+    <>
+      <div className="seat-grid">
+        {constituencies.map(c=>{
+          const bg = colorByAlliance[c.leader.alliance] || "#8A8272";
+          const isPending = c.status === "pending";
+          const cls = "seat" + (c.status === "leading" ? " leading" : "");
+          return (
+            <div
+              key={c.no}
+              className={cls}
+              style={{background: isPending ? "#E3D8BB" : bg}}
+              onMouseEnter={e => onEnter(e, c)}
+              onMouseLeave={onLeave}
+            ></div>
+          );
+        })}
+      </div>
+      {tip && (
+        <div className="seat-tip" style={{ left:tip.x + "px", top:tip.y + "px" }}>
+          <div className="tip-title">
+            <span className="tip-swatch" style={{background: colorByAlliance[tip.c.leader.alliance] || "#8A8272"}}></span>
+            {tip.c.no}. {tip.c.name}
+          </div>
+          <div className="tip-row">{tip.c.leader.name}</div>
+          <div className="tip-row" style={{color:"var(--bg)"}}>{tip.c.leader.party} · {tip.c.status}</div>
+          {tip.c.leader.margin > 0 && (
+            <div className="tip-row" style={{marginTop:4}}>margin {tip.c.leader.margin.toLocaleString("en-IN")}</div>
+          )}
+        </div>
+      )}
+    </>
   );
 }
 
-// ──────────────────────────────────────────────────────────
-// Per-constituency detail
 // ──────────────────────────────────────────────────────────
 function ConstituencyDetail({ ac, colorByAlliance }){
   const [state, setState] = useState({ loading:true, data:null, err:null });
@@ -543,8 +592,17 @@ function ConstituencyDetail({ ac, colorByAlliance }){
     return ()=>{ active = false; };
   },[ac]);
 
-  if (state.loading) return <div className="detail-inner mono text-[12px] text-[var(--ink-3)]">Loading candidate details…</div>;
-  if (state.err)     return <div className="detail-inner mono text-[12px]" style={{color:"#FF7A5C"}}>Couldn't load · {state.err}</div>;
+  if (state.loading) return (
+    <div className="detail-inner">
+      <div className="mono text-[11px] text-[var(--ink-3)] mb-3 uppercase tracking-[.18em]">Loading candidates…</div>
+      <div className="space-y-2">
+        <div className="skeleton h-8"></div>
+        <div className="skeleton h-8" style={{width:"80%"}}></div>
+        <div className="skeleton h-8" style={{width:"60%"}}></div>
+      </div>
+    </div>
+  );
+  if (state.err) return <div className="detail-inner mono text-[12px]" style={{color:"var(--accent)"}}>Couldn't load · {state.err}</div>;
 
   const d = state.data;
   if (!d?.candidates?.length) return <div className="detail-inner mono text-[12px] text-[var(--ink-3)]">No candidate data available yet.</div>;
@@ -567,7 +625,7 @@ function ConstituencyDetail({ ac, colorByAlliance }){
       <div className="space-y-2.5">
         {d.candidates.slice(0, 10).map((c, i)=>{
           const w = maxVotes > 0 ? Math.max(2, (c.total / maxVotes) * 100) : 0;
-          const color = colorByAlliance[c.alliance] || "#6F6A5E";
+          const color = colorByAlliance[c.alliance] || "#8A8272";
           const isWinner = i === 0;
           return (
             <div key={c.sn} className="grid grid-cols-12 gap-3 items-center">
@@ -650,10 +708,10 @@ function ConstituencyTable({ constituencies, alliances }){
           <tbody>
             {rows.slice(0,120).map(c=>{
               const chip = c.status==="declared"
-                ? { bg:"rgba(46,125,50,.2)", fg:"#86D992", label:"Won" }
+                ? { bg:"rgba(46,125,50,.15)", fg:"#1F5C22", label:"Won" }
                 : c.status==="leading"
-                ? { bg:"rgba(232,197,71,.15)", fg:"var(--accent)", label:"Leading" }
-                : { bg:"rgba(111,106,94,.2)", fg:"#9C978B", label:"Pending" };
+                ? { bg:"rgba(176,137,42,.18)", fg:"var(--gold)", label:"Leading" }
+                : { bg:"rgba(138,130,114,.15)", fg:"var(--ink-3)", label:"Pending" };
               const expanded = expandedAc === c.no;
               return (
                 <React.Fragment key={c.no}>
@@ -669,7 +727,7 @@ function ConstituencyTable({ constituencies, alliances }){
                     <td className="py-3 pr-3 text-[var(--ink-2)]">{c.leader.name}</td>
                     <td className="py-3 pr-3">
                       <span className="inline-flex items-center gap-1.5">
-                        <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{background:colorByAlliance[c.leader.alliance]||"#6F6A5E"}}></span>
+                        <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{background:colorByAlliance[c.leader.alliance]||"#8A8272"}}></span>
                         <span className="font-medium">{c.leader.party}</span>
                       </span>
                     </td>
@@ -698,11 +756,29 @@ function ConstituencyTable({ constituencies, alliances }){
   );
 }
 
+// Initial-load skeleton
+function InitialLoadingState(){
+  return (
+    <section className="max-w-7xl mx-auto px-5 md:px-8 pt-8 pb-12">
+      <div className="card p-7 md:p-10">
+        <div className="mono text-[10px] tracking-[.2em] text-[var(--gold)] uppercase animate-pulse">Fetching latest results from ECI…</div>
+        <div className="mt-6 space-y-3">
+          <div className="skeleton h-16 w-3/4"></div>
+          <div className="skeleton h-8 w-1/2"></div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
+          {[1,2,3,4].map(i=> <div key={i} className="skeleton h-32"></div>)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─────────────────────────────────────────────────────────
 // APP
 // ─────────────────────────────────────────────────────────
 function App(){
-  const { data, err, loading, lastFetch, reload } = useResults();
+  const { data, err, loading, initialLoad, lastFetch, reload } = useResults();
   const now = useNow(1000);
   const countingStarted = now >= COUNTING_START;
   const hasLiveNumbers = (data?.totals?.declared || 0) + (data?.totals?.leading || 0) > 0;
@@ -710,16 +786,19 @@ function App(){
 
   return (
     <div>
-      <Masthead lastFetch={lastFetch} countingStarted={countingStarted} err={err} label={data?.label} />
+      {loading && <div className="topbar-loader"><div className="topbar-loader-inner"></div></div>}
+
+      <Masthead lastFetch={lastFetch} countingStarted={countingStarted} err={err} loading={loading} />
 
       {data?.alliances && hasLiveNumbers && <TickerBar alliances={data.alliances} />}
 
       <main>
-        {/* Pre-counting hero */}
-        {!hasLiveNumbers && (
+        {initialLoad && <InitialLoadingState />}
+
+        {!initialLoad && !countingStarted && !hasLiveNumbers && (
           <section className="max-w-7xl mx-auto px-5 md:px-8 pt-8 pb-12">
             <div className="card p-7 md:p-12 relative overflow-hidden">
-              <div className="absolute -top-20 -right-20 w-[400px] h-[400px] rounded-full" style={{background:"radial-gradient(circle, rgba(232,197,71,.12), transparent 70%)"}}></div>
+              <div className="absolute -top-20 -right-20 w-[400px] h-[400px] rounded-full" style={{background:"radial-gradient(circle, rgba(155,44,31,.08), transparent 70%)"}}></div>
               <div className="relative">
                 <div className="mono text-[10px] tracking-[.3em] text-[var(--accent)] uppercase">The Count Begins In</div>
                 <div className="mt-6"><Countdown target={COUNTING_START} /></div>
@@ -732,10 +811,8 @@ function App(){
           </section>
         )}
 
-        {/* Live results */}
-        {data?.alliances && data?.constituencies?.length > 0 && (
+        {data?.alliances && hasLiveNumbers && (
           <>
-            {/* Verdict hero + gauge */}
             <section className="max-w-7xl mx-auto px-5 md:px-8 pt-10 pb-10">
               <div className="grid md:grid-cols-[1fr_360px] gap-8 items-center">
                 <div className="reveal reveal-1"><VerdictHero alliances={data.alliances} /></div>
@@ -745,19 +822,16 @@ function App(){
               </div>
             </section>
 
-            {/* Alliance tiles */}
             <section className="max-w-7xl mx-auto px-5 md:px-8 pb-10">
               <AllianceTiles alliances={data.alliances} />
             </section>
 
-            {/* Seat bar */}
             <section className="max-w-7xl mx-auto px-5 md:px-8 pb-12">
               <div className="card p-6 md:p-8">
                 <SeatBar alliances={data.alliances} total={totalSeats} />
               </div>
             </section>
 
-            {/* Party chart + totals */}
             <section className="max-w-7xl mx-auto px-5 md:px-8 pb-10">
               <div className="grid md:grid-cols-[1.5fr_1fr] gap-6">
                 <div className="card p-6 md:p-8">
@@ -777,8 +851,8 @@ function App(){
                   </div>
                   <div className="mt-6 space-y-5">
                     {[
-                      { label:"Declared", value:data.totals?.declared ?? 0, color:"#86D992", sub:"Officially called" },
-                      { label:"Leading",  value:data.totals?.leading ?? 0,  color:"var(--accent)", sub:"Ahead, not declared" },
+                      { label:"Declared", value:data.totals?.declared ?? 0, color:"#1F5C22", sub:"Officially called" },
+                      { label:"Leading",  value:data.totals?.leading ?? 0,  color:"var(--gold)", sub:"Ahead, not declared" },
                       { label:"Pending",  value:data.totals?.pending ?? 0,  color:"var(--ink-3)", sub:"Awaiting first trend" },
                     ].map(r=>(
                       <div key={r.label} className="flex items-baseline justify-between pb-4 border-b border-[var(--rule)] last:border-b-0 last:pb-0">
@@ -794,21 +868,19 @@ function App(){
               </div>
             </section>
 
-            {/* Seat wall */}
             <section className="max-w-7xl mx-auto px-5 md:px-8 pb-12">
               <div className="card p-6 md:p-8">
                 <div className="flex items-baseline justify-between mb-5 flex-wrap gap-2">
                   <div>
                     <div className="mono text-[10px] tracking-[.22em] text-[var(--ink-3)] uppercase">The Wall</div>
                     <h3 className="serif font-bold text-2xl md:text-3xl mt-1">Every seat, one tile</h3>
+                    <div className="mono text-[10px] text-[var(--ink-3)] mt-1">Hover for details · Solid = declared · Faded = leading</div>
                   </div>
-                  <div className="mono text-[10px] text-[var(--ink-3)] hidden md:block">Faded = leading · Solid = declared</div>
                 </div>
-                <SeatWall constituencies={data.constituencies} />
+                <SeatWall constituencies={data.constituencies} alliances={data.alliances} />
               </div>
             </section>
 
-            {/* Constituency search table */}
             <section className="max-w-7xl mx-auto px-5 md:px-8 pb-16">
               <div className="card p-6 md:p-8">
                 <div className="flex items-baseline justify-between mb-5 flex-wrap gap-2">
@@ -824,7 +896,6 @@ function App(){
           </>
         )}
 
-        {/* Editorial note */}
         <section className="max-w-3xl mx-auto px-5 md:px-8 pb-16">
           <p className="serif dropcap text-[var(--ink-2)] text-[16px] leading-[1.85]">
             Data streams from the Election Commission of India's public counting portal at results.eci.gov.in,
@@ -834,14 +905,13 @@ function App(){
           </p>
         </section>
 
-        {/* Footer */}
         <footer className="border-t border-[var(--rule)]">
           <div className="max-w-7xl mx-auto px-5 md:px-8 py-8 flex items-center justify-between flex-wrap gap-4">
             <div className="mono text-[10px] text-[var(--ink-3)] tracking-[.1em]">
               Source · results.eci.gov.in · Refresh every {REFRESH_MS/60000} minutes
             </div>
             <button onClick={reload}
-              className="mono text-[10px] uppercase tracking-[.2em] px-4 py-2 rounded-lg border border-[var(--rule)] text-[var(--ink-2)] hover:bg-[var(--accent)] hover:text-[#121212] hover:border-[var(--accent)] transition">
+              className="mono text-[10px] uppercase tracking-[.2em] px-4 py-2 rounded-lg border border-[var(--rule)] text-[var(--ink-2)] hover:bg-[var(--accent)] hover:text-[var(--bg)] hover:border-[var(--accent)] transition">
               {loading ? "Refreshing…" : "Refresh now"}
             </button>
           </div>
