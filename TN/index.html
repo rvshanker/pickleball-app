@@ -3,63 +3,173 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>Tamil Nadu 2026 · Live Results</title>
-<meta name="description" content="Live 2026 Tamil Nadu Legislative Assembly election results. 234 seats. Counting May 4, 2026." />
-<meta name="theme-color" content="#111111" />
+<title>TN 2026 · The Count</title>
+<meta name="description" content="Live 2026 Tamil Nadu Legislative Assembly election results. 234 seats. Counting May 4." />
+<meta name="theme-color" content="#0B0B0D" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,700&family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@500;700;800&display=swap" rel="stylesheet">
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
 
 <style>
   :root{
-    --bg:#FBFAF7; --card:#FFFFFF; --ink:#111111; --ink-2:#444444; --ink-3:#8A8680;
-    --rule:#E7E3DA; --accent:#C23A2B;
+    --bg:#0B0B0D;
+    --bg-2:#131319;
+    --bg-3:#1A1A22;
+    --ink:#F5F1E8;
+    --ink-2:#B8B2A3;
+    --ink-3:#6F6A5E;
+    --rule:#26242B;
+    --accent:#E8C547;
+    --accent-2:#FF4D2E;
+    --grid:rgba(245,241,232,0.06);
   }
   html,body{background:var(--bg);color:var(--ink);}
-  body{font-family:"Inter",system-ui,sans-serif;font-feature-settings:"ss01","cv11";}
-  .display{font-family:"Fraunces",Georgia,serif;font-optical-sizing:auto;letter-spacing:-.015em;}
+  body{
+    font-family:"Syne","Inter",system-ui,sans-serif;
+    font-feature-settings:"ss01","cv11";
+    background-image:
+      radial-gradient(1200px 600px at 15% -5%, rgba(232,197,71,.08), transparent 55%),
+      radial-gradient(900px 500px at 100% 10%, rgba(255,77,46,.07), transparent 55%),
+      linear-gradient(var(--bg), var(--bg));
+    background-attachment: fixed;
+    min-height:100vh;
+  }
+  .serif{font-family:"Fraunces",Georgia,serif;font-optical-sizing:auto;letter-spacing:-.02em;}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;}
   .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
-  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;}
 
-  .pulse-dot{position:relative;width:8px;height:8px;border-radius:999px;background:#D32F2F;display:inline-block;}
-  .pulse-dot::after{content:"";position:absolute;inset:-4px;border-radius:999px;border:1px solid #D32F2F;animation:pulse 1.6s ease-out infinite;}
-  @keyframes pulse{0%{transform:scale(.7);opacity:.9}100%{transform:scale(1.9);opacity:0}}
+  /* grain overlay */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.4;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.08 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  main{position:relative;z-index:2;}
 
-  .card{background:var(--card);border:1px solid var(--rule);border-radius:14px;}
-  .chip{display:inline-flex;align-items:center;gap:.35rem;padding:.1rem .5rem;border-radius:999px;font-size:11px;font-weight:500;}
+  /* Grid backdrop */
+  .gridlines{
+    position:absolute;inset:0;pointer-events:none;z-index:0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: linear-gradient(180deg, rgba(0,0,0,.9), rgba(0,0,0,0));
+  }
 
-  .bar{position:relative;height:44px;background:#EEE9DC;border-radius:8px;overflow:hidden;border:1px solid var(--rule);}
-  .bar-majority{position:absolute;top:-6px;bottom:-6px;border-left:2px dashed var(--ink);}
-  .bar-majority::after{content:"majority";position:absolute;left:8px;top:-20px;font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--ink);white-space:nowrap;letter-spacing:.04em;}
+  .card{
+    background:linear-gradient(180deg, var(--bg-2), rgba(19,19,25,.7));
+    border:1px solid var(--rule);
+    border-radius:18px;
+    backdrop-filter:blur(8px);
+  }
+  .card-dark{background:var(--bg-3);border:1px solid var(--rule);border-radius:14px;}
 
-  .alli{position:relative;border-radius:14px;padding:18px 20px;color:#fff;overflow:hidden;}
-  .alli::after{content:"";position:absolute;inset:0;background:linear-gradient(140deg, rgba(255,255,255,.15), rgba(0,0,0,.12));pointer-events:none;}
-  .alli .lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.9;font-weight:600;}
-  .alli .big{font-family:"Fraunces",serif;font-weight:700;font-size:64px;line-height:.95;letter-spacing:-.02em;margin-top:6px;}
-  .alli .sub{font-size:12px;opacity:.92;margin-top:6px;font-family:"IBM Plex Mono",monospace;}
+  .chip{display:inline-flex;align-items:center;gap:.35rem;padding:.15rem .55rem;border-radius:999px;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;}
 
+  /* Pulse live dot */
+  .pulse-dot{position:relative;width:7px;height:7px;border-radius:999px;background:#FF4D2E;display:inline-block;}
+  .pulse-dot::after{content:"";position:absolute;inset:-5px;border-radius:999px;border:1px solid #FF4D2E;animation:pulse 1.6s ease-out infinite;}
+  @keyframes pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2);opacity:0}}
+
+  /* Ticker animation */
+  @keyframes ticker {
+    0% { transform:translateX(0); }
+    100% { transform:translateX(-50%); }
+  }
+  .ticker-track{animation:ticker 40s linear infinite;will-change:transform;}
+
+  /* Hero number count-up effect */
+  @keyframes countIn {
+    from { opacity:0; transform:translateY(20px) scale(.92); letter-spacing:.1em; filter:blur(10px); }
+    to   { opacity:1; transform:translateY(0) scale(1); letter-spacing:-.02em; filter:blur(0); }
+  }
+  .count-in{animation:countIn .9s cubic-bezier(.2,.9,.2,1) both;}
+
+  /* Row hover */
+  tbody tr.row-btn{cursor:pointer;transition:background .15s;}
+  tbody tr.row-btn:hover{background:rgba(232,197,71,.05);}
+  tbody tr.row-btn.expanded{background:rgba(232,197,71,.08);}
   tbody tr{border-top:1px solid var(--rule);}
-  .row-btn{cursor:pointer;transition:background .15s;}
-  .row-btn:hover{background:#F7F3E9;}
-  .row-btn.expanded{background:#F3EFE3;}
 
   /* Detail row */
-  .detail-row td{padding:0;background:#FBF7EB;border-top:1px solid var(--rule);}
-  .detail-inner{padding:18px 20px;}
-  .vote-bar{position:relative;height:22px;background:#EEE9DC;border-radius:5px;overflow:hidden;}
-  .vote-bar-fill{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;padding:0 8px;color:#fff;font-size:11px;font-weight:600;}
+  .detail-row td{padding:0;background:#0F0F14;border-top:1px solid var(--rule);}
+  .detail-inner{padding:22px 24px;}
+  .vote-bar{position:relative;height:26px;background:rgba(245,241,232,.04);border-radius:6px;overflow:hidden;}
+  .vote-bar-fill{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;padding:0 10px;color:#fff;font-size:11px;font-weight:700;letter-spacing:.02em;transition:width .6s cubic-bezier(.2,.9,.2,1);}
 
+  /* Big alliance tiles */
+  .alli-tile{
+    position:relative;border-radius:16px;padding:24px;overflow:hidden;
+    background:var(--bg-3);border:1px solid var(--rule);
+    transition:transform .3s cubic-bezier(.2,.9,.2,1), border-color .3s;
+  }
+  .alli-tile:hover{transform:translateY(-2px);}
+  .alli-tile .swatch{
+    position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;
+    filter:blur(40px);opacity:.55;pointer-events:none;
+  }
+  .alli-tile.leader{border-color:var(--accent);}
+  .alli-tile.leader::after{content:"LEADING";position:absolute;top:14px;right:14px;font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.15em;color:var(--accent);}
+
+  /* Seat wall tiles */
+  .seat-grid{display:grid;gap:3px;grid-template-columns:repeat(26, minmax(0, 1fr));}
+  .seat{aspect-ratio:1;border-radius:3px;background:#1F1E24;transition:transform .15s;}
+  .seat:hover{transform:scale(1.4);z-index:2;position:relative;}
+  .seat.leading{opacity:.55;}
+
+  /* Marquee / ticker */
+  .ticker{
+    display:flex;overflow:hidden;white-space:nowrap;
+    -webkit-mask:linear-gradient(90deg, transparent, #000 80px, #000 calc(100% - 80px), transparent);
+    mask:linear-gradient(90deg, transparent, #000 80px, #000 calc(100% - 80px), transparent);
+  }
+
+  /* Scrollbar */
   ::-webkit-scrollbar{width:10px;height:10px}
-  ::-webkit-scrollbar-thumb{background:#D6CFBE;border-radius:999px}
+  ::-webkit-scrollbar-thumb{background:#2E2C34;border-radius:999px}
   ::-webkit-scrollbar-track{background:transparent}
 
-  .link{color:var(--accent);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;}
+  /* Drop cap */
+  .dropcap::first-letter{
+    font-family:"Fraunces",serif;font-weight:900;font-size:4em;line-height:.78;
+    float:left;padding:6px 12px 0 0;color:var(--accent);
+  }
+
+  /* Input */
+  .input{background:var(--bg-3);border:1px solid var(--rule);color:var(--ink);border-radius:10px;padding:.65rem .9rem;font-size:14px;}
+  .input:focus{outline:none;border-color:var(--accent);}
+  .input::placeholder{color:var(--ink-3);}
+
+  /* Filter pills */
+  .pill{
+    font-family:"JetBrains Mono",monospace;font-size:11px;padding:.45rem .8rem;
+    border-radius:8px;border:1px solid var(--rule);color:var(--ink-2);
+    transition:all .15s;white-space:nowrap;cursor:pointer;
+  }
+  .pill:hover{border-color:var(--ink-2);color:var(--ink);}
+  .pill.active{background:var(--accent);color:#121212;border-color:var(--accent);font-weight:700;}
+
+  /* Hero masthead stripe */
+  .stripe{
+    background:linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 50%, var(--accent) 100%);
+    background-size:200% 100%;animation:shimmer 6s linear infinite;
+    height:3px;border-radius:999px;
+  }
+  @keyframes shimmer { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
+
+  /* Staggered reveal */
+  .reveal{opacity:0;transform:translateY(8px);animation:reveal .8s cubic-bezier(.2,.9,.2,1) forwards;}
+  .reveal-1{animation-delay:.05s;} .reveal-2{animation-delay:.12s;}
+  .reveal-3{animation-delay:.2s;}  .reveal-4{animation-delay:.28s;}
+  .reveal-5{animation-delay:.36s;} .reveal-6{animation-delay:.44s;}
+  @keyframes reveal {to{opacity:1;transform:translateY(0);}}
 </style>
 </head>
 <body>
@@ -67,33 +177,17 @@
 
 <script type="text/babel" data-presets="env,react">
 const { useState, useEffect, useMemo, useRef } = React;
+const { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, PieChart, Pie, RadialBarChart, RadialBar, Legend } = window.Recharts;
 
 // ─────────────────────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────────────────────
-const PROXY_URL = "https://us-central1-pickleball-app-1bba7.cloudfunctions.net/tnResults";
-
+const PROXY_URL = "https://us-central1-pickleball-app.cloudfunctions.net/tnResults";
 const COUNTING_START = new Date("2026-05-04T02:30:00Z"); // 08:00 IST
 const REFRESH_MS = 120_000;
-const TITLE = "Tamil Nadu · 2026";
-const SUBTITLE = "17th Legislative Assembly · 234 seats";
+const TITLE = "Tamil Nadu";
+const YEAR  = "2026";
 const MAJORITY = 118;
-
-// ─────────────────────────────────────────────────────────
-// FIXTURE (used only if PROXY_URL is blank)
-// ─────────────────────────────────────────────────────────
-const FIXTURE = (() => {
-  const alliances = [
-    { id:"spa", name:"DMK-led SPA", parties:["DMK"], color:"#C8352F" },
-    { id:"nda", name:"AIADMK+BJP", parties:["AIADMK"], color:"#2E7D32" },
-  ];
-  return {
-    updatedAt: new Date().toISOString(),
-    totals: { declared:0, leading:0, pending:234, total:234 },
-    alliances: alliances.map(a=>({...a, won:0, leading:0})),
-    constituencies: [], __demo: true,
-  };
-})();
 
 // ─────────────────────────────────────────────────────────
 // HOOKS
@@ -105,14 +199,14 @@ function useNow(ms=1000){
 }
 
 function useResults(){
-  const [data,setData]=useState(PROXY_URL ? null : FIXTURE);
+  const [data,setData]=useState(null);
   const [err,setErr]=useState(null);
-  const [loading,setLoading]=useState(!!PROXY_URL);
+  const [loading,setLoading]=useState(true);
   const [lastFetch,setLastFetch]=useState(null);
   const t = useRef(null);
 
   async function load(){
-    if (!PROXY_URL){ setData(FIXTURE); setLastFetch(new Date()); return; }
+    if (!PROXY_URL){ setLoading(false); return; }
     try{
       setLoading(true);
       const r = await fetch(PROXY_URL, { cache:"no-store" });
@@ -143,24 +237,67 @@ function useResults(){
 }
 
 // ─────────────────────────────────────────────────────────
-// UI
+// UI PIECES
 // ─────────────────────────────────────────────────────────
-function Header({ lastFetch, countingStarted, demo, err }){
+
+function Masthead({ lastFetch, countingStarted, err, label }){
   return (
-    <div className="border-b border-[var(--rule)] bg-white/60 backdrop-blur sticky top-0 z-10">
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <span className="display font-bold text-lg">{TITLE}</span>
-          <span className="mono text-[11px] text-[var(--ink-3)] hidden sm:inline">· {SUBTITLE}</span>
+    <header className="relative">
+      <div className="gridlines"></div>
+      <div className="max-w-7xl mx-auto px-5 md:px-8 pt-6 pb-3 relative">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="mono text-[10px] tracking-[.3em] text-[var(--ink-3)] uppercase">The Count</div>
+            <div className="h-[14px] w-px bg-[var(--rule)]"></div>
+            <div className="mono text-[10px] tracking-[.2em] text-[var(--ink-3)]">{(lastFetch||new Date()).toLocaleDateString("en-IN",{weekday:"short",day:"2-digit",month:"short",year:"numeric"})}</div>
+          </div>
+          <div className="flex items-center gap-3">
+            {countingStarted
+              ? <span className="inline-flex items-center gap-2"><span className="pulse-dot"></span><span className="mono text-[10px] tracking-[.2em] text-[var(--accent-2)]">LIVE</span></span>
+              : <span className="chip" style={{background:"rgba(232,197,71,.12)",color:"var(--accent)"}}>Pre-counting</span>
+            }
+            {lastFetch && <span className="mono text-[10px] text-[var(--ink-3)] hidden md:inline">Updated {lastFetch.toLocaleTimeString("en-IN")}</span>}
+            {err && <span className="chip" style={{background:"rgba(255,77,46,.15)",color:"#FF7A5C"}}>Error</span>}
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          {countingStarted
-            ? <><span className="pulse-dot"></span><span className="mono text-[11px]">LIVE</span></>
-            : <span className="mono text-[11px] text-[var(--ink-3)]">Counting May 4 · 8:00 IST</span>
-          }
-          {lastFetch && <span className="mono text-[11px] text-[var(--ink-3)] hidden sm:inline">Updated {lastFetch.toLocaleTimeString()}</span>}
-          {demo && <span className="chip" style={{background:"#FEF3C7",color:"#92400E"}}>Demo data</span>}
-          {err  && <span className="chip" style={{background:"#FEE2E2",color:"#991B1B"}}>Error</span>}
+
+        <div className="stripe mt-4"></div>
+
+        <div className="mt-6 flex items-end justify-between gap-6 flex-wrap">
+          <div>
+            <h1 className="serif font-black text-[54px] md:text-[92px] lg:text-[116px] leading-[.85] tracking-[-.03em]">
+              <span className="count-in block">{TITLE}.</span>
+              <span className="count-in block" style={{animationDelay:".2s", color:"var(--accent)"}}>{YEAR}.</span>
+            </h1>
+          </div>
+          <div className="mb-2">
+            <div className="mono text-[10px] tracking-[.25em] text-[var(--ink-3)] uppercase mb-1">17th Assembly</div>
+            <div className="serif italic text-[var(--ink-2)] text-lg md:text-xl max-w-xs">
+              234 seats. 5.67 crore voters. One hundred and eighteen for a majority.
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function TickerBar({ alliances }){
+  if (!alliances || !alliances.length) return null;
+  const items = [...alliances, ...alliances]; // duplicated for seamless loop
+  return (
+    <div className="border-y border-[var(--rule)] bg-[var(--bg-2)]/60 backdrop-blur-sm overflow-hidden">
+      <div className="ticker py-3">
+        <div className="ticker-track inline-flex gap-10 items-center">
+          {items.map((a,i)=>(
+            <div key={i} className="inline-flex items-center gap-3 shrink-0">
+              <span className="inline-block w-2 h-2 rounded-sm" style={{background:a.color}}></span>
+              <span className="mono text-[11px] tracking-[.12em] uppercase text-[var(--ink-2)]">{a.name}</span>
+              <span className="serif text-2xl font-bold num" style={{color:a.color}}>{a.won + a.leading}</span>
+              <span className="mono text-[10px] text-[var(--ink-3)]">won {a.won} · lead {a.leading}</span>
+              <span className="text-[var(--ink-3)] mx-2">·</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -176,56 +313,91 @@ function Countdown({ target }){
   const s = Math.floor(diff/1000)%60;
   const pad = n => String(n).padStart(2,"0");
   return (
-    <div className="flex items-end gap-5">
-      {[[d,"days"],[pad(h),"hrs"],[pad(m),"min"],[pad(s),"sec"]].map(([v,l])=>(
-        <div key={l}>
-          <div className="display text-5xl md:text-6xl leading-none num">{v}</div>
-          <div className="mono text-[10px] uppercase tracking-[.18em] text-[var(--ink-3)] mt-1">{l}</div>
+    <div className="flex items-end gap-6">
+      {[[d,"days"],[pad(h),"hrs"],[pad(m),"min"],[pad(s),"sec"]].map(([v,l],i)=>(
+        <div key={l} className="reveal" style={{animationDelay:`${0.1 + i*0.05}s`}}>
+          <div className="serif font-bold text-6xl md:text-8xl leading-none num" style={{color:i===0?"var(--accent)":"var(--ink)"}}>{v}</div>
+          <div className="mono text-[10px] uppercase tracking-[.24em] text-[var(--ink-3)] mt-2">{l}</div>
         </div>
       ))}
     </div>
   );
 }
 
-function LeadSummary({ alliances }){
-  if (!alliances || alliances.length===0) return null;
+function VerdictHero({ alliances }){
+  if (!alliances?.length) return null;
   const sorted = [...alliances].map(a=>({...a, total:a.won+a.leading})).sort((a,b)=>b.total-a.total);
   const first = sorted[0];
   const second = sorted[1] || { total:0, name:"" };
   const gap = first.total - second.total;
   const pastMajority = first.total >= MAJORITY;
-  const diff = first.total - MAJORITY;
 
-  let verdictLine;
-  if (first.total === 0) verdictLine = "Counting hasn't started.";
-  else if (pastMajority) verdictLine = `${first.name} has crossed the halfway mark — ${diff} seat${diff!==1?"s":""} above majority.`;
-  else if (gap >= 30) verdictLine = `${first.name} is comfortably ahead — ${gap} seats clear of ${second.name}.`;
-  else if (gap >= 10) verdictLine = `${first.name} is leading, ${gap} seats ahead of ${second.name}.`;
-  else if (gap > 0)   verdictLine = `Close race — ${first.name} narrowly ahead of ${second.name} by ${gap}.`;
-  else                verdictLine = "Neck and neck.";
+  let topLine, subLine;
+  if (first.total === 0){ topLine = "Awaiting first numbers"; subLine = "Counting has not begun."; }
+  else if (pastMajority){
+    topLine = `${first.name} forms government`;
+    subLine = `Past the halfway mark by ${first.total - MAJORITY} seat${first.total - MAJORITY !== 1 ? "s" : ""}.`;
+  } else if (gap >= 30){
+    topLine = `${first.name} sweeping`;
+    subLine = `A commanding lead — ${gap} seats clear of ${second.name}.`;
+  } else if (gap >= 10){
+    topLine = `${first.name} leading`;
+    subLine = `Holding ${gap} seats over ${second.name}.`;
+  } else if (gap > 0){
+    topLine = `${first.name} narrowly ahead`;
+    subLine = `Razor-thin ${gap}-seat lead over ${second.name}.`;
+  } else { topLine = "Neck and neck"; subLine = "A deadlocked night."; }
 
   return (
-    <div>
-      <div className="text-[11px] uppercase tracking-[.16em] text-[var(--ink-3)] font-medium">Who's leading</div>
-      <div className="display font-bold text-3xl md:text-[38px] leading-[1.1] mt-2 tracking-tight">
-        <span style={{color:first.color}}>{first.name}</span>{" "}
-        <span className="num">{first.total}</span>
+    <div className="relative">
+      <div className="mono text-[10px] tracking-[.3em] text-[var(--ink-3)] uppercase">The Verdict</div>
+      <h2 className="serif font-bold text-4xl md:text-6xl lg:text-7xl leading-[.95] mt-3 tracking-tight" style={{color:first.color}}>
+        {topLine}
+      </h2>
+      <div className="serif italic text-[var(--ink-2)] text-xl md:text-2xl mt-4 max-w-2xl">{subLine}</div>
+      <div className="mt-6 flex items-baseline gap-6 flex-wrap">
+        <div>
+          <div className="mono text-[10px] tracking-[.18em] text-[var(--ink-3)] uppercase">Seats</div>
+          <div className="serif font-black text-7xl md:text-8xl num leading-none mt-1" style={{color:first.color}}>{first.total}</div>
+        </div>
+        <div className="text-[var(--ink-3)] serif text-5xl leading-none">/</div>
+        <div>
+          <div className="mono text-[10px] tracking-[.18em] text-[var(--ink-3)] uppercase">Total</div>
+          <div className="serif font-bold text-5xl num leading-none mt-1 text-[var(--ink-2)]">234</div>
+        </div>
+        <div className="text-[var(--ink-3)] serif text-5xl leading-none">·</div>
+        <div>
+          <div className="mono text-[10px] tracking-[.18em] text-[var(--ink-3)] uppercase">Majority</div>
+          <div className="serif font-bold text-5xl num leading-none mt-1">{MAJORITY}</div>
+        </div>
       </div>
-      <div className="text-[15px] md:text-base text-[var(--ink-2)] mt-2">{verdictLine}</div>
     </div>
   );
 }
 
-function AllianceCards({ alliances }){
+function AllianceTiles({ alliances }){
+  const sorted = [...alliances].sort((a,b)=>(b.won+b.leading)-(a.won+a.leading));
+  const leader = sorted[0];
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
-      {alliances.map(a=>{
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {sorted.map((a,i)=>{
         const total = a.won + a.leading;
+        const pct = ((total/234)*100).toFixed(1);
         return (
-          <div key={a.id} className="alli" style={{ background:a.color }}>
-            <div className="lbl">{a.name}</div>
-            <div className="big num">{total}</div>
-            <div className="sub">won {a.won} · leading {a.leading}</div>
+          <div key={a.id} className={"alli-tile reveal reveal-" + (i+1) + (a.id === leader?.id && total > 0 ? " leader" : "")}>
+            <div className="swatch" style={{background:a.color}}></div>
+            <div className="relative">
+              <div className="mono text-[10px] tracking-[.15em] uppercase text-[var(--ink-3)] font-semibold">{a.name}</div>
+              <div className="flex items-baseline gap-2 mt-3">
+                <div className="serif font-bold num text-6xl leading-none" style={{color:a.color}}>{total}</div>
+                <div className="mono text-[11px] text-[var(--ink-3)] mb-1">{pct}%</div>
+              </div>
+              <div className="mt-4 flex items-center gap-3 text-[11px] mono text-[var(--ink-2)]">
+                <span>won <span className="text-[var(--ink)] font-semibold num">{a.won}</span></span>
+                <span className="text-[var(--ink-3)]">·</span>
+                <span>lead <span className="text-[var(--ink)] font-semibold num">{a.leading}</span></span>
+              </div>
+            </div>
           </div>
         );
       })}
@@ -233,80 +405,125 @@ function AllianceCards({ alliances }){
   );
 }
 
+// Horizontal bar of alliance shares, with a majority marker
 function SeatBar({ alliances, total }){
   return (
-    <div className="mt-6">
-      <div className="flex items-center justify-between mb-2 text-[11px] mono text-[var(--ink-3)]">
-        <span>Seat distribution</span>
-        <span>{total} seats · majority {MAJORITY}</span>
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="mono text-[10px] tracking-[.2em] text-[var(--ink-3)] uppercase">Distribution</div>
+        <div className="mono text-[10px] text-[var(--ink-3)]">{total} seats · majority {MAJORITY}</div>
       </div>
-      <div className="bar">
+      <div className="relative h-12 rounded-xl overflow-hidden bg-[var(--bg-3)] border border-[var(--rule)]">
         <div className="absolute inset-0 flex">
           {alliances.map(a=>{
             const pct = ((a.won+a.leading)/total)*100;
             if (pct===0) return null;
             return (
-              <div key={a.id} className="relative h-full flex items-center justify-center text-white"
+              <div key={a.id} className="relative h-full flex items-center justify-center transition-all duration-500"
                    style={{ width:`${pct}%`, background:a.color }}>
-                {pct>7 && <span className="mono text-[12px] font-medium">{a.won+a.leading}</span>}
+                {pct>6 && <span className="mono text-[13px] font-bold text-white num drop-shadow">{a.won+a.leading}</span>}
               </div>
             );
           })}
         </div>
-        <div className="bar-majority" style={{ left:`${(MAJORITY/total)*100}%` }}></div>
+        {/* Majority tick */}
+        <div className="absolute top-0 bottom-0" style={{ left:`${(MAJORITY/total)*100}%` }}>
+          <div className="h-full w-px bg-[var(--ink)] opacity-80"></div>
+          <div className="absolute -top-5 left-1 mono text-[9px] tracking-[.15em] text-[var(--ink)] whitespace-nowrap">MAJORITY ↓</div>
+        </div>
       </div>
     </div>
   );
 }
 
-function PartyTable({ constituencies, alliances }){
-  const byParty = {};
-  constituencies.forEach(c=>{
-    const p = c.leader.party || "—";
-    if (!byParty[p]) byParty[p] = { party:p, alliance:c.leader.alliance, won:0, leading:0 };
-    if (c.status==="declared") byParty[p].won++;
-    else if (c.status==="leading") byParty[p].leading++;
-  });
-  const rows = Object.values(byParty)
-    .map(r=>({ ...r, total:r.won+r.leading }))
-    .filter(r=>r.total>0)
-    .sort((a,b)=>b.total-a.total);
+// Recharts bar chart of parties (top N)
+function PartyChart({ constituencies, alliances }){
+  const data = useMemo(()=>{
+    const byParty = {};
+    constituencies.forEach(c=>{
+      const p = c.leader.party || "—";
+      if (!byParty[p]) byParty[p] = { name:p, won:0, leading:0, alliance:c.leader.alliance, total:0 };
+      if (c.status==="declared") byParty[p].won++;
+      else if (c.status==="leading") byParty[p].leading++;
+      byParty[p].total = byParty[p].won + byParty[p].leading;
+    });
+    return Object.values(byParty).sort((a,b)=>b.total-a.total).slice(0, 12);
+  },[constituencies]);
 
-  const colorByAlliance = Object.fromEntries((alliances||[]).map(a=>[a.id,a.color]));
+  const colorByAlliance = Object.fromEntries(alliances.map(a=>[a.id, a.color]));
 
-  if (rows.length===0) return <div className="text-sm text-[var(--ink-3)] py-4">No party data yet.</div>;
+  if (!data.length) return <div className="text-sm text-[var(--ink-3)] py-6">Party data pending…</div>;
 
   return (
-    <table className="w-full text-sm">
-      <thead>
-        <tr className="text-left text-[10px] uppercase tracking-[.14em] text-[var(--ink-3)]">
-          <th className="py-2 pr-3">Party</th>
-          <th className="py-2 pr-3 text-right">Won</th>
-          <th className="py-2 pr-3 text-right">Leading</th>
-          <th className="py-2 pr-3 text-right">Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map(r=>(
-          <tr key={r.party}>
-            <td className="py-2.5 pr-3">
-              <span className="inline-flex items-center gap-2">
-                <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{background:colorByAlliance[r.alliance]||"#999"}}></span>
-                <span className="font-medium">{r.party}</span>
-              </span>
-            </td>
-            <td className="py-2.5 pr-3 text-right num">{r.won}</td>
-            <td className="py-2.5 pr-3 text-right num text-[var(--ink-3)]">{r.leading}</td>
-            <td className="py-2.5 pr-3 text-right num font-semibold">{r.total}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <div style={{ width:"100%", height: Math.max(220, data.length * 32 + 40) }}>
+      <ResponsiveContainer>
+        <BarChart data={data} layout="vertical" margin={{ top:5, right:30, bottom:5, left:10 }}>
+          <XAxis type="number" stroke="#6F6A5E" fontSize={11} tick={{fill:"#B8B2A3"}} />
+          <YAxis type="category" dataKey="name" stroke="#6F6A5E" fontSize={12} tick={{fill:"#F5F1E8", fontWeight:600}} width={70} />
+          <Tooltip
+            cursor={{fill:"rgba(232,197,71,.05)"}}
+            contentStyle={{background:"#131319", border:"1px solid #26242B", borderRadius:8, color:"#F5F1E8", fontSize:12, fontFamily:"JetBrains Mono"}}
+            formatter={(v, n)=> [v, n === "total" ? "Total" : n]}
+          />
+          <Bar dataKey="total" radius={[0,6,6,0]}>
+            {data.map((d,i)=> <Cell key={i} fill={colorByAlliance[d.alliance] || "#6F6A5E"} />)}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// Radial progress chart showing lead vs majority
+function MajorityGauge({ alliances }){
+  const sorted = [...alliances].sort((a,b)=>(b.won+b.leading)-(a.won+a.leading));
+  const leader = sorted[0] || { won:0, leading:0, color:"#6F6A5E", name:"—" };
+  const total = (leader.won || 0) + (leader.leading || 0);
+  const pct = Math.min(100, (total / MAJORITY) * 100);
+  const data = [{ name: leader.name, value: pct, fill: leader.color }];
+
+  return (
+    <div className="relative" style={{width:"100%", height:220}}>
+      <ResponsiveContainer>
+        <RadialBarChart innerRadius="72%" outerRadius="100%" data={data} startAngle={90} endAngle={-270}>
+          <RadialBar minAngle={15} background={{fill:"#1F1E24"}} clockWise dataKey="value" cornerRadius={8} />
+        </RadialBarChart>
+      </ResponsiveContainer>
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+        <div className="mono text-[9px] tracking-[.25em] text-[var(--ink-3)] uppercase">To Majority</div>
+        <div className="serif font-black num leading-none mt-1" style={{color:leader.color, fontSize:56}}>{total}</div>
+        <div className="mono text-[10px] text-[var(--ink-3)] mt-1">of {MAJORITY} needed</div>
+      </div>
+    </div>
+  );
+}
+
+// Seat-wall: every seat as a tile
+function SeatWall({ constituencies }){
+  if (!constituencies?.length) return null;
+  // Pad to 234 so the grid always looks complete
+  const tiles = [...constituencies];
+  const colorByAlliance = {}; // filled in by component below via context not needed; inline fallback below
+  return (
+    <div className="seat-grid">
+      {tiles.map(c=>{
+        const bg =
+          c.leader.alliance === "spa"    ? "#C8352F" :
+          c.leader.alliance === "nda"    ? "#2E7D32" :
+          c.leader.alliance === "tvk"    ? "#E65100" :
+          c.leader.alliance === "ind"    ? "#2E7D32" :
+          c.leader.alliance === "aimim"  ? "#1E3A8A" :
+          c.status === "pending"         ? "#1F1E24" : "#6F6A5E";
+        const cls = "seat" + (c.status === "leading" ? " leading" : "");
+        const title = `${c.no}. ${c.name} — ${c.leader.party} (${c.status})`;
+        return <div key={c.no} title={title} className={cls} style={{background: bg}}></div>;
+      })}
+    </div>
   );
 }
 
 // ──────────────────────────────────────────────────────────
-// Per-constituency detail — fetches candidate-level vote totals
+// Per-constituency detail
 // ──────────────────────────────────────────────────────────
 function ConstituencyDetail({ ac, colorByAlliance }){
   const [state, setState] = useState({ loading:true, data:null, err:null });
@@ -326,46 +543,48 @@ function ConstituencyDetail({ ac, colorByAlliance }){
     return ()=>{ active = false; };
   },[ac]);
 
-  if (state.loading) return <div className="detail-inner text-[var(--ink-3)] text-sm">Loading candidate details…</div>;
-  if (state.err)     return <div className="detail-inner text-[var(--accent)] text-sm">Couldn't load details · {state.err}</div>;
+  if (state.loading) return <div className="detail-inner mono text-[12px] text-[var(--ink-3)]">Loading candidate details…</div>;
+  if (state.err)     return <div className="detail-inner mono text-[12px]" style={{color:"#FF7A5C"}}>Couldn't load · {state.err}</div>;
 
   const d = state.data;
-  if (!d?.candidates?.length) return <div className="detail-inner text-[var(--ink-3)] text-sm">No candidate data available yet.</div>;
+  if (!d?.candidates?.length) return <div className="detail-inner mono text-[12px] text-[var(--ink-3)]">No candidate data available yet.</div>;
 
   const maxVotes = Math.max(...d.candidates.map(c=>c.total));
 
   return (
     <div className="detail-inner">
-      <div className="flex items-baseline justify-between mb-3 gap-3 flex-wrap">
+      <div className="flex items-baseline justify-between mb-5 gap-3 flex-wrap">
         <div>
-          <div className="text-[10px] uppercase tracking-[.16em] text-[var(--ink-3)]">{d.name} · AC {d.no}</div>
-          <div className="mono text-[12px] text-[var(--ink-2)] mt-0.5">
-            Round {d.round || "—"} · total votes {d.totalVotes.toLocaleString("en-IN")}
-          </div>
+          <div className="mono text-[9px] tracking-[.22em] text-[var(--ink-3)] uppercase">AC {d.no}</div>
+          <div className="serif font-bold text-2xl md:text-3xl mt-1 tracking-tight">{d.name}</div>
+        </div>
+        <div className="text-right">
+          <div className="mono text-[10px] text-[var(--ink-3)]">Round {d.round || "—"}</div>
+          <div className="mono text-[11px] text-[var(--ink-2)] mt-0.5">{d.totalVotes.toLocaleString("en-IN")} votes</div>
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {d.candidates.slice(0, 10).map((c, i)=>{
           const w = maxVotes > 0 ? Math.max(2, (c.total / maxVotes) * 100) : 0;
-          const color = colorByAlliance[c.alliance] || "#8A8680";
+          const color = colorByAlliance[c.alliance] || "#6F6A5E";
           const isWinner = i === 0;
           return (
-            <div key={c.sn} className="grid grid-cols-12 gap-2 items-center">
+            <div key={c.sn} className="grid grid-cols-12 gap-3 items-center">
               <div className="col-span-5 md:col-span-4 min-w-0">
-                <div className="text-[13px] font-medium truncate">{c.name}</div>
-                <div className="mono text-[11px] text-[var(--ink-3)] truncate">{c.partyFull}</div>
+                <div className={"text-[13px] truncate " + (isWinner ? "font-bold" : "font-medium text-[var(--ink-2)]")}>{c.name}</div>
+                <div className="mono text-[10px] text-[var(--ink-3)] truncate mt-0.5">{c.partyFull}</div>
               </div>
               <div className="col-span-5 md:col-span-6">
                 <div className="vote-bar">
-                  <div className="vote-bar-fill" style={{ width:`${w}%`, background:color, opacity: isWinner ? 1 : 0.65 }}>
-                    {w > 20 && <span className="num">{c.total.toLocaleString("en-IN")}</span>}
+                  <div className="vote-bar-fill" style={{ width:`${w}%`, background:color, opacity: isWinner ? 1 : 0.55 }}>
+                    {w > 22 && <span className="num">{c.total.toLocaleString("en-IN")}</span>}
                   </div>
                 </div>
               </div>
-              <div className="col-span-2 text-right num text-[13px]">
-                <div>{c.pct.toFixed(1)}%</div>
-                {w <= 20 && <div className="mono text-[10px] text-[var(--ink-3)]">{c.total.toLocaleString("en-IN")}</div>}
+              <div className="col-span-2 text-right">
+                <div className="num text-[13px] font-bold">{c.pct.toFixed(1)}%</div>
+                {w <= 22 && <div className="mono text-[10px] text-[var(--ink-3)] num">{c.total.toLocaleString("en-IN")}</div>}
               </div>
             </div>
           );
@@ -373,7 +592,7 @@ function ConstituencyDetail({ ac, colorByAlliance }){
       </div>
 
       {d.candidates.length > 10 && (
-        <div className="mono text-[11px] text-[var(--ink-3)] mt-3">+{d.candidates.length - 10} more candidates</div>
+        <div className="mono text-[10px] text-[var(--ink-3)] mt-4">+{d.candidates.length - 10} more candidates</div>
       )}
     </div>
   );
@@ -401,17 +620,13 @@ function ConstituencyTable({ constituencies, alliances }){
 
   return (
     <div>
-      <div className="flex flex-col md:flex-row md:items-center gap-3 mb-4">
+      <div className="flex flex-col md:flex-row md:items-center gap-3 mb-5">
         <input value={q} onChange={e=>setQ(e.target.value)}
           placeholder="Search constituency, candidate, or party…"
-          className="flex-1 bg-white border border-[var(--rule)] rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[var(--ink)] transition" />
-        <div className="flex gap-1 overflow-x-auto">
+          className="input flex-1" />
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
           {[["all","All"],["declared","Won"],["leading","Leading"],["close","Close"],["pending","Pending"]].map(([k,l])=>(
-            <button key={k} onClick={()=>setFilter(k)}
-              className={"mono text-[11px] px-3 py-1.5 rounded-md border transition whitespace-nowrap " +
-                (filter===k ? "bg-[var(--ink)] text-white border-[var(--ink)]" : "border-[var(--rule)] text-[var(--ink-2)] hover:border-[var(--ink)]")}>
-              {l}
-            </button>
+            <button key={k} onClick={()=>setFilter(k)} className={"pill " + (filter===k?"active":"")}>{l}</button>
           ))}
         </div>
       </div>
@@ -419,48 +634,48 @@ function ConstituencyTable({ constituencies, alliances }){
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-[10px] uppercase tracking-[.14em] text-[var(--ink-3)]">
-              <th className="py-2 pr-3 w-10">#</th>
-              <th className="py-2 pr-3">Constituency</th>
-              <th className="py-2 pr-3">Leader</th>
-              <th className="py-2 pr-3">Party</th>
-              <th className="py-2 pr-3 text-right">Round</th>
-              <th className="py-2 pr-3 text-right cursor-pointer hover:text-[var(--ink)]"
+            <tr className="text-left mono text-[9px] uppercase tracking-[.18em] text-[var(--ink-3)]">
+              <th className="py-3 pr-3 w-10">#</th>
+              <th className="py-3 pr-3">Constituency</th>
+              <th className="py-3 pr-3">Leader</th>
+              <th className="py-3 pr-3">Party</th>
+              <th className="py-3 pr-3 text-right">Round</th>
+              <th className="py-3 pr-3 text-right cursor-pointer hover:text-[var(--ink)]"
                   onClick={()=>setSort(sort==="margin-asc"?"margin-desc":sort==="margin-desc"?"number":"margin-asc")}>
                 Margin {sort==="margin-asc"?"↑":sort==="margin-desc"?"↓":""}
               </th>
-              <th className="py-2 pr-3">Status</th>
+              <th className="py-3 pr-3">Status</th>
             </tr>
           </thead>
           <tbody>
             {rows.slice(0,120).map(c=>{
               const chip = c.status==="declared"
-                ? { bg:"#DCFCE7", fg:"#166534", label:"Won" }
+                ? { bg:"rgba(46,125,50,.2)", fg:"#86D992", label:"Won" }
                 : c.status==="leading"
-                ? { bg:"#FEF3C7", fg:"#92400E", label:"Leading" }
-                : { bg:"#F3F4F6", fg:"#6B7280", label:"Pending" };
+                ? { bg:"rgba(232,197,71,.15)", fg:"var(--accent)", label:"Leading" }
+                : { bg:"rgba(111,106,94,.2)", fg:"#9C978B", label:"Pending" };
               const expanded = expandedAc === c.no;
               return (
                 <React.Fragment key={c.no}>
                   <tr className={"row-btn" + (expanded ? " expanded" : "")}
                       onClick={()=>setExpandedAc(expanded ? null : c.no)}>
-                    <td className="py-2.5 pr-3 mono text-[var(--ink-3)]">
+                    <td className="py-3 pr-3 mono text-[var(--ink-3)]">
                       <span className="inline-flex items-center gap-1.5">
-                        <span className="text-[10px] text-[var(--ink-3)]">{expanded ? "▾" : "▸"}</span>
+                        <span className="text-[var(--accent)] text-[10px]">{expanded ? "▾" : "▸"}</span>
                         {c.no}
                       </span>
                     </td>
-                    <td className="py-2.5 pr-3 font-medium">{c.name}</td>
-                    <td className="py-2.5 pr-3">{c.leader.name}</td>
-                    <td className="py-2.5 pr-3">
+                    <td className="py-3 pr-3 font-semibold text-[var(--ink)]">{c.name}</td>
+                    <td className="py-3 pr-3 text-[var(--ink-2)]">{c.leader.name}</td>
+                    <td className="py-3 pr-3">
                       <span className="inline-flex items-center gap-1.5">
-                        <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{background:colorByAlliance[c.leader.alliance]||"#999"}}></span>
-                        <span>{c.leader.party}</span>
+                        <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{background:colorByAlliance[c.leader.alliance]||"#6F6A5E"}}></span>
+                        <span className="font-medium">{c.leader.party}</span>
                       </span>
                     </td>
-                    <td className="py-2.5 pr-3 text-right num text-[var(--ink-3)]">{c.round || "—"}</td>
-                    <td className="py-2.5 pr-3 text-right num">{c.leader.margin ? c.leader.margin.toLocaleString("en-IN") : "—"}</td>
-                    <td className="py-2.5 pr-3">
+                    <td className="py-3 pr-3 text-right mono text-[12px] text-[var(--ink-3)]">{c.round || "—"}</td>
+                    <td className="py-3 pr-3 text-right num font-medium">{c.leader.margin ? c.leader.margin.toLocaleString("en-IN") : "—"}</td>
+                    <td className="py-3 pr-3">
                       <span className="chip" style={{background:chip.bg, color:chip.fg}}>{chip.label}</span>
                     </td>
                   </tr>
@@ -476,8 +691,8 @@ function ConstituencyTable({ constituencies, alliances }){
             })}
           </tbody>
         </table>
-        {rows.length>120 && <div className="mono text-[11px] text-[var(--ink-3)] mt-3">Showing first 120 of {rows.length}. Search to narrow.</div>}
-        {rows.length===0 && <div className="text-sm text-[var(--ink-3)] py-8 text-center">No matches.</div>}
+        {rows.length>120 && <div className="mono text-[10px] text-[var(--ink-3)] mt-4">Showing first 120 of {rows.length}. Refine your search.</div>}
+        {rows.length===0 && <div className="text-center py-10 text-[var(--ink-3)] text-sm">No matches.</div>}
       </div>
     </div>
   );
@@ -494,88 +709,147 @@ function App(){
   const totalSeats = data?.totals?.total || 234;
 
   return (
-    <div className="min-h-screen pb-20">
-      <Header lastFetch={lastFetch} countingStarted={countingStarted} demo={data?.__demo} err={err} />
+    <div>
+      <Masthead lastFetch={lastFetch} countingStarted={countingStarted} err={err} label={data?.label} />
 
-      {!countingStarted && !hasLiveNumbers && (
-        <section className="max-w-6xl mx-auto px-4 md:px-6 pt-10 md:pt-14">
-          <div className="card p-6 md:p-10">
-            <div className="text-[11px] uppercase tracking-[.18em] text-[var(--ink-3)]">Counting begins in</div>
-            <div className="mt-4"><Countdown target={COUNTING_START} /></div>
-            <div className="mt-6 text-[15px] text-[var(--ink-2)] max-w-xl">
-              Polling is on Thursday, April 23. Counting begins Monday, May 4 at 8:00 AM IST.
-              This page will show live alliance totals, party breakdown, and every constituency result as ECI publishes them.
-            </div>
-          </div>
-        </section>
-      )}
+      {data?.alliances && hasLiveNumbers && <TickerBar alliances={data.alliances} />}
 
-      {data?.alliances && hasLiveNumbers && (
-        <section className="max-w-6xl mx-auto px-4 md:px-6 pt-6 md:pt-10">
-          <div className="card p-5 md:p-7">
-            <LeadSummary alliances={data.alliances} />
-            <AllianceCards alliances={data.alliances} />
-            <SeatBar alliances={data.alliances} total={totalSeats} />
-            <div className="mt-5 grid grid-cols-3 gap-3 max-w-md">
-              <div>
-                <div className="text-[10px] uppercase tracking-[.14em] text-[var(--ink-3)]">Won</div>
-                <div className="display text-3xl font-bold num mt-1">{data.totals?.declared ?? "—"}</div>
-              </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-[.14em] text-[var(--ink-3)]">Leading</div>
-                <div className="display text-3xl font-bold num mt-1">{data.totals?.leading ?? "—"}</div>
-              </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-[.14em] text-[var(--ink-3)]">Pending</div>
-                <div className="display text-3xl font-bold num mt-1 text-[var(--ink-3)]">{data.totals?.pending ?? "—"}</div>
+      <main>
+        {/* Pre-counting hero */}
+        {!countingStarted && !hasLiveNumbers && (
+          <section className="max-w-7xl mx-auto px-5 md:px-8 pt-8 pb-12">
+            <div className="card p-7 md:p-12 relative overflow-hidden">
+              <div className="absolute -top-20 -right-20 w-[400px] h-[400px] rounded-full" style={{background:"radial-gradient(circle, rgba(232,197,71,.12), transparent 70%)"}}></div>
+              <div className="relative">
+                <div className="mono text-[10px] tracking-[.3em] text-[var(--accent)] uppercase">The Count Begins In</div>
+                <div className="mt-6"><Countdown target={COUNTING_START} /></div>
+                <div className="mt-10 max-w-2xl serif italic text-lg md:text-xl text-[var(--ink-2)] leading-relaxed">
+                  Polling, Thursday the 23<sup>rd</sup> of April. Counting, the 4<sup>th</sup> of May at eight in the morning IST.
+                  Every constituency, every candidate, every vote — as the Election Commission publishes them.
+                </div>
               </div>
             </div>
-          </div>
-        </section>
-      )}
+          </section>
+        )}
 
-      {data?.constituencies && data.constituencies.length > 0 && (
-        <section className="max-w-6xl mx-auto px-4 md:px-6 mt-6">
-          <div className="card p-5 md:p-7">
-            <div className="flex items-baseline justify-between">
-              <h2 className="display text-2xl md:text-3xl font-bold">Party-wise results</h2>
-              <span className="mono text-[11px] text-[var(--ink-3)]">{totalSeats} total</span>
-            </div>
-            <div className="mt-3"><PartyTable constituencies={data.constituencies} alliances={data.alliances} /></div>
-          </div>
-        </section>
-      )}
-
-      {data?.constituencies && data.constituencies.length > 0 && (
-        <section className="max-w-6xl mx-auto px-4 md:px-6 mt-6">
-          <div className="card p-5 md:p-7">
-            <div className="flex items-baseline justify-between mb-4">
-              <div>
-                <h2 className="display text-2xl md:text-3xl font-bold">Every constituency</h2>
-                <div className="mono text-[11px] text-[var(--ink-3)] mt-1">Click any row to see candidate-level vote totals</div>
+        {/* Live results */}
+        {data?.alliances && hasLiveNumbers && (
+          <>
+            {/* Verdict hero + gauge */}
+            <section className="max-w-7xl mx-auto px-5 md:px-8 pt-10 pb-10">
+              <div className="grid md:grid-cols-[1fr_360px] gap-8 items-center">
+                <div className="reveal reveal-1"><VerdictHero alliances={data.alliances} /></div>
+                <div className="card p-5 reveal reveal-3">
+                  <MajorityGauge alliances={data.alliances} />
+                </div>
               </div>
-              <span className="mono text-[11px] text-[var(--ink-3)] hidden md:inline">Tap Margin to sort</span>
-            </div>
-            <ConstituencyTable constituencies={data.constituencies} alliances={data.alliances} />
-          </div>
-        </section>
-      )}
+            </section>
 
-      <footer className="max-w-6xl mx-auto px-4 md:px-6 mt-8">
-        <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] mono text-[var(--ink-3)]">
-          <div>
-            Source · <a className="link" href="https://results.eci.gov.in" target="_blank" rel="noreferrer">results.eci.gov.in</a>
-            {" · "}Refresh every {REFRESH_MS/60000} min during counting
+            {/* Alliance tiles */}
+            <section className="max-w-7xl mx-auto px-5 md:px-8 pb-10">
+              <AllianceTiles alliances={data.alliances} />
+            </section>
+
+            {/* Seat bar */}
+            <section className="max-w-7xl mx-auto px-5 md:px-8 pb-12">
+              <div className="card p-6 md:p-8">
+                <SeatBar alliances={data.alliances} total={totalSeats} />
+              </div>
+            </section>
+
+            {/* Party chart + totals */}
+            <section className="max-w-7xl mx-auto px-5 md:px-8 pb-10">
+              <div className="grid md:grid-cols-[1.5fr_1fr] gap-6">
+                <div className="card p-6 md:p-8">
+                  <div className="flex items-baseline justify-between mb-5 flex-wrap gap-2">
+                    <div>
+                      <div className="mono text-[10px] tracking-[.22em] text-[var(--ink-3)] uppercase">Breakdown</div>
+                      <h3 className="serif font-bold text-2xl md:text-3xl mt-1">By the party</h3>
+                    </div>
+                    <div className="mono text-[10px] text-[var(--ink-3)]">Top 12 · by seats</div>
+                  </div>
+                  <PartyChart constituencies={data.constituencies} alliances={data.alliances} />
+                </div>
+                <div className="card p-6 md:p-8 flex flex-col justify-between">
+                  <div>
+                    <div className="mono text-[10px] tracking-[.22em] text-[var(--ink-3)] uppercase">Status</div>
+                    <h3 className="serif font-bold text-2xl md:text-3xl mt-1">As of now</h3>
+                  </div>
+                  <div className="mt-6 space-y-5">
+                    {[
+                      { label:"Declared", value:data.totals?.declared ?? 0, color:"#86D992", sub:"Officially called" },
+                      { label:"Leading",  value:data.totals?.leading ?? 0,  color:"var(--accent)", sub:"Ahead, not declared" },
+                      { label:"Pending",  value:data.totals?.pending ?? 0,  color:"var(--ink-3)", sub:"Awaiting first trend" },
+                    ].map(r=>(
+                      <div key={r.label} className="flex items-baseline justify-between pb-4 border-b border-[var(--rule)] last:border-b-0 last:pb-0">
+                        <div>
+                          <div className="mono text-[10px] tracking-[.18em] text-[var(--ink-3)] uppercase">{r.label}</div>
+                          <div className="text-[11px] text-[var(--ink-3)] mt-0.5">{r.sub}</div>
+                        </div>
+                        <div className="serif font-bold text-5xl num leading-none" style={{color:r.color}}>{r.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Seat wall */}
+            <section className="max-w-7xl mx-auto px-5 md:px-8 pb-12">
+              <div className="card p-6 md:p-8">
+                <div className="flex items-baseline justify-between mb-5 flex-wrap gap-2">
+                  <div>
+                    <div className="mono text-[10px] tracking-[.22em] text-[var(--ink-3)] uppercase">The Wall</div>
+                    <h3 className="serif font-bold text-2xl md:text-3xl mt-1">Every seat, one tile</h3>
+                  </div>
+                  <div className="mono text-[10px] text-[var(--ink-3)] hidden md:block">Faded = leading · Solid = declared</div>
+                </div>
+                <SeatWall constituencies={data.constituencies} />
+              </div>
+            </section>
+
+            {/* Constituency search table */}
+            <section className="max-w-7xl mx-auto px-5 md:px-8 pb-16">
+              <div className="card p-6 md:p-8">
+                <div className="flex items-baseline justify-between mb-5 flex-wrap gap-2">
+                  <div>
+                    <div className="mono text-[10px] tracking-[.22em] text-[var(--ink-3)] uppercase">The Map</div>
+                    <h3 className="serif font-bold text-2xl md:text-3xl mt-1">Every constituency</h3>
+                    <div className="mono text-[10px] text-[var(--ink-3)] mt-1">Tap a row to see full candidate vote totals</div>
+                  </div>
+                </div>
+                <ConstituencyTable constituencies={data.constituencies} alliances={data.alliances} />
+              </div>
+            </section>
+          </>
+        )}
+
+        {/* Editorial note */}
+        <section className="max-w-3xl mx-auto px-5 md:px-8 pb-16">
+          <p className="serif dropcap text-[var(--ink-2)] text-[16px] leading-[1.85]">
+            Data streams from the Election Commission of India's public counting portal at results.eci.gov.in,
+            mirrored through a small proxy that refreshes every two minutes. A "leading" seat is not a win — the
+            Returning Officer's declaration is. Margins shown are provisional until the final round of counting
+            concludes in each constituency.
+          </p>
+        </section>
+
+        {/* Footer */}
+        <footer className="border-t border-[var(--rule)]">
+          <div className="max-w-7xl mx-auto px-5 md:px-8 py-8 flex items-center justify-between flex-wrap gap-4">
+            <div className="mono text-[10px] text-[var(--ink-3)] tracking-[.1em]">
+              Source · results.eci.gov.in · Refresh every {REFRESH_MS/60000} minutes
+            </div>
+            <button onClick={reload}
+              className="mono text-[10px] uppercase tracking-[.2em] px-4 py-2 rounded-lg border border-[var(--rule)] text-[var(--ink-2)] hover:bg-[var(--accent)] hover:text-[#121212] hover:border-[var(--accent)] transition">
+              {loading ? "Refreshing…" : "Refresh now"}
+            </button>
           </div>
-          <button onClick={reload}
-            className="px-3 py-1.5 rounded-md border border-[var(--rule)] hover:bg-[var(--ink)] hover:text-white hover:border-[var(--ink)] transition uppercase tracking-[.14em]">
-            {loading ? "Refreshing…" : "Refresh"}
-          </button>
-        </div>
-        <div className="mt-3 text-[11px] mono text-[var(--ink-3)]">
-          Not affiliated with the Election Commission. Leading ≠ declared. Results advisory until officially notified (Form-20).
-        </div>
-      </footer>
+          <div className="max-w-7xl mx-auto px-5 md:px-8 pb-6 mono text-[9px] text-[var(--ink-3)] tracking-[.05em]">
+            Not affiliated with the Election Commission. Results advisory until officially notified (Form-20).
+          </div>
+        </footer>
+      </main>
     </div>
   );
 }
