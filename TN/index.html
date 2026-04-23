@@ -4,18 +4,18 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>TN 2026 · The Count</title>
-<meta name="description" content="Live 2026 Tamil Nadu Legislative Assembly election results. 234 seats. Counting May 4." />
 <meta name="theme-color" content="#F4EFE1" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,700&family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;0,9..144,900;1,9..144,400&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
-<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
 <style>
   :root{
@@ -27,39 +27,28 @@
     --ink-3:#8A8272;
     --rule:#D9CDB0;
     --rule-2:#C4B697;
-    --accent:#9B2C1F;     /* oxblood */
-    --accent-2:#C25A2E;   /* burnt sienna */
-    --gold:#B0892A;       /* dark gold */
+    --accent:#9B2C1F;
+    --accent-2:#C25A2E;
+    --gold:#B0892A;
     --grid:rgba(26,24,20,0.05);
   }
   html,body{background:var(--bg);color:var(--ink);}
   body{
-    font-family:"Syne","Inter",system-ui,sans-serif;
-    font-feature-settings:"ss01","cv11";
+    font-family:"Inter",system-ui,sans-serif;
     background-image:
       radial-gradient(900px 500px at 10% -5%, rgba(155,44,31,.05), transparent 55%),
       radial-gradient(700px 400px at 95% 5%, rgba(176,137,42,.06), transparent 55%);
     background-attachment:fixed;min-height:100vh;
   }
-  .serif{font-family:"Fraunces",Georgia,serif;font-optical-sizing:auto;letter-spacing:-.02em;}
+  .serif{font-family:"Fraunces",Georgia,serif;letter-spacing:-.02em;}
   .mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;}
-  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
+  .num{font-variant-numeric:tabular-nums;}
 
-  /* Paper grain */
   body::before{
-    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.45;mix-blend-mode:multiply;
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.4;mix-blend-mode:multiply;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.4  0 0 0 0 0.3  0 0 0 0 0.15  0 0 0 0.08 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   }
   main{position:relative;z-index:2;}
-
-  .gridlines{
-    position:absolute;inset:0;pointer-events:none;z-index:0;
-    background-image:
-      linear-gradient(var(--grid) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-    background-size:48px 48px;
-    mask-image:linear-gradient(180deg, rgba(0,0,0,.8), rgba(0,0,0,0));
-  }
 
   .card{
     background:linear-gradient(180deg, var(--bg-2), rgba(251,247,235,.7));
@@ -74,38 +63,15 @@
   .pulse-dot::after{content:"";position:absolute;inset:-5px;border-radius:999px;border:1px solid var(--accent);animation:pulse 1.6s ease-out infinite;}
   @keyframes pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2);opacity:0}}
 
-  /* Top progress bar loader */
-  .topbar-loader{
-    position:fixed;top:0;left:0;right:0;height:3px;z-index:100;overflow:hidden;
-    background:rgba(155,44,31,.08);
-  }
-  .topbar-loader-inner{
-    position:absolute;top:0;bottom:0;left:-30%;width:30%;
-    background:linear-gradient(90deg, transparent, var(--accent), transparent);
-    animation:loaderSlide 1.2s ease-in-out infinite;
-  }
-  @keyframes loaderSlide {
-    0% { left:-30%; } 100% { left:100%; }
-  }
+  .topbar-loader{position:fixed;top:0;left:0;right:0;height:3px;z-index:100;overflow:hidden;background:rgba(155,44,31,.08);}
+  .topbar-loader-inner{position:absolute;top:0;bottom:0;left:-30%;width:30%;background:linear-gradient(90deg, transparent, var(--accent), transparent);animation:loaderSlide 1.2s ease-in-out infinite;}
+  @keyframes loaderSlide {0%{left:-30%}100%{left:100%}}
 
-  /* Skeleton loading state */
-  .skeleton{
-    background:linear-gradient(90deg, var(--bg-3) 25%, rgba(237,229,209,.5) 50%, var(--bg-3) 75%);
-    background-size:200% 100%;
-    animation:shimmer 1.5s infinite;
-    border-radius:8px;
-  }
-  @keyframes shimmer { 0% { background-position:-200% 0; } 100% { background-position:200% 0; } }
+  .skeleton{background:linear-gradient(90deg, var(--bg-3) 25%, rgba(237,229,209,.5) 50%, var(--bg-3) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px;}
+  @keyframes shimmer {0%{background-position:-200% 0}100%{background-position:200% 0}}
 
-  /* Ticker */
-  @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+  @keyframes ticker {0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
   .ticker-track{animation:ticker 40s linear infinite;will-change:transform;}
-
-  @keyframes countIn {
-    from{opacity:0;transform:translateY(20px) scale(.92);letter-spacing:.1em;filter:blur(10px);}
-    to  {opacity:1;transform:translateY(0) scale(1);letter-spacing:-.02em;filter:blur(0);}
-  }
-  .count-in{animation:countIn .9s cubic-bezier(.2,.9,.2,1) both;}
 
   tbody tr.row-btn{cursor:pointer;transition:background .15s;}
   tbody tr.row-btn:hover{background:rgba(155,44,31,.05);}
@@ -115,178 +81,150 @@
   .detail-row td{padding:0;background:#FAF5E5;border-top:1px solid var(--rule);}
   .detail-inner{padding:22px 24px;}
   .vote-bar{position:relative;height:26px;background:rgba(26,24,20,.05);border-radius:6px;overflow:hidden;}
-  .vote-bar-fill{
-    position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;padding:0 10px;
-    color:#fff;font-size:11px;font-weight:700;letter-spacing:.02em;
-    transition:width .6s cubic-bezier(.2,.9,.2,1);
-  }
+  .vote-bar-fill{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;padding:0 10px;color:#fff;font-size:11px;font-weight:700;}
 
-  .alli-tile{
-    position:relative;border-radius:14px;padding:22px;overflow:hidden;
-    background:var(--bg-2);border:1px solid var(--rule);
-    transition:transform .3s cubic-bezier(.2,.9,.2,1), border-color .3s;
-    box-shadow:0 1px 0 rgba(26,24,20,.02);
-  }
+  .alli-tile{position:relative;border-radius:14px;padding:22px;overflow:hidden;background:var(--bg-2);border:1px solid var(--rule);transition:transform .3s, border-color .3s;}
   .alli-tile:hover{transform:translateY(-2px);border-color:var(--rule-2);}
-  .alli-tile .swatch{
-    position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;
-    filter:blur(36px);opacity:.32;pointer-events:none;
-  }
-  .alli-tile.leader{border-color:var(--accent);background:linear-gradient(180deg, #FDFAEF, var(--bg-2));}
+  .alli-tile .swatch{position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;filter:blur(36px);opacity:.32;pointer-events:none;}
+  .alli-tile.leader{border-color:var(--accent);}
   .alli-tile.leader::after{content:"LEADING";position:absolute;top:14px;right:14px;font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.15em;color:var(--accent);font-weight:700;}
 
-  /* Seat wall tiles */
   .seat-grid{display:grid;gap:3px;grid-template-columns:repeat(26, minmax(0, 1fr));}
-  .seat{
-    aspect-ratio:1;border-radius:3px;background:#E3D8BB;
-    transition:transform .15s, box-shadow .15s;
-    cursor:pointer;position:relative;
-  }
+  .seat{aspect-ratio:1;border-radius:3px;background:#E3D8BB;transition:transform .15s, box-shadow .15s;cursor:pointer;position:relative;}
   .seat:hover{transform:scale(1.6);z-index:5;box-shadow:0 4px 20px rgba(0,0,0,.25);}
   .seat.leading{opacity:.55;}
 
-  /* Seat tooltip */
-  .seat-tip{
-    position:fixed;z-index:1000;pointer-events:none;
-    background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;
-    font-family:"JetBrains Mono",monospace;font-size:11px;
-    box-shadow:0 12px 40px rgba(0,0,0,.3);
-    transform:translate(-50%, -100%) translateY(-12px);
-    max-width:240px;
-  }
-  .seat-tip::after{
-    content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
-    border:6px solid transparent;border-top-color:var(--ink);
-  }
-  .seat-tip .tip-title{font-family:"Fraunces",serif;font-weight:700;font-size:14px;color:var(--bg);letter-spacing:-.01em;margin-bottom:3px;}
-  .seat-tip .tip-row{color:var(--ink-3);opacity:.9;}
+  .seat-tip{position:fixed;z-index:1000;pointer-events:none;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;font-family:"JetBrains Mono",monospace;font-size:11px;box-shadow:0 12px 40px rgba(0,0,0,.3);transform:translate(-50%, -100%) translateY(-12px);max-width:240px;}
+  .seat-tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--ink);}
+  .seat-tip .tip-title{font-family:"Fraunces",serif;font-weight:700;font-size:14px;color:var(--bg);margin-bottom:3px;}
+  .seat-tip .tip-row{color:var(--bg);opacity:.75;}
   .seat-tip .tip-swatch{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle;}
 
-  .ticker{
-    display:flex;overflow:hidden;white-space:nowrap;
-    -webkit-mask:linear-gradient(90deg, transparent, #000 80px, #000 calc(100% - 80px), transparent);
-    mask:linear-gradient(90deg, transparent, #000 80px, #000 calc(100% - 80px), transparent);
-  }
+  .ticker{display:flex;overflow:hidden;white-space:nowrap;}
 
   ::-webkit-scrollbar{width:10px;height:10px}
   ::-webkit-scrollbar-thumb{background:#C4B697;border-radius:999px}
   ::-webkit-scrollbar-track{background:transparent}
 
-  .dropcap::first-letter{
-    font-family:"Fraunces",serif;font-weight:900;font-size:4em;line-height:.78;
-    float:left;padding:6px 12px 0 0;color:var(--accent);
-  }
-
-  .input{background:var(--bg-2);border:1px solid var(--rule);color:var(--ink);border-radius:10px;padding:.65rem .9rem;font-size:14px;}
+  .input{background:var(--bg-2);border:1px solid var(--rule);color:var(--ink);border-radius:10px;padding:.65rem .9rem;font-size:14px;width:100%;}
   .input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(155,44,31,.08);}
   .input::placeholder{color:var(--ink-3);}
 
-  .pill{
-    font-family:"JetBrains Mono",monospace;font-size:11px;padding:.45rem .8rem;
-    border-radius:8px;border:1px solid var(--rule);color:var(--ink-2);background:var(--bg-2);
-    transition:all .15s;white-space:nowrap;cursor:pointer;
-  }
+  .pill{font-family:"JetBrains Mono",monospace;font-size:11px;padding:.45rem .8rem;border-radius:8px;border:1px solid var(--rule);color:var(--ink-2);background:var(--bg-2);transition:all .15s;white-space:nowrap;cursor:pointer;}
   .pill:hover{border-color:var(--ink-2);color:var(--ink);}
   .pill.active{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:700;}
 
-  .stripe{
-    background:linear-gradient(90deg, var(--accent) 0%, var(--gold) 50%, var(--accent) 100%);
-    background-size:200% 100%;animation:shimmer 6s linear infinite;
-    height:3px;border-radius:999px;
-  }
+  .stripe{background:linear-gradient(90deg, var(--accent) 0%, var(--gold) 50%, var(--accent) 100%);background-size:200% 100%;animation:stripeShimmer 6s linear infinite;height:3px;border-radius:999px;}
+  @keyframes stripeShimmer {0%{background-position:0% 50%}100%{background-position:200% 50%}}
 
-  .reveal{opacity:0;transform:translateY(8px);animation:reveal .8s cubic-bezier(.2,.9,.2,1) forwards;}
-  .reveal-1{animation-delay:.05s;} .reveal-2{animation-delay:.12s;}
-  .reveal-3{animation-delay:.2s;}  .reveal-4{animation-delay:.28s;}
-  .reveal-5{animation-delay:.36s;} .reveal-6{animation-delay:.44s;}
-  @keyframes reveal {to{opacity:1;transform:translateY(0);}}
+  .dropcap::first-letter{font-family:"Fraunces",serif;font-weight:900;font-size:4em;line-height:.78;float:left;padding:6px 12px 0 0;color:var(--accent);}
+
+  .err-box{padding:30px;background:#FFF5F5;border:1px solid #F5C2C2;border-radius:14px;color:#7A1F1F;margin:30px;font-family:"JetBrains Mono",monospace;font-size:13px;}
 </style>
 </head>
 <body>
 <div id="root"></div>
 
-<script type="text/babel" data-presets="env,react">
-const { useState, useEffect, useMemo, useRef } = React;
-const Recharts = window.Recharts || {};
-const { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, RadialBarChart, RadialBar } = Recharts;
+<script type="text/babel" data-type="module" data-presets="env,react">
+'use strict';
 
-// ─────────────────────────────────────────────────────────
-const PROXY_URL = "https://us-central1-pickleball-app-1bba7.cloudfunctions.net/tnResults";
-const COUNTING_START = new Date("2026-05-04T02:30:00Z");
-const REFRESH_MS = 120_000;
-const TITLE = "Tamil Nadu";
-const YEAR  = "2026";
-const MAJORITY = 118;
+var useState = React.useState;
+var useEffect = React.useEffect;
+var useMemo = React.useMemo;
+var useRef = React.useRef;
 
-// ─────────────────────────────────────────────────────────
-function useNow(ms=1000){
-  const [n,setN]=useState(()=>new Date());
-  useEffect(()=>{const id=setInterval(()=>setN(new Date()),ms);return()=>clearInterval(id);},[ms]);
-  return n;
+// Defensive: Recharts may or may not be loaded.
+var RC = window.Recharts || {};
+var ResponsiveContainer = RC.ResponsiveContainer;
+var BarChart = RC.BarChart;
+var Bar = RC.Bar;
+var XAxis = RC.XAxis;
+var YAxis = RC.YAxis;
+var Tooltip = RC.Tooltip;
+var Cell = RC.Cell;
+var RadialBarChart = RC.RadialBarChart;
+var RadialBar = RC.RadialBar;
+var hasRecharts = !!(ResponsiveContainer && BarChart && Bar);
+
+// CONFIG
+var PROXY_URL = "https://us-central1-pickleball-app-1bba7.cloudfunctions.net/tnResults";
+var COUNTING_START = new Date("2026-05-04T02:30:00Z");
+var REFRESH_MS = 120000;
+var TITLE = "Tamil Nadu";
+var YEAR = "2026";
+var MAJORITY = 118;
+
+// Hooks
+function useNow(ms) {
+  if (ms == null) ms = 1000;
+  var n = useState(function () { return new Date(); });
+  var setN = n[1];
+  useEffect(function () {
+    var id = setInterval(function () { setN(new Date()); }, ms);
+    return function () { clearInterval(id); };
+  }, [ms]);
+  return n[0];
 }
 
-function useResults(){
-  const [data,setData]=useState(null);
-  const [err,setErr]=useState(null);
-  const [loading,setLoading]=useState(true);
-  const [initialLoad,setInitialLoad]=useState(true);
-  const [lastFetch,setLastFetch]=useState(null);
-  const t = useRef(null);
+function useResults() {
+  var s1 = useState(null); var data = s1[0]; var setData = s1[1];
+  var s2 = useState(null); var err = s2[0]; var setErr = s2[1];
+  var s3 = useState(true); var loading = s3[0]; var setLoading = s3[1];
+  var s4 = useState(true); var initialLoad = s4[0]; var setInitialLoad = s4[1];
+  var s5 = useState(null); var lastFetch = s5[0]; var setLastFetch = s5[1];
+  var t = useRef(null);
 
-  async function load(){
-    if (!PROXY_URL){ setLoading(false); setInitialLoad(false); return; }
-    try{
-      setLoading(true);
-      const r = await fetch(PROXY_URL, { cache:"no-store" });
-      if (!r.ok) throw new Error("HTTP "+r.status);
-      const j = await r.json();
-      setData(j); setErr(null); setLastFetch(new Date());
-    }catch(e){ setErr(e.message||"Fetch failed"); }
-    finally{ setLoading(false); setInitialLoad(false); }
+  function load() {
+    if (!PROXY_URL) { setLoading(false); setInitialLoad(false); return; }
+    setLoading(true);
+    fetch(PROXY_URL, { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (j) { setData(j); setErr(null); setLastFetch(new Date()); })
+      .catch(function (e) { setErr(e.message || "Fetch failed"); })
+      .finally(function () { setLoading(false); setInitialLoad(false); });
   }
 
-  useEffect(()=>{
+  useEffect(function () {
     load();
-    const startPolling = ()=>{
+    function startPolling() {
       if (t.current) clearInterval(t.current);
       t.current = setInterval(load, REFRESH_MS);
-    };
-    if (new Date() >= COUNTING_START) startPolling();
-    else {
-      const delay = COUNTING_START - new Date();
-      const tid = setTimeout(()=>{ load(); startPolling(); }, Math.min(delay, 2_147_483_000));
-      return ()=>{ clearTimeout(tid); if (t.current) clearInterval(t.current); };
     }
-    return ()=>{ if (t.current) clearInterval(t.current); };
-  // eslint-disable-next-line
-  },[]);
+    if (new Date() >= COUNTING_START) {
+      startPolling();
+    } else {
+      var delay = COUNTING_START - new Date();
+      var tid = setTimeout(function () { load(); startPolling(); }, Math.min(delay, 2147483000));
+      return function () { clearTimeout(tid); if (t.current) clearInterval(t.current); };
+    }
+    return function () { if (t.current) clearInterval(t.current); };
+  }, []);
 
-  return { data, err, loading, initialLoad, lastFetch, reload: load };
+  return { data: data, err: err, loading: loading, initialLoad: initialLoad, lastFetch: lastFetch, reload: load };
 }
 
-// ─────────────────────────────────────────────────────────
-// UI
-// ─────────────────────────────────────────────────────────
-
-function Masthead({ lastFetch, countingStarted, err, loading }){
+// Components
+function Masthead(props) {
+  var lastFetch = props.lastFetch, countingStarted = props.countingStarted, err = props.err, loading = props.loading;
   return (
     <header className="relative">
-      <div className="gridlines"></div>
       <div className="max-w-7xl mx-auto px-5 md:px-8 pt-6 pb-3 relative">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="mono text-[10px] tracking-[.3em] text-[var(--ink-3)] uppercase">The Count</div>
             <div className="h-[14px] w-px bg-[var(--rule-2)]"></div>
-            <div className="mono text-[10px] tracking-[.2em] text-[var(--ink-3)]">{(lastFetch||new Date()).toLocaleDateString("en-IN",{weekday:"short",day:"2-digit",month:"short",year:"numeric"})}</div>
+            <div className="mono text-[10px] tracking-[.2em] text-[var(--ink-3)]">
+              {(lastFetch || new Date()).toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}
+            </div>
           </div>
           <div className="flex items-center gap-3">
-            {loading && <span className="mono text-[10px] text-[var(--gold)] tracking-[.15em] uppercase animate-pulse">Fetching…</span>}
+            {loading ? <span className="mono text-[10px] text-[var(--gold)] tracking-[.15em] uppercase animate-pulse">Fetching…</span> : null}
             {countingStarted
               ? <span className="inline-flex items-center gap-2"><span className="pulse-dot"></span><span className="mono text-[10px] tracking-[.2em] text-[var(--accent)]">LIVE</span></span>
-              : <span className="chip" style={{background:"rgba(176,137,42,.15)",color:"var(--gold)"}}>Pre-counting</span>
+              : <span className="chip" style={{ background: "rgba(176,137,42,.15)", color: "var(--gold)" }}>Pre-counting</span>
             }
-            {lastFetch && <span className="mono text-[10px] text-[var(--ink-3)] hidden md:inline">Updated {lastFetch.toLocaleTimeString("en-IN")}</span>}
-            {err && <span className="chip" style={{background:"rgba(155,44,31,.15)",color:"var(--accent)"}}>Error</span>}
+            {lastFetch ? <span className="mono text-[10px] text-[var(--ink-3)] hidden md:inline">Updated {lastFetch.toLocaleTimeString("en-IN")}</span> : null}
+            {err ? <span className="chip" style={{ background: "rgba(155,44,31,.15)", color: "var(--accent)" }}>Error</span> : null}
           </div>
         </div>
 
@@ -295,8 +233,8 @@ function Masthead({ lastFetch, countingStarted, err, loading }){
         <div className="mt-6 flex items-end justify-between gap-6 flex-wrap">
           <div>
             <h1 className="serif font-black text-[54px] md:text-[92px] lg:text-[116px] leading-[.85] tracking-[-.03em]">
-              <span className="count-in block">{TITLE}.</span>
-              <span className="count-in block" style={{animationDelay:".2s", color:"var(--accent)"}}>{YEAR}.</span>
+              <span className="block">{TITLE}.</span>
+              <span className="block" style={{ color: "var(--accent)" }}>{YEAR}.</span>
             </h1>
           </div>
           <div className="mb-2">
@@ -311,83 +249,83 @@ function Masthead({ lastFetch, countingStarted, err, loading }){
   );
 }
 
-function TickerBar({ alliances }){
+function TickerBar(props) {
+  var alliances = props.alliances;
   if (!alliances || !alliances.length) return null;
-  const items = [...alliances, ...alliances];
+  var items = alliances.concat(alliances);
   return (
-    <div className="border-y border-[var(--rule)] bg-[var(--bg-3)]/40 backdrop-blur-sm overflow-hidden">
+    <div className="border-y border-[var(--rule)] overflow-hidden" style={{ background: "rgba(237,229,209,.4)" }}>
       <div className="ticker py-3">
         <div className="ticker-track inline-flex gap-10 items-center">
-          {items.map((a,i)=>(
-            <div key={i} className="inline-flex items-center gap-3 shrink-0">
-              <span className="inline-block w-2 h-2 rounded-sm" style={{background:a.color}}></span>
-              <span className="mono text-[11px] tracking-[.12em] uppercase text-[var(--ink-2)]">{a.name}</span>
-              <span className="serif text-2xl font-bold num" style={{color:a.color}}>{a.won + a.leading}</span>
-              <span className="mono text-[10px] text-[var(--ink-3)]">won {a.won} · lead {a.leading}</span>
-              <span className="text-[var(--ink-3)] mx-2">·</span>
-            </div>
-          ))}
+          {items.map(function (a, i) {
+            return (
+              <div key={i} className="inline-flex items-center gap-3 shrink-0">
+                <span className="inline-block w-2 h-2 rounded-sm" style={{ background: a.color }}></span>
+                <span className="mono text-[11px] tracking-[.12em] uppercase text-[var(--ink-2)]">{a.name}</span>
+                <span className="serif text-2xl font-bold num" style={{ color: a.color }}>{a.won + a.leading}</span>
+                <span className="mono text-[10px] text-[var(--ink-3)]">won {a.won} · lead {a.leading}</span>
+                <span className="text-[var(--ink-3)] mx-2">·</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
   );
 }
 
-function Countdown({ target }){
-  const now = useNow(1000);
-  const diff = Math.max(0, target - now);
-  const d = Math.floor(diff/86400000);
-  const h = Math.floor(diff/3600000)%24;
-  const m = Math.floor(diff/60000)%60;
-  const s = Math.floor(diff/1000)%60;
-  const pad = n => String(n).padStart(2,"0");
+function Countdown(props) {
+  var now = useNow(1000);
+  var diff = Math.max(0, props.target - now);
+  var d = Math.floor(diff / 86400000);
+  var h = Math.floor(diff / 3600000) % 24;
+  var m = Math.floor(diff / 60000) % 60;
+  var s = Math.floor(diff / 1000) % 60;
+  function pad(n) { return String(n).padStart(2, "0"); }
+  var parts = [[d, "days"], [pad(h), "hrs"], [pad(m), "min"], [pad(s), "sec"]];
   return (
     <div className="flex items-end gap-6">
-      {[[d,"days"],[pad(h),"hrs"],[pad(m),"min"],[pad(s),"sec"]].map(([v,l],i)=>(
-        <div key={l} className="reveal" style={{animationDelay:`${0.1 + i*0.05}s`}}>
-          <div className="serif font-bold text-6xl md:text-8xl leading-none num" style={{color:i===0?"var(--accent)":"var(--ink)"}}>{v}</div>
-          <div className="mono text-[10px] uppercase tracking-[.24em] text-[var(--ink-3)] mt-2">{l}</div>
-        </div>
-      ))}
+      {parts.map(function (p, i) {
+        return (
+          <div key={p[1]}>
+            <div className="serif font-bold text-6xl md:text-8xl leading-none num" style={{ color: i === 0 ? "var(--accent)" : "var(--ink)" }}>{p[0]}</div>
+            <div className="mono text-[10px] uppercase tracking-[.24em] text-[var(--ink-3)] mt-2">{p[1]}</div>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-function VerdictHero({ alliances }){
-  if (!alliances?.length) return null;
-  const sorted = [...alliances].map(a=>({...a, total:a.won+a.leading})).sort((a,b)=>b.total-a.total);
-  const first = sorted[0];
-  const second = sorted[1] || { total:0, name:"" };
-  const gap = first.total - second.total;
-  const pastMajority = first.total >= MAJORITY;
+function VerdictHero(props) {
+  var alliances = props.alliances;
+  if (!alliances || !alliances.length) return null;
+  var sorted = alliances.map(function (a) { return Object.assign({}, a, { total: a.won + a.leading }); }).sort(function (a, b) { return b.total - a.total; });
+  var first = sorted[0];
+  var second = sorted[1] || { total: 0, name: "" };
+  var gap = first.total - second.total;
+  var pastMajority = first.total >= MAJORITY;
 
-  let topLine, subLine;
-  if (first.total === 0){ topLine = "Awaiting first numbers"; subLine = "Counting has not begun."; }
-  else if (pastMajority){
-    topLine = `${first.name} forms government`;
-    subLine = `Past the halfway mark by ${first.total - MAJORITY} seat${first.total - MAJORITY !== 1 ? "s" : ""}.`;
-  } else if (gap >= 30){
-    topLine = `${first.name} sweeping`;
-    subLine = `A commanding lead — ${gap} seats clear of ${second.name}.`;
-  } else if (gap >= 10){
-    topLine = `${first.name} leading`;
-    subLine = `Holding ${gap} seats over ${second.name}.`;
-  } else if (gap > 0){
-    topLine = `${first.name} narrowly ahead`;
-    subLine = `Razor-thin ${gap}-seat lead over ${second.name}.`;
-  } else { topLine = "Neck and neck"; subLine = "A deadlocked night."; }
+  var topLine, subLine;
+  if (first.total === 0) { topLine = "Awaiting first numbers"; subLine = "Counting has not begun."; }
+  else if (pastMajority) {
+    topLine = first.name + " forms government";
+    var d = first.total - MAJORITY;
+    subLine = "Past the halfway mark by " + d + " seat" + (d !== 1 ? "s" : "") + ".";
+  } else if (gap >= 30) { topLine = first.name + " sweeping"; subLine = "A commanding lead — " + gap + " seats clear of " + second.name + "."; }
+  else if (gap >= 10) { topLine = first.name + " leading"; subLine = "Holding " + gap + " seats over " + second.name + "."; }
+  else if (gap > 0) { topLine = first.name + " narrowly ahead"; subLine = "Razor-thin " + gap + "-seat lead over " + second.name + "."; }
+  else { topLine = "Neck and neck"; subLine = "A deadlocked night."; }
 
   return (
     <div className="relative">
       <div className="mono text-[10px] tracking-[.3em] text-[var(--ink-3)] uppercase">The Verdict</div>
-      <h2 className="serif font-bold text-4xl md:text-6xl lg:text-7xl leading-[.95] mt-3 tracking-tight" style={{color:first.color}}>
-        {topLine}
-      </h2>
+      <h2 className="serif font-bold text-4xl md:text-6xl lg:text-7xl leading-[.95] mt-3 tracking-tight" style={{ color: first.color }}>{topLine}</h2>
       <div className="serif italic text-[var(--ink-2)] text-xl md:text-2xl mt-4 max-w-2xl">{subLine}</div>
       <div className="mt-6 flex items-baseline gap-6 flex-wrap">
         <div>
           <div className="mono text-[10px] tracking-[.18em] text-[var(--ink-3)] uppercase">Seats</div>
-          <div className="serif font-black text-7xl md:text-8xl num leading-none mt-1" style={{color:first.color}}>{first.total}</div>
+          <div className="serif font-black text-7xl md:text-8xl num leading-none mt-1" style={{ color: first.color }}>{first.total}</div>
         </div>
         <div className="text-[var(--ink-3)] serif text-5xl leading-none">/</div>
         <div>
@@ -404,21 +342,23 @@ function VerdictHero({ alliances }){
   );
 }
 
-function AllianceTiles({ alliances }){
-  const sorted = [...alliances].sort((a,b)=>(b.won+b.leading)-(a.won+a.leading));
-  const leader = sorted[0];
+function AllianceTiles(props) {
+  var alliances = props.alliances;
+  var sorted = alliances.slice().sort(function (a, b) { return (b.won + b.leading) - (a.won + a.leading); });
+  var leader = sorted[0];
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {sorted.map((a,i)=>{
-        const total = a.won + a.leading;
-        const pct = ((total/234)*100).toFixed(1);
+      {sorted.map(function (a, i) {
+        var total = a.won + a.leading;
+        var pct = ((total / 234) * 100).toFixed(1);
+        var cls = "alli-tile" + (a.id === leader.id && total > 0 ? " leader" : "");
         return (
-          <div key={a.id} className={"alli-tile reveal reveal-" + (i+1) + (a.id === leader?.id && total > 0 ? " leader" : "")}>
-            <div className="swatch" style={{background:a.color}}></div>
+          <div key={a.id} className={cls}>
+            <div className="swatch" style={{ background: a.color }}></div>
             <div className="relative">
               <div className="mono text-[10px] tracking-[.15em] uppercase text-[var(--ink-3)] font-semibold">{a.name}</div>
               <div className="flex items-baseline gap-2 mt-3">
-                <div className="serif font-bold num text-6xl leading-none" style={{color:a.color}}>{total}</div>
+                <div className="serif font-bold num text-6xl leading-none" style={{ color: a.color }}>{total}</div>
                 <div className="mono text-[11px] text-[var(--ink-3)] mb-1">{pct}%</div>
               </div>
               <div className="mt-4 flex items-center gap-3 text-[11px] mono text-[var(--ink-2)]">
@@ -434,7 +374,8 @@ function AllianceTiles({ alliances }){
   );
 }
 
-function SeatBar({ alliances, total }){
+function SeatBar(props) {
+  var alliances = props.alliances, total = props.total;
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
@@ -443,18 +384,18 @@ function SeatBar({ alliances, total }){
       </div>
       <div className="relative h-12 rounded-xl overflow-hidden bg-[var(--bg-3)] border border-[var(--rule)]">
         <div className="absolute inset-0 flex">
-          {alliances.map(a=>{
-            const pct = ((a.won+a.leading)/total)*100;
-            if (pct===0) return null;
+          {alliances.map(function (a) {
+            var pct = ((a.won + a.leading) / total) * 100;
+            if (pct === 0) return null;
             return (
               <div key={a.id} className="relative h-full flex items-center justify-center transition-all duration-500"
-                   style={{ width:`${pct}%`, background:a.color }}>
-                {pct>6 && <span className="mono text-[13px] font-bold text-white num drop-shadow">{a.won+a.leading}</span>}
+                   style={{ width: pct + "%", background: a.color }}>
+                {pct > 6 ? <span className="mono text-[13px] font-bold text-white num">{a.won + a.leading}</span> : null}
               </div>
             );
           })}
         </div>
-        <div className="absolute top-0 bottom-0" style={{ left:`${(MAJORITY/total)*100}%` }}>
+        <div className="absolute top-0 bottom-0" style={{ left: ((MAJORITY / total) * 100) + "%" }}>
           <div className="h-full w-px bg-[var(--ink)] opacity-80"></div>
           <div className="absolute -top-5 left-1 mono text-[9px] tracking-[.15em] text-[var(--ink)] whitespace-nowrap">MAJORITY ↓</div>
         </div>
@@ -463,35 +404,59 @@ function SeatBar({ alliances, total }){
   );
 }
 
-function PartyChart({ constituencies, alliances }){
-  const data = useMemo(()=>{
-    const byParty = {};
-    constituencies.forEach(c=>{
-      const p = c.leader.party || "—";
-      if (!byParty[p]) byParty[p] = { name:p, won:0, leading:0, alliance:c.leader.alliance, total:0 };
-      if (c.status==="declared") byParty[p].won++;
-      else if (c.status==="leading") byParty[p].leading++;
+function PartyChart(props) {
+  var constituencies = props.constituencies, alliances = props.alliances;
+
+  var data = useMemo(function () {
+    var byParty = {};
+    constituencies.forEach(function (c) {
+      var p = c.leader.party || "—";
+      if (!byParty[p]) byParty[p] = { name: p, won: 0, leading: 0, alliance: c.leader.alliance, total: 0 };
+      if (c.status === "declared") byParty[p].won++;
+      else if (c.status === "leading") byParty[p].leading++;
       byParty[p].total = byParty[p].won + byParty[p].leading;
     });
-    return Object.values(byParty).sort((a,b)=>b.total-a.total).slice(0, 12);
-  },[constituencies]);
+    return Object.keys(byParty).map(function (k) { return byParty[k]; }).sort(function (a, b) { return b.total - a.total; }).slice(0, 12);
+  }, [constituencies]);
 
-  const colorByAlliance = Object.fromEntries(alliances.map(a=>[a.id, a.color]));
+  var colorByAlliance = {};
+  alliances.forEach(function (a) { colorByAlliance[a.id] = a.color; });
+
   if (!data.length) return <div className="text-sm text-[var(--ink-3)] py-6">Party data pending…</div>;
 
+  if (!hasRecharts) {
+    return (
+      <div className="space-y-2">
+        {data.map(function (d) {
+          var max = data[0].total;
+          var w = max > 0 ? (d.total / max) * 100 : 0;
+          return (
+            <div key={d.name} className="flex items-center gap-3">
+              <div className="w-16 text-right mono text-[12px] font-semibold">{d.name}</div>
+              <div className="flex-1 h-7 rounded bg-[var(--bg-3)] relative overflow-hidden">
+                <div style={{ width: w + "%", background: colorByAlliance[d.alliance] || "#8A8272", height: "100%" }}></div>
+              </div>
+              <div className="w-10 text-right num font-bold text-[14px]">{d.total}</div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  var height = Math.max(220, data.length * 32 + 40);
   return (
-    <div style={{ width:"100%", height: Math.max(220, data.length * 32 + 40) }}>
+    <div style={{ width: "100%", height: height }}>
       <ResponsiveContainer>
-        <BarChart data={data} layout="vertical" margin={{ top:5, right:30, bottom:5, left:10 }}>
-          <XAxis type="number" stroke="#8A8272" fontSize={11} tick={{fill:"#4D4740"}} />
-          <YAxis type="category" dataKey="name" stroke="#8A8272" fontSize={12} tick={{fill:"#1A1814", fontWeight:600}} width={70} />
-          <Tooltip
-            cursor={{fill:"rgba(155,44,31,.06)"}}
-            contentStyle={{background:"#1A1814", border:"1px solid #4D4740", borderRadius:8, color:"#F4EFE1", fontSize:12, fontFamily:"JetBrains Mono"}}
-            formatter={(v)=>[v, "Seats"]}
+        <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, bottom: 5, left: 10 }}>
+          <XAxis type="number" stroke="#8A8272" fontSize={11} tick={{ fill: "#4D4740" }} />
+          <YAxis type="category" dataKey="name" stroke="#8A8272" fontSize={12} tick={{ fill: "#1A1814", fontWeight: 600 }} width={70} />
+          <Tooltip cursor={{ fill: "rgba(155,44,31,.06)" }}
+            contentStyle={{ background: "#1A1814", border: "1px solid #4D4740", borderRadius: 8, color: "#F4EFE1", fontSize: 12, fontFamily: "JetBrains Mono" }}
+            formatter={function (v) { return [v, "Seats"]; }}
           />
-          <Bar dataKey="total" radius={[0,6,6,0]}>
-            {data.map((d,i)=> <Cell key={i} fill={colorByAlliance[d.alliance] || "#8A8272"} />)}
+          <Bar dataKey="total" radius={[0, 6, 6, 0]}>
+            {data.map(function (d, i) { return <Cell key={i} fill={colorByAlliance[d.alliance] || "#8A8272"} />; })}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -499,116 +464,120 @@ function PartyChart({ constituencies, alliances }){
   );
 }
 
-function MajorityGauge({ alliances }){
-  const sorted = [...alliances].sort((a,b)=>(b.won+b.leading)-(a.won+a.leading));
-  const leader = sorted[0] || { won:0, leading:0, color:"#8A8272", name:"—" };
-  const total = (leader.won || 0) + (leader.leading || 0);
-  const pct = Math.min(100, (total / MAJORITY) * 100);
-  const data = [{ name: leader.name, value: pct, fill: leader.color }];
+function MajorityGauge(props) {
+  var alliances = props.alliances;
+  var sorted = alliances.slice().sort(function (a, b) { return (b.won + b.leading) - (a.won + a.leading); });
+  var leader = sorted[0] || { won: 0, leading: 0, color: "#8A8272", name: "—" };
+  var total = (leader.won || 0) + (leader.leading || 0);
+  var pct = Math.min(100, (total / MAJORITY) * 100);
+  var data = [{ name: leader.name, value: pct, fill: leader.color }];
+
+  if (!hasRecharts) {
+    return (
+      <div className="flex flex-col items-center justify-center" style={{ minHeight: 220 }}>
+        <div className="mono text-[9px] tracking-[.25em] text-[var(--ink-3)] uppercase">To Majority</div>
+        <div className="serif font-black num leading-none mt-3" style={{ color: leader.color, fontSize: 72 }}>{total}</div>
+        <div className="mono text-[10px] text-[var(--ink-3)] mt-2">of {MAJORITY} needed</div>
+        <div className="w-full mt-6 h-3 rounded-full bg-[var(--bg-3)] overflow-hidden">
+          <div style={{ width: pct + "%", height: "100%", background: leader.color }}></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="relative" style={{width:"100%", height:220}}>
+    <div className="relative" style={{ width: "100%", height: 220 }}>
       <ResponsiveContainer>
         <RadialBarChart innerRadius="72%" outerRadius="100%" data={data} startAngle={90} endAngle={-270}>
-          <RadialBar minAngle={15} background={{fill:"#EDE5D1"}} clockWise dataKey="value" cornerRadius={8} />
+          <RadialBar minAngle={15} background={{ fill: "#EDE5D1" }} clockWise dataKey="value" cornerRadius={8} />
         </RadialBarChart>
       </ResponsiveContainer>
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
         <div className="mono text-[9px] tracking-[.25em] text-[var(--ink-3)] uppercase">To Majority</div>
-        <div className="serif font-black num leading-none mt-1" style={{color:leader.color, fontSize:56}}>{total}</div>
+        <div className="serif font-black num leading-none mt-1" style={{ color: leader.color, fontSize: 56 }}>{total}</div>
         <div className="mono text-[10px] text-[var(--ink-3)] mt-1">of {MAJORITY} needed</div>
       </div>
     </div>
   );
 }
 
-// Seat wall with real floating tooltip
-function SeatWall({ constituencies, alliances }){
-  const [tip, setTip] = useState(null);
-  const colorByAlliance = Object.fromEntries(alliances.map(a=>[a.id,a.color]));
+function SeatWall(props) {
+  var constituencies = props.constituencies, alliances = props.alliances;
+  var tipState = useState(null); var tip = tipState[0]; var setTip = tipState[1];
+  var colorByAlliance = {};
+  alliances.forEach(function (a) { colorByAlliance[a.id] = a.color; });
 
-  function onEnter(e, c){
-    const rect = e.currentTarget.getBoundingClientRect();
-    setTip({
-      x: rect.left + rect.width/2,
-      y: rect.top,
-      c,
-    });
+  function onEnter(e, c) {
+    var rect = e.currentTarget.getBoundingClientRect();
+    setTip({ x: rect.left + rect.width / 2, y: rect.top, c: c });
   }
-  function onLeave(){ setTip(null); }
+  function onLeave() { setTip(null); }
 
-  if (!constituencies?.length) return null;
+  if (!constituencies || !constituencies.length) return null;
 
   return (
-    <>
+    <React.Fragment>
       <div className="seat-grid">
-        {constituencies.map(c=>{
-          const bg = colorByAlliance[c.leader.alliance] || "#8A8272";
-          const isPending = c.status === "pending";
-          const cls = "seat" + (c.status === "leading" ? " leading" : "");
+        {constituencies.map(function (c) {
+          var bg = colorByAlliance[c.leader.alliance] || "#8A8272";
+          var isPending = c.status === "pending";
+          var cls = "seat" + (c.status === "leading" ? " leading" : "");
           return (
-            <div
-              key={c.no}
+            <div key={c.no}
               className={cls}
-              style={{background: isPending ? "#E3D8BB" : bg}}
-              onMouseEnter={e => onEnter(e, c)}
+              style={{ background: isPending ? "#E3D8BB" : bg }}
+              onMouseEnter={function (e) { onEnter(e, c); }}
               onMouseLeave={onLeave}
             ></div>
           );
         })}
       </div>
-      {tip && (
-        <div className="seat-tip" style={{ left:tip.x + "px", top:tip.y + "px" }}>
+      {tip ? (
+        <div className="seat-tip" style={{ left: tip.x + "px", top: tip.y + "px" }}>
           <div className="tip-title">
-            <span className="tip-swatch" style={{background: colorByAlliance[tip.c.leader.alliance] || "#8A8272"}}></span>
+            <span className="tip-swatch" style={{ background: colorByAlliance[tip.c.leader.alliance] || "#8A8272" }}></span>
             {tip.c.no}. {tip.c.name}
           </div>
           <div className="tip-row">{tip.c.leader.name}</div>
-          <div className="tip-row" style={{color:"var(--bg)"}}>{tip.c.leader.party} · {tip.c.status}</div>
-          {tip.c.leader.margin > 0 && (
-            <div className="tip-row" style={{marginTop:4}}>margin {tip.c.leader.margin.toLocaleString("en-IN")}</div>
-          )}
+          <div className="tip-row">{tip.c.leader.party} · {tip.c.status}</div>
+          {tip.c.leader.margin > 0 ? <div className="tip-row" style={{ marginTop: 4 }}>margin {tip.c.leader.margin.toLocaleString("en-IN")}</div> : null}
         </div>
-      )}
-    </>
+      ) : null}
+    </React.Fragment>
   );
 }
 
-// ──────────────────────────────────────────────────────────
-function ConstituencyDetail({ ac, colorByAlliance }){
-  const [state, setState] = useState({ loading:true, data:null, err:null });
+function ConstituencyDetail(props) {
+  var ac = props.ac, colorByAlliance = props.colorByAlliance;
+  var s = useState({ loading: true, data: null, err: null }); var state = s[0]; var setState = s[1];
 
-  useEffect(()=>{
-    let active = true;
-    (async ()=>{
-      try{
-        const r = await fetch(`${PROXY_URL}?ac=${ac}`, { cache:"no-store" });
-        if (!r.ok) throw new Error("HTTP "+r.status);
-        const j = await r.json();
-        if (active) setState({ loading:false, data:j, err:null });
-      }catch(e){
-        if (active) setState({ loading:false, data:null, err:e.message });
-      }
-    })();
-    return ()=>{ active = false; };
-  },[ac]);
+  useEffect(function () {
+    var active = true;
+    fetch(PROXY_URL + "?ac=" + ac, { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (j) { if (active) setState({ loading: false, data: j, err: null }); })
+      .catch(function (e) { if (active) setState({ loading: false, data: null, err: e.message }); });
+    return function () { active = false; };
+  }, [ac]);
 
-  if (state.loading) return (
-    <div className="detail-inner">
-      <div className="mono text-[11px] text-[var(--ink-3)] mb-3 uppercase tracking-[.18em]">Loading candidates…</div>
-      <div className="space-y-2">
-        <div className="skeleton h-8"></div>
-        <div className="skeleton h-8" style={{width:"80%"}}></div>
-        <div className="skeleton h-8" style={{width:"60%"}}></div>
+  if (state.loading) {
+    return (
+      <div className="detail-inner">
+        <div className="mono text-[11px] text-[var(--ink-3)] mb-3 uppercase tracking-[.18em]">Loading candidates…</div>
+        <div className="space-y-2">
+          <div className="skeleton h-8"></div>
+          <div className="skeleton h-8" style={{ width: "80%" }}></div>
+          <div className="skeleton h-8" style={{ width: "60%" }}></div>
+        </div>
       </div>
-    </div>
-  );
-  if (state.err) return <div className="detail-inner mono text-[12px]" style={{color:"var(--accent)"}}>Couldn't load · {state.err}</div>;
+    );
+  }
+  if (state.err) return <div className="detail-inner mono text-[12px]" style={{ color: "var(--accent)" }}>Couldn't load · {state.err}</div>;
 
-  const d = state.data;
-  if (!d?.candidates?.length) return <div className="detail-inner mono text-[12px] text-[var(--ink-3)]">No candidate data available yet.</div>;
+  var d = state.data;
+  if (!d || !d.candidates || !d.candidates.length) return <div className="detail-inner mono text-[12px] text-[var(--ink-3)]">No candidate data available yet.</div>;
 
-  const maxVotes = Math.max(...d.candidates.map(c=>c.total));
+  var maxVotes = Math.max.apply(null, d.candidates.map(function (c) { return c.total; }));
 
   return (
     <div className="detail-inner">
@@ -624,69 +593,78 @@ function ConstituencyDetail({ ac, colorByAlliance }){
       </div>
 
       <div className="space-y-2.5">
-        {d.candidates.slice(0, 10).map((c, i)=>{
-          const w = maxVotes > 0 ? Math.max(2, (c.total / maxVotes) * 100) : 0;
-          const color = colorByAlliance[c.alliance] || "#8A8272";
-          const isWinner = i === 0;
+        {d.candidates.slice(0, 10).map(function (c, i) {
+          var w = maxVotes > 0 ? Math.max(2, (c.total / maxVotes) * 100) : 0;
+          var color = colorByAlliance[c.alliance] || "#8A8272";
+          var isWinner = i === 0;
+          var nameCls = "text-[13px] truncate " + (isWinner ? "font-bold" : "font-medium text-[var(--ink-2)]");
           return (
             <div key={c.sn} className="grid grid-cols-12 gap-3 items-center">
               <div className="col-span-5 md:col-span-4 min-w-0">
-                <div className={"text-[13px] truncate " + (isWinner ? "font-bold" : "font-medium text-[var(--ink-2)]")}>{c.name}</div>
+                <div className={nameCls}>{c.name}</div>
                 <div className="mono text-[10px] text-[var(--ink-3)] truncate mt-0.5">{c.partyFull}</div>
               </div>
               <div className="col-span-5 md:col-span-6">
                 <div className="vote-bar">
-                  <div className="vote-bar-fill" style={{ width:`${w}%`, background:color, opacity: isWinner ? 1 : 0.55 }}>
-                    {w > 22 && <span className="num">{c.total.toLocaleString("en-IN")}</span>}
+                  <div className="vote-bar-fill" style={{ width: w + "%", background: color, opacity: isWinner ? 1 : 0.55 }}>
+                    {w > 22 ? <span className="num">{c.total.toLocaleString("en-IN")}</span> : null}
                   </div>
                 </div>
               </div>
               <div className="col-span-2 text-right">
                 <div className="num text-[13px] font-bold">{c.pct.toFixed(1)}%</div>
-                {w <= 22 && <div className="mono text-[10px] text-[var(--ink-3)] num">{c.total.toLocaleString("en-IN")}</div>}
+                {w <= 22 ? <div className="mono text-[10px] text-[var(--ink-3)] num">{c.total.toLocaleString("en-IN")}</div> : null}
               </div>
             </div>
           );
         })}
       </div>
 
-      {d.candidates.length > 10 && (
-        <div className="mono text-[10px] text-[var(--ink-3)] mt-4">+{d.candidates.length - 10} more candidates</div>
-      )}
+      {d.candidates.length > 10 ? <div className="mono text-[10px] text-[var(--ink-3)] mt-4">+{d.candidates.length - 10} more candidates</div> : null}
     </div>
   );
 }
 
-function ConstituencyTable({ constituencies, alliances }){
-  const [q,setQ] = useState("");
-  const [filter,setFilter] = useState("all");
-  const [sort,setSort] = useState("number");
-  const [expandedAc,setExpandedAc] = useState(null);
-  const colorByAlliance = Object.fromEntries(alliances.map(a=>[a.id,a.color]));
+function ConstituencyTable(props) {
+  var constituencies = props.constituencies, alliances = props.alliances;
+  var qS = useState(""); var q = qS[0]; var setQ = qS[1];
+  var fS = useState("all"); var filter = fS[0]; var setFilter = fS[1];
+  var sS = useState("number"); var sort = sS[0]; var setSort = sS[1];
+  var eS = useState(null); var expandedAc = eS[0]; var setExpandedAc = eS[1];
 
-  const rows = useMemo(()=>{
-    const needle = q.trim().toLowerCase();
-    let list = constituencies.filter(c=>{
-      if (filter==="close") return c.status!=="pending" && c.leader.margin>0 && c.leader.margin<3000;
-      if (filter!=="all" && c.status!==filter) return false;
+  var colorByAlliance = {};
+  alliances.forEach(function (a) { colorByAlliance[a.id] = a.color; });
+
+  var rows = useMemo(function () {
+    var needle = q.trim().toLowerCase();
+    var list = constituencies.filter(function (c) {
+      if (filter === "close") return c.status !== "pending" && c.leader.margin > 0 && c.leader.margin < 3000;
+      if (filter !== "all" && c.status !== filter) return false;
       if (!needle) return true;
-      return (c.name+" "+c.leader.party+" "+c.leader.name+" "+c.no).toLowerCase().includes(needle);
+      return (c.name + " " + c.leader.party + " " + c.leader.name + " " + c.no).toLowerCase().indexOf(needle) >= 0;
     });
-    if (sort==="margin-asc")  list = [...list].sort((a,b)=>(a.leader.margin||999999)-(b.leader.margin||999999));
-    if (sort==="margin-desc") list = [...list].sort((a,b)=>(b.leader.margin||0)-(a.leader.margin||0));
+    if (sort === "margin-asc") list = list.slice().sort(function (a, b) { return (a.leader.margin || 999999) - (b.leader.margin || 999999); });
+    if (sort === "margin-desc") list = list.slice().sort(function (a, b) { return (b.leader.margin || 0) - (a.leader.margin || 0); });
     return list;
-  },[q,filter,sort,constituencies]);
+  }, [q, filter, sort, constituencies]);
+
+  function nextSort() {
+    if (sort === "margin-asc") setSort("margin-desc");
+    else if (sort === "margin-desc") setSort("number");
+    else setSort("margin-asc");
+  }
+
+  var filterButtons = [["all", "All"], ["declared", "Won"], ["leading", "Leading"], ["close", "Close"], ["pending", "Pending"]];
 
   return (
     <div>
       <div className="flex flex-col md:flex-row md:items-center gap-3 mb-5">
-        <input value={q} onChange={e=>setQ(e.target.value)}
-          placeholder="Search constituency, candidate, or party…"
-          className="input flex-1" />
+        <input value={q} onChange={function (e) { setQ(e.target.value); }} placeholder="Search constituency, candidate, or party…" className="input flex-1" />
         <div className="flex gap-1.5 overflow-x-auto pb-1">
-          {[["all","All"],["declared","Won"],["leading","Leading"],["close","Close"],["pending","Pending"]].map(([k,l])=>(
-            <button key={k} onClick={()=>setFilter(k)} className={"pill " + (filter===k?"active":"")}>{l}</button>
-          ))}
+          {filterButtons.map(function (b) {
+            var cls = "pill" + (filter === b[0] ? " active" : "");
+            return <button key={b[0]} onClick={function () { setFilter(b[0]); }} className={cls}>{b[1]}</button>;
+          })}
         </div>
       </div>
 
@@ -699,25 +677,24 @@ function ConstituencyTable({ constituencies, alliances }){
               <th className="py-3 pr-3">Leader</th>
               <th className="py-3 pr-3">Party</th>
               <th className="py-3 pr-3 text-right">Round</th>
-              <th className="py-3 pr-3 text-right cursor-pointer hover:text-[var(--ink)]"
-                  onClick={()=>setSort(sort==="margin-asc"?"margin-desc":sort==="margin-desc"?"number":"margin-asc")}>
-                Margin {sort==="margin-asc"?"↑":sort==="margin-desc"?"↓":""}
+              <th className="py-3 pr-3 text-right cursor-pointer hover:text-[var(--ink)]" onClick={nextSort}>
+                Margin {sort === "margin-asc" ? "↑" : sort === "margin-desc" ? "↓" : ""}
               </th>
               <th className="py-3 pr-3">Status</th>
             </tr>
           </thead>
           <tbody>
-            {rows.slice(0,120).map(c=>{
-              const chip = c.status==="declared"
-                ? { bg:"rgba(46,125,50,.15)", fg:"#1F5C22", label:"Won" }
-                : c.status==="leading"
-                ? { bg:"rgba(176,137,42,.18)", fg:"var(--gold)", label:"Leading" }
-                : { bg:"rgba(138,130,114,.15)", fg:"var(--ink-3)", label:"Pending" };
-              const expanded = expandedAc === c.no;
+            {rows.slice(0, 120).map(function (c) {
+              var chip = c.status === "declared"
+                ? { bg: "rgba(46,125,50,.15)", fg: "#1F5C22", label: "Won" }
+                : c.status === "leading"
+                ? { bg: "rgba(176,137,42,.18)", fg: "var(--gold)", label: "Leading" }
+                : { bg: "rgba(138,130,114,.15)", fg: "var(--ink-3)", label: "Pending" };
+              var expanded = expandedAc === c.no;
+              var rowCls = "row-btn" + (expanded ? " expanded" : "");
               return (
                 <React.Fragment key={c.no}>
-                  <tr className={"row-btn" + (expanded ? " expanded" : "")}
-                      onClick={()=>setExpandedAc(expanded ? null : c.no)}>
+                  <tr className={rowCls} onClick={function () { setExpandedAc(expanded ? null : c.no); }}>
                     <td className="py-3 pr-3 mono text-[var(--ink-3)]">
                       <span className="inline-flex items-center gap-1.5">
                         <span className="text-[var(--accent)] text-[10px]">{expanded ? "▾" : "▸"}</span>
@@ -728,47 +705,46 @@ function ConstituencyTable({ constituencies, alliances }){
                     <td className="py-3 pr-3 text-[var(--ink-2)]">{c.leader.name}</td>
                     <td className="py-3 pr-3">
                       <span className="inline-flex items-center gap-1.5">
-                        <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{background:colorByAlliance[c.leader.alliance]||"#8A8272"}}></span>
+                        <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: colorByAlliance[c.leader.alliance] || "#8A8272" }}></span>
                         <span className="font-medium">{c.leader.party}</span>
                       </span>
                     </td>
                     <td className="py-3 pr-3 text-right mono text-[12px] text-[var(--ink-3)]">{c.round || "—"}</td>
                     <td className="py-3 pr-3 text-right num font-medium">{c.leader.margin ? c.leader.margin.toLocaleString("en-IN") : "—"}</td>
                     <td className="py-3 pr-3">
-                      <span className="chip" style={{background:chip.bg, color:chip.fg}}>{chip.label}</span>
+                      <span className="chip" style={{ background: chip.bg, color: chip.fg }}>{chip.label}</span>
                     </td>
                   </tr>
-                  {expanded && (
+                  {expanded ? (
                     <tr className="detail-row">
                       <td colSpan={7}>
                         <ConstituencyDetail ac={c.no} colorByAlliance={colorByAlliance} />
                       </td>
                     </tr>
-                  )}
+                  ) : null}
                 </React.Fragment>
               );
             })}
           </tbody>
         </table>
-        {rows.length>120 && <div className="mono text-[10px] text-[var(--ink-3)] mt-4">Showing first 120 of {rows.length}. Refine your search.</div>}
-        {rows.length===0 && <div className="text-center py-10 text-[var(--ink-3)] text-sm">No matches.</div>}
+        {rows.length > 120 ? <div className="mono text-[10px] text-[var(--ink-3)] mt-4">Showing first 120 of {rows.length}. Refine your search.</div> : null}
+        {rows.length === 0 ? <div className="text-center py-10 text-[var(--ink-3)] text-sm">No matches.</div> : null}
       </div>
     </div>
   );
 }
 
-// Initial-load skeleton
-function InitialLoadingState(){
+function InitialLoadingState() {
   return (
     <section className="max-w-7xl mx-auto px-5 md:px-8 pt-8 pb-12">
       <div className="card p-7 md:p-10">
         <div className="mono text-[10px] tracking-[.2em] text-[var(--gold)] uppercase animate-pulse">Fetching latest results from ECI…</div>
         <div className="mt-6 space-y-3">
-          <div className="skeleton h-16 w-3/4"></div>
-          <div className="skeleton h-8 w-1/2"></div>
+          <div className="skeleton h-16" style={{ width: "75%" }}></div>
+          <div className="skeleton h-8" style={{ width: "50%" }}></div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
-          {[1,2,3,4].map(i=> <div key={i} className="skeleton h-32"></div>)}
+          {[1, 2, 3, 4].map(function (i) { return <div key={i} className="skeleton h-32"></div>; })}
         </div>
       </div>
     </section>
@@ -776,50 +752,49 @@ function InitialLoadingState(){
 }
 
 // ─────────────────────────────────────────────────────────
-// APP
-// ─────────────────────────────────────────────────────────
-function App(){
-  const { data, err, loading, initialLoad, lastFetch, reload } = useResults();
-  const now = useNow(1000);
-  const countingStarted = now >= COUNTING_START;
-  const hasLiveNumbers = (data?.totals?.declared || 0) + (data?.totals?.leading || 0) > 0;
-  const totalSeats = data?.totals?.total || 234;
+function App() {
+  var r = useResults();
+  var data = r.data, err = r.err, loading = r.loading, initialLoad = r.initialLoad, lastFetch = r.lastFetch, reload = r.reload;
+  var now = useNow(1000);
+  var countingStarted = now >= COUNTING_START;
+  var declared = (data && data.totals && data.totals.declared) || 0;
+  var leadingCount = (data && data.totals && data.totals.leading) || 0;
+  var hasLiveNumbers = (declared + leadingCount) > 0;
+  var totalSeats = (data && data.totals && data.totals.total) || 234;
 
   return (
     <div>
-      {loading && <div className="topbar-loader"><div className="topbar-loader-inner"></div></div>}
+      {loading ? <div className="topbar-loader"><div className="topbar-loader-inner"></div></div> : null}
 
       <Masthead lastFetch={lastFetch} countingStarted={countingStarted} err={err} loading={loading} />
 
-      {data?.alliances && hasLiveNumbers && <TickerBar alliances={data.alliances} />}
+      {data && data.alliances && hasLiveNumbers ? <TickerBar alliances={data.alliances} /> : null}
 
       <main>
-        {initialLoad && <InitialLoadingState />}
+        {initialLoad ? <InitialLoadingState /> : null}
 
-        {!initialLoad && !countingStarted && !hasLiveNumbers && (
+        {!initialLoad && !countingStarted && !hasLiveNumbers ? (
           <section className="max-w-7xl mx-auto px-5 md:px-8 pt-8 pb-12">
             <div className="card p-7 md:p-12 relative overflow-hidden">
-              <div className="absolute -top-20 -right-20 w-[400px] h-[400px] rounded-full" style={{background:"radial-gradient(circle, rgba(155,44,31,.08), transparent 70%)"}}></div>
+              <div className="absolute -top-20 -right-20 w-[400px] h-[400px] rounded-full" style={{ background: "radial-gradient(circle, rgba(155,44,31,.08), transparent 70%)" }}></div>
               <div className="relative">
                 <div className="mono text-[10px] tracking-[.3em] text-[var(--accent)] uppercase">The Count Begins In</div>
                 <div className="mt-6"><Countdown target={COUNTING_START} /></div>
                 <div className="mt-10 max-w-2xl serif italic text-lg md:text-xl text-[var(--ink-2)] leading-relaxed">
-                  Polling, Thursday the 23<sup>rd</sup> of April. Counting, the 4<sup>th</sup> of May at eight in the morning IST.
+                  Polling, Thursday the 23rd of April. Counting, the 4th of May at eight in the morning IST.
                   Every constituency, every candidate, every vote — as the Election Commission publishes them.
                 </div>
               </div>
             </div>
           </section>
-        )}
+        ) : null}
 
-        {data?.alliances && hasLiveNumbers && (
-          <>
+        {data && data.alliances && hasLiveNumbers ? (
+          <React.Fragment>
             <section className="max-w-7xl mx-auto px-5 md:px-8 pt-10 pb-10">
               <div className="grid md:grid-cols-[1fr_360px] gap-8 items-center">
-                <div className="reveal reveal-1"><VerdictHero alliances={data.alliances} /></div>
-                <div className="card p-5 reveal reveal-3">
-                  <MajorityGauge alliances={data.alliances} />
-                </div>
+                <div><VerdictHero alliances={data.alliances} /></div>
+                <div className="card p-5"><MajorityGauge alliances={data.alliances} /></div>
               </div>
             </section>
 
@@ -828,9 +803,7 @@ function App(){
             </section>
 
             <section className="max-w-7xl mx-auto px-5 md:px-8 pb-12">
-              <div className="card p-6 md:p-8">
-                <SeatBar alliances={data.alliances} total={totalSeats} />
-              </div>
+              <div className="card p-6 md:p-8"><SeatBar alliances={data.alliances} total={totalSeats} /></div>
             </section>
 
             <section className="max-w-7xl mx-auto px-5 md:px-8 pb-10">
@@ -852,18 +825,20 @@ function App(){
                   </div>
                   <div className="mt-6 space-y-5">
                     {[
-                      { label:"Declared", value:data.totals?.declared ?? 0, color:"#1F5C22", sub:"Officially called" },
-                      { label:"Leading",  value:data.totals?.leading ?? 0,  color:"var(--gold)", sub:"Ahead, not declared" },
-                      { label:"Pending",  value:data.totals?.pending ?? 0,  color:"var(--ink-3)", sub:"Awaiting first trend" },
-                    ].map(r=>(
-                      <div key={r.label} className="flex items-baseline justify-between pb-4 border-b border-[var(--rule)] last:border-b-0 last:pb-0">
-                        <div>
-                          <div className="mono text-[10px] tracking-[.18em] text-[var(--ink-3)] uppercase">{r.label}</div>
-                          <div className="text-[11px] text-[var(--ink-3)] mt-0.5">{r.sub}</div>
+                      { label: "Declared", value: declared, color: "#1F5C22", sub: "Officially called" },
+                      { label: "Leading", value: leadingCount, color: "var(--gold)", sub: "Ahead, not declared" },
+                      { label: "Pending", value: (data.totals && data.totals.pending) || 0, color: "var(--ink-3)", sub: "Awaiting first trend" }
+                    ].map(function (r) {
+                      return (
+                        <div key={r.label} className="flex items-baseline justify-between pb-4 border-b border-[var(--rule)] last:border-b-0 last:pb-0">
+                          <div>
+                            <div className="mono text-[10px] tracking-[.18em] text-[var(--ink-3)] uppercase">{r.label}</div>
+                            <div className="text-[11px] text-[var(--ink-3)] mt-0.5">{r.sub}</div>
+                          </div>
+                          <div className="serif font-bold text-5xl num leading-none" style={{ color: r.color }}>{r.value}</div>
                         </div>
-                        <div className="serif font-bold text-5xl num leading-none" style={{color:r.color}}>{r.value}</div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -894,8 +869,8 @@ function App(){
                 <ConstituencyTable constituencies={data.constituencies} alliances={data.alliances} />
               </div>
             </section>
-          </>
-        )}
+          </React.Fragment>
+        ) : null}
 
         <section className="max-w-3xl mx-auto px-5 md:px-8 pb-16">
           <p className="serif dropcap text-[var(--ink-2)] text-[16px] leading-[1.85]">
@@ -909,7 +884,7 @@ function App(){
         <footer className="border-t border-[var(--rule)]">
           <div className="max-w-7xl mx-auto px-5 md:px-8 py-8 flex items-center justify-between flex-wrap gap-4">
             <div className="mono text-[10px] text-[var(--ink-3)] tracking-[.1em]">
-              Source · results.eci.gov.in · Refresh every {REFRESH_MS/60000} minutes
+              Source · results.eci.gov.in · Refresh every {REFRESH_MS / 60000} minutes
             </div>
             <button onClick={reload}
               className="mono text-[10px] uppercase tracking-[.2em] px-4 py-2 rounded-lg border border-[var(--rule)] text-[var(--ink-2)] hover:bg-[var(--accent)] hover:text-[var(--bg)] hover:border-[var(--accent)] transition">
@@ -925,7 +900,13 @@ function App(){
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+// Mount with try/catch so any error shows up visibly
+try {
+  ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+} catch (e) {
+  document.getElementById("root").innerHTML = '<div class="err-box"><b>Render error:</b> ' + (e.message || e) + '</div>';
+  console.error("Render error:", e);
+}
 </script>
 </body>
 </html>
