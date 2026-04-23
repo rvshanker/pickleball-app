@@ -733,7 +733,7 @@ function App(){
         )}
 
         {/* Live results */}
-        {data?.alliances && hasLiveNumbers && (
+        {data?.alliances && data?.constituencies?.length > 0 && (
           <>
             {/* Verdict hero + gauge */}
             <section className="max-w-7xl mx-auto px-5 md:px-8 pt-10 pb-10">
