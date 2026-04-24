@@ -20,103 +20,65 @@
 
 <style>
   :root{
-    --bg:#0E1A24;
-    --bg-2:#172533;
-    --bg-3:#1F303F;
-    --bg-4:#283D4F;
-    --ink:#F0E9D6;
-    --ink-2:#A8B0BA;
-    --ink-3:#6E7A87;
-    --rule:#283D4F;
-    --rule-2:#3B5163;
-    --accent:#D4A848;
-    --accent-2:#E76F51;
-    --teal:#4ABFB0;
-    --rust:#C8553D;
+    --bg:#0E1A24; --bg-2:#172533; --bg-3:#1F303F; --bg-4:#283D4F;
+    --ink:#F0E9D6; --ink-2:#A8B0BA; --ink-3:#6E7A87;
+    --rule:#283D4F; --rule-2:#3B5163;
+    --accent:#D4A848; --accent-2:#E76F51; --teal:#4ABFB0; --rust:#C8553D;
   }
   html,body{background:var(--bg);color:var(--ink);}
-  body{
-    font-family:"Inter",system-ui,sans-serif;
-    background-image:
-      radial-gradient(1200px 600px at 10% -5%, rgba(212,168,72,.05), transparent 55%),
-      radial-gradient(900px 500px at 95% 5%, rgba(74,191,176,.05), transparent 55%);
-    background-attachment:fixed;min-height:100vh;
-  }
+  body{font-family:"Inter",system-ui,sans-serif;
+    background-image:radial-gradient(1200px 600px at 10% -5%, rgba(212,168,72,.05), transparent 55%),radial-gradient(900px 500px at 95% 5%, rgba(74,191,176,.05), transparent 55%);
+    background-attachment:fixed;min-height:100vh;}
   .serif{font-family:"Fraunces",Georgia,serif;letter-spacing:-.02em;}
   .mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;}
   .num{font-variant-numeric:tabular-nums;}
-
-  body::before{
-    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.35;mix-blend-mode:overlay;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  }
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.35;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");}
   main{position:relative;z-index:2;}
-
   .card{background:var(--bg-2);border:1px solid var(--rule);border-radius:16px;}
-  .card-deep{background:var(--bg-3);border:1px solid var(--rule);border-radius:16px;}
-
   .chip{display:inline-flex;align-items:center;gap:.35rem;padding:.15rem .55rem;border-radius:999px;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;}
-
   .pulse-dot{position:relative;width:7px;height:7px;border-radius:999px;background:var(--accent-2);display:inline-block;}
   .pulse-dot::after{content:"";position:absolute;inset:-5px;border-radius:999px;border:1px solid var(--accent-2);animation:pulse 1.6s ease-out infinite;}
   @keyframes pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2);opacity:0}}
-
   .topbar-loader{position:fixed;top:0;left:0;right:0;height:3px;z-index:100;overflow:hidden;background:rgba(212,168,72,.1);}
   .topbar-loader-inner{position:absolute;top:0;bottom:0;left:-30%;width:30%;background:linear-gradient(90deg, transparent, var(--accent), transparent);animation:loaderSlide 1.2s ease-in-out infinite;}
   @keyframes loaderSlide {0%{left:-30%}100%{left:100%}}
-
   .skeleton{background:linear-gradient(90deg, var(--bg-3) 25%, var(--bg-4) 50%, var(--bg-3) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px;}
   @keyframes shimmer {0%{background-position:-200% 0}100%{background-position:200% 0}}
-
-  @keyframes ticker {0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-  .ticker-track{animation:ticker 40s linear infinite;will-change:transform;}
-
   tbody tr.row-btn{cursor:pointer;transition:background .15s;}
   tbody tr.row-btn:hover{background:rgba(212,168,72,.06);}
   tbody tr.row-btn.expanded{background:rgba(212,168,72,.10);}
   tbody tr{border-top:1px solid var(--rule);}
-
   .detail-row td{padding:0;background:var(--bg-3);border-top:1px solid var(--rule);}
   .detail-inner{padding:22px 24px;}
   .vote-bar{position:relative;height:26px;background:rgba(255,255,255,.05);border-radius:6px;overflow:hidden;}
   .vote-bar-fill{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;padding:0 10px;color:#fff;font-size:11px;font-weight:700;}
-
   .alli-tile{position:relative;border-radius:14px;padding:18px;overflow:hidden;background:var(--bg-3);border:1px solid var(--rule);transition:transform .25s, border-color .25s;}
   .alli-tile:hover{transform:translateY(-2px);border-color:var(--rule-2);}
-  .alli-tile .swatch{position:absolute;right:0;top:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .alli-tile .swatch{position:absolute;right:14px;top:14px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px;}
   .alli-tile .num-big{font-family:"Fraunces",serif;font-weight:700;font-size:46px;line-height:1;}
-
   .seat-tip{position:fixed;z-index:1000;pointer-events:none;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;font-family:"JetBrains Mono",monospace;font-size:11px;box-shadow:0 12px 40px rgba(0,0,0,.5);transform:translate(-50%, -100%) translateY(-12px);max-width:240px;}
   .seat-tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--ink);}
   .seat-tip .tip-title{font-family:"Fraunces",serif;font-weight:700;font-size:14px;color:var(--bg);margin-bottom:3px;}
   .seat-tip .tip-row{color:var(--bg);opacity:.7;}
   .seat-tip .tip-swatch{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle;}
-
-  .ticker{display:flex;overflow:hidden;white-space:nowrap;}
-
   ::-webkit-scrollbar{width:10px;height:10px}
   ::-webkit-scrollbar-thumb{background:var(--rule-2);border-radius:999px}
   ::-webkit-scrollbar-track{background:transparent}
-
   .input{background:var(--bg-3);border:1px solid var(--rule);color:var(--ink);border-radius:10px;padding:.65rem .9rem;font-size:14px;width:100%;}
   .input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(212,168,72,.12);}
   .input::placeholder{color:var(--ink-3);}
-
   .pill{font-family:"JetBrains Mono",monospace;font-size:11px;padding:.45rem .8rem;border-radius:8px;border:1px solid var(--rule);color:var(--ink-2);background:var(--bg-3);transition:all .15s;white-space:nowrap;cursor:pointer;}
   .pill:hover{border-color:var(--rule-2);color:var(--ink);}
   .pill.active{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:700;}
-
-  .ornaments{position:absolute;right:0;top:0;bottom:0;width:55%;opacity:.07;pointer-events:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='200' viewBox='0 0 400 200'><g fill='none' stroke='%23F0E9D6' stroke-width='1.5'><circle cx='100' cy='100' r='40'/><circle cx='100' cy='100' r='30'/><circle cx='100' cy='100' r='20'/><path d='M 70 100 L 130 100 M 100 70 L 100 130 M 78 78 L 122 122 M 122 78 L 78 122'/><path d='M 200 60 Q 220 30 240 60 Q 260 30 280 60 Q 300 30 320 60' /><path d='M 200 140 Q 220 170 240 140 Q 260 170 280 140 Q 300 170 320 140' /><circle cx='240' cy='100' r='15'/><circle cx='280' cy='100' r='15'/><path d='M 340 80 L 360 100 L 340 120 M 380 80 L 360 100 L 380 120' stroke-width='2'/></g></svg>");background-repeat:repeat;background-size:400px;}
-
+  .archive-link{display:inline-flex;align-items:center;gap:6px;font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);padding:.5rem .9rem;border-radius:8px;transition:all .15s;text-decoration:none;}
+  .archive-link:hover{background:var(--accent);color:var(--bg);}
+  .ornaments{position:absolute;right:0;top:0;bottom:0;width:55%;opacity:.07;pointer-events:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='200' viewBox='0 0 400 200'><g fill='none' stroke='%23F0E9D6' stroke-width='1.5'><circle cx='100' cy='100' r='40'/><circle cx='100' cy='100' r='30'/><circle cx='100' cy='100' r='20'/><path d='M 70 100 L 130 100 M 100 70 L 100 130 M 78 78 L 122 122 M 122 78 L 78 122'/></g></svg>");background-repeat:repeat;background-size:400px;}
   .err-box{padding:30px;background:#3D1A1A;border:1px solid #6B2A2A;border-radius:14px;color:#F0C2C2;margin:30px;font-family:"JetBrains Mono",monospace;font-size:13px;}
-
-  /* Map styling */
-  .tn-map path, .tn-hex { transition: opacity .15s; cursor: pointer; }
-  .tn-map path:hover, .tn-hex:hover { opacity: 0.75; stroke: var(--ink); stroke-width: 1.5; }
-
-  /* Donut chart */
-  .donut-segment { transition: opacity .15s; }
-  .donut-segment:hover { opacity: 0.75; }
+  .tn-map path{transition:opacity .15s;cursor:pointer;}
+  .tn-map path:hover{opacity:0.75;stroke:var(--ink);stroke-width:1.5;}
+  .donut-segment{transition:opacity .15s;}
+  .donut-segment:hover{opacity:0.75;}
 </style>
 </head>
 <body>
@@ -125,21 +87,12 @@
 <script type="text/babel" data-presets="env,react">
 'use strict';
 
-var useState = React.useState;
-var useEffect = React.useEffect;
-var useMemo = React.useMemo;
-var useRef = React.useRef;
+var useState = React.useState, useEffect = React.useEffect, useMemo = React.useMemo, useRef = React.useRef;
 
 var RC = window.Recharts || {};
-var ResponsiveContainer = RC.ResponsiveContainer;
-var BarChart = RC.BarChart;
-var Bar = RC.Bar;
-var XAxis = RC.XAxis;
-var YAxis = RC.YAxis;
-var Tooltip = RC.Tooltip;
-var Cell = RC.Cell;
+var ResponsiveContainer = RC.ResponsiveContainer, BarChart = RC.BarChart, Bar = RC.Bar;
+var XAxis = RC.XAxis, YAxis = RC.YAxis, Tooltip = RC.Tooltip, Cell = RC.Cell;
 var hasRecharts = !!(ResponsiveContainer && BarChart && Bar);
-
 var hasD3 = !!window.d3;
 
 // CONFIG
@@ -150,7 +103,45 @@ var TITLE = "Tamil Nadu";
 var YEAR = "2026";
 var MAJORITY = 118;
 
-// Region mapping — rough geographic grouping by AC number
+// ─────────────────────────────────────────────────────────
+// PARTY-SPECIFIC COLORS — iconic colors per party
+// ─────────────────────────────────────────────────────────
+var PARTY_COLORS = {
+  // TN parties
+  "DMK":     "#C8352F",  // red, rising sun
+  "AIADMK":  "#1F7A1F",  // deep green, two leaves
+  "BJP":     "#FF7E00",  // saffron
+  "INC":     "#1A8FE3",  // Congress blue
+  "TVK":     "#9D2F2F",  // maroon, Vijay
+  "NTK":     "#FFCC00",  // yellow
+  "PMK":     "#E8B423",  // gold/mustard
+  "VCK":     "#0066B3",  // blue
+  "MDMK":    "#B71C1C",  // red
+  "DMDK":    "#FFC107",  // yellow-amber
+  "AMMK":    "#7B1FA2",  // purple
+  "IUML":    "#006400",  // muslim league green
+  "KMDK":    "#5D4037",  // brown
+  "CPI":     "#D32F2F",  // communist red
+  "CPI(M)":  "#D32F2F",
+  "AIMIM":   "#1E5C2C",  // dark green, kite
+  // Bihar parties
+  "JD(U)":   "#008542",  // party flag green
+  "LJPRV":   "#6A1B9A",  // Chirag's purple
+  "HAMS":    "#1B5E20",  // dark green
+  "RLM":     "#FF6F00",  // orange
+  "RJD":     "#2E7D32",  // lantern green
+  "CPI(ML)": "#B71C1C",  // dark red
+  "VIP":     "#7B1FA2",  // purple
+  "JSP":     "#0277BD",  // blue
+  "BSP":     "#1565C0",  // blue
+  "IIP":     "#558B2F",  // olive
+  "IND":     "#6E7A87",  // grey
+  "NOTA":    "#424242",  // dark grey
+  "—":       "#6E7A87",
+};
+function partyColor(p) { return PARTY_COLORS[p] || "#6E7A87"; }
+
+// Region mapping for TN
 function regionFor(no) {
   if (no <= 30) return "Chennai & North";
   if (no <= 75) return "North-Central";
@@ -163,12 +154,8 @@ var REGIONS = ["Chennai & North", "North-Central", "Western", "Southern", "Coast
 // Hooks
 function useNow(ms) {
   if (ms == null) ms = 1000;
-  var n = useState(function () { return new Date(); });
-  var setN = n[1];
-  useEffect(function () {
-    var id = setInterval(function () { setN(new Date()); }, ms);
-    return function () { clearInterval(id); };
-  }, [ms]);
+  var n = useState(function () { return new Date(); }); var setN = n[1];
+  useEffect(function () { var id = setInterval(function () { setN(new Date()); }, ms); return function () { clearInterval(id); }; }, [ms]);
   return n[0];
 }
 
@@ -192,13 +179,9 @@ function useResults() {
 
   useEffect(function () {
     load();
-    function startPolling() {
-      if (t.current) clearInterval(t.current);
-      t.current = setInterval(load, REFRESH_MS);
-    }
-    if (new Date() >= COUNTING_START) {
-      startPolling();
-    } else {
+    function startPolling() { if (t.current) clearInterval(t.current); t.current = setInterval(load, REFRESH_MS); }
+    if (new Date() >= COUNTING_START) { startPolling(); }
+    else {
       var delay = COUNTING_START - new Date();
       var tid = setTimeout(function () { load(); startPolling(); }, Math.min(delay, 2147483000));
       return function () { clearTimeout(tid); if (t.current) clearInterval(t.current); };
@@ -209,8 +192,7 @@ function useResults() {
   return { data: data, err: err, loading: loading, initialLoad: initialLoad, lastFetch: lastFetch, reload: load };
 }
 
-// Components ──────────────────────────────────────────────
-
+// ─────────────────────────────────────────────────────────
 function Header(props) {
   var lastFetch = props.lastFetch, countingStarted = props.countingStarted, err = props.err, loading = props.loading;
   return (
@@ -231,6 +213,7 @@ function Header(props) {
           }
           {lastFetch ? <span className="mono text-[10px] text-[var(--ink-3)] hidden md:inline">Updated {lastFetch.toLocaleTimeString("en-IN")}</span> : null}
           {err ? <span className="chip" style={{ background: "rgba(231,111,81,.15)", color: "var(--accent-2)" }}>Error</span> : null}
+          <a href="tn-2021.html" className="archive-link">2021 archive →</a>
         </div>
       </div>
     </div>
@@ -285,26 +268,17 @@ function Countdown(props) {
   );
 }
 
-// THE PERFECT — the big editorial verdict
 function VerdictHero(props) {
   var alliances = props.alliances, totals = props.totals;
   if (!alliances || !alliances.length) return null;
   var sorted = alliances.map(function (a) { return Object.assign({}, a, { total: a.won + a.leading }); }).sort(function (a, b) { return b.total - a.total; });
-  var first = sorted[0];
-  var second = sorted[1] || { total: 0, name: "" };
+  var first = sorted[0], second = sorted[1] || { total: 0, name: "" };
   var gap = first.total - second.total;
   var pastMajority = first.total >= MAJORITY;
-
   var topLine, subLine;
   if (first.total === 0) { topLine = "Awaiting first numbers"; subLine = "Counting has not begun."; }
-  else if (pastMajority && first.total >= MAJORITY + 30) {
-    topLine = first.name + " returns to power with absolute majority";
-    subLine = "A historic mandate · " + (first.total - MAJORITY) + " seats above majority threshold.";
-  }
-  else if (pastMajority) {
-    topLine = first.name + " forms the government";
-    subLine = "Past the halfway mark by " + (first.total - MAJORITY) + " seats.";
-  }
+  else if (pastMajority && first.total >= MAJORITY + 30) { topLine = first.name + " returns to power with absolute majority"; subLine = "A historic mandate · " + (first.total - MAJORITY) + " seats above majority threshold."; }
+  else if (pastMajority) { topLine = first.name + " forms the government"; subLine = "Past the halfway mark by " + (first.total - MAJORITY) + " seats."; }
   else if (gap >= 30) { topLine = first.name + " sweeping"; subLine = "Commanding lead — " + gap + " seats clear of " + second.name + "."; }
   else if (gap >= 10) { topLine = first.name + " leading"; subLine = "Holding " + gap + " seats over " + second.name + "."; }
   else if (gap > 0) { topLine = first.name + " narrowly ahead"; subLine = "Razor-thin " + gap + "-seat lead over " + second.name + "."; }
@@ -358,20 +332,17 @@ function VerdictHero(props) {
 function AllianceTiles(props) {
   var alliances = props.alliances;
   var sorted = alliances.slice().sort(function (a, b) { return (b.won + b.leading) - (a.won + a.leading); });
-  var iconFor = { spa: "✱", nda: "❋", tvk: "✦", others: "◇", nda_b: "❋", ind: "✱", aimim: "◆" };
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       {sorted.map(function (a) {
         var total = a.won + a.leading;
         return (
           <div key={a.id} className="alli-tile">
-            <div className="swatch" style={{ color: a.color }}>{iconFor[a.id] || "✦"}</div>
-            <div className="mono text-[10px] tracking-[.15em] uppercase text-[var(--ink-3)] font-semibold">{a.name}</div>
+            <div className="swatch" style={{ background: a.color, borderRadius: 8 }}></div>
+            <div className="mono text-[10px] tracking-[.15em] uppercase text-[var(--ink-3)] font-semibold pr-12">{a.name}</div>
             <div className="num-big mt-2" style={{ color: a.color }}>{total}</div>
             <div className="mt-3 flex items-center gap-2 text-[10px] mono text-[var(--ink-3)]">
-              <span>WON {a.won}</span>
-              <span>·</span>
-              <span>LEAD {a.leading}</span>
+              <span>WON {a.won}</span><span>·</span><span>LEAD {a.leading}</span>
             </div>
           </div>
         );
@@ -394,8 +365,7 @@ function SeatBar(props) {
             var pct = ((a.won + a.leading) / total) * 100;
             if (pct === 0) return null;
             return (
-              <div key={a.id} className="relative h-full flex items-center justify-center"
-                   style={{ width: pct + "%", background: a.color, transition: "width .8s cubic-bezier(.2,.9,.2,1)" }}>
+              <div key={a.id} className="relative h-full flex items-center justify-center" style={{ width: pct + "%", background: a.color, transition: "width .8s cubic-bezier(.2,.9,.2,1)" }}>
                 {pct > 6 ? <span className="mono text-[13px] font-bold text-white num">{a.won + a.leading}</span> : null}
               </div>
             );
@@ -411,21 +381,18 @@ function SeatBar(props) {
 }
 
 function PartyChart(props) {
-  var constituencies = props.constituencies, alliances = props.alliances;
+  var constituencies = props.constituencies;
   var data = useMemo(function () {
     var byParty = {};
     constituencies.forEach(function (c) {
       var p = c.leader.party || "—";
-      if (!byParty[p]) byParty[p] = { name: p, won: 0, leading: 0, alliance: c.leader.alliance, total: 0 };
+      if (!byParty[p]) byParty[p] = { name: p, won: 0, leading: 0, total: 0 };
       if (c.status === "declared") byParty[p].won++;
       else if (c.status === "leading") byParty[p].leading++;
       byParty[p].total = byParty[p].won + byParty[p].leading;
     });
     return Object.keys(byParty).map(function (k) { return byParty[k]; }).sort(function (a, b) { return b.total - a.total; }).slice(0, 12);
   }, [constituencies]);
-
-  var colorByAlliance = {};
-  alliances.forEach(function (a) { colorByAlliance[a.id] = a.color; });
 
   if (!data.length) return <div className="text-sm text-[var(--ink-3)] py-6">Party data pending…</div>;
 
@@ -439,7 +406,7 @@ function PartyChart(props) {
             <div key={d.name} className="flex items-center gap-3">
               <div className="w-20 text-right mono text-[12px] font-semibold text-[var(--ink-2)]">{d.name}</div>
               <div className="flex-1 h-7 rounded bg-[var(--bg-3)] relative overflow-hidden">
-                <div style={{ width: w + "%", background: colorByAlliance[d.alliance] || "#6E7A87", height: "100%" }}></div>
+                <div style={{ width: w + "%", background: partyColor(d.name), height: "100%" }}></div>
               </div>
               <div className="w-10 text-right num font-bold text-[14px]">{d.total}</div>
             </div>
@@ -461,7 +428,7 @@ function PartyChart(props) {
             formatter={function (v) { return [v, "Seats"]; }}
           />
           <Bar dataKey="total" radius={[0, 6, 6, 0]} label={{ position: "right", fill: "#F0E9D6", fontSize: 12, fontWeight: 700, fontFamily: "JetBrains Mono" }}>
-            {data.map(function (d, i) { return <Cell key={i} fill={colorByAlliance[d.alliance] || "#6E7A87"} />; })}
+            {data.map(function (d, i) { return <Cell key={i} fill={partyColor(d.name)} />; })}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -469,15 +436,13 @@ function PartyChart(props) {
   );
 }
 
-// Tamil Nadu constituency map
 function TNMap(props) {
-  var constituencies = props.constituencies, alliances = props.alliances;
+  var constituencies = props.constituencies;
   var ref = useRef(null);
   var s1 = useState(null); var geo = s1[0]; var setGeo = s1[1];
   var s2 = useState(null); var loadErr = s2[0]; var setLoadErr = s2[1];
   var s3 = useState(null); var tip = s3[0]; var setTip = s3[1];
 
-  // Try to fetch real TN constituency hex map
   useEffect(function () {
     var url = "https://raw.githubusercontent.com/baskicanvas/tamilnadu-assembly-constituency-maps/main/tn_ac_2021_hex_map.geojson";
     fetch(url)
@@ -488,17 +453,14 @@ function TNMap(props) {
 
   var byNo = {};
   constituencies.forEach(function (c) { byNo[c.no] = c; });
-  var colorByAlliance = {};
-  alliances.forEach(function (a) { colorByAlliance[a.id] = a.color; });
 
   function colorFor(no) {
     var c = byNo[no];
     if (!c) return "#283D4F";
     if (c.status === "pending") return "#283D4F";
-    return colorByAlliance[c.leader.alliance] || "#6E7A87";
+    return partyColor(c.leader.party);
   }
 
-  // D3 render
   useEffect(function () {
     if (!geo || !hasD3 || !ref.current) return;
     var svg = window.d3.select(ref.current);
@@ -507,13 +469,11 @@ function TNMap(props) {
     var height = 540;
     svg.attr("viewBox", "0 0 " + width + " " + height);
 
-    // Detect AC number key — in baskicanvas/tn the key is "ac_no"
     var firstFeat = geo.features && geo.features[0];
     var props = firstFeat && firstFeat.properties;
     var acKey = "ac_no";
     if (props) {
       var keys = Object.keys(props);
-      // Pick first numeric-looking key
       for (var i = 0; i < keys.length; i++) {
         var k = keys[i].toLowerCase();
         if (k.indexOf("ac") >= 0 || k.indexOf("no") >= 0 || k.indexOf("num") >= 0 || k.indexOf("code") >= 0) {
@@ -529,48 +489,27 @@ function TNMap(props) {
       .data(geo.features)
       .enter().append("path")
       .attr("d", path)
-      .attr("fill", function (d) {
-        var no = +d.properties[acKey];
-        return colorFor(no);
-      })
+      .attr("fill", function (d) { return colorFor(+d.properties[acKey]); })
       .attr("stroke", "#0E1A24")
       .attr("stroke-width", 0.6)
-      .attr("class", "tn-hex")
       .on("mouseenter", function (event, d) {
-        var no = +d.properties[acKey];
-        var c = byNo[no];
+        var c = byNo[+d.properties[acKey]];
         if (!c) return;
         setTip({ x: event.clientX, y: event.clientY, c: c });
       })
       .on("mousemove", function (event, d) {
-        var no = +d.properties[acKey];
-        var c = byNo[no];
+        var c = byNo[+d.properties[acKey]];
         if (!c) return;
         setTip({ x: event.clientX, y: event.clientY, c: c });
       })
       .on("mouseleave", function () { setTip(null); });
   }, [geo, constituencies]);
 
-  // Fallback: hex grid
-  if (loadErr || (!geo && Date.now() > 0)) {
-    // Show fallback only if loadErr or after a delay
-  }
-
   if (loadErr) {
-    return (
-      <div className="text-sm text-[var(--ink-3)] py-12 text-center">
-        <div>Map not available</div>
-        <div className="mono text-[10px] mt-2 opacity-60">{loadErr}</div>
-      </div>
-    );
+    return <div className="text-sm text-[var(--ink-3)] py-12 text-center"><div>Map not available</div><div className="mono text-[10px] mt-2 opacity-60">{loadErr}</div></div>;
   }
   if (!geo) {
-    return (
-      <div className="py-12">
-        <div className="skeleton h-[400px]"></div>
-        <div className="mono text-[10px] text-[var(--ink-3)] text-center mt-3">Loading constituency map…</div>
-      </div>
-    );
+    return <div className="py-12"><div className="skeleton h-[400px]"></div><div className="mono text-[10px] text-[var(--ink-3)] text-center mt-3">Loading constituency map…</div></div>;
   }
 
   return (
@@ -579,7 +518,7 @@ function TNMap(props) {
       {tip ? (
         <div className="seat-tip" style={{ left: tip.x + "px", top: tip.y + "px" }}>
           <div className="tip-title">
-            <span className="tip-swatch" style={{ background: colorByAlliance[tip.c.leader.alliance] || "#6E7A87" }}></span>
+            <span className="tip-swatch" style={{ background: partyColor(tip.c.leader.party) }}></span>
             {tip.c.no}. {tip.c.name}
           </div>
           <div className="tip-row">{tip.c.leader.name}</div>
@@ -591,32 +530,24 @@ function TNMap(props) {
   );
 }
 
-// SVG donut chart
 function DonutChart(props) {
   var data = props.data, total = props.total, label = props.label;
-  if (!data || !data.length || total === 0) {
-    return <div className="text-sm text-[var(--ink-3)] py-12 text-center">No data yet</div>;
-  }
+  if (!data || !data.length || total === 0) return <div className="text-sm text-[var(--ink-3)] py-12 text-center">No data yet</div>;
   var size = 240, cx = size / 2, cy = size / 2, r = 95, ir = 60;
   var cumulative = 0;
   var segments = data.map(function (d) {
     var startAngle = (cumulative / total) * 2 * Math.PI - Math.PI / 2;
     cumulative += d.value;
     var endAngle = (cumulative / total) * 2 * Math.PI - Math.PI / 2;
-    var x1 = cx + r * Math.cos(startAngle);
-    var y1 = cy + r * Math.sin(startAngle);
-    var x2 = cx + r * Math.cos(endAngle);
-    var y2 = cy + r * Math.sin(endAngle);
-    var x3 = cx + ir * Math.cos(endAngle);
-    var y3 = cy + ir * Math.sin(endAngle);
-    var x4 = cx + ir * Math.cos(startAngle);
-    var y4 = cy + ir * Math.sin(startAngle);
+    var x1 = cx + r * Math.cos(startAngle), y1 = cy + r * Math.sin(startAngle);
+    var x2 = cx + r * Math.cos(endAngle), y2 = cy + r * Math.sin(endAngle);
+    var x3 = cx + ir * Math.cos(endAngle), y3 = cy + ir * Math.sin(endAngle);
+    var x4 = cx + ir * Math.cos(startAngle), y4 = cy + ir * Math.sin(startAngle);
     var largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
     var path = ["M", x1, y1, "A", r, r, 0, largeArc, 1, x2, y2, "L", x3, y3, "A", ir, ir, 0, largeArc, 0, x4, y4, "Z"].join(" ");
     var midAngle = (startAngle + endAngle) / 2;
     var labelR = (r + ir) / 2;
-    var labelX = cx + labelR * Math.cos(midAngle);
-    var labelY = cy + labelR * Math.sin(midAngle);
+    var labelX = cx + labelR * Math.cos(midAngle), labelY = cy + labelR * Math.sin(midAngle);
     var pct = (d.value / total) * 100;
     return { d: d, path: path, labelX: labelX, labelY: labelY, pct: pct };
   });
@@ -632,7 +563,7 @@ function DonutChart(props) {
             </g>
           );
         })}
-        <text x={cx} y={cy - 6} textAnchor="middle" fill="#A8B0BA" fontSize="9" fontFamily="JetBrains Mono" letterSpacing="2" textTransform="uppercase">{label || "TOTAL"}</text>
+        <text x={cx} y={cy - 6} textAnchor="middle" fill="#A8B0BA" fontSize="9" fontFamily="JetBrains Mono" letterSpacing="2">{label || "TOTAL"}</text>
         <text x={cx} y={cy + 14} textAnchor="middle" fill="#F0E9D6" fontSize="22" fontWeight="700" fontFamily="Fraunces" className="num">{total}</text>
       </svg>
       <div className="flex-1 min-w-0 space-y-2">
@@ -654,7 +585,7 @@ function DonutChart(props) {
 }
 
 function ConstituencyDetail(props) {
-  var ac = props.ac, colorByAlliance = props.colorByAlliance;
+  var ac = props.ac;
   var s = useState({ loading: true, data: null, err: null }); var state = s[0]; var setState = s[1];
 
   useEffect(function () {
@@ -695,13 +626,16 @@ function ConstituencyDetail(props) {
         <div className="text-right">
           <div className="mono text-[10px] text-[var(--ink-3)]">Round {d.round || "—"}</div>
           <div className="mono text-[11px] text-[var(--ink-2)] mt-0.5">{d.totalVotes.toLocaleString("en-IN")} votes</div>
+          {d.realMargin != null && d.realMargin > 0 ?
+            <div className="mono text-[11px] mt-0.5" style={{ color: "var(--accent)" }}>margin {d.realMargin.toLocaleString("en-IN")}</div>
+            : null}
         </div>
       </div>
 
       <div className="space-y-2.5">
         {d.candidates.slice(0, 10).map(function (c, i) {
           var w = maxVotes > 0 ? Math.max(2, (c.total / maxVotes) * 100) : 0;
-          var color = colorByAlliance[c.alliance] || "#6E7A87";
+          var color = partyColor(c.party);
           var isWinner = i === 0;
           var nameCls = "text-[13px] truncate " + (isWinner ? "font-bold text-[var(--ink)]" : "font-medium text-[var(--ink-2)]");
           return (
@@ -732,14 +666,11 @@ function ConstituencyDetail(props) {
 }
 
 function ConstituencyTable(props) {
-  var constituencies = props.constituencies, alliances = props.alliances;
+  var constituencies = props.constituencies;
   var qS = useState(""); var q = qS[0]; var setQ = qS[1];
   var fS = useState("all"); var filter = fS[0]; var setFilter = fS[1];
   var sS = useState("number"); var sort = sS[0]; var setSort = sS[1];
   var eS = useState(null); var expandedAc = eS[0]; var setExpandedAc = eS[1];
-
-  var colorByAlliance = {};
-  alliances.forEach(function (a) { colorByAlliance[a.id] = a.color; });
 
   var rows = useMemo(function () {
     var needle = q.trim().toLowerCase();
@@ -798,6 +729,10 @@ function ConstituencyTable(props) {
                 : { bg: "rgba(110,122,135,.15)", fg: "var(--ink-3)", label: "Pending" };
               var expanded = expandedAc === c.no;
               var rowCls = "row-btn" + (expanded ? " expanded" : "");
+              // Show margin only when verified (>= 100) — otherwise show "—"
+              var marginDisplay = (c.leader.marginVerified && c.leader.margin > 0)
+                ? c.leader.margin.toLocaleString("en-IN")
+                : "—";
               return (
                 <React.Fragment key={c.no}>
                   <tr className={rowCls} onClick={function () { setExpandedAc(expanded ? null : c.no); }}>
@@ -811,12 +746,12 @@ function ConstituencyTable(props) {
                     <td className="py-3 pr-3 text-[var(--ink-2)]">{c.leader.name}</td>
                     <td className="py-3 pr-3">
                       <span className="inline-flex items-center gap-1.5">
-                        <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: colorByAlliance[c.leader.alliance] || "#6E7A87" }}></span>
+                        <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: partyColor(c.leader.party) }}></span>
                         <span className="font-medium">{c.leader.party}</span>
                       </span>
                     </td>
                     <td className="py-3 pr-3 text-right mono text-[12px] text-[var(--ink-3)]">{c.round || "—"}</td>
-                    <td className="py-3 pr-3 text-right num font-medium">{c.leader.margin ? c.leader.margin.toLocaleString("en-IN") : "—"}</td>
+                    <td className="py-3 pr-3 text-right num font-medium">{marginDisplay}</td>
                     <td className="py-3 pr-3">
                       <span className="chip" style={{ background: chip.bg, color: chip.fg }}>{chip.label}</span>
                     </td>
@@ -824,7 +759,7 @@ function ConstituencyTable(props) {
                   {expanded ? (
                     <tr className="detail-row">
                       <td colSpan={7}>
-                        <ConstituencyDetail ac={c.no} colorByAlliance={colorByAlliance} />
+                        <ConstituencyDetail ac={c.no} />
                       </td>
                     </tr>
                   ) : null}
@@ -857,7 +792,6 @@ function InitialLoadingState() {
   );
 }
 
-// ─────────────────────────────────────────────────────────
 function App() {
   var r = useResults();
   var data = r.data, err = r.err, loading = r.loading, initialLoad = r.initialLoad, lastFetch = r.lastFetch, reload = r.reload;
@@ -868,7 +802,6 @@ function App() {
   var hasLiveNumbers = (declared + leadingCount) > 0;
   var totalSeats = (data && data.totals && data.totals.total) || 234;
 
-  // Regional analysis
   var regionalData = useMemo(function () {
     if (!data || !data.constituencies) return null;
     var byRegion = {};
@@ -880,26 +813,16 @@ function App() {
       var p = c.leader.party;
       byRegion[reg].parties[p] = (byRegion[reg].parties[p] || 0) + 1;
     });
-    // Color each region by its dominant alliance
-    var colorByAlliance = {};
-    if (data.alliances) data.alliances.forEach(function (a) { colorByAlliance[a.id] = a.color; });
     Object.keys(byRegion).forEach(function (reg) {
-      var topParty = null, topCount = 0, topAlliance = null;
-      data.constituencies.forEach(function (c) {
-        if (regionFor(c.no) !== reg || c.status === "pending") return;
-        var parties = byRegion[reg].parties;
-        if (parties[c.leader.party] > topCount) {
-          topCount = parties[c.leader.party];
-          topParty = c.leader.party;
-          topAlliance = c.leader.alliance;
-        }
+      var topParty = null, topCount = 0;
+      Object.keys(byRegion[reg].parties).forEach(function (p) {
+        if (byRegion[reg].parties[p] > topCount) { topCount = byRegion[reg].parties[p]; topParty = p; }
       });
-      byRegion[reg].color = colorByAlliance[topAlliance] || "#6E7A87";
+      if (topParty) byRegion[reg].color = partyColor(topParty);
     });
     return Object.keys(byRegion).map(function (k) { return byRegion[k]; }).filter(function (r) { return r.value > 0; });
   }, [data]);
 
-  // Margin distribution (instead of vote share — we don't have all candidate votes at state level)
   var marginData = useMemo(function () {
     if (!data || !data.constituencies) return null;
     var buckets = [
@@ -911,14 +834,11 @@ function App() {
     ];
     data.constituencies.forEach(function (c) {
       if (c.status === "pending") return;
+      if (!c.leader.marginVerified) return;
       var m = c.leader.margin || 0;
-      // If margin is 0 (data missing), treat as unknown — skip
       if (m === 0) return;
       for (var i = 0; i < buckets.length; i++) {
-        if (m >= buckets[i].min && m < buckets[i].max) {
-          buckets[i].value++;
-          break;
-        }
+        if (m >= buckets[i].min && m < buckets[i].max) { buckets[i].value++; break; }
       }
     });
     return buckets.filter(function (b) { return b.value > 0; });
@@ -930,7 +850,6 @@ function App() {
   return (
     <div>
       {loading ? <div className="topbar-loader"><div className="topbar-loader-inner"></div></div> : null}
-
       <Header lastFetch={lastFetch} countingStarted={countingStarted} err={err} loading={loading} />
       <Masthead />
 
@@ -939,7 +858,7 @@ function App() {
 
         {!initialLoad && !countingStarted && !hasLiveNumbers ? (
           <section className="max-w-7xl mx-auto px-5 md:px-8 pt-8 pb-12">
-            <div className="card p-7 md:p-12 relative overflow-hidden">
+            <div className="card p-7 md:p-12">
               <div className="mono text-[10px] tracking-[.3em] text-[var(--accent)] uppercase">The Count Begins In</div>
               <div className="mt-6"><Countdown target={COUNTING_START} /></div>
               <div className="mt-10 max-w-2xl serif italic text-lg md:text-xl text-[var(--ink-2)] leading-relaxed">
@@ -951,22 +870,18 @@ function App() {
 
         {data && data.alliances && hasLiveNumbers ? (
           <React.Fragment>
-            {/* THE PERFECT — verdict hero */}
             <section className="max-w-7xl mx-auto px-5 md:px-8 pt-7 pb-7">
               <VerdictHero alliances={data.alliances} totals={data.totals} />
             </section>
 
-            {/* Alliance tiles */}
             <section className="max-w-7xl mx-auto px-5 md:px-8 pb-7">
               <AllianceTiles alliances={data.alliances} />
             </section>
 
-            {/* Distribution bar */}
             <section className="max-w-7xl mx-auto px-5 md:px-8 pb-10">
               <div className="card p-6 md:p-8"><SeatBar alliances={data.alliances} total={totalSeats} /></div>
             </section>
 
-            {/* Party Breakdown + TN Map */}
             <section className="max-w-7xl mx-auto px-5 md:px-8 pb-10">
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="card p-6 md:p-8">
@@ -977,41 +892,39 @@ function App() {
                     </div>
                     <div className="mono text-[10px] text-[var(--ink-3)]">Top 12 · by seats</div>
                   </div>
-                  <PartyChart constituencies={data.constituencies} alliances={data.alliances} />
+                  <PartyChart constituencies={data.constituencies} />
                 </div>
                 <div className="card p-6 md:p-8">
                   <div className="mb-5">
                     <div className="mono text-[10px] tracking-[.22em] text-[var(--ink-3)] uppercase">Map</div>
                     <h3 className="serif font-bold text-2xl md:text-3xl mt-1">Constituency Map</h3>
-                    <div className="mono text-[10px] text-[var(--ink-3)] mt-1">Hover any constituency for details</div>
+                    <div className="mono text-[10px] text-[var(--ink-3)] mt-1">Hover any constituency for details · colored by winning party</div>
                   </div>
-                  <TNMap constituencies={data.constituencies} alliances={data.alliances} />
+                  <TNMap constituencies={data.constituencies} />
                 </div>
               </div>
             </section>
 
-            {/* Constituency table */}
             <section className="max-w-7xl mx-auto px-5 md:px-8 pb-12">
               <div className="card p-6 md:p-8">
                 <div className="flex items-baseline justify-between mb-5 flex-wrap gap-2">
                   <div>
-                    <div className="mono text-[10px] tracking-[.22em] text-[var(--ink-3)] uppercase">The Map</div>
+                    <div className="mono text-[10px] tracking-[.22em] text-[var(--ink-3)] uppercase">All 234 seats</div>
                     <h3 className="serif font-bold text-2xl md:text-3xl mt-1">Constituency &amp; Candidate View</h3>
-                    <div className="mono text-[10px] text-[var(--ink-3)] mt-1">Tap a row to see full candidate vote totals</div>
+                    <div className="mono text-[10px] text-[var(--ink-3)] mt-1">Tap a row to see full candidate vote totals · margin shown only when verified</div>
                   </div>
                 </div>
-                <ConstituencyTable constituencies={data.constituencies} alliances={data.alliances} />
+                <ConstituencyTable constituencies={data.constituencies} />
               </div>
             </section>
 
-            {/* Regional + Margin analysis */}
             <section className="max-w-7xl mx-auto px-5 md:px-8 pb-16">
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="card p-6 md:p-8">
                   <div className="mb-5">
                     <div className="mono text-[10px] tracking-[.22em] text-[var(--ink-3)] uppercase">Regional Analysis</div>
                     <h3 className="serif font-bold text-2xl md:text-3xl mt-1">By Region</h3>
-                    <div className="mono text-[10px] text-[var(--ink-3)] mt-1">Each segment colored by region's leading alliance</div>
+                    <div className="mono text-[10px] text-[var(--ink-3)] mt-1">Each segment colored by region's leading party</div>
                   </div>
                   {regionalData && regionalTotal > 0
                     ? <DonutChart data={regionalData} total={regionalTotal} label="DECIDED" />
@@ -1026,7 +939,7 @@ function App() {
                   </div>
                   {marginData && marginTotal > 0
                     ? <DonutChart data={marginData} total={marginTotal} label="WITH DATA" />
-                    : <div className="text-sm text-[var(--ink-3)] py-12 text-center">Margin data pending — showing once first wins are declared</div>
+                    : <div className="text-sm text-[var(--ink-3)] py-12 text-center">Margin data populates as ECI publishes leader/runner-up vote counts</div>
                   }
                 </div>
               </div>
@@ -1039,10 +952,13 @@ function App() {
             <div className="mono text-[10px] text-[var(--ink-3)] tracking-[.1em]">
               Source · results.eci.gov.in · Refresh every {REFRESH_MS / 60000} minutes
             </div>
-            <button onClick={reload}
-              className="mono text-[10px] uppercase tracking-[.2em] px-4 py-2 rounded-lg border border-[var(--rule)] text-[var(--ink-2)] hover:bg-[var(--accent)] hover:text-[var(--bg)] hover:border-[var(--accent)] transition">
-              {loading ? "Refreshing…" : "Refresh now"}
-            </button>
+            <div className="flex items-center gap-3">
+              <a href="tn-2021.html" className="archive-link">View 2021 Results →</a>
+              <button onClick={reload}
+                className="mono text-[10px] uppercase tracking-[.2em] px-4 py-2 rounded-lg border border-[var(--rule)] text-[var(--ink-2)] hover:bg-[var(--accent)] hover:text-[var(--bg)] hover:border-[var(--accent)] transition">
+                {loading ? "Refreshing…" : "Refresh now"}
+              </button>
+            </div>
           </div>
           <div className="max-w-7xl mx-auto px-5 md:px-8 pb-5 mono text-[9px] text-[var(--ink-3)] tracking-[.05em]">
             Not affiliated with the Election Commission. Results advisory until officially notified (Form-20).
@@ -1053,9 +969,8 @@ function App() {
   );
 }
 
-try {
-  ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-} catch (e) {
+try { ReactDOM.createRoot(document.getElementById("root")).render(<App />); }
+catch (e) {
   document.getElementById("root").innerHTML = '<div class="err-box"><b>Render error:</b> ' + (e.message || e) + '</div>';
   console.error("Render error:", e);
 }
