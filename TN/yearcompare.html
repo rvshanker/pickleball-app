@@ -179,7 +179,25 @@ main { position: relative; z-index: 1; }
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 1.5rem; margin-bottom: 2.5rem;
 }
-@media (max-width: 640px) { .compare-grid { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+  .section { padding: 1.25rem .8rem; }
+  .section-title { margin-bottom: 1rem; }
+  .compare-controls { gap: .8rem; margin-bottom: 1.25rem; }
+  .compare-grid { gap: .6rem; }
+  .card-header { padding: .8rem .8rem; gap: .5rem; }
+  .card-year { font-size: 1.6rem; }
+  .card-winner-label { font-size: .55rem; letter-spacing: .1em; }
+  .card-winner-party { font-size: .8rem; }
+  .card-body { padding: .8rem .8rem; }
+  .stat-row { padding: .4rem 0; gap: .25rem; flex-wrap: wrap; }
+  .stat-key { font-size: .55rem; letter-spacing: .08em; }
+  .stat-val { font-size: .7rem; }
+  .seat-bar { height: 24px; }
+  .seat-seg { font-size: .6rem; }
+  .seat-bar-label { font-size: .5rem; }
+  .sbl-item { font-size: .55rem; }
+  .seat-bar-legend { gap: .3rem .5rem; }
+}
 
 .card {
   background: var(--bg2); border: 1px solid var(--border);
@@ -425,23 +443,7 @@ footer {
   </div>
 </header>
 
-<!-- HERO -->
-<section class="hero">
-  <div class="hero-inner">
-    <div class="hero-eyebrow">Assembly Elections · 234 Seats · 50+ Years</div>
-    <h1 class="hero-heading">Tamil Nadu<br>Votes <em>Compared</em></h1>
-    <p class="hero-sub">
-      Five decades of pendulum politics — DMK and AIADMK have traded power in almost every election since 1977. Explore seat counts, turnout, and context across all 11 elections.
-    </p>
-    <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:var(--dmk)"></div>DMK</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--aiadmk)"></div>AIADMK</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--inc)"></div>INC</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--bjp)"></div>BJP</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--others)"></div>Others/Allies</div>
-    </div>
-  </div>
-</section>
+<!-- HERO removed: jump straight to compare -->
 
 <!-- COMPARE SECTION -->
 <section class="section" id="compare">
