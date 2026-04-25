@@ -859,7 +859,7 @@ var VOTE_MESSAGES = {
     { emoji: "🌅", line1: "Oh, you think the Sun will rise again!", line2: "Stalin fans never doubt. May your prediction age like fine filter coffee." },
     { emoji: "☀️", line1: "Rising Sun, rising hopes!", line2: "DMK faithful since 1949. You're keeping the tradition alive." },
     { emoji: "🔴", line1: "Red and rising, just like the Sun!", line2: "Bold pick. Now go argue about it at the tea shop." },
-    { emoji: "🫡", line1: "Aneh vitta naame!", line2: "A true believer. Stalin would be proud. Maybe." },
+    { emoji: "🫡", line1: "Rising Sun", line2: "A true believer. Stalin would be proud. Maybe." },
     { emoji: "🌄", line1: "The sun doesn't ask permission to rise.", line2: "Neither does DMK, apparently. Respect the confidence." },
   ],
   aiadmk: [
@@ -905,7 +905,7 @@ var SEAT_RANGES = {
 };
 
 // ─── Firestore REST helpers ───────────────────────────────
-var FS_BASE = "https://firestore.googleapis.com/v1/projects/pickleball-app-1bba7/databases/-default-/documents";
+var FS_BASE = "https://firestore.googleapis.com/v1/projects/pickleball-app-1bba7/databases/(default)/documents";
 
 // Convert a plain JS object to Firestore REST "fields" format
 function toFsFields(obj) {
@@ -936,20 +936,28 @@ function fromFsDoc(doc) {
 }
 
 function fsGet(collection, docId) {
-  return fetch(FS_BASE + "/" + collection + "/" + docId + "?key=", { cache: "no-store" })
-    .then(function(r) { if (r.status === 404) return null; if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+  var url = FS_BASE + "/" + collection + "/" + docId;
+  return fetch(url, { cache: "no-store" })
+    .then(function(r) {
+      if (r.status === 404) return null;
+      if (!r.ok) return r.text().then(function(t){ throw new Error("HTTP " + r.status + " " + t.slice(0,120)); });
+      return r.json();
+    })
     .then(function(doc) { return fromFsDoc(doc); });
 }
 
 function fsSet(collection, docId, data) {
-  // PATCH with updateMask so we only write specified fields
   var fields = toFsFields(data);
-  var mask = Object.keys(fields).map(function(k){ return "updateMask.fieldPaths=" + k; }).join("&");
-  return fetch(FS_BASE + "/" + collection + "/" + docId + "?" + mask, {
+  var mask = Object.keys(fields).map(function(k){ return "updateMask.fieldPaths=" + encodeURIComponent(k); }).join("&");
+  var url = FS_BASE + "/" + collection + "/" + docId + "?" + mask;
+  return fetch(url, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ fields: fields }),
-  }).then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+  }).then(function(r) {
+    if (!r.ok) return r.text().then(function(t){ throw new Error("HTTP " + r.status + " " + t.slice(0,120)); });
+    return r.json();
+  });
 }
 
 // Increment a single integer field in a Firestore doc using a transaction
