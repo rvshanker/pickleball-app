@@ -113,6 +113,14 @@ var XAxis = RC.XAxis, YAxis = RC.YAxis, Tooltip = RC.Tooltip, Cell = RC.Cell;
 var hasRecharts = !!(ResponsiveContainer && BarChart && Bar);
 var hasD3 = !!window.d3;
 
+// ─────────────────────────────────────────────────────────
+// ⚙️  MAIN TOGGLE — flip this to TRUE on May 4 morning
+// ─────────────────────────────────────────────────────────
+//   false → countdown + voting poll only (no ECI fetch)
+//   true  → live ECI results + countdown until counting day
+var SHOW_LIVE_RESULTS = false;
+// ─────────────────────────────────────────────────────────
+
 // CONFIG
 var PROXY_URL = "https://us-central1-pickleball-app-1bba7.cloudfunctions.net/tnResults";
 var COUNTING_START = new Date("2026-05-04T02:30:00Z");
@@ -186,6 +194,7 @@ function useResults() {
   var t = useRef(null);
 
   function load() {
+    if (!SHOW_LIVE_RESULTS) { setLoading(false); setInitialLoad(false); return; }
     if (!PROXY_URL) { setLoading(false); setInitialLoad(false); return; }
     setLoading(true);
     fetch(PROXY_URL, { cache: "no-store" })
@@ -196,6 +205,12 @@ function useResults() {
   }
 
   useEffect(function () {
+    if (!SHOW_LIVE_RESULTS) {
+      // Skip all fetching — just show countdown + poll
+      setLoading(false);
+      setInitialLoad(false);
+      return;
+    }
     load();
     function startPolling() { if (t.current) clearInterval(t.current); t.current = setInterval(load, REFRESH_MS); }
     if (new Date() >= COUNTING_START) { startPolling(); }
@@ -226,13 +241,16 @@ function Header(props) {
           </nav>
         </div>
         <div className="flex items-center gap-3">
-          {loading ? <span className="mono text-[10px] text-[var(--accent)] tracking-[.15em] uppercase animate-pulse">Fetching…</span> : null}
-          {countingStarted
-            ? <span className="inline-flex items-center gap-2"><span className="pulse-dot"></span><span className="mono text-[10px] tracking-[.2em] text-[var(--accent-2)]">LIVE COUNTING</span></span>
-            : <span className="chip" style={{ background: "rgba(212,168,72,.15)", color: "var(--accent)" }}>Pre-counting</span>
+          {SHOW_LIVE_RESULTS && loading ? <span className="mono text-[10px] text-[var(--accent)] tracking-[.15em] uppercase animate-pulse">Fetching…</span> : null}
+          {SHOW_LIVE_RESULTS
+            ? (countingStarted
+                ? <span className="inline-flex items-center gap-2"><span className="pulse-dot"></span><span className="mono text-[10px] tracking-[.2em] text-[var(--accent-2)]">LIVE COUNTING</span></span>
+                : <span className="chip" style={{ background: "rgba(212,168,72,.15)", color: "var(--accent)" }}>Pre-counting</span>
+              )
+            : <span className="chip" style={{ background: "rgba(74,191,176,.15)", color: "var(--teal)" }}>Predict & Vote</span>
           }
-          {lastFetch ? <span className="mono text-[10px] text-[var(--ink-3)] hidden md:inline">Updated {lastFetch.toLocaleTimeString("en-IN")}</span> : null}
-          {err ? <span className="chip" style={{ background: "rgba(231,111,81,.15)", color: "var(--accent-2)" }}>Error</span> : null}
+          {SHOW_LIVE_RESULTS && lastFetch ? <span className="mono text-[10px] text-[var(--ink-3)] hidden md:inline">Updated {lastFetch.toLocaleTimeString("en-IN")}</span> : null}
+          {SHOW_LIVE_RESULTS && err ? <span className="chip" style={{ background: "rgba(231,111,81,.15)", color: "var(--accent-2)" }}>Error</span> : null}
         </div>
       </div>
     </div>
@@ -997,9 +1015,10 @@ function App() {
       <Masthead />
 
       <main>
-        {initialLoad ? <InitialLoadingState /> : null}
+        {SHOW_LIVE_RESULTS && initialLoad ? <InitialLoadingState /> : null}
 
-        {!initialLoad && !countingStarted && !hasLiveNumbers ? (
+        {/* Show countdown + poll when SHOW_LIVE_RESULTS is off, OR before counting starts and no data yet */}
+        {!SHOW_LIVE_RESULTS || (!initialLoad && !countingStarted && !hasLiveNumbers) ? (
           <React.Fragment>
             <section className="max-w-7xl mx-auto px-5 md:px-8 pt-8 pb-7">
               <div className="card p-7 md:p-12">
@@ -1014,7 +1033,7 @@ function App() {
           </React.Fragment>
         ) : null}
 
-        {data && data.alliances && hasLiveNumbers ? (
+        {SHOW_LIVE_RESULTS && data && data.alliances && hasLiveNumbers ? (
           <React.Fragment>
             <section className="max-w-7xl mx-auto px-5 md:px-8 pt-7 pb-7">
               <VerdictHero alliances={data.alliances} totals={data.totals} />
@@ -1096,15 +1115,19 @@ function App() {
         <footer className="border-t border-[var(--rule)]">
           <div className="max-w-7xl mx-auto px-5 md:px-8 py-7 flex items-center justify-between flex-wrap gap-4">
             <div className="mono text-[10px] text-[var(--ink-3)] tracking-[.1em]">
-              Source · results.eci.gov.in · Refresh every {REFRESH_MS / 60000} minutes
+              {SHOW_LIVE_RESULTS
+                ? "Source · results.eci.gov.in · Refresh every " + (REFRESH_MS / 60000) + " minutes"
+                : "Live results activate at counting start · May 4, 8 AM IST"}
             </div>
             <div className="flex items-center gap-3 flex-wrap">
               <a href="yearcompare.html" className="archive-link">Compare elections →</a>
               <a href="50years.html" className="archive-link">Archive 1971–2021 →</a>
-              <button onClick={reload}
-                className="mono text-[10px] uppercase tracking-[.2em] px-4 py-2 rounded-lg border border-[var(--rule)] text-[var(--ink-2)] hover:bg-[var(--accent)] hover:text-[var(--bg)] hover:border-[var(--accent)] transition">
-                {loading ? "Refreshing…" : "Refresh now"}
-              </button>
+              {SHOW_LIVE_RESULTS ? (
+                <button onClick={reload}
+                  className="mono text-[10px] uppercase tracking-[.2em] px-4 py-2 rounded-lg border border-[var(--rule)] text-[var(--ink-2)] hover:bg-[var(--accent)] hover:text-[var(--bg)] hover:border-[var(--accent)] transition">
+                  {loading ? "Refreshing…" : "Refresh now"}
+                </button>
+              ) : null}
             </div>
           </div>
           <div className="max-w-7xl mx-auto px-5 md:px-8 pb-5 mono text-[9px] text-[var(--ink-3)] tracking-[.05em]">
