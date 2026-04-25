@@ -35,7 +35,8 @@ main{position:relative;z-index:2;}
 .pill:hover{border-color:var(--rule-2);color:var(--ink);}
 .pill.active{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:700;}
 .archive-badge{display:inline-flex;align-items:center;gap:6px;font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--teal);border:1px solid var(--teal);padding:.5rem .9rem;border-radius:8px;}
-.nav-link{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);padding:.4rem .7rem;border-radius:6px;transition:all .15s;text-decoration:none;}
+.nav-link{font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding:.4rem .55rem;border-radius:6px;transition:all .15s;text-decoration:none;white-space:nowrap;}
+@media(min-width:768px){.nav-link{font-size:10px;letter-spacing:.15em;padding:.4rem .7rem;}}
 .nav-link:hover{color:var(--ink);background:var(--bg-3);}
 .nav-link.active{color:var(--accent);background:rgba(212,168,72,.1);}
 .year-tab{font-family:"JetBrains Mono",monospace;font-size:12px;padding:.5rem .85rem;border-radius:8px;border:1px solid var(--rule);color:var(--ink-3);background:transparent;cursor:pointer;transition:all .15s;white-space:nowrap;}
@@ -107,17 +108,12 @@ function allianceSummary(year,alliances){
 function Header(){
   return (
     <div className="border-b border-[var(--rule)]">
-      <div className="max-w-7xl mx-auto px-5 md:px-8 py-3 flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="mono text-[10px] tracking-[.3em] text-[var(--ink-3)] uppercase">The Count</div>
-          <span className="text-[var(--rule-2)]">|</span>
-          <nav className="flex items-center gap-1 flex-wrap">
-            <a href="index.html" className="nav-link">2026 Live</a>
-            <a href="yearcompare.html" className="nav-link">Compare</a>
-            <a href="50years.html" className="nav-link active">Archive 1971–2021</a>
-          </nav>
-        </div>
-        <span className="archive-badge">Archive · Official ECI Data</span>
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-3">
+        <nav className="flex items-center justify-center md:justify-start gap-1 md:gap-2">
+          <a href="index.html" className="nav-link">2026 Live</a>
+          <a href="yearcompare.html" className="nav-link">Compare</a>
+          <a href="50years.html" className="nav-link active">Archive 1971–2021</a>
+        </nav>
       </div>
     </div>
   );
