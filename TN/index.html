@@ -73,9 +73,9 @@
   .pill.active{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:700;}
   .archive-link{display:inline-flex;align-items:center;gap:6px;font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);padding:.5rem .9rem;border-radius:8px;transition:all .15s;text-decoration:none;}
   .archive-link:hover{background:var(--accent);color:var(--bg);}
-  .nav-link{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);padding:.4rem .7rem;border-radius:6px;transition:all .15s;text-decoration:none;}
-  .nav-link:hover{color:var(--ink);background:var(--bg-3);}
-  .nav-link.active{color:var(--accent);background:rgba(212,168,72,.1);}
+  .nav-link{font-family:"Inter",system-ui,sans-serif;font-size:13px;font-weight:600;color:var(--ink-2);padding:.5rem .85rem;border-radius:8px;transition:all .15s;text-decoration:none;border:1px solid transparent;}
+  .nav-link:hover{color:var(--accent);background:rgba(212,168,72,.08);border-color:rgba(212,168,72,.3);text-decoration:underline;text-underline-offset:3px;}
+  .nav-link.active{color:var(--accent);background:rgba(212,168,72,.12);border-color:rgba(212,168,72,.4);}
   .ornaments{position:absolute;right:0;top:0;bottom:0;width:55%;opacity:.07;pointer-events:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='200' viewBox='0 0 400 200'><g fill='none' stroke='%23F0E9D6' stroke-width='1.5'><circle cx='100' cy='100' r='40'/><circle cx='100' cy='100' r='30'/><circle cx='100' cy='100' r='20'/><path d='M 70 100 L 130 100 M 100 70 L 100 130 M 78 78 L 122 122 M 122 78 L 78 122'/></g></svg>");background-repeat:repeat;background-size:400px;}
   .err-box{padding:30px;background:#3D1A1A;border:1px solid #6B2A2A;border-radius:14px;color:#F0C2C2;margin:30px;font-family:"JetBrains Mono",monospace;font-size:13px;}
   .tn-map path{transition:opacity .15s;cursor:pointer;}
@@ -86,17 +86,24 @@
   /* POLL */
   .poll-hero{position:relative;border-radius:20px;overflow:hidden;background:linear-gradient(135deg,#1a0a0a 0%,#2a1a0a 50%,#0a1a1a 100%);}
   .poll-hero-img{width:100%;display:block;border-radius:20px 20px 0 0;}
-  .poll-card{position:relative;border-radius:14px;padding:24px 18px;background:var(--bg-3);border:2px solid var(--rule);cursor:pointer;transition:all .25s cubic-bezier(.2,.9,.2,1);text-align:center;overflow:hidden;}
+  .poll-card{position:relative;border-radius:12px;padding:14px 8px;background:var(--bg-3);border:2px solid var(--rule);cursor:pointer;transition:all .25s cubic-bezier(.2,.9,.2,1);text-align:center;overflow:hidden;}
+  @media (min-width: 768px) { .poll-card{padding:24px 18px;border-radius:14px;} }
   .poll-card:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 20px 40px rgba(0,0,0,.4);}
   .poll-card.voted{border-color:var(--teal);background:linear-gradient(180deg,rgba(74,191,176,.08),var(--bg-3));}
-  .poll-card.your-pick::before{content:"YOUR PICK";position:absolute;top:8px;right:8px;font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.15em;color:var(--teal);font-weight:700;}
+  .poll-card.your-pick::before{content:"✓";position:absolute;top:4px;right:6px;font-family:"JetBrains Mono",monospace;font-size:14px;color:var(--teal);font-weight:700;}
+  @media (min-width: 768px) { .poll-card.your-pick::before{content:"YOUR PICK";font-size:9px;letter-spacing:.15em;top:8px;right:8px;} }
   .poll-card-body{position:relative;z-index:2;}
-  .poll-leader-name{font-family:"Fraunces",serif;font-weight:900;font-size:22px;letter-spacing:-.02em;line-height:1.05;}
-  .poll-party-tag{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.2em;font-weight:700;margin-top:6px;}
-  .poll-bar{position:relative;height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:14px;}
+  .poll-leader-name{font-family:"Fraunces",serif;font-weight:900;font-size:14px;letter-spacing:-.02em;line-height:1.05;}
+  @media (min-width: 768px) { .poll-leader-name{font-size:22px;} }
+  .poll-party-tag{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.12em;font-weight:700;margin-top:4px;}
+  @media (min-width: 768px) { .poll-party-tag{font-size:11px;letter-spacing:.2em;margin-top:6px;} }
+  .poll-bar{position:relative;height:6px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:10px;}
+  @media (min-width: 768px) { .poll-bar{height:8px;margin-top:14px;} }
   .poll-bar-fill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;transition:width .8s cubic-bezier(.2,.9,.2,1);}
-  .poll-pct{font-family:"Fraunces",serif;font-weight:900;font-size:38px;letter-spacing:-.02em;margin-top:10px;line-height:1;}
-  .poll-votes{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--ink-3);margin-top:4px;}
+  .poll-pct{font-family:"Fraunces",serif;font-weight:900;font-size:24px;letter-spacing:-.02em;margin-top:8px;line-height:1;}
+  @media (min-width: 768px) { .poll-pct{font-size:38px;margin-top:10px;} }
+  .poll-votes{font-family:"JetBrains Mono",monospace;font-size:9px;color:var(--ink-3);margin-top:3px;}
+  @media (min-width: 768px) { .poll-votes{font-size:10px;margin-top:4px;} }
 </style>
 </head>
 <body>
@@ -231,15 +238,11 @@ function Header(props) {
   return (
     <div className="border-b border-[var(--rule)]">
       <div className="max-w-7xl mx-auto px-5 md:px-8 py-3 flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="mono text-[10px] tracking-[.3em] text-[var(--ink-3)] uppercase">The Count</div>
-          <span className="text-[var(--rule-2)]">|</span>
-          <nav className="flex items-center gap-1 flex-wrap">
-            <a href="index.html" className="nav-link active">2026 Live</a>
-            <a href="yearcompare.html" className="nav-link">Compare</a>
-            <a href="50years.html" className="nav-link">Archive 1971–2021</a>
-          </nav>
-        </div>
+        <nav className="flex items-center gap-1 flex-nowrap overflow-x-auto">
+          <a href="index.html" className="nav-link active" style={{whiteSpace:"nowrap",padding:".4rem .6rem",fontSize:12}}>2026 Live</a>
+          <a href="yearcompare.html" className="nav-link" style={{whiteSpace:"nowrap",padding:".4rem .6rem",fontSize:12}}>Compare Elections</a>
+          <a href="50years.html" className="nav-link" style={{whiteSpace:"nowrap",padding:".4rem .6rem",fontSize:12}}>Archive 1971–2021</a>
+        </nav>
         <div className="flex items-center gap-3">
           {SHOW_LIVE_RESULTS && loading ? <span className="mono text-[10px] text-[var(--accent)] tracking-[.15em] uppercase animate-pulse">Fetching…</span> : null}
           {SHOW_LIVE_RESULTS
@@ -247,7 +250,7 @@ function Header(props) {
                 ? <span className="inline-flex items-center gap-2"><span className="pulse-dot"></span><span className="mono text-[10px] tracking-[.2em] text-[var(--accent-2)]">LIVE COUNTING</span></span>
                 : <span className="chip" style={{ background: "rgba(212,168,72,.15)", color: "var(--accent)" }}>Pre-counting</span>
               )
-            : <span className="chip" style={{ background: "rgba(74,191,176,.15)", color: "var(--teal)" }}>Predict & Vote</span>
+            : null
           }
           {SHOW_LIVE_RESULTS && lastFetch ? <span className="mono text-[10px] text-[var(--ink-3)] hidden md:inline">Updated {lastFetch.toLocaleTimeString("en-IN")}</span> : null}
           {SHOW_LIVE_RESULTS && err ? <span className="chip" style={{ background: "rgba(231,111,81,.15)", color: "var(--accent-2)" }}>Error</span> : null}
@@ -301,6 +304,33 @@ function Countdown(props) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// Compact horizontal countdown — fits in a single line strip
+function CountdownStrip(props) {
+  var now = useNow(1000);
+  var diff = Math.max(0, props.target - now);
+  var d = Math.floor(diff / 86400000);
+  var h = Math.floor(diff / 3600000) % 24;
+  var m = Math.floor(diff / 60000) % 60;
+  var s = Math.floor(diff / 1000) % 60;
+  function pad(n) { return String(n).padStart(2, "0"); }
+  return (
+    <div className="border-b border-[var(--rule)] bg-[var(--bg-2)]/50">
+      <div className="max-w-7xl mx-auto px-5 md:px-8 py-3 flex items-center justify-center gap-2 md:gap-4 flex-wrap">
+        <span className="mono text-[10px] tracking-[.2em] text-[var(--ink-3)] uppercase">Counting starts May 4 in</span>
+        <div className="flex items-baseline gap-2 md:gap-3">
+          <span className="serif font-bold text-2xl md:text-3xl num" style={{ color: "var(--accent)" }}>{d}<span className="text-[10px] text-[var(--ink-3)] ml-1 mono uppercase tracking-wider">d</span></span>
+          <span className="text-[var(--rule-2)]">·</span>
+          <span className="serif font-bold text-2xl md:text-3xl num">{pad(h)}<span className="text-[10px] text-[var(--ink-3)] ml-1 mono uppercase tracking-wider">h</span></span>
+          <span className="text-[var(--rule-2)]">·</span>
+          <span className="serif font-bold text-2xl md:text-3xl num">{pad(m)}<span className="text-[10px] text-[var(--ink-3)] ml-1 mono uppercase tracking-wider">m</span></span>
+          <span className="text-[var(--rule-2)]">·</span>
+          <span className="serif font-bold text-2xl md:text-3xl num">{pad(s)}<span className="text-[10px] text-[var(--ink-3)] ml-1 mono uppercase tracking-wider">s</span></span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -814,122 +844,335 @@ function ConstituencyTable(props) {
 
 // ─────────────────────────────────────────────────────────
 // FUN POLL — pre-counting prediction game
+// Backed by Firebase Cloud Function tnPoll → Firestore
 // ─────────────────────────────────────────────────────────
-var POLL_API = "https://api.counterapi.dev/v1/pickleconnect-tn2026";
+var POLL_API = "https://us-central1-pickleball-app-1bba7.cloudfunctions.net/tnPoll";
 var POLL_OPTIONS = [
-  { id: "dmk",    name: "M. K. Stalin",    party: "DMK",    color: "#C8352F", tag: "Rising Sun ☀" },
-  { id: "aiadmk", name: "E. Palaniswami",  party: "AIADMK", color: "#1F7A1F", tag: "Two Leaves 🌿" },
-  { id: "tvk",    name: "Vijay",           party: "TVK",    color: "#9D2F2F", tag: "Drum & Mic 🥁" },
+  { id: "dmk",    name: "Stalin",       party: "DMK",    color: "#C8352F", tag: "Rising Sun" },
+  { id: "aiadmk", name: "Palaniswami",  party: "AIADMK", color: "#1F7A1F", tag: "Two Leaves" },
+  { id: "tvk",    name: "Vijay",        party: "TVK",    color: "#9D2F2F", tag: "Whistle" },
 ];
+
+// Fun messages shown after voting — arrays, one picked randomly
+var VOTE_MESSAGES = {
+  dmk: [
+    { emoji: "🌅", line1: "Oh, you think the Sun will rise again!", line2: "Stalin fans never doubt. May your prediction age like fine filter coffee." },
+    { emoji: "☀️", line1: "Rising Sun, rising hopes!", line2: "DMK faithful since 1949. You're keeping the tradition alive." },
+    { emoji: "🔴", line1: "Red and rising, just like the Sun!", line2: "Bold pick. Now go argue about it at the tea shop." },
+    { emoji: "🫡", line1: "Aneh vitta naame!", line2: "A true believer. Stalin would be proud. Maybe." },
+    { emoji: "🌄", line1: "The sun doesn't ask permission to rise.", line2: "Neither does DMK, apparently. Respect the confidence." },
+  ],
+  aiadmk: [
+    { emoji: "🍃", line1: "Leaves coming again, are they?", line2: "Palaniswami fans never give up. Respect the undying faith." },
+    { emoji: "💚", line1: "Two leaves, one dream!", line2: "AIADMK is down but not out — or so you believe. Brave pick." },
+    { emoji: "🌿", line1: "The leaves are rustling back to power!", line2: "MGR's legacy runs deep. You're betting on a comeback story." },
+    { emoji: "🫂", line1: "Still with Amma's party!", line2: "EPS fans are loyal to the bone. Let's see if the numbers agree." },
+    { emoji: "🍀", line1: "Four-leaf clover energy!", line2: "You need a little luck and a lot of booth agents. Good luck!" },
+  ],
+  tvk: [
+    { emoji: "🎵", line1: "The whistle blows — and the crowd goes wild!", line2: "Vijay's fans are loud, proud, and hoping 2026 is their big year." },
+    { emoji: "🎬", line1: "From screen to assembly!", line2: "Thalapathy's political debut. You believe in the script. Bold." },
+    { emoji: "🏟️", line1: "Whistle podu!", line2: "If fan energy converted to votes, TVK would win 300+ seats. You might be right!" },
+    { emoji: "🌟", line1: "A new star enters Tamil Nadu politics!", line2: "First election, big dreams. You're betting on the newcomer. Respect." },
+    { emoji: "🎤", line1: "The mic is live, the crowd is ready!", line2: "TVK fans say this is just the beginning. Maybe you'll be proven right on May 4." },
+  ],
+};
+function pickMessage(partyId) {
+  var arr = VOTE_MESSAGES[partyId];
+  if (!arr || !arr.length) return { emoji: "🗳️", line1: "Vote cast!", line2: "May your prediction be right." };
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// Candidate line — shown below the message, randomised so it's not the same every time
+var CANDIDATE_LINES = [
+  "Next time, I want your name on the candidate list! 🗳️",
+  "2031 mela ungalukku ticket kudunga — just saying! 🎫",
+  "Candidate-a நீங்களே நின்னா? We'd vote for you! 🌟",
+  "Your political career starts with one prediction. This is that moment. 🚀",
+  "Keep this screenshot — future CM's first election prediction! 📸",
+  "Form-A ready panna sollunga. You clearly have opinions! 😄",
+  "2031: Voter → Candidate. We see the arc! 🗺️",
+];
+function pickCandidateLine() {
+  return CANDIDATE_LINES[Math.floor(Math.random() * CANDIDATE_LINES.length)];
+}
+
+// Seat prediction ranges per party
+var SEAT_RANGES = {
+  dmk:    ["< 100", "100–117", "118–150", "150–180", "180+"],
+  aiadmk: ["< 50",  "50–80",   "80–117",  "118–150", "150+"],
+  tvk:    ["< 20",  "20–40",   "40–70",   "70–100",  "100+"],
+};
+
+// ─── Firestore REST helpers ───────────────────────────────
+var FS_BASE = "https://firestore.googleapis.com/v1/projects/pickleball-app-1bba7/databases/-default-/documents";
+
+// Convert a plain JS object to Firestore REST "fields" format
+function toFsFields(obj) {
+  var fields = {};
+  Object.keys(obj).forEach(function(k) {
+    var v = obj[k];
+    if (v === null || v === undefined) { fields[k] = { nullValue: null }; }
+    else if (typeof v === "number")    { fields[k] = { integerValue: String(Math.round(v)) }; }
+    else if (typeof v === "boolean")   { fields[k] = { booleanValue: v }; }
+    else                               { fields[k] = { stringValue: String(v) }; }
+  });
+  return fields;
+}
+
+// Parse Firestore REST document back to plain JS object
+function fromFsDoc(doc) {
+  if (!doc || !doc.fields) return null;
+  var out = {};
+  Object.keys(doc.fields).forEach(function(k) {
+    var f = doc.fields[k];
+    if (f.integerValue !== undefined) out[k] = parseInt(f.integerValue, 10);
+    else if (f.doubleValue  !== undefined) out[k] = f.doubleValue;
+    else if (f.booleanValue !== undefined) out[k] = f.booleanValue;
+    else if (f.stringValue  !== undefined) out[k] = f.stringValue;
+    else out[k] = null;
+  });
+  return out;
+}
+
+function fsGet(collection, docId) {
+  return fetch(FS_BASE + "/" + collection + "/" + docId + "?key=", { cache: "no-store" })
+    .then(function(r) { if (r.status === 404) return null; if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(function(doc) { return fromFsDoc(doc); });
+}
+
+function fsSet(collection, docId, data) {
+  // PATCH with updateMask so we only write specified fields
+  var fields = toFsFields(data);
+  var mask = Object.keys(fields).map(function(k){ return "updateMask.fieldPaths=" + k; }).join("&");
+  return fetch(FS_BASE + "/" + collection + "/" + docId + "?" + mask, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fields: fields }),
+  }).then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+}
+
+// Increment a single integer field in a Firestore doc using a transaction
+function fsIncrement(collection, docId, field) {
+  return fsGet(collection, docId).then(function(doc) {
+    var cur = (doc && typeof doc[field] === "number") ? doc[field] : 0;
+    var update = {};
+    update[field] = cur + 1;
+    return fsSet(collection, docId, update).then(function() { return cur + 1; });
+  });
+}
+
+// Visitor ID stored in Firebase under /visitors/{visitorId}
+function getOrCreateVisitorId() {
+  try {
+    var k = "tn2026_vid";
+    var v = sessionStorage.getItem(k) || (Math.random().toString(36).slice(2) + Date.now().toString(36));
+    sessionStorage.setItem(k, v);
+    return v;
+  } catch(e) {
+    return Math.random().toString(36).slice(2);
+  }
+}
 
 function Poll() {
   var s1 = useState({}); var counts = s1[0]; var setCounts = s1[1];
   var s2 = useState(null); var myVote = s2[0]; var setMyVote = s2[1];
   var s3 = useState(true); var loadingCounts = s3[0]; var setLoadingCounts = s3[1];
   var s4 = useState(null); var voteErr = s4[0]; var setVoteErr = s4[1];
+  // seat prediction: step = "vote" | "seats" | "done"
+  var s5 = useState("vote"); var step = s5[0]; var setStep = s5[1];
+  var s6 = useState(null); var pendingVote = s6[0]; var setPendingVote = s6[1];
+  var s7 = useState(null); var seatPick = s7[0]; var setSeatPick = s7[1];
+  var s8 = useState(null); var voteMsg = s8[0]; var setVoteMsg = s8[1];
+  var s9 = useState(null); var candLine = s9[0]; var setCandLine = s9[1];
+  var visitorId = useRef(getOrCreateVisitorId());
 
-  // Load existing vote from localStorage and counts from API
   useEffect(function () {
-    try {
-      var v = localStorage.getItem("tn2026_poll_vote");
-      if (v) setMyVote(v);
-    } catch (e) {}
-    fetchCounts();
+    loadAll();
   }, []);
 
-  function fetchCounts() {
+  function loadAll() {
     setLoadingCounts(true);
-    Promise.all(POLL_OPTIONS.map(function (o) {
-      return fetch(POLL_API + "/poll-" + o.id + "/").then(function (r) { return r.json(); }).catch(function () { return { value: 0 }; });
-    })).then(function (results) {
-      var c = {};
-      POLL_OPTIONS.forEach(function (o, i) { c[o.id] = (results[i] && results[i].value) || 0; });
-      setCounts(c);
-      setLoadingCounts(false);
-    }).catch(function () { setLoadingCounts(false); });
+    var vid = visitorId.current;
+    Promise.all([
+      fsGet("tn2026poll", "votes").catch(function(){ return null; }),
+      fsGet("tn2026poll", "visitor_" + vid).catch(function(){ return null; }),
+    ]).then(function(results) {
+      var votes = results[0];
+      var myRecord = results[1];
+      if (votes) {
+        setCounts({ dmk: votes.dmk||0, aiadmk: votes.aiadmk||0, tvk: votes.tvk||0 });
+      }
+      if (myRecord && myRecord.choice) {
+        setMyVote(myRecord.choice);
+        setSeatPick(myRecord.seats || null);
+        setVoteMsg(pickMessage(myRecord.choice));
+        setCandLine(pickCandidateLine());
+        setStep("done");
+      }
+    }).catch(function(){ /* silent */ })
+      .finally(function(){ setLoadingCounts(false); });
   }
 
-  function vote(optId) {
-    if (myVote) return; // already voted
-    // Optimistically register the vote
-    try { localStorage.setItem("tn2026_poll_vote", optId); } catch (e) {}
+  function handleVoteCard(optId) {
+    if (myVote || step !== "vote") return;
+    setPendingVote(optId);
+    setStep("seats");
+  }
+
+  function handleSeatPick(range) {
+    setSeatPick(range);
+    commitVote(pendingVote, range);
+  }
+
+  function skipSeatPick() {
+    commitVote(pendingVote, null);
+  }
+
+  function commitVote(optId, seats) {
+    var vid = visitorId.current;
+    setVoteErr(null);
+    // Pick random message NOW so it's stable for this session
+    setVoteMsg(pickMessage(optId));
+    setCandLine(pickCandidateLine());
+    // Optimistic update
     setMyVote(optId);
-    setCounts(function (c) { var nc = Object.assign({}, c); nc[optId] = (nc[optId] || 0) + 1; return nc; });
-    // Send increment to API
-    fetch(POLL_API + "/poll-" + optId + "/up/")
-      .then(function (r) { return r.json(); })
-      .then(function () { setTimeout(fetchCounts, 800); })
-      .catch(function (e) { setVoteErr("Couldn't sync your vote — but it's saved locally."); });
+    setStep("done");
+    setCounts(function(c){ var nc = Object.assign({}, c); nc[optId] = (nc[optId]||0)+1; return nc; });
+
+    // Save to Firestore: increment vote count + record visitor
+    Promise.all([
+      fsIncrement("tn2026poll", "votes", optId),
+      fsSet("tn2026poll", "visitor_" + vid, { choice: optId, seats: seats || "", ts: Date.now() }),
+    ]).then(function(){
+      fsGet("tn2026poll", "votes").then(function(votes){
+        if (votes) setCounts({ dmk: votes.dmk||0, aiadmk: votes.aiadmk||0, tvk: votes.tvk||0 });
+      }).catch(function(){});
+    }).catch(function(e){ setVoteErr("Couldn't sync with server: " + (e.message||"unknown")); });
   }
 
-  var total = (counts.dmk || 0) + (counts.aiadmk || 0) + (counts.tvk || 0);
+  var total = (counts.dmk||0) + (counts.aiadmk||0) + (counts.tvk||0);
+  var msg = voteMsg;
+  var chosenOpt = POLL_OPTIONS.find(function(o){ return o.id === myVote; });
 
   return (
-    <section className="max-w-7xl mx-auto px-5 md:px-8 pt-7 pb-7">
+    <section className="max-w-7xl mx-auto px-3 md:px-8 pt-5 pb-7">
       <div className="poll-hero">
-        {/* Hero image — referenced relatively. Drop poll-hero.png into your public/ folder */}
         <img src="poll-hero.png" alt="Tamil Nadu Elections 2026" className="poll-hero-img"
-             onError={function (e) { e.target.style.display = 'none'; }} />
-        <div className="p-6 md:p-9">
-          <div className="flex items-baseline justify-between mb-5 flex-wrap gap-3">
-            <div>
-              <div className="mono text-[10px] tracking-[.28em] text-[var(--accent)] uppercase">Predict the Winner</div>
-              <h2 className="serif font-black text-3xl md:text-5xl mt-2 leading-[1.05]">Who will lead Tamil Nadu?</h2>
-              <div className="text-[var(--ink-2)] text-sm md:text-base mt-2 italic">
-                Cast your vote · One pick per browser · Results live as people vote
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="mono text-[9px] tracking-[.2em] text-[var(--ink-3)] uppercase">Total votes</div>
-              <div className="serif font-bold num text-3xl mt-1" style={{ color: "var(--accent)" }}>{loadingCounts ? "…" : total.toLocaleString("en-IN")}</div>
-            </div>
-          </div>
+             onError={function(e){ e.target.style.display='none'; }} />
+        <div className="p-4 md:p-9">
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-            {POLL_OPTIONS.map(function (o) {
-              var n = counts[o.id] || 0;
-              var pct = total > 0 ? (n / total) * 100 : 0;
-              var isMine = myVote === o.id;
-              var voted = !!myVote;
-              var cls = "poll-card" + (voted ? " voted" : "") + (isMine ? " your-pick" : "");
-              return (
-                <div key={o.id} className={cls}
-                     onClick={function () { vote(o.id); }}
-                     role="button" tabIndex={0}>
-                  <div className="poll-card-body">
-                    <div className="poll-leader-name" style={{ color: o.color }}>{o.name}</div>
-                    <div className="poll-party-tag" style={{ color: o.color }}>{o.party}</div>
-                    <div className="text-[var(--ink-3)] mono text-[10px] mt-1">{o.tag}</div>
-
-                    {voted ? (
-                      <React.Fragment>
-                        <div className="poll-pct num" style={{ color: o.color }}>{pct.toFixed(1)}%</div>
-                        <div className="poll-bar"><div className="poll-bar-fill" style={{ width: pct + "%", background: o.color }}></div></div>
-                        <div className="poll-votes">{n.toLocaleString("en-IN")} {n === 1 ? "vote" : "votes"}</div>
-                      </React.Fragment>
-                    ) : (
-                      <div className="mt-5">
-                        <div className="mono text-[10px] tracking-[.2em] uppercase font-bold py-2 rounded-lg" style={{ background: o.color, color: "#fff" }}>
-                          Vote {o.party}
-                        </div>
-                      </div>
-                    )}
+          {/* ── STEP 1: Vote ── */}
+          {step !== "seats" && (
+            <React.Fragment>
+              <div className="flex items-baseline justify-between mb-4 flex-wrap gap-3">
+                <div>
+                  <div className="mono text-[10px] tracking-[.28em] text-[var(--accent)] uppercase">Predict the Winner</div>
+                  <h2 className="serif font-black text-2xl md:text-5xl mt-1 leading-[1.05]">Who will lead Tamil Nadu?</h2>
+                  <div className="text-[var(--ink-2)] text-xs md:text-base mt-2 italic">
+                    One pick per browser · Live results as people vote
                   </div>
                 </div>
-              );
-            })}
-          </div>
+                <div className="text-right">
+                  <div className="mono text-[9px] tracking-[.2em] text-[var(--ink-3)] uppercase">Total votes</div>
+                  <div className="serif font-bold num text-2xl md:text-3xl mt-1" style={{ color: "var(--accent)" }}>{loadingCounts ? "…" : total.toLocaleString("en-IN")}</div>
+                </div>
+              </div>
 
-          {myVote ? (
-            <div className="mt-5 mono text-[10px] text-center text-[var(--ink-3)] tracking-[.1em]">
-              Thanks for voting! Real results land May 4 · Refresh page to see live tally
-            </div>
-          ) : (
-            <div className="mt-5 mono text-[10px] text-center text-[var(--accent)] tracking-[.1em] uppercase animate-pulse">
-              👆 Tap a card to cast your vote
-            </div>
+              <div className="grid grid-cols-3 gap-2 md:gap-4">
+                {POLL_OPTIONS.map(function(o) {
+                  var n = counts[o.id] || 0;
+                  var pct = total > 0 ? (n / total) * 100 : 0;
+                  var isMine = myVote === o.id;
+                  var voted = !!myVote;
+                  var cls = "poll-card" + (voted ? " voted" : "") + (isMine ? " your-pick" : "");
+                  return (
+                    <div key={o.id} className={cls}
+                         onClick={function(){ handleVoteCard(o.id); }}
+                         role="button" tabIndex={0}>
+                      <div className="poll-card-body">
+                        <div className="poll-leader-name" style={{ color: o.color }}>{o.name}</div>
+                        <div className="poll-party-tag" style={{ color: o.color }}>{o.party}</div>
+                        <div className="text-[var(--ink-3)] mono text-[9px] md:text-[10px] mt-1 hidden sm:block">{o.tag}</div>
+                        {voted ? (
+                          <React.Fragment>
+                            <div className="poll-pct num" style={{ color: o.color }}>{pct.toFixed(1)}%</div>
+                            <div className="poll-bar"><div className="poll-bar-fill" style={{ width: pct+"%", background: o.color }}></div></div>
+                            <div className="poll-votes">{n.toLocaleString("en-IN")} {n===1?"vote":"votes"}</div>
+                          </React.Fragment>
+                        ) : (
+                          <div className="mt-3 md:mt-5">
+                            <div className="mono text-[9px] md:text-[10px] tracking-[.15em] uppercase font-bold py-2 rounded-lg" style={{ background: o.color, color: "#fff" }}>
+                              Vote
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Post-vote fun message */}
+              {step === "done" && msg && (
+                <div className="mt-6 rounded-2xl p-5 md:p-7 border" style={{ background: "rgba(255,255,255,.04)", borderColor: chosenOpt ? chosenOpt.color+"55" : "var(--rule)" }}>
+                  <div className="text-3xl md:text-4xl mb-2">{msg.emoji}</div>
+                  <div className="serif font-black text-lg md:text-2xl leading-snug" style={{ color: chosenOpt ? chosenOpt.color : "var(--accent)" }}>
+                    {msg.line1}
+                  </div>
+                  <div className="text-[var(--ink-2)] text-sm md:text-base mt-2">{msg.line2}</div>
+                  {seatPick && (
+                    <div className="mt-3 mono text-[10px] text-[var(--ink-3)]">
+                      Your seat prediction: <span style={{ color: "var(--accent)" }}>{seatPick} seats</span>
+                    </div>
+                  )}
+                  <div className="mt-4 mono text-[10px] text-[var(--ink-3)] tracking-[.08em] border-t border-[var(--rule)] pt-3">
+                    {candLine || "Next time, I want your name on the candidate list! 🗳️"} Real results land May 4.
+                  </div>
+                </div>
+              )}
+
+              {step === "vote" && (
+                <div className="mt-5 mono text-[10px] text-center text-[var(--accent)] tracking-[.1em] uppercase animate-pulse">
+                  👆 Tap a card to cast your vote
+                </div>
+              )}
+              {voteErr ? <div className="mt-3 mono text-[10px] text-center" style={{ color: "var(--accent-2)" }}>{voteErr}</div> : null}
+            </React.Fragment>
           )}
-          {voteErr ? <div className="mt-3 mono text-[10px] text-center" style={{ color: "var(--accent-2)" }}>{voteErr}</div> : null}
+
+          {/* ── STEP 2: Seat prediction ── */}
+          {step === "seats" && pendingVote && (function(){
+            var opt = POLL_OPTIONS.find(function(o){ return o.id === pendingVote; });
+            var ranges = SEAT_RANGES[pendingVote] || [];
+            return (
+              <div className="py-4">
+                <div className="mono text-[10px] tracking-[.28em] text-[var(--accent)] uppercase mb-2">One more question…</div>
+                <h2 className="serif font-black text-2xl md:text-4xl leading-[1.05] mb-1">
+                  How many seats will <span style={{ color: opt.color }}>{opt.party}</span> win?
+                </h2>
+                <div className="text-[var(--ink-3)] text-sm mb-6 italic">Your guess — no right answers yet!</div>
+                <div className="grid grid-cols-5 gap-2 mb-5">
+                  {ranges.map(function(r){
+                    return (
+                      <button key={r}
+                        onClick={function(){ handleSeatPick(r); }}
+                        className="poll-card"
+                        style={{ padding: "14px 6px" }}>
+                        <div className="serif font-black text-lg md:text-2xl" style={{ color: opt.color }}>{r}</div>
+                        <div className="mono text-[9px] text-[var(--ink-3)] mt-1">seats</div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button onClick={skipSeatPick}
+                  className="mono text-[10px] text-[var(--ink-3)] tracking-[.1em] underline underline-offset-2 mt-1">
+                  Skip this question →
+                </button>
+              </div>
+            );
+          })()}
+
         </div>
       </div>
     </section>
@@ -1012,7 +1255,6 @@ function App() {
     <div>
       {loading ? <div className="topbar-loader"><div className="topbar-loader-inner"></div></div> : null}
       <Header lastFetch={lastFetch} countingStarted={countingStarted} err={err} loading={loading} />
-      <Masthead />
 
       <main>
         {SHOW_LIVE_RESULTS && initialLoad ? <InitialLoadingState /> : null}
@@ -1020,21 +1262,14 @@ function App() {
         {/* Show countdown + poll when SHOW_LIVE_RESULTS is off, OR before counting starts and no data yet */}
         {!SHOW_LIVE_RESULTS || (!initialLoad && !countingStarted && !hasLiveNumbers) ? (
           <React.Fragment>
-            <section className="max-w-7xl mx-auto px-5 md:px-8 pt-8 pb-7">
-              <div className="card p-7 md:p-12">
-                <div className="mono text-[10px] tracking-[.3em] text-[var(--accent)] uppercase">The Count Begins In</div>
-                <div className="mt-6"><Countdown target={COUNTING_START} /></div>
-                <div className="mt-10 max-w-2xl serif italic text-lg md:text-xl text-[var(--ink-2)] leading-relaxed">
-                  Polling, Thursday the 23rd of April. Counting, the 4th of May at eight in the morning IST.
-                </div>
-              </div>
-            </section>
+            <CountdownStrip target={COUNTING_START} />
             <Poll />
           </React.Fragment>
         ) : null}
 
         {SHOW_LIVE_RESULTS && data && data.alliances && hasLiveNumbers ? (
           <React.Fragment>
+            <Masthead />
             <section className="max-w-7xl mx-auto px-5 md:px-8 pt-7 pb-7">
               <VerdictHero alliances={data.alliances} totals={data.totals} />
             </section>
