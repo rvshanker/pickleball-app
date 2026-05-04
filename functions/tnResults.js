@@ -42,7 +42,28 @@ const PARTIES_BIHAR = {
   "All India Majlis-E-Ittehadul Muslimeen":                       { short:"AIMIM",  alliance:"aimim" },
   "Independent":                                                  { short:"IND",    alliance:"others" },
   "None of the Above":                                            { short:"NOTA",   alliance:"others" },
+  
+  // ── SHORT name aliases (ECI uses these in table cells) ──────────────────
+  "DMK":     { short:"DMK",    alliance:"dmk" },
+  "INC":     { short:"INC",    alliance:"dmk" },
+  "VCK":     { short:"VCK",    alliance:"dmk" },
+  "CPI(M)":  { short:"CPI(M)", alliance:"dmk" },
+  "CPI":     { short:"CPI",    alliance:"dmk" },
+  "MDMK":    { short:"MDMK",   alliance:"dmk" },
+  "IUML":    { short:"IUML",   alliance:"dmk" },
+  "KMDK":    { short:"KMDK",   alliance:"dmk" },
+  "AIADMK":  { short:"AIADMK", alliance:"aiadmk" },
+  "BJP":     { short:"BJP",    alliance:"aiadmk" },
+  "PMK":     { short:"PMK",    alliance:"aiadmk" },
+  "AMMK":    { short:"AMMK",   alliance:"aiadmk" },
+  "DMDK":    { short:"DMDK",   alliance:"aiadmk" },
+  "TVK":     { short:"TVK",    alliance:"tvk" },
+  "NTK":     { short:"NTK",    alliance:"ntk" },
+  "AIMIM":   { short:"AIMIM",  alliance:"aimim" },
+  "IND":     { short:"IND",    alliance:"others" },
+  "NOTA":    { short:"NOTA",   alliance:"others" },
 };
+
 
 const ALLIANCES_BIHAR = [
   { id:"nda",    name:"NDA",         parties:["BJP","JD(U)","LJPRV","HAMS","RLM"], color:"#E65100" },
