@@ -143,13 +143,37 @@ const CACHE_MS = 60_000;
 // ─────────────────────────────────────────────────────────────
 function extractPartyName($, cell) {
   const $c = $(cell);
+
+  // Try <a> or <span> inside the cell — ECI often wraps party name here
+  const innerTag = $c.find("a, span").first().text().replace(/\s+/g, " ").trim();
+  if (innerTag && innerTag.length > 2 && !/pwst|tooltip|trend|leading|won/i.test(innerTag)) {
+    return innerTag;
+  }
+
+  // Walk text nodes, skip PWST-like prefixes
+  const textNodes = [];
+  $c.contents().each((_, node) => {
+    if (node.nodeType === 3) {
+      const t = (node.data || "").replace(/\s+/g, " ").trim();
+      if (t.length > 2 && !/^PWST/i.test(t)) textNodes.push(t);
+    }
+  });
+  if (textNodes.length > 0) return textNodes[0];
+
+  // HTML before first tag — skip if PWST prefix
   const html = $c.html() || "";
   const beforeTag = html.split(/<[^>]+>/)[0].replace(/&amp;/g, "&").trim();
-  if (beforeTag && beforeTag.length > 2) return beforeTag;
+  if (beforeTag && beforeTag.length > 2 && !/^PWST/i.test(beforeTag)) return beforeTag;
+
+  // Raw text fallback — strip PWST prefix then cut at tooltip markers
   const txt = $c.text().replace(/\s+/g, " ").trim();
-  const cut = txt.split(/iParty\s+Wise/i)[0]
-                 .split(/\bi\s+Party\s+Wise/i)[0];
-  return cut.trim();
+  return txt
+    .replace(/^PWST\s*[IVX\d]*/i, "")
+    .split(/iParty\s+Wise/i)[0]
+    .split(/\bParty\s+Wise/i)[0]
+    .split(/Leading\s+In/i)[0]
+    .split(/Won\s+In/i)[0]
+    .trim();
 }
 
 function parsePartyTooltip(partyFullRaw) {
@@ -325,19 +349,22 @@ async function fetchStatewise() {
   const sumTooltip = Object.values(partyTotalsFromTooltip).reduce((s, t) => s + t.won + t.leading, 0);
 
   // Strategy 1: tooltip data from statewise pages
-  if (sumTallies === 0 && sumTooltip > 0) {
-    Object.keys(tallies).forEach(id => { tallies[id].won = 0; tallies[id].leading = 0; });
-    for (const [partyFull, t] of Object.entries(partyTotalsFromTooltip)) {
-      const lp = lookupParty(partyFull);
-      const bucket = tallies[lp.alliance];
-      if (!bucket) continue;
-      bucket.won += t.won;
-      bucket.leading += t.leading;
-    }
-    constituencies.forEach(c => {
-      if (c.status === "pending") c.status = "declared";
-    });
+const hasValidParties = constituencies.some(c =>
+  c.leader.party !== "—" && !/^PWST/i.test(c.leader.party)
+);
+if (sumTallies === 0 && sumTooltip > 0 && hasValidParties) {
+  Object.keys(tallies).forEach(id => { tallies[id].won = 0; tallies[id].leading = 0; });
+  for (const [partyFull, t] of Object.entries(partyTotalsFromTooltip)) {
+    const lp = lookupParty(partyFull);
+    const bucket = tallies[lp.alliance];
+    if (!bucket) continue;
+    bucket.won += t.won;
+    bucket.leading += t.leading;
   }
+  constituencies.forEach(c => {
+    if (c.status === "pending") c.status = "declared";
+  });
+}
 
   // Strategy 2: partywiseresult page (fallback when statewise gives nothing)
   const sumAfterStrategy1 = Object.values(tallies).reduce((s, t) => s + t.won + t.leading, 0);
