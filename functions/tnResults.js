@@ -278,7 +278,6 @@ function parseStatewisePage(html) {
       /result\s+declared|\bdeclared\b|\bwon\b/i.test(statusRaw) ? "declared" :
       /leading/i.test(statusRaw)                                 ? "leading"  :
       /result\s+awaited|awaited/i.test(statusRaw)                ? "pending"  :
-      allDeclared                                                 ? "declared" :
       margin > 0                                                  ? "leading"  :
       "pending";
 
