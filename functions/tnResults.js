@@ -271,14 +271,15 @@ function parseStatewisePage(html) {
         if (n > 0 && n < 1_000_000) margin = n;
       }
       if (/^\d+\/\d+$/.test(cellTxt) && !round) round = cellTxt;
-      if (/declared|result|leading|won/i.test(cellTxt)) statusRaw = cellTxt;
+      if (/result\s+declared|result\s+awaited|leading|won/i.test(cellTxt)) statusRaw = cellTxt;
     }
 
     const status =
-      /declared|result|\bwon\b/i.test(statusRaw) ? "declared" :
-      /leading/i.test(statusRaw)                 ? "leading"  :
-      allDeclared                                ? "declared" :
-      margin > 0                                 ? "leading"  :
+      /result\s+declared|\bdeclared\b|\bwon\b/i.test(statusRaw) ? "declared" :
+      /leading/i.test(statusRaw)                                 ? "leading"  :
+      /result\s+awaited|awaited/i.test(statusRaw)                ? "pending"  :
+      allDeclared                                                 ? "declared" :
+      margin > 0                                                  ? "leading"  :
       "pending";
 
     const lp = lookupParty(leaderParty);
