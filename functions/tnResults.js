@@ -232,7 +232,11 @@ async function fetchStatewisePage(pageNum) {
 }
 
 function detectAllDeclared(html) {
-  return /Status Known For\s+(\d+)\s+out of\s+\1\s+Constituencies/i.test(html);
+  const m = html.match(/Status Known For\s+(\d+)\s+out of\s+(\d+)\s+Constituencies/i);
+  if (!m) return false;
+  const known = parseInt(m[1], 10);
+  const total = parseInt(m[2], 10);
+  return known > 0 && known === total;  // ← 0-of-0 no longer matches
 }
 
 function parseStatewisePage(html) {
@@ -361,9 +365,7 @@ if (sumTallies === 0 && sumTooltip > 0 && hasValidParties) {
     bucket.won += t.won;
     bucket.leading += t.leading;
   }
-  constituencies.forEach(c => {
-    if (c.status === "pending") c.status = "declared";
-  });
+
 }
 
   // Strategy 2: partywiseresult page (fallback when statewise gives nothing)
