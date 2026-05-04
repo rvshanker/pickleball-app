@@ -11,7 +11,7 @@ const functions = require("firebase-functions");
 const cheerio = require("cheerio");
 
 // ─────────────────────────────────────────────────────────────
-const MODE = "bihar";
+const MODE = "tn";
 
 const TARGETS = {
   bihar: { prefix: "ResultAcGenNov2025", stateCode: "S04", label: "Bihar · 2025", totalSeats: 243, majority: 122 },
@@ -52,30 +52,44 @@ const ALLIANCES_BIHAR = [
 ];
 
 const PARTIES_TN = {
-  "Dravida Munnetra Kazhagam":                        { short:"DMK",    alliance:"spa" },
-  "Indian National Congress":                         { short:"INC",    alliance:"spa" },
-  "Viduthalai Chiruthaigal Katchi":                   { short:"VCK",    alliance:"spa" },
-  "Communist Party of India":                         { short:"CPI",    alliance:"spa" },
-  "Communist Party of India (Marxist)":               { short:"CPI(M)", alliance:"spa" },
-  "Marumalarchi Dravida Munnetra Kazhagam":           { short:"MDMK",   alliance:"spa" },
-  "Indian Union Muslim League":                       { short:"IUML",   alliance:"spa" },
-  "Kongunadu Makkal Desia Katchi":                    { short:"KMDK",   alliance:"spa" },
-  "All India Anna Dravida Munnetra Kazhagam":         { short:"AIADMK", alliance:"nda" },
-  "Bharatiya Janata Party":                           { short:"BJP",    alliance:"nda" },
-  "Pattali Makkal Katchi":                            { short:"PMK",    alliance:"nda" },
-  "Amma Makkal Munnettra Kazagam":                    { short:"AMMK",   alliance:"nda" },
-  "Desiya Murpokku Dravida Kazhagam":                 { short:"DMDK",   alliance:"nda" },
+  // ── DMK-led alliance ──────────────────────────────────────────────────────
+  "Dravida Munnetra Kazhagam":                        { short:"DMK",    alliance:"dmk" },
+  "Indian National Congress":                         { short:"INC",    alliance:"dmk" },
+  "Viduthalai Chiruthaigal Katchi":                   { short:"VCK",    alliance:"dmk" },
+  "Communist Party of India":                         { short:"CPI",    alliance:"dmk" },
+  "Communist Party of India (Marxist)":               { short:"CPI(M)", alliance:"dmk" },
+  "Marumalarchi Dravida Munnetra Kazhagam":           { short:"MDMK",   alliance:"dmk" },
+  "Indian Union Muslim League":                       { short:"IUML",   alliance:"dmk" },
+  "Kongunadu Makkal Desia Katchi":                    { short:"KMDK",   alliance:"dmk" },
+
+  // ── AIADMK-led alliance ───────────────────────────────────────────────────
+  "All India Anna Dravida Munnetra Kazhagam":         { short:"AIADMK", alliance:"aiadmk" },
+  "Bharatiya Janata Party":                           { short:"BJP",    alliance:"aiadmk" },
+  "Pattali Makkal Katchi":                            { short:"PMK",    alliance:"aiadmk" },
+  "Amma Makkal Munnettra Kazagam":                    { short:"AMMK",   alliance:"aiadmk" },
+  "Desiya Murpokku Dravida Kazhagam":                 { short:"DMDK",   alliance:"aiadmk" },
+
+  // ── TVK ───────────────────────────────────────────────────────────────────
   "Tamilaga Vettri Kazhagam":                         { short:"TVK",    alliance:"tvk" },
-  "Naam Tamilar Katchi":                              { short:"NTK",    alliance:"others" },
+
+  // ── NTK ───────────────────────────────────────────────────────────────────
+  "Naam Tamilar Katchi":                              { short:"NTK",    alliance:"ntk" },
+
+  // ── AIMIM ─────────────────────────────────────────────────────────────────
+  "All India Majlis-E-Ittehadul Muslimeen":           { short:"AIMIM",  alliance:"aimim" },
+
+  // ── Others ───────────────────────────────────────────────────────────────
   "Independent":                                      { short:"IND",    alliance:"others" },
   "None of the Above":                                { short:"NOTA",   alliance:"others" },
 };
 
 const ALLIANCES_TN = [
-  { id:"spa",    name:"DMK-led SPA",      parties:["DMK","INC","VCK","CPI","CPI(M)","MDMK","IUML","KMDK"], color:"#C8352F" },
-  { id:"nda",    name:"AIADMK+BJP front", parties:["AIADMK","BJP","PMK","AMMK","DMDK"], color:"#2E7D32" },
-  { id:"tvk",    name:"TVK",              parties:["TVK"], color:"#E65100" },
-  { id:"others", name:"Others",           parties:["NTK","IND"], color:"#6B6B6B" },
+  { id:"dmk",    name:"DMK+",    parties:["DMK","INC","VCK","CPI","CPI(M)","MDMK","IUML","KMDK"], color:"#C8352F" },
+  { id:"aiadmk", name:"AIADMK+", parties:["AIADMK","BJP","PMK","AMMK","DMDK"],                    color:"#1F7A1F" },
+  { id:"tvk",    name:"TVK",     parties:["TVK"],                                                  color:"#2557B0" },
+  { id:"ntk",    name:"NTK",     parties:["NTK"],                                                  color:"#7a9e1b" },
+  { id:"aimim",  name:"AIMIM",   parties:["AIMIM"],                                                color:"#1E5C2C" },
+  { id:"others", name:"Others",  parties:["IND","NOTA"],                                           color:"#6B6B6B" },
 ];
 
 const PARTIES   = MODE === "bihar" ? PARTIES_BIHAR   : PARTIES_TN;
@@ -95,9 +109,9 @@ function lookupParty(fullName) {
     if (norm.includes(kNorm) || kNorm.includes(norm)) return val;
   }
   const initials = trimmed.replace(/[()]/g, " ").split(/\s+/)
-    .filter(w => w.length>0 && /^[A-Z]/.test(w))
+    .filter(w => w.length > 0 && /^[A-Z]/.test(w))
     .map(w => w[0]).join("");
-  return { short: initials || trimmed.slice(0,8).toUpperCase(), alliance:"others" };
+  return { short: initials || trimmed.slice(0, 8).toUpperCase(), alliance:"others" };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -106,38 +120,60 @@ const acCache = new Map();
 const CACHE_MS = 60_000;
 
 // ─────────────────────────────────────────────────────────────
-// Extract clean party name from cell containing an embedded tooltip.
-// The raw text looks like:  "Bharatiya Janata PartyiParty Wise State TrendsLeading In:0Won In:89Trailing In:0"
-// We cut at "iParty Wise" (the tooltip marker) to get just the name.
-// ─────────────────────────────────────────────────────────────
 function extractPartyName($, cell) {
   const $c = $(cell);
-  // Prefer HTML-based extraction — text before first nested tag
   const html = $c.html() || "";
   const beforeTag = html.split(/<[^>]+>/)[0].replace(/&amp;/g, "&").trim();
   if (beforeTag && beforeTag.length > 2) return beforeTag;
-
-  // Fallback — raw text, cut at tooltip "iParty Wise"
   const txt = $c.text().replace(/\s+/g, " ").trim();
   const cut = txt.split(/iParty\s+Wise/i)[0]
                  .split(/\bi\s+Party\s+Wise/i)[0];
   return cut.trim();
 }
 
-// Parse "Won In: X" / "Leading In: Y" out of the tooltip text.
-// Used to tally party totals even when the table columns are sparse.
 function parsePartyTooltip(partyFullRaw) {
   if (!partyFullRaw) return { won:null, leading:null };
-  const wonMatch = partyFullRaw.match(/Won\s+In\s*:?\s*(\d+)/i);
+  const wonMatch  = partyFullRaw.match(/Won\s+In\s*:?\s*(\d+)/i);
   const leadMatch = partyFullRaw.match(/Leading\s+In\s*:?\s*(\d+)/i);
   return {
-    won: wonMatch ? parseInt(wonMatch[1], 10) : null,
+    won:     wonMatch  ? parseInt(wonMatch[1],  10) : null,
     leading: leadMatch ? parseInt(leadMatch[1], 10) : null,
   };
 }
 
 // ─────────────────────────────────────────────────────────────
-// STATE-WISE pages
+// Party-wise result page  (confirmed URL for TN 2026)
+// https://results.eci.gov.in/ResultAcGenMay2026/partywiseresult-S22.htm
+// ─────────────────────────────────────────────────────────────
+async function fetchPartywise() {
+  const url = `${BASE}/partywiseresult-${TARGET.stateCode}.htm`;
+  try {
+    const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (PickleConnect)" } });
+    if (!r.ok) return null;
+    const $ = cheerio.load(await r.text());
+    const totals = {};
+
+    $("tr").each((_, tr) => {
+      const tds = $(tr).find("td").toArray();
+      if (tds.length < 3) return;
+      const name    = $(tds[0]).text().trim();
+      const won     = parseInt($(tds[1]).text().replace(/[^0-9]/g, ""), 10) || 0;
+      const leading = parseInt($(tds[2]).text().replace(/[^0-9]/g, ""), 10) || 0;
+      if (name && name.length > 2 && (won + leading) > 0) {
+        totals[name] = { won, leading };
+      }
+    });
+
+    return Object.keys(totals).length > 0 ? totals : null;
+  } catch (e) {
+    console.warn("fetchPartywise failed:", e.message);
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// State-wise pages
+// https://results.eci.gov.in/ResultAcGenMay2026/statewiseS221.htm
 // ─────────────────────────────────────────────────────────────
 async function fetchStatewisePage(pageNum) {
   const url = `${BASE}/statewise${TARGET.stateCode}${pageNum}.htm`;
@@ -150,8 +186,6 @@ async function fetchStatewisePage(pageNum) {
   }
 }
 
-// Detect if the page overall is the "final/declared" archived view.
-// ECI shows "Status Known For 243 out of 243 Constituencies" when done.
 function detectAllDeclared(html) {
   return /Status Known For\s+(\d+)\s+out of\s+\1\s+Constituencies/i.test(html);
 }
@@ -164,48 +198,38 @@ function parseStatewisePage(html) {
   $("tr").each((_, tr) => {
     const $tr = $(tr);
     const tds = $tr.find("td").toArray();
-    // Need at least constituency, number, leader name, leader party
     if (tds.length < 4) return;
 
     const constituency = $(tds[0]).text().trim();
     const constNo = parseInt($(tds[1]).text().trim(), 10);
     if (!constituency || !Number.isFinite(constNo)) return;
-    // Skip weirdly short constituency strings (they're probably footer rows)
     if (constituency.length < 2) return;
 
-    const leaderName  = $(tds[2]).text().trim();
+    const leaderName    = $(tds[2]).text().trim();
     const leaderCellRaw = $(tds[3]).text();
-    const leaderParty = extractPartyName($, tds[3]);
+    const leaderParty   = extractPartyName($, tds[3]);
+    const trailName     = tds[4] ? $(tds[4]).text().trim() : "";
+    const trailParty    = tds[5] ? extractPartyName($, tds[5]) : "";
 
-    // Trail cells (may be present or collapsed)
-    const trailName  = tds[4] ? $(tds[4]).text().trim() : "";
-    const trailParty = tds[5] ? extractPartyName($, tds[5]) : "";
-
-    // Scan all cells for margin / round / status patterns
-    let margin = 0;
-    let round = "";
-    let statusRaw = "";
+    let margin = 0, round = "", statusRaw = "";
 
     for (let i = 6; i < tds.length; i++) {
       const cellTxt = $(tds[i]).text().trim();
       if (!cellTxt) continue;
-      // Margin: a large-ish pure number or "+ 12345"
       const numMatch = cellTxt.match(/^[\s+\-]*([\d,]+)/);
       if (numMatch && !margin) {
         const n = parseInt(numMatch[1].replace(/,/g, ""), 10);
         if (n > 0 && n < 1_000_000) margin = n;
       }
-      // Round: pattern like "25/25"
       if (/^\d+\/\d+$/.test(cellTxt) && !round) round = cellTxt;
-      // Status text
       if (/declared|result|leading|won/i.test(cellTxt)) statusRaw = cellTxt;
     }
 
     const status =
       /declared|result|\bwon\b/i.test(statusRaw) ? "declared" :
-      /leading/i.test(statusRaw)                 ? "leading" :
-      allDeclared                                ? "declared" :   // archived page fallback
-      margin > 0                                 ? "leading" :
+      /leading/i.test(statusRaw)                 ? "leading"  :
+      allDeclared                                ? "declared" :
+      margin > 0                                 ? "leading"  :
       "pending";
 
     const lp = lookupParty(leaderParty);
@@ -228,7 +252,7 @@ function parseStatewisePage(html) {
         alliance: tp.alliance,
       },
       round, status,
-      _tooltip: parsePartyTooltip(leaderCellRaw), // for whole-state tallies
+      _tooltip: parsePartyTooltip(leaderCellRaw),
     });
   });
 
@@ -236,15 +260,17 @@ function parseStatewisePage(html) {
 }
 
 async function fetchStatewise() {
-  const results = await Promise.all(
-    Array.from({ length: 15 }, (_, i) => fetchStatewisePage(i + 1))
-  );
+  // Fetch statewise pages and partywiseresult page in parallel
+  const [statewiseResults, partywiseTotals] = await Promise.all([
+    Promise.all(Array.from({ length: 15 }, (_, i) => fetchStatewisePage(i + 1))),
+    fetchPartywise(),
+  ]);
 
   const allRows = [];
   let anyAllDeclared = false;
   const errors = [];
 
-  results.forEach((r, i) => {
+  statewiseResults.forEach((r, i) => {
     if (!r.ok) {
       if (r.status && r.status !== 404) errors.push(`page ${i+1}: HTTP ${r.status}`);
       return;
@@ -258,7 +284,6 @@ async function fetchStatewise() {
   allRows.forEach(row => byNo.set(row.no, row));
   const constituencies = Array.from(byNo.values()).sort((a, b) => a.no - b.no);
 
-  // PRIMARY tally: count by each row's leader.party + status
   const tallies = Object.fromEntries(ALLIANCES.map(a => [a.id, { won:0, leading:0 }]));
   constituencies.forEach(c => {
     const t = tallies[c.leader.alliance];
@@ -267,9 +292,6 @@ async function fetchStatewise() {
     else if (c.status === "leading") t.leading++;
   });
 
-  // SECONDARY source: the tooltip ships "Won In: X" for every party at state level.
-  // Build per-party totals from those tooltips, then check if our row-count matches.
-  // If the row-tallies are all zero (parser confused) but tooltips have data, use tooltips.
   const partyTotalsFromTooltip = {};
   constituencies.forEach(c => {
     const p = c.leader.partyFull;
@@ -278,11 +300,11 @@ async function fetchStatewise() {
     partyTotalsFromTooltip[p] = { won: t.won, leading: t.leading || 0 };
   });
 
-  const sumTallies = Object.values(tallies).reduce((s,t) => s + t.won + t.leading, 0);
-  const sumTooltip = Object.values(partyTotalsFromTooltip).reduce((s,t) => s + t.won + t.leading, 0);
+  const sumTallies = Object.values(tallies).reduce((s, t) => s + t.won + t.leading, 0);
+  const sumTooltip = Object.values(partyTotalsFromTooltip).reduce((s, t) => s + t.won + t.leading, 0);
 
+  // Strategy 1: tooltip data from statewise pages
   if (sumTallies === 0 && sumTooltip > 0) {
-    // Row-level parse failed to assign status — rebuild alliance tallies from tooltip party totals
     Object.keys(tallies).forEach(id => { tallies[id].won = 0; tallies[id].leading = 0; });
     for (const [partyFull, t] of Object.entries(partyTotalsFromTooltip)) {
       const lp = lookupParty(partyFull);
@@ -291,10 +313,22 @@ async function fetchStatewise() {
       bucket.won += t.won;
       bucket.leading += t.leading;
     }
-    // Also flip each constituency's status to "declared" since archived pages report total wins
     constituencies.forEach(c => {
       if (c.status === "pending") c.status = "declared";
     });
+  }
+
+  // Strategy 2: partywiseresult page (fallback when statewise gives nothing)
+  const sumAfterStrategy1 = Object.values(tallies).reduce((s, t) => s + t.won + t.leading, 0);
+  if (sumAfterStrategy1 === 0 && partywiseTotals) {
+    Object.keys(tallies).forEach(id => { tallies[id].won = 0; tallies[id].leading = 0; });
+    for (const [partyFull, t] of Object.entries(partywiseTotals)) {
+      const lp = lookupParty(partyFull);
+      const bucket = tallies[lp.alliance];
+      if (!bucket) continue;
+      bucket.won += t.won;
+      bucket.leading += t.leading;
+    }
   }
 
   const alliances = ALLIANCES.map(a => ({ ...a, won: tallies[a.id].won, leading: tallies[a.id].leading }));
@@ -304,8 +338,11 @@ async function fetchStatewise() {
   const pending  = Math.max(0, TARGET.totalSeats - constituencies.length) +
                    constituencies.filter(c => c.status === "pending").length;
 
-  // Strip internal fields before sending
   constituencies.forEach(c => { delete c._tooltip; });
+
+  const sumPartywise = partywiseTotals
+    ? Object.values(partywiseTotals).reduce((s, t) => s + t.won + t.leading, 0)
+    : 0;
 
   return {
     mode: MODE, label: TARGET.label,
@@ -313,17 +350,18 @@ async function fetchStatewise() {
     totals: { declared, leading, pending, total: TARGET.totalSeats },
     alliances, constituencies,
     _meta: {
-      pagesFetched: results.filter(r => r.ok).length,
+      pagesFetched: statewiseResults.filter(r => r.ok).length,
       allDeclared: anyAllDeclared,
       rowTallySum: sumTallies,
       tooltipTallySum: sumTooltip,
+      partywiseTallySum: sumPartywise,
       errors: errors.length ? errors : undefined,
     },
   };
 }
 
 // ─────────────────────────────────────────────────────────────
-// Per-constituency detail (unchanged — Constituencywise URL)
+// Per-constituency detail
 // ─────────────────────────────────────────────────────────────
 async function fetchConstituency(ac) {
   const url = `${BASE}/Constituencywise${TARGET.stateCode}${ac}.htm`;
@@ -334,7 +372,7 @@ async function fetchConstituency(ac) {
 
   const heading = $("h2, h3").filter((_, el) => /Assembly Constituency/i.test($(el).text())).first().text().trim();
   const m = heading.match(/Constituency\s+(\d+)\s*[-–]\s*([^(]+)/i);
-  const no = m ? parseInt(m[1], 10) : ac;
+  const no   = m ? parseInt(m[1], 10) : ac;
   const name = m ? m[2].trim() : "";
 
   const statusText = $("*:contains('Status as on')").first().text().trim();
@@ -353,13 +391,13 @@ async function fetchConstituency(ac) {
     const total    = parseInt($(tds[5]).text().replace(/[^0-9]/g, ""), 10) || 0;
     const pct      = parseFloat($(tds[6]).text().trim()) || 0;
     const lp = lookupParty(party);
-    candidates.push({ sn: parseInt(sn,10), name:candName, party:lp.short, partyFull:party, alliance:lp.alliance, evm, postal, total, pct });
+    candidates.push({ sn: parseInt(sn, 10), name:candName, party:lp.short, partyFull:party, alliance:lp.alliance, evm, postal, total, pct });
   });
-  candidates.sort((a,b) => b.total - a.total);
+  candidates.sort((a, b) => b.total - a.total);
 
   return {
     no, name, round, candidates,
-    totalVotes: candidates.reduce((s,c) => s + c.total, 0),
+    totalVotes: candidates.reduce((s, c) => s + c.total, 0),
     updatedAt: new Date().toISOString(),
   };
 }
@@ -372,9 +410,9 @@ exports.tnResults = functions
   .https.onRequest(async (req, res) => {
     const origin = req.headers.origin || "";
     const allowed = [
-      "https://pickleconnect.live","https://www.pickleconnect.live",
-      "https://skipq.app","https://skipq.vip",
-      "http://localhost:3000","http://localhost:5173","http://localhost:8080",
+      "https://pickleconnect.live", "https://www.pickleconnect.live",
+      "https://skipq.app", "https://skipq.vip",
+      "http://localhost:3000", "http://localhost:5173", "http://localhost:8080",
     ];
     if (allowed.includes(origin)) res.set("Access-Control-Allow-Origin", origin);
     else res.set("Access-Control-Allow-Origin", "*");
@@ -384,7 +422,7 @@ exports.tnResults = functions
     if (req.method === "OPTIONS") { res.status(204).send(""); return; }
 
     try {
-      const ac = parseInt(req.query.ac, 10);
+      const ac  = parseInt(req.query.ac, 10);
       const now = Date.now();
 
       if (Number.isFinite(ac) && ac > 0) {
@@ -400,18 +438,18 @@ exports.tnResults = functions
         res.json({ ...summaryCache.data, _cached:true }); return;
       }
       const parsed = await fetchStatewise();
-      if (parsed.constituencies.length > 0) {
+      if (parsed.constituencies.length > 0 || Object.values(parsed.alliances).some(a => a.won + a.leading > 0)) {
         summaryCache = { at:now, data:parsed };
         res.json(parsed);
       } else {
         res.json({
-          mode:MODE, label:TARGET.label,
-          updatedAt:new Date().toISOString(),
-          totals:{ declared:0, leading:0, pending:TARGET.totalSeats, total:TARGET.totalSeats },
+          mode: MODE, label: TARGET.label,
+          updatedAt: new Date().toISOString(),
+          totals: { declared:0, leading:0, pending:TARGET.totalSeats, total:TARGET.totalSeats },
           alliances: ALLIANCES.map(a => ({ ...a, won:0, leading:0 })),
-          constituencies:[],
-          _note:"No data yet",
-          _meta:parsed._meta,
+          constituencies: [],
+          _note: "No data yet — counting may not have started",
+          _meta: parsed._meta,
         });
       }
     } catch (e) {
