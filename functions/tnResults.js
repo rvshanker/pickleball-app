@@ -262,17 +262,24 @@ function parseStatewisePage(html) {
 
     let margin = 0, round = "", statusRaw = "";
 
-    for (let i = 6; i < tds.length; i++) {
-      const cellTxt = $(tds[i]).text().trim();
-      if (!cellTxt) continue;
-      const numMatch = cellTxt.match(/^[\s+\-]*([\d,]+)/);
-      if (numMatch && !margin) {
-        const n = parseInt(numMatch[1].replace(/,/g, ""), 10);
-        if (n > 0 && n < 1_000_000) margin = n;
-      }
-      if (/^\d+\/\d+$/.test(cellTxt) && !round) round = cellTxt;
-      if (/result\s+declared|result\s+awaited|leading|won/i.test(cellTxt)) statusRaw = cellTxt;
-    }
+// Replace the entire for loop (i = 6) block with:
+const foundNums = [];
+for (let i = 6; i < tds.length; i++) {
+  const cellTxt = $(tds[i]).text().trim();
+  if (!cellTxt) continue;
+  if (/^\d+\/\d+$/.test(cellTxt)) { if (!round) round = cellTxt; continue; }
+  if (/result\s+declared|result\s+awaited|leading|won/i.test(cellTxt)) {
+    statusRaw = cellTxt; continue;
+  }
+  // Match standalone numbers only (not partial matches inside longer strings)
+  const numMatch = cellTxt.match(/^[+\-\s]*([\d,]+)\s*$/);
+  if (numMatch) {
+    const n = parseInt(numMatch[1].replace(/,/g, ""), 10);
+    if (n >= 0 && n < 5_000_000) foundNums.push(n);
+  }
+}
+// Use LAST non-zero number — margin is always the last data column
+margin = [...foundNums].filter(n => n > 0).pop() || 0;
 
     const status =
       /result\s+declared|\bdeclared\b|\bwon\b/i.test(statusRaw) ? "declared" :
@@ -445,11 +452,17 @@ async function fetchConstituency(ac) {
   });
   candidates.sort((a, b) => b.total - a.total);
 
-  return {
-    no, name, round, candidates,
-    totalVotes: candidates.reduce((s, c) => s + c.total, 0),
-    updatedAt: new Date().toISOString(),
-  };
+// Compute real margin from actual vote difference
+const realMargin = candidates.length >= 2
+  ? candidates[0].total - candidates[1].total
+  : 0;
+
+return {
+  no, name, round, candidates,
+  totalVotes: candidates.reduce((s, c) => s + c.total, 0),
+  realMargin,           // ← ADD THIS
+  updatedAt: new Date().toISOString(),
+};
 }
 
 // ─────────────────────────────────────────────────────────────
