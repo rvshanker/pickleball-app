@@ -306,79 +306,114 @@ function genSingles(players,rounds,courts){
     }
     return all;
 }
+function genRotating(players, rounds, courts) {
+    const stats = {};
+    players.forEach(p => { stats[p] = { games:0, sitOuts:0, partners:{}, opponents:{}, lastPartner:null }; });
+    const all = [];
 
-function genRotating(players,rounds,courts){
-    const stats={};
-    players.forEach(p=>{stats[p]={games:0,sitOuts:0,partners:{},opponents:{},lastPartner:null};});
-    const all=[];
+    const scoreMatch = (t1a, t1b, t2a, t2b) => {
+        let sc = (stats[t1a].partners[t1b] || 0) * 2000
+               + (stats[t2a].partners[t2b] || 0) * 2000;
+        if (stats[t1a].lastPartner === t1b || stats[t1b].lastPartner === t1a) sc += 5000;
+        if (stats[t2a].lastPartner === t2b || stats[t2b].lastPartner === t2a) sc += 5000;
+        sc += (stats[t1a].opponents[t2a] || 0) * 10 + (stats[t1a].opponents[t2b] || 0) * 10
+            + (stats[t1b].opponents[t2a] || 0) * 10 + (stats[t1b].opponents[t2b] || 0) * 10;
+        return sc;
+    };
 
-    for(let round=0;round<rounds;round++){
-        // Prioritise players who have sat out most AND played least
-        const sorted=[...players].sort((a,b)=>{
-            const sitDiff=stats[b].sitOuts-stats[a].sitOuts; // more sit-outs → play first
-            if(sitDiff!==0)return sitDiff;
-            return stats[a].games-stats[b].games; // fewer games → play first
-        });
+    const bestPairingForFour = (four, courtNum, round) => {
+        const [p1,p2,p3,p4] = four;
+        const opts = [
+            { team1:[p1,p2], team2:[p3,p4] },
+            { team1:[p1,p3], team2:[p2,p4] },
+            { team1:[p1,p4], team2:[p2,p3] },
+        ];
+        let best = null, bestSc = Infinity;
+        for (const o of opts) {
+            const sc = scoreMatch(o.team1[0], o.team1[1], o.team2[0], o.team2[1]);
+            if (sc < bestSc) { bestSc = sc; best = o; }
+        }
+        return { score: bestSc, match: { id:`r${round}-m${courtNum}`, court:courtNum+1, team1:best.team1, team2:best.team2 } };
+    };
 
-        const playN=Math.floor(Math.min(courts*4,sorted.length)/4)*4;
-        const playing=sorted.slice(0,playN);
-        const byes=sorted.slice(playN);
-        byes.forEach(p=>stats[p].sitOuts++);
-
-        const matches=[];
-        let remaining=[...playing];
-        let courtNum=0;
-
-        while(remaining.length>=4&&courtNum<courts){
-            let bestScore=Infinity,bestMatch=null,bestUsed=null;
-
-            // Try every combination of 4 players and all 3 possible team pairings
-            for(let a=0;a<remaining.length;a++)
-            for(let b=a+1;b<remaining.length;b++)
-            for(let c=b+1;c<remaining.length;c++)
-            for(let d=c+1;d<remaining.length;d++){
-                const[p1,p2,p3,p4]=[remaining[a],remaining[b],remaining[c],remaining[d]];
-                const pairings=[
-                    {team1:[p1,p2],team2:[p3,p4]},
-                    {team1:[p1,p3],team2:[p2,p4]},
-                    {team1:[p1,p4],team2:[p2,p3]},
-                ];
-                for(const pair of pairings){
-                    const[t1a,t1b]=pair.team1,[t2a,t2b]=pair.team2;
-                    // Very strong penalty for any repeat partnership
-                    let sc=(stats[t1a].partners[t1b]||0)*2000
-                          +(stats[t2a].partners[t2b]||0)*2000;
-                    // Extra penalty if they were partners LAST round
-                    if(stats[t1a].lastPartner===t1b||stats[t1b].lastPartner===t1a)sc+=5000;
-                    if(stats[t2a].lastPartner===t2b||stats[t2b].lastPartner===t2a)sc+=5000;
-                    // Mild penalty for repeat opponents
-                    sc+=(stats[t1a].opponents[t2a]||0)*10+(stats[t1a].opponents[t2b]||0)*10
-                       +(stats[t1b].opponents[t2a]||0)*10+(stats[t1b].opponents[t2b]||0)*10;
-                    if(sc<bestScore){bestScore=sc;bestMatch={id:`r${round}-m${courtNum}`,court:courtNum+1,team1:pair.team1,team2:pair.team2};bestUsed=[t1a,t1b,t2a,t2b];}
+    // Generator: every way to partition `pool` into k groups of 4 (anchor first elem to dedupe)
+    function* partitionsOfFour(pool, k) {
+        if (k === 0) { yield []; return; }
+        const first = pool[0], rest = pool.slice(1), n = rest.length;
+        for (let a = 0; a < n - 2; a++)
+            for (let b = a + 1; b < n - 1; b++)
+                for (let c = b + 1; c < n; c++) {
+                    const group = [first, rest[a], rest[b], rest[c]];
+                    const remainder = rest.filter((_, i) => i !== a && i !== b && i !== c);
+                    for (const sub of partitionsOfFour(remainder, k - 1)) yield [group, ...sub];
                 }
+    }
+
+    for (let round = 0; round < rounds; round++) {
+        const sorted = [...players].sort((a, b) => {
+            const sd = stats[b].sitOuts - stats[a].sitOuts;
+            return sd !== 0 ? sd : stats[a].games - stats[b].games;
+        });
+        const playN = Math.floor(Math.min(courts*4, sorted.length) / 4) * 4;
+        const playing = sorted.slice(0, playN);
+        const byes = sorted.slice(playN);
+        byes.forEach(p => stats[p].sitOuts++);
+
+        const k = playN / 4;
+        let matches = [];
+
+        // Joint optimization for small problems; greedy fallback for large
+        if (k <= 3) {
+            let bestTotal = Infinity, bestMatches = null;
+            for (const partition of partitionsOfFour(playing, k)) {
+                let total = 0;
+                const tentative = [];
+                for (let i = 0; i < partition.length; i++) {
+                    const r = bestPairingForFour(partition[i], i, round);
+                    total += r.score;
+                    tentative.push(r.match);
+                    if (total >= bestTotal) break;  // prune
+                }
+                if (total < bestTotal) { bestTotal = total; bestMatches = tentative; }
             }
-
-            if(!bestMatch)break;
-            matches.push(bestMatch);
-            const[t1a,t1b,t2a,t2b]=[bestMatch.team1[0],bestMatch.team1[1],bestMatch.team2[0],bestMatch.team2[1]];
-
-            // Update stats
-            [t1a,t1b,t2a,t2b].forEach(p=>stats[p].games++);
-            stats[t1a].partners[t1b]=(stats[t1a].partners[t1b]||0)+1;
-            stats[t1b].partners[t1a]=(stats[t1b].partners[t1a]||0)+1;
-            stats[t2a].partners[t2b]=(stats[t2a].partners[t2b]||0)+1;
-            stats[t2b].partners[t2a]=(stats[t2b].partners[t2a]||0)+1;
-            stats[t1a].lastPartner=t1b;stats[t1b].lastPartner=t1a;
-            stats[t2a].lastPartner=t2b;stats[t2b].lastPartner=t2a;
-            [t1a,t1b].forEach(x=>[t2a,t2b].forEach(y=>{
-                stats[x].opponents[y]=(stats[x].opponents[y]||0)+1;
-                stats[y].opponents[x]=(stats[y].opponents[x]||0)+1;
-            }));
-            remaining=remaining.filter(p=>!bestUsed.includes(p));
-            courtNum++;
+            matches = bestMatches || [];
+        } else {
+            // Greedy (original behavior) for 4+ courts
+            let remaining = [...playing], courtNum = 0;
+            while (remaining.length >= 4 && courtNum < courts) {
+                let bestSc = Infinity, bestM = null, bestUsed = null;
+                for (let a = 0; a < remaining.length; a++)
+                for (let b = a + 1; b < remaining.length; b++)
+                for (let c = b + 1; c < remaining.length; c++)
+                for (let d = c + 1; d < remaining.length; d++) {
+                    const four = [remaining[a], remaining[b], remaining[c], remaining[d]];
+                    const r = bestPairingForFour(four, courtNum, round);
+                    if (r.score < bestSc) { bestSc = r.score; bestM = r.match; bestUsed = four; }
+                }
+                if (!bestM) break;
+                matches.push(bestM);
+                remaining = remaining.filter(p => !bestUsed.includes(p));
+                courtNum++;
+            }
         }
 
-        if(byes.length)matches.byePlayers=byes;
+        // Commit stats
+        matches.forEach(m => {
+            const [t1a,t1b] = m.team1, [t2a,t2b] = m.team2;
+            [t1a,t1b,t2a,t2b].forEach(p => stats[p].games++);
+            stats[t1a].partners[t1b] = (stats[t1a].partners[t1b]||0)+1;
+            stats[t1b].partners[t1a] = (stats[t1b].partners[t1a]||0)+1;
+            stats[t2a].partners[t2b] = (stats[t2a].partners[t2b]||0)+1;
+            stats[t2b].partners[t2a] = (stats[t2b].partners[t2a]||0)+1;
+            stats[t1a].lastPartner = t1b; stats[t1b].lastPartner = t1a;
+            stats[t2a].lastPartner = t2b; stats[t2b].lastPartner = t2a;
+            [t1a,t1b].forEach(x => [t2a,t2b].forEach(y => {
+                stats[x].opponents[y] = (stats[x].opponents[y]||0)+1;
+                stats[y].opponents[x] = (stats[y].opponents[x]||0)+1;
+            }));
+        });
+
+        if (byes.length) matches.byePlayers = byes;
         all.push(matches);
     }
     return all;
