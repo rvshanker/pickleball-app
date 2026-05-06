@@ -1,0 +1,32 @@
+async function runSearch() {
+    const query = document.getElementById('searchInput').value;
+    const resultsDiv = document.getElementById('results');
+    
+    // Point this to your hosted proxy URL
+    const PROXY_URL = "https://pickleconnect.live/fetch-price?url="; 
+
+    const engines = [
+        { name: 'Amazon', url: `https://www.amazon.in/s?k=` },
+        { name: 'Flipkart', url: `https://www.flipkart.com/search?q=` }
+    ];
+
+    for (const engine of engines) {
+        try {
+            const target = engine.url + encodeURIComponent(query);
+            // Request goes to YOUR server, which then fetches from Amazon
+            const response = await fetch(PROXY_URL + encodeURIComponent(target));
+            const html = await response.text();
+            
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, "text/html");
+
+            // Logic to find variants (128GB, 256GB)
+            const textContent = doc.body.innerText;
+            if (textContent.includes("128GB")) renderItem(engine, "128GB");
+            if (textContent.includes("256GB")) renderItem(engine, "256GB");
+            
+        } catch (err) {
+            console.error("Fetch failed:", err);
+        }
+    }
+}
