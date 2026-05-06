@@ -40,11 +40,12 @@
         <div id="results" class="space-y-4"></div>
 
         <div id="emptyState" class="text-center text-slate-500 text-sm mt-8 hidden">
-            No matches found. The site may be returning a captcha — check the console.
+            No matches found. Open DevTools console for diagnostic logs.
         </div>
     </div>
 
     <script>
+        // IMPORTANT: no /api/ prefix and no trailing slash before the ?
         const PROXY_URL = "/fetch-price?url=";
 
         async function runSearch() {
@@ -91,22 +92,23 @@
                     const target = engine.url + encodeURIComponent(query);
                     const response = await fetch(PROXY_URL + encodeURIComponent(target));
 
-                    if (!response.ok) {
-                        const errBody = await response.text();
-                        console.error(`${engine.name} proxy returned ${response.status}:`, errBody.slice(0, 300));
-                        continue;
-                    }
+                    console.log(`${engine.name} HTTP status:`, response.status);
 
                     const html = await response.text();
                     console.log(`${engine.name} HTML length:`, html.length);
+                    console.log(`${engine.name} first 200 chars:`, html.slice(0, 200));
 
-                    // Sanity check
+                    if (!response.ok) {
+                        console.error(`${engine.name} proxy returned non-OK status`);
+                        continue;
+                    }
+
                     if (html.length < 5000) {
-                        console.warn(`${engine.name} response suspiciously short — likely blocked. First 200 chars:`, html.slice(0, 200));
+                        console.warn(`${engine.name} response suspiciously short — likely blocked`);
                         continue;
                     }
                     if (html.toLowerCase().includes('captcha') || html.includes('Robot Check')) {
-                        console.warn(`${engine.name} returned a captcha page.`);
+                        console.warn(`${engine.name} returned a captcha page`);
                         continue;
                     }
 
