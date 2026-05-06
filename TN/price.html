@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PriceTrack India - Client Side</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; }
+        .card { background-color: #1e293b; border: 1px solid #334155; }
+        .amazon { border-left: 4px solid #ff9900; }
+        .flipkart { border-left: 4px solid #2874f0; }
+    </style>
+</head>
+<body class="p-6 font-sans">
+
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6 text-center text-blue-400">Indian Price Comparison</h1>
+        
+        <!-- Search Bar -->
+        <div class="flex gap-2 mb-8">
+            <input id="searchInput" type="text" placeholder="e.g. iphone 16" value="iphone 16" 
+                   class="flex-1 p-3 rounded-lg bg-slate-800 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
+            <button onclick="runSearch()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-bold transition">Search</button>
+        </div>
+
+        <!-- Status -->
+        <div id="status" class="text-sm text-slate-400 mb-4 h-4"></div>
+
+        <!-- Results Table -->
+        <div id="results" class="grid gap-4">
+            <!-- Data will appear here -->
+        </div>
+    </div>
+
+    <script>
+        const CORS_PROXY = "https://api.allorigins.win/get?url=";
+
+        async function runSearch() {
+            const query = document.getElementById('searchInput').value;
+            const resultsDiv = document.getElementById('results');
+            const statusDiv = document.getElementById('status');
+            
+            resultsDiv.innerHTML = "";
+            statusDiv.innerText = "Searching variants (128GB, 256GB, 512GB)...";
+
+            // Define the platforms and their search URLs
+            const engines = [
+                { name: 'Amazon', url: `https://www.amazon.in/s?k=`, color: 'amazon' },
+                { name: 'Flipkart', url: `https://www.flipkart.com/search?q=`, color: 'flipkart' }
+            ];
+
+            // List of variants to check
+            const variants = ["128GB", "256GB", "512GB"];
+
+            for (const engine of engines) {
+                statusDiv.innerText = `Fetching ${engine.name} results...`;
+                
+                try {
+                    // We fetch the main search page for the base query
+                    const targetUrl = engine.url + encodeURIComponent(query);
+                    const response = await fetch(CORS_PROXY + encodeURIComponent(targetUrl));
+                    const data = await response.json();
+                    
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(data.contents, "text/html");
+
+                    // Basic selector logic (Note: These often change and need updates)
+                    // Amazon: .s-result-item | Flipkart: ._75nlfW
+                    const items = engine.name === 'Amazon' 
+                        ? doc.querySelectorAll('.s-result-item') 
+                        : doc.querySelectorAll('[data-id]');
+
+                    items.forEach(item => {
+                        let title = item.innerText;
+                        // Find matches for the specific variants you asked for
+                        variants.forEach(storage => {
+                            if (title.toLowerCase().includes(query.toLowerCase()) && title.includes(storage)) {
+                                renderItem(engine, title, storage);
+                            }
+                        });
+                    });
+
+                } catch (err) {
+                    console.error(`Error fetching ${engine.name}:`, err);
+                }
+            }
+            statusDiv.innerText = "Search complete.";
+        }
+
+        function renderItem(engine, fullTitle, storage) {
+            const resultsDiv = document.getElementById('results');
+            const card = document.createElement('div');
+            card.className = `card ${engine.color} p-4 rounded-lg flex justify-between items-center`;
+            
+            // Extract a dummy price or handle parsing here
+            // In a real version, you'd use specific regex for ₹ symbols
+            card.innerHTML = `
+                <div>
+                    <span class="text-xs font-bold uppercase text-slate-500">${engine.name}</span>
+                    <h3 class="text-lg font-semibold">${fullTitle.substring(0, 60)}...</h3>
+                    <span class="bg-blue-900 text-blue-200 text-xs px-2 py-1 rounded mt-2 inline-block">${storage}</span>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-green-400">Check Site</div>
+                    <button class="text-xs text-blue-400 underline">View Product</button>
+                </div>
+            `;
+            resultsDiv.appendChild(card);
+        }
+    </script>
+</body>
+</html>
