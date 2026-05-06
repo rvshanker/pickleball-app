@@ -804,3 +804,5 @@ exports.onMessageCreated = onDocumentCreated(
 // ─────────────────────────────────────────────────────────────────────────────
 
 exports.tnResults = require("./tnResults").tnResults;
+exports.fetchPrice = require("./fetchPrice").fetchPrice;
+
