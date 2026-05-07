@@ -800,7 +800,7 @@ exports.onMessageCreated = onDocumentCreated(
   }
 );
 // ─────────────────────────────────────────────────────────────────────────────
-// Tamil Nadu 2026 election results proxy
+// Tamil Nadu 2026 election results proxy.
 // ─────────────────────────────────────────────────────────────────────────────
 
 exports.tnResults = require("./tnResults").tnResults;
