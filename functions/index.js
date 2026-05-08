@@ -9,7 +9,7 @@
  * 6. Push: game invite / accept / decline  (existing)
  * 7. Push: player joined your court        (FIXED — now triggers on checkins subcollection)
  * 8. Push: game starting soon reminder     (existing — piggybacked on 5-min schedule)
- * 9. Push: direct message received         (FIXED — now triggers on chatMessages collection)
+ * 9. Push: direct message received         (FIXED — now triggers on chatMessages collections)
  */
 
 const { onSchedule }        = require("firebase-functions/v2/scheduler");
