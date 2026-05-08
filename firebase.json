@@ -31,10 +31,10 @@
       }
     ],
     "rewrites": [
-      {
-        "source": "/fetch-price",
-        "function": "fetchPrice"
-      }
+      { "source": "/fetch-price", "function": "fetchPrice" },
+      { "source": "/search", "function": "searchCatalog" },
+      { "source": "/admin-seed", "function": "adminSeedCatalog" },
+      { "source": "/admin-refresh", "function": "adminRefreshAll" }
     ]
   }
 }
