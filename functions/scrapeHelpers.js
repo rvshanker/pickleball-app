@@ -6,8 +6,7 @@ const SCRAPINGBEE_KEY = defineSecret("SCRAPINGBEE_KEY");
 
 // Site-specific ScrapingBee options.
 // Amazon: cheaper (25 credits) - their HTML is server-rendered with prices visible.
-// Flipkart: needs full JS rendering (75 credits) - their pages load prices via JS
-//   AND fingerprint plain proxy requests as bots, returning a fake "Oops" page.
+// Flipkart: needs JS rendering (75 credits with premium proxy + render_js).
 function buildScrapingBeeUrl(targetUrl, site) {
   const params = new URLSearchParams({
     api_key: SCRAPINGBEE_KEY.value(),
@@ -17,15 +16,12 @@ function buildScrapingBeeUrl(targetUrl, site) {
   });
 
   if (site === "flipkart") {
-    // Flipkart: render JS, wait for the price element to appear before returning.
+    // Render JS and let the page settle for 5 seconds.
+    // We deliberately don't use wait_for — Flipkart's class names rotate too often,
+    // and a missing wait_for element causes a hard 500 instead of returning HTML.
     params.set("render_js", "true");
-    // Wait until the main price element loads. CSS selector for the
-    // primary "Buy now at ₹XXX" button block.
-    params.set("wait_for", "div._30jeq3, div.Nx9bqj, div._16Jk6d");
-    // 8-second cap so we don't burn credits on stuck pages
     params.set("wait", "5000");
   } else {
-    // Amazon: SSR is enough, save credits
     params.set("render_js", "false");
   }
 
@@ -40,7 +36,7 @@ async function fetchPage(url, site) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Amazon product page extractor
+// Amazon
 // ─────────────────────────────────────────────────────────────────────
 function extractAmazonPrice(html) {
   const block = html.match(/corePriceDisplay_desktop_feature_div([\s\S]{0,3000})/);
@@ -68,34 +64,37 @@ function extractAmazonStock(html) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Flipkart product page extractor
-// With render_js=true, the page is fully rendered. Price ends up in the DOM,
-// not just in JSON state. So we look for both shapes.
+// Flipkart — render_js=true means full DOM is in the HTML response.
 // ─────────────────────────────────────────────────────────────────────
 function extractFlipkartPrice(html) {
-  // First check: did Flipkart serve the bot-block page?
-  if (/Oops!\s*Something broke/i.test(html)) {
-    return null;
-  }
+  // First check: bot-block page
+  if (/Oops!\s*Something broke/i.test(html)) return null;
 
   const head = html.slice(0, 800000);
 
-  // Strategy 1: rendered DOM — class names rotate but the price text is stable.
-  // Look for the div that follows "Buy now at" pattern, or the primary price div.
-  let m = head.match(/<div[^>]*class="[^"]*(?:_30jeq3|Nx9bqj|_16Jk6d)[^"]*"[^>]*>\s*₹([\d,]+)/);
+  // Strategy 1: rendered DOM — look for the primary price near "Buy now at"
+  let m = head.match(/Buy now at[^₹]{0,200}₹\s*([\d,]+)/);
   if (m) {
     const price = parseFloat(m[1].replace(/,/g, ""));
     if (price >= 1000 && price <= 500000) return price;
   }
 
-  // Strategy 2: any price-like span/div with rupee symbol, scoped to the buying block
-  m = head.match(/Buy now at[^₹]{0,200}₹\s*([\d,]+)/);
+  // Strategy 2: any standalone ₹XX,XXX in a div near a percentage discount
+  // (e.g. "↓10% 69,900 ₹62,900" — the SECOND number after the discount block is the selling price)
+  m = head.match(/↓\s*\d+%[^₹]{0,100}[\d,]+[^₹]{0,100}₹\s*([\d,]+)/);
   if (m) {
     const price = parseFloat(m[1].replace(/,/g, ""));
     if (price >= 1000 && price <= 500000) return price;
   }
 
-  // Strategy 3: JSON state fallback for sites that do SSR
+  // Strategy 3: meta tag (Flipkart sometimes puts canonical price here)
+  m = head.match(/<meta[^>]*property="product:price:amount"[^>]*content="([\d.]+)"/);
+  if (m) {
+    const price = parseFloat(m[1]);
+    if (price >= 1000 && price <= 500000) return price;
+  }
+
+  // Strategy 4: JSON state fallback
   m = head.match(/"finalPrice"\s*:\s*\{[^{}]*?"value"\s*:\s*(\d+(?:\.\d+)?)/);
   if (m) {
     const price = parseFloat(m[1]);
@@ -144,9 +143,8 @@ async function scrapeProduct(site, url) {
       return result;
     }
 
-    // Detect Flipkart bot-block page
     if (site === "flipkart" && /Oops!\s*Something broke/i.test(html)) {
-      result.error = "Flipkart served bot-block page (Oops Something broke)";
+      result.error = "Flipkart served bot-block page";
       return result;
     }
 
