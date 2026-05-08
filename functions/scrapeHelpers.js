@@ -1,6 +1,4 @@
 // Shared scraping helpers used by refresh functions.
-// Final Flipkart attempt: stealth_proxy=true (different IP pool than premium_proxy)
-// plus diagnostic output on failure to see what's actually being returned.
 
 const { defineSecret } = require("firebase-functions/params");
 const SCRAPINGBEE_KEY = defineSecret("SCRAPINGBEE_KEY");
@@ -13,8 +11,6 @@ function buildScrapingBeeUrl(targetUrl, site) {
   });
 
   if (site === "flipkart") {
-    // Stealth proxy is ScrapingBee's tier for sites with strong bot detection.
-    // Don't combine with premium_proxy — they're alternatives, not stackable.
     params.set("stealth_proxy", "true");
     params.set("render_js", "true");
     params.set("wait", "5000");
@@ -65,43 +61,36 @@ function extractFlipkartPrice(html) {
 
   const head = html.slice(0, 800000);
 
+  // Strategy 1: rendered DOM — look for "Buy now at ₹XXX"
   let m = head.match(/Buy now at[^₹]{0,200}₹\s*([\d,]+)/);
   if (m) {
     const price = parseFloat(m[1].replace(/,/g, ""));
     if (price >= 1000 && price <= 500000) return price;
   }
 
+  // Strategy 2: meta tag
   m = head.match(/<meta[^>]*property="product:price:amount"[^>]*content="([\d.]+)"/);
   if (m) {
     const price = parseFloat(m[1]);
     if (price >= 1000 && price <= 500000) return price;
   }
 
+  // Strategy 3: JSON state finalPrice
   m = head.match(/"finalPrice"\s*:\s*\{[^{}]*?"value"\s*:\s*(\d+(?:\.\d+)?)/);
   if (m) {
     const price = parseFloat(m[1]);
     if (price >= 1000 && price <= 500000) return price;
   }
 
+  // Strategy 4: JSON sellingPrice
   m = head.match(/"sellingPrice"\s*:\s*(?:\{[^{}]*?"(?:amount|value)"\s*:\s*)?(\d+(?:\.\d+)?)/);
   if (m) {
     const price = parseFloat(m[1]);
     if (price >= 1000 && price <= 500000) return price;
   }
 
-  // Strategy: find any standalone ₹ amount in a sensible price range
-  const allPrices = [...head.matchAll(/₹\s*([\d,]+(?:\.\d{2})?)/g)]
-    .map(x => parseFloat(x[1].replace(/,/g, "")))
-    .filter(p => p >= 5000 && p <= 200000);
-
-  if (allPrices.length > 0) {
-    // Most common price in valid range = likely the actual price
-    const counts = {};
-    allPrices.forEach(p => counts[p] = (counts[p] || 0) + 1);
-    const mostCommon = Object.entries(counts).sort((a,b) => b[1]-a[1])[0];
-    if (mostCommon && mostCommon[1] >= 2) return parseFloat(mostCommon[0]);
-  }
-
+  // No fuzzy fallback — better to return null and surface the diagnostic
+  // than to confidently report ₹12,499 when the real price is ₹62,900.
   return null;
 }
 
@@ -152,14 +141,19 @@ async function scrapeProduct(site, url) {
     }
 
     if (result.price === null) {
-      // Diagnostic: include indicators of what's actually in the response
-      const hasRupee = html.includes("₹");
-      const hasBuyNow = /Buy now/i.test(html);
-      const hasAddToCart = /Add to cart/i.test(html);
-      const hasFinalPrice = html.includes("finalPrice");
       const titleMatch = html.match(/<title>([^<]+)<\/title>/);
       const title = titleMatch ? titleMatch[1].slice(0, 80) : "no title";
-      result.error = `No price extracted (${html.length} bytes, title="${title}", hasRupee=${hasRupee}, hasBuyNow=${hasBuyNow}, hasAddToCart=${hasAddToCart}, hasFinalPrice=${hasFinalPrice})`;
+      const hasRupee = html.includes("₹");
+      const hasBuyNow = /Buy now/i.test(html);
+      const hasFinalPrice = html.includes("finalPrice");
+      const hasSellingPrice = html.includes("sellingPrice");
+      const hasMetaPrice = /product:price:amount/i.test(html);
+
+      // Find first 3 ₹ amounts in page for context
+      const rupeeMatches = [...html.matchAll(/₹\s*([\d,]+)/g)].slice(0, 5)
+        .map(x => x[0]).join(", ");
+
+      result.error = `No price (${html.length}b, title="${title}", ₹=${hasRupee}, BuyNow=${hasBuyNow}, finalPrice=${hasFinalPrice}, sellingPrice=${hasSellingPrice}, metaPrice=${hasMetaPrice}, samples=[${rupeeMatches}])`;
     }
     return result;
   } catch (e) {
