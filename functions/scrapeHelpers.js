@@ -56,57 +56,87 @@ function extractAmazonStock(html) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Flipkart: target the JSON-LD block, which is canonical product data
+// ─────────────────────────────────────────────────────────────────────
 function extractFlipkartPrice(html) {
   if (/Oops!\s*Something broke/i.test(html)) return null;
 
-  const head = html.slice(0, 800000);
-
-  // Strategy 1: rendered DOM — look for "Buy now at ₹XXX"
-  let m = head.match(/Buy now at[^₹]{0,200}₹\s*([\d,]+)/);
-  if (m) {
-    const price = parseFloat(m[1].replace(/,/g, ""));
-    if (price >= 1000 && price <= 500000) return price;
+  // JSON-LD structured data — Flipkart embeds this for SEO/Google rich snippets.
+  // It's the most reliable canonical source. Format:
+  //   <script type="application/ld+json">{"@type":"Product",...,"offers":{"price":62900,...}}</script>
+  // There may be MULTIPLE ld+json blocks (breadcrumbs, page-level, product). We want the Product one.
+  const ldJsonBlocks = [...html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)];
+  for (const block of ldJsonBlocks) {
+    try {
+      const parsed = JSON.parse(block[1]);
+      // Could be a single object or an array
+      const items = Array.isArray(parsed) ? parsed : [parsed];
+      for (const item of items) {
+        if (item["@type"] === "Product" && item.offers) {
+          // offers can be an object or array
+          const offers = Array.isArray(item.offers) ? item.offers : [item.offers];
+          for (const offer of offers) {
+            const price = parseFloat(offer.price);
+            if (price >= 1000 && price <= 500000) return price;
+          }
+        }
+      }
+    } catch (e) {
+      // Skip malformed JSON-LD blocks
+    }
   }
 
-  // Strategy 2: meta tag
-  m = head.match(/<meta[^>]*property="product:price:amount"[^>]*content="([\d.]+)"/);
+  // Fallback: meta tag
+  let m = html.match(/<meta[^>]*property="product:price:amount"[^>]*content="([\d.]+)"/);
   if (m) {
     const price = parseFloat(m[1]);
     if (price >= 1000 && price <= 500000) return price;
   }
 
-  // Strategy 3: JSON state finalPrice
+  // Fallback: og:price:amount
+  m = html.match(/<meta[^>]*property="og:price:amount"[^>]*content="([\d.]+)"/);
+  if (m) {
+    const price = parseFloat(m[1]);
+    if (price >= 1000 && price <= 500000) return price;
+  }
+
+  // Fallback: JSON state (works on some Flipkart layouts)
+  const head = html.slice(0, 800000);
   m = head.match(/"finalPrice"\s*:\s*\{[^{}]*?"value"\s*:\s*(\d+(?:\.\d+)?)/);
   if (m) {
     const price = parseFloat(m[1]);
     if (price >= 1000 && price <= 500000) return price;
   }
 
-  // Strategy 4: JSON sellingPrice
-  m = head.match(/"sellingPrice"\s*:\s*(?:\{[^{}]*?"(?:amount|value)"\s*:\s*)?(\d+(?:\.\d+)?)/);
-  if (m) {
-    const price = parseFloat(m[1]);
-    if (price >= 1000 && price <= 500000) return price;
-  }
-
-  // No fuzzy fallback — better to return null and surface the diagnostic
-  // than to confidently report ₹12,499 when the real price is ₹62,900.
   return null;
 }
 
 function extractFlipkartStock(html) {
   if (/Oops!\s*Something broke/i.test(html)) return null;
 
-  const head = html.slice(0, 800000);
+  // Try JSON-LD first — it has authoritative availability
+  const ldJsonBlocks = [...html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)];
+  for (const block of ldJsonBlocks) {
+    try {
+      const parsed = JSON.parse(block[1]);
+      const items = Array.isArray(parsed) ? parsed : [parsed];
+      for (const item of items) {
+        if (item["@type"] === "Product" && item.offers) {
+          const offers = Array.isArray(item.offers) ? item.offers : [item.offers];
+          for (const offer of offers) {
+            if (offer.availability) {
+              return /InStock/i.test(offer.availability);
+            }
+          }
+        }
+      }
+    } catch (e) {}
+  }
 
+  const head = html.slice(0, 800000);
   if (/Buy now at/i.test(head)) return true;
   if (/Add to cart/i.test(head)) return true;
-  if (/"BUY_NOW"/i.test(head)) return true;
-  if (/"ADD_TO_CART"/i.test(head)) return true;
-
   if (/Notify Me/i.test(head) && !/Buy now|Add to cart/i.test(head)) return false;
-  if (/Sold Out/i.test(head)) return false;
-
   return true;
 }
 
@@ -141,19 +171,16 @@ async function scrapeProduct(site, url) {
     }
 
     if (result.price === null) {
+      // Diagnostic
       const titleMatch = html.match(/<title>([^<]+)<\/title>/);
       const title = titleMatch ? titleMatch[1].slice(0, 80) : "no title";
-      const hasRupee = html.includes("₹");
-      const hasBuyNow = /Buy now/i.test(html);
-      const hasFinalPrice = html.includes("finalPrice");
-      const hasSellingPrice = html.includes("sellingPrice");
-      const hasMetaPrice = /product:price:amount/i.test(html);
+      const ldJsonCount = (html.match(/type="application\/ld\+json"/g) || []).length;
+      const hasProductLd = /"@type"\s*:\s*"Product"/i.test(html);
+      const hasOffers = /"offers"\s*:/.test(html);
+      const ldPriceMatch = html.match(/"price"\s*:\s*"?(\d+)/);
+      const ldPriceFound = ldPriceMatch ? ldPriceMatch[1] : "none";
 
-      // Find first 3 ₹ amounts in page for context
-      const rupeeMatches = [...html.matchAll(/₹\s*([\d,]+)/g)].slice(0, 5)
-        .map(x => x[0]).join(", ");
-
-      result.error = `No price (${html.length}b, title="${title}", ₹=${hasRupee}, BuyNow=${hasBuyNow}, finalPrice=${hasFinalPrice}, sellingPrice=${hasSellingPrice}, metaPrice=${hasMetaPrice}, samples=[${rupeeMatches}])`;
+      result.error = `No price (${html.length}b, title="${title}", ldJsonBlocks=${ldJsonCount}, ProductLd=${hasProductLd}, hasOffers=${hasOffers}, firstLdPrice=${ldPriceFound})`;
     }
     return result;
   } catch (e) {
