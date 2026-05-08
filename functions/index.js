@@ -805,4 +805,6 @@ exports.onMessageCreated = onDocumentCreated(
 
 exports.tnResults = require("./tnResults").tnResults;
 exports.fetchPrice = require("./fetchPrice").fetchPrice;
-
+exports.refreshPrices = require("./refreshPrices").refreshPrices;
+exports.searchCatalog = require("./searchCatalog").searchCatalog;
+exports.adminRefreshAll = require("./adminRefreshAll").adminRefreshAll;
