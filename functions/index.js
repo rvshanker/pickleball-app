@@ -808,3 +808,4 @@ exports.fetchPrice = require("./fetchPrice").fetchPrice;
 exports.refreshPrices = require("./refreshPrices").refreshPrices;
 exports.searchCatalog = require("./searchCatalog").searchCatalog;
 exports.adminRefreshAll = require("./adminRefreshAll").adminRefreshAll;
+exports.adminSeedCatalog = require("./adminSeedCatalog").adminSeedCatalog;
