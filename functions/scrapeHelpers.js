@@ -4,19 +4,36 @@
 const { defineSecret } = require("firebase-functions/params");
 const SCRAPINGBEE_KEY = defineSecret("SCRAPINGBEE_KEY");
 
-function buildScrapingBeeUrl(targetUrl) {
+// Site-specific ScrapingBee options.
+// Amazon: cheaper (25 credits) - their HTML is server-rendered with prices visible.
+// Flipkart: needs full JS rendering (75 credits) - their pages load prices via JS
+//   AND fingerprint plain proxy requests as bots, returning a fake "Oops" page.
+function buildScrapingBeeUrl(targetUrl, site) {
   const params = new URLSearchParams({
     api_key: SCRAPINGBEE_KEY.value(),
     url: targetUrl,
-    render_js: "false",
     country_code: "in",
     premium_proxy: "true"
   });
+
+  if (site === "flipkart") {
+    // Flipkart: render JS, wait for the price element to appear before returning.
+    params.set("render_js", "true");
+    // Wait until the main price element loads. CSS selector for the
+    // primary "Buy now at ₹XXX" button block.
+    params.set("wait_for", "div._30jeq3, div.Nx9bqj, div._16Jk6d");
+    // 8-second cap so we don't burn credits on stuck pages
+    params.set("wait", "5000");
+  } else {
+    // Amazon: SSR is enough, save credits
+    params.set("render_js", "false");
+  }
+
   return `https://app.scrapingbee.com/api/v1/?${params.toString()}`;
 }
 
-async function fetchPage(url) {
-  const sbUrl = buildScrapingBeeUrl(url);
+async function fetchPage(url, site) {
+  const sbUrl = buildScrapingBeeUrl(url, site);
   const r = await fetch(sbUrl);
   const html = await r.text();
   return { status: r.status, html, ok: r.ok };
@@ -26,8 +43,6 @@ async function fetchPage(url) {
 // Amazon product page extractor
 // ─────────────────────────────────────────────────────────────────────
 function extractAmazonPrice(html) {
-  // Scope to the corePriceDisplay block so we don't catch unrelated prices
-  // (related products, "Compare with similar items", etc.)
   const block = html.match(/corePriceDisplay_desktop_feature_div([\s\S]{0,3000})/);
   const haystack = block ? block[1] : html.slice(0, 200000);
 
@@ -44,7 +59,6 @@ function extractAmazonPrice(html) {
 }
 
 function extractAmazonStock(html) {
-  // Only check the buying-options block, not the whole page (related items can mention "out of stock")
   const block = html.match(/(buybox|availability|outOfStock)[\s\S]{0,1500}/i);
   const haystack = block ? block[0] : html;
 
@@ -55,43 +69,40 @@ function extractAmazonStock(html) {
 
 // ─────────────────────────────────────────────────────────────────────
 // Flipkart product page extractor
+// With render_js=true, the page is fully rendered. Price ends up in the DOM,
+// not just in JSON state. So we look for both shapes.
 // ─────────────────────────────────────────────────────────────────────
-//
-// Flipkart embeds canonical product data in a JSON blob inside the HTML.
-// The structure has several stable keys we can target:
-//   - "finalPrice": { "value": <number> }     <- the displayed selling price
-//   - "totalPrice": { "value": <number> }     <- often same as finalPrice
-//   - "mrp":        { "value": <number> }     <- MRP (struck-through price)
-//
-// We need the SELECTED variant's price specifically. Flipkart embeds prices
-// for ALL variants on the page (different storage tiers, colors), and the
-// selected variant is typically the FIRST occurrence in the JSON.
-//
-// To avoid grabbing accessory/EMI/related-product prices, we constrain the
-// search to a window early in the HTML where the main product data lives.
-//
 function extractFlipkartPrice(html) {
-  // Look only in the first 500KB of HTML — main product data is at the top.
-  // Beyond that we hit recommendations, accessories, related items.
-  const head = html.slice(0, 500000);
+  // First check: did Flipkart serve the bot-block page?
+  if (/Oops!\s*Something broke/i.test(html)) {
+    return null;
+  }
 
-  // Strategy 1: finalPrice with value (most reliable)
-  let m = head.match(/"finalPrice"\s*:\s*\{[^{}]*?"value"\s*:\s*(\d+(?:\.\d+)?)/);
+  const head = html.slice(0, 800000);
+
+  // Strategy 1: rendered DOM — class names rotate but the price text is stable.
+  // Look for the div that follows "Buy now at" pattern, or the primary price div.
+  let m = head.match(/<div[^>]*class="[^"]*(?:_30jeq3|Nx9bqj|_16Jk6d)[^"]*"[^>]*>\s*₹([\d,]+)/);
   if (m) {
-    const price = parseFloat(m[1]);
-    // Sanity: phones aren't ₹100, accessories aren't ₹500k. Reject obvious junk.
+    const price = parseFloat(m[1].replace(/,/g, ""));
     if (price >= 1000 && price <= 500000) return price;
   }
 
-  // Strategy 2: totalPrice with value
-  m = head.match(/"totalPrice"\s*:\s*\{[^{}]*?"value"\s*:\s*(\d+(?:\.\d+)?)/);
+  // Strategy 2: any price-like span/div with rupee symbol, scoped to the buying block
+  m = head.match(/Buy now at[^₹]{0,200}₹\s*([\d,]+)/);
+  if (m) {
+    const price = parseFloat(m[1].replace(/,/g, ""));
+    if (price >= 1000 && price <= 500000) return price;
+  }
+
+  // Strategy 3: JSON state fallback for sites that do SSR
+  m = head.match(/"finalPrice"\s*:\s*\{[^{}]*?"value"\s*:\s*(\d+(?:\.\d+)?)/);
   if (m) {
     const price = parseFloat(m[1]);
     if (price >= 1000 && price <= 500000) return price;
   }
 
-  // Strategy 3: pricingData fields (newer Flipkart shape)
-  m = head.match(/"pricingData"\s*:\s*\{[^{}]*?"value"\s*:\s*(\d+(?:\.\d+)?)/);
+  m = head.match(/"sellingPrice"\s*:\s*(?:\{[^{}]*?"(?:amount|value)"\s*:\s*)?(\d+(?:\.\d+)?)/);
   if (m) {
     const price = parseFloat(m[1]);
     if (price >= 1000 && price <= 500000) return price;
@@ -101,25 +112,18 @@ function extractFlipkartPrice(html) {
 }
 
 function extractFlipkartStock(html) {
-  // Flipkart shows "Out of Stock" / "Sold Out" / "Coming Soon" for unavailable items.
-  // BUT these strings can also appear in other variants on the same page.
-  //
-  // The reliable signal: presence of "Buy now" / "Add to cart" / "Go to cart" buttons
-  // for the selected variant means it's in stock.
-  const head = html.slice(0, 500000);
+  if (/Oops!\s*Something broke/i.test(html)) return null;
 
-  // Look for affirmative in-stock signals
+  const head = html.slice(0, 800000);
+
+  if (/Buy now at/i.test(head)) return true;
+  if (/Add to cart/i.test(head)) return true;
   if (/"BUY_NOW"/i.test(head)) return true;
   if (/"ADD_TO_CART"/i.test(head)) return true;
-  if (/"GO_TO_CART"/i.test(head)) return true;
-  if (/Buy with EMI/i.test(head)) return true;  // appears next to price when buyable
 
-  // Negative signal — only trust this if there's no positive signal AND
-  // the global state is clearly out of stock
-  if (/"NOTIFY_ME"/i.test(head) && !/"BUY_NOW"|"ADD_TO_CART"/i.test(head)) return false;
-  if (/"OUT_OF_STOCK"\s*:\s*true/i.test(head)) return false;
+  if (/Notify Me/i.test(head) && !/Buy now|Add to cart/i.test(head)) return false;
+  if (/Sold Out/i.test(head)) return false;
 
-  // Default: assume in stock if we found a price (price extractors will catch the no-price case)
   return true;
 }
 
@@ -128,7 +132,7 @@ async function scrapeProduct(site, url) {
   const result = { site, url, price: null, inStock: null, error: null, htmlLength: 0 };
 
   try {
-    const { status, html, ok } = await fetchPage(url);
+    const { status, html, ok } = await fetchPage(url, site);
     result.htmlLength = html.length;
 
     if (!ok) {
@@ -137,6 +141,12 @@ async function scrapeProduct(site, url) {
     }
     if (html.length < 5000) {
       result.error = `Response too short (${html.length} bytes)`;
+      return result;
+    }
+
+    // Detect Flipkart bot-block page
+    if (site === "flipkart" && /Oops!\s*Something broke/i.test(html)) {
+      result.error = "Flipkart served bot-block page (Oops Something broke)";
       return result;
     }
 
