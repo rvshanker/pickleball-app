@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>India Price Compare!</title>
+    <title>India Price Compare</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; color: #f8fafc; }
@@ -37,15 +37,16 @@
             <span id="statusText" class="text-sm text-slate-400">Fetching live data...</span>
         </div>
 
+        <div id="creditInfo" class="text-center text-xs text-slate-500 mb-4 hidden"></div>
+
         <div id="results" class="space-y-4"></div>
 
         <div id="emptyState" class="text-center text-slate-500 text-sm mt-8 hidden">
-            No matches found. Open DevTools console for diagnostic logs 1.
+            No matches found. Open DevTools console for diagnostic logs.
         </div>
     </div>
 
     <script>
-        // IMPORTANT: no /api/ prefix and no trailing slash before the ?
         const PROXY_URL = "/fetch-price?url=";
 
         async function runSearch() {
@@ -56,10 +57,12 @@
             const statusArea = document.getElementById('statusArea');
             const statusText = document.getElementById('statusText');
             const emptyState = document.getElementById('emptyState');
+            const creditInfo = document.getElementById('creditInfo');
             const searchBtn = document.getElementById('searchBtn');
 
             resultsDiv.innerHTML = "";
             emptyState.classList.add('hidden');
+            creditInfo.classList.add('hidden');
             statusArea.classList.remove('hidden');
             searchBtn.disabled = true;
             searchBtn.classList.add('opacity-50');
@@ -77,22 +80,28 @@
                     name: 'Flipkart',
                     url: `https://www.flipkart.com/search?q=`,
                     container: 'div[data-id]',
-                    title: '.KzDlHZ, ._4rR01T, .s1Q9rs, ._2WkVRV',
+                    title: '.KzDlHZ, ._4rR01T, .s1Q9rs, ._2WkVRV, .wjcEIp',
                     price: '.Nx9bqj, ._30jeq3, ._1_WHN1',
                     style: 'flipkart-border'
                 }
             ];
 
             let totalFound = 0;
+            let lastCreditsRemaining = null;
 
             for (const engine of engines) {
-                statusText.innerText = `Searching ${engine.name}...`;
+                statusText.innerText = `Searching ${engine.name}... (this takes 10-30s)`;
 
                 try {
                     const target = engine.url + encodeURIComponent(query);
                     const response = await fetch(PROXY_URL + encodeURIComponent(target));
 
                     console.log(`${engine.name} HTTP status:`, response.status);
+                    console.log(`${engine.name} ScrapingBee cost:`, response.headers.get('X-ScrapingBee-Cost'));
+                    console.log(`${engine.name} credits remaining:`, response.headers.get('X-ScrapingBee-Remaining'));
+
+                    const remaining = response.headers.get('X-ScrapingBee-Remaining');
+                    if (remaining) lastCreditsRemaining = remaining;
 
                     const html = await response.text();
                     console.log(`${engine.name} HTML length:`, html.length);
@@ -104,10 +113,11 @@
                     }
 
                     if (html.length < 5000) {
-                        console.warn(`${engine.name} response suspiciously short — likely blocked`);
+                        console.warn(`${engine.name} response suspiciously short — likely blocked or empty`);
                         continue;
                     }
-                    if (html.toLowerCase().includes('captcha') || html.includes('Robot Check')) {
+                    if (html.toLowerCase().includes('robot check') ||
+                        html.toLowerCase().includes('enter the characters you see')) {
                         console.warn(`${engine.name} returned a captcha page`);
                         continue;
                     }
@@ -122,7 +132,7 @@
                         const rawPrice = item.querySelector(engine.price)?.innerText || "";
                         const cleanPrice = rawPrice.replace(/[^\d]/g, '');
 
-                        if (titleText.toLowerCase().includes(query.toLowerCase()) && cleanPrice.length > 3) {
+                        if (titleText.toLowerCase().includes(query.toLowerCase().split(' ')[0]) && cleanPrice.length > 3) {
                             let storage = "";
                             const m = titleText.match(/(64|128|256|512)\s*GB/i) || titleText.match(/(1|2)\s*TB/i);
                             if (m) storage = m[0].toUpperCase().replace(/\s+/g, '');
@@ -142,6 +152,10 @@
             searchBtn.disabled = false;
             searchBtn.classList.remove('opacity-50');
 
+            if (lastCreditsRemaining) {
+                creditInfo.innerText = `ScrapingBee credits remaining: ${lastCreditsRemaining}`;
+                creditInfo.classList.remove('hidden');
+            }
             if (totalFound === 0) emptyState.classList.remove('hidden');
         }
 
@@ -151,7 +165,6 @@
             const storageBadge = storage
                 ? `<span class="bg-blue-500/10 text-blue-400 text-[10px] px-2 py-0.5 rounded-full font-bold">${storage}</span>`
                 : '';
-
             const escTitle = title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
             const html = `
                 <div class="card ${engine.style} p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
