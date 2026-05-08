@@ -1,6 +1,14 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { logger } = require("firebase-functions");
 
+// ────────────────────────────────────────────────────────────────────
+// IMPORTANT: paste your ScrapingBee API key here.
+// This file is for use in a PRIVATE GitHub repo only.
+// If you ever make the repo public, rotate the key immediately.
+// You can rotate the key in your ScrapingBee dashboard.
+// ────────────────────────────────────────────────────────────────────
+const SCRAPINGBEE_KEY = "PASTE_YOUR_SCRAPINGBEE_KEY_HERE";
+
 const ALLOWED_HOSTS = new Set([
   "www.amazon.in",
   "www.flipkart.com",
@@ -10,31 +18,33 @@ const ALLOWED_HOSTS = new Set([
 
 const ALLOWED_ORIGINS = new Set([
   "https://pickleconnect.live",
-  "https://www.pickleconnect.live"
+  "https://www.pickleconnect.live",
+  "https://pickleball-app-1bba7.web.app",
+  "https://pickleball-app-1bba7.firebaseapp.com"
 ]);
 
-function getStealthHeaders(targetUrl) {
-  const isAmazon = targetUrl.includes("amazon.in");
-  return {
-    "User-Agent":
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept":
-      "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-    "Accept-Language": "en-IN,en;q=0.9,hi-IN;q=0.8",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
-    "Sec-Fetch-Dest": "document",
-    "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-Site": "none",
-    "Sec-Fetch-User": "?1",
-    "Cache-Control": "max-age=0",
-    "Referer": isAmazon ? "https://www.amazon.in/" : "https://www.google.com/"
-  };
+function buildScrapingBeeUrl(targetUrl) {
+  // ScrapingBee documentation: https://www.scrapingbee.com/documentation/
+  // - render_js=false : cheaper and faster. Both Amazon and Flipkart SSR enough product data.
+  // - country_code=in : routes through Indian residential/mobile IPs.
+  // - premium_proxy=true : uses ScrapingBee's residential pool (not datacenter IPs).
+  //   Costs 25 credits per request but is what gets us past Amazon/Flipkart blocks.
+  const params = new URLSearchParams({
+    api_key: SCRAPINGBEE_KEY,
+    url: targetUrl,
+    render_js: "false",
+    country_code: "in",
+    premium_proxy: "true"
+  });
+  return `https://app.scrapingbee.com/api/v1/?${params.toString()}`;
 }
 
 exports.fetchPrice = onRequest(
-  { cors: true, timeoutSeconds: 30, memory: "256MiB" },
+  {
+    cors: true,
+    timeoutSeconds: 60,    // ScrapingBee can take 10-30s
+    memory: "256MiB"
+  },
   async (req, res) => {
     const origin = req.headers.origin || "";
     if (ALLOWED_ORIGINS.has(origin)) {
@@ -44,6 +54,13 @@ exports.fetchPrice = onRequest(
 
     if (req.method === "OPTIONS") {
       res.status(204).end();
+      return;
+    }
+
+    // Sanity check that you actually pasted a key
+    if (!SCRAPINGBEE_KEY || SCRAPINGBEE_KEY === "PASTE_YOUR_SCRAPINGBEE_KEY_HERE") {
+      logger.error("SCRAPINGBEE_KEY not set in fetchPrice.js");
+      res.status(500).json({ error: "Proxy API key not configured" });
       return;
     }
 
@@ -66,27 +83,35 @@ exports.fetchPrice = onRequest(
       return;
     }
 
-    logger.info("fetchPrice fetching", { url: targetUrl });
+    const scrapingBeeUrl = buildScrapingBeeUrl(targetUrl);
+    logger.info("fetchPrice via ScrapingBee", { host: parsed.hostname });
 
     try {
-      const upstream = await fetch(targetUrl, {
-        method: "GET",
-        headers: getStealthHeaders(targetUrl)
-      });
+      const upstream = await fetch(scrapingBeeUrl, { method: "GET" });
       const html = await upstream.text();
 
-      logger.info("fetchPrice upstream", {
+      const cost = upstream.headers.get("Spb-cost");
+      const remaining = upstream.headers.get("Spb-monthly-credits-remaining");
+
+      logger.info("ScrapingBee response", {
         status: upstream.status,
         bytes: html.length,
-        host: parsed.hostname
+        host: parsed.hostname,
+        cost,
+        creditsRemaining: remaining
       });
 
+      // Surface ScrapingBee headers to the client for debugging
+      if (cost) res.setHeader("X-ScrapingBee-Cost", cost);
+      if (remaining) res.setHeader("X-ScrapingBee-Remaining", remaining);
+
       res.setHeader("Content-Type", "text/html; charset=utf-8");
-      res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
+      // Cache 6 hours at the edge — repeated searches don't burn credits
+      res.setHeader("Cache-Control", "s-maxage=21600, stale-while-revalidate=43200");
       res.status(upstream.status).send(html);
     } catch (err) {
       logger.error("fetchPrice failed", { error: err.message });
-      res.status(502).json({ error: "Failed to reach upstream", detail: err.message });
+      res.status(502).json({ error: "Failed to reach ScrapingBee", detail: err.message });
     }
   }
 );
