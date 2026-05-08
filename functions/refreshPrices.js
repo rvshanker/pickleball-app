@@ -1,5 +1,5 @@
-// Scheduled function: refresh prices for products in the catalog.
-// Runs every 6 hours, processes up to 20 stale products per run.
+// Scheduled function: refresh prices for stale products.
+// Runs every 6 hours, processes up to 20 products per run, paced 3 seconds apart.
 
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { logger } = require("firebase-functions");
@@ -8,6 +8,9 @@ const { scrapeProduct, SCRAPINGBEE_KEY } = require("./scrapeHelpers");
 
 const PRODUCTS_PER_RUN = 20;
 const STALE_AFTER_MS = 6 * 60 * 60 * 1000;
+const REQUEST_DELAY_MS = 3000;
+
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 exports.refreshPrices = onSchedule(
   {
@@ -15,7 +18,7 @@ exports.refreshPrices = onSchedule(
     timeZone: "Asia/Kolkata",
     memory: "512MiB",
     timeoutSeconds: 540,
-    secrets: [SCRAPINGBEE_KEY]   // <-- this is the new line: grants secret access
+    secrets: [SCRAPINGBEE_KEY]
   },
   async () => {
     const db = admin.firestore();
@@ -38,6 +41,7 @@ exports.refreshPrices = onSchedule(
     logger.info(`refreshPrices: refreshing ${snap.size} product(s)`);
 
     let successCount = 0, errorCount = 0, creditsUsed = 0;
+    let isFirstRequest = true;
 
     for (const doc of snap.docs) {
       const product = doc.data();
@@ -47,7 +51,10 @@ exports.refreshPrices = onSchedule(
       const updates = [];
 
       if (product.amazonUrl) {
+        if (!isFirstRequest) await sleep(REQUEST_DELAY_MS);
+        isFirstRequest = false;
         creditsUsed += 25;
+
         const result = await scrapeProduct("amazon", product.amazonUrl);
         if (result.price !== null) {
           updates.push(
@@ -68,7 +75,10 @@ exports.refreshPrices = onSchedule(
       }
 
       if (product.flipkartUrl) {
+        if (!isFirstRequest) await sleep(REQUEST_DELAY_MS);
+        isFirstRequest = false;
         creditsUsed += 25;
+
         const result = await scrapeProduct("flipkart", product.flipkartUrl);
         if (result.price !== null) {
           updates.push(
