@@ -1,20 +1,20 @@
-// Manual trigger: refresh prices for all products in the catalog right now.
-// Use this once after seeding to get initial prices populated.
-// Hit it once via browser, then rely on the scheduled refreshPrices function.
-//
-// Protected by a simple admin token in the URL — replace with proper auth
-// later if this becomes a real product.
+// Manual trigger: refresh prices for all products right now.
+// Use after seeding to populate initial prices.
 
 const { onRequest } = require("firebase-functions/v2/https");
 const { logger } = require("firebase-functions");
 const admin = require("firebase-admin");
-const { scrapeProduct } = require("./scrapeHelpers");
+const { scrapeProduct, SCRAPINGBEE_KEY } = require("./scrapeHelpers");
 
-// Change this to whatever you want — anyone with this token can trigger refreshes
 const ADMIN_TOKEN = "change-me-to-something-random-12345";
 
 exports.adminRefreshAll = onRequest(
-  { cors: true, timeoutSeconds: 540, memory: "512MiB" },
+  {
+    cors: true,
+    timeoutSeconds: 540,
+    memory: "512MiB",
+    secrets: [SCRAPINGBEE_KEY]   // <-- grants secret access
+  },
   async (req, res) => {
     if (req.query.token !== ADMIN_TOKEN) {
       res.status(403).json({ error: "Forbidden" });
@@ -32,8 +32,7 @@ exports.adminRefreshAll = onRequest(
 
     logger.info(`adminRefreshAll: refreshing ${snap.size} products`);
 
-    let amazonOk = 0, amazonFail = 0;
-    let flipkartOk = 0, flipkartFail = 0;
+    let amazonOk = 0, amazonFail = 0, flipkartOk = 0, flipkartFail = 0;
     const errors = [];
 
     for (const doc of snap.docs) {
@@ -43,9 +42,9 @@ exports.adminRefreshAll = onRequest(
       if (product.amazonUrl) {
         const r = await scrapeProduct("amazon", product.amazonUrl);
         if (r.price !== null) {
-          await db.collection("catalog").doc(productId)
-            .collection("prices").doc("amazon")
-            .set({ site: "amazon", price: r.price, inStock: r.inStock, url: product.amazonUrl, checkedAt: now });
+          await db.collection("catalog").doc(productId).collection("prices").doc("amazon")
+            .set({ site: "amazon", price: r.price, inStock: r.inStock,
+                   url: product.amazonUrl, checkedAt: now });
           amazonOk++;
         } else {
           amazonFail++;
@@ -56,9 +55,9 @@ exports.adminRefreshAll = onRequest(
       if (product.flipkartUrl) {
         const r = await scrapeProduct("flipkart", product.flipkartUrl);
         if (r.price !== null) {
-          await db.collection("catalog").doc(productId)
-            .collection("prices").doc("flipkart")
-            .set({ site: "flipkart", price: r.price, inStock: r.inStock, url: product.flipkartUrl, checkedAt: now });
+          await db.collection("catalog").doc(productId).collection("prices").doc("flipkart")
+            .set({ site: "flipkart", price: r.price, inStock: r.inStock,
+                   url: product.flipkartUrl, checkedAt: now });
           flipkartOk++;
         } else {
           flipkartFail++;
@@ -76,7 +75,7 @@ exports.adminRefreshAll = onRequest(
       amazonOk, amazonFail,
       flipkartOk, flipkartFail,
       estimatedCreditsUsed: estimatedCredits,
-      errors: errors.slice(0, 10) // first 10 errors only
+      errors: errors.slice(0, 10)
     });
   }
 );

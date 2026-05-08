@@ -1,13 +1,8 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { logger } = require("firebase-functions");
+const { defineSecret } = require("firebase-functions/params");
 
-// ────────────────────────────────────────────────────────────────────
-// IMPORTANT: paste your ScrapingBee API key here.
-// This file is for use in a PRIVATE GitHub repo only.
-// If you ever make the repo public, rotate the key immediately.
-// You can rotate the key in your ScrapingBee dashboard.
-// ────────────────────────────────────────────────────────────────────
-const SCRAPINGBEE_KEY = "PASTE_YOUR_SCRAPINGBEE_KEY_HERE";
+const SCRAPINGBEE_KEY = defineSecret("SCRAPINGBEE_KEY");
 
 const ALLOWED_HOSTS = new Set([
   "www.amazon.in",
@@ -24,13 +19,8 @@ const ALLOWED_ORIGINS = new Set([
 ]);
 
 function buildScrapingBeeUrl(targetUrl) {
-  // ScrapingBee documentation: https://www.scrapingbee.com/documentation/
-  // - render_js=false : cheaper and faster. Both Amazon and Flipkart SSR enough product data.
-  // - country_code=in : routes through Indian residential/mobile IPs.
-  // - premium_proxy=true : uses ScrapingBee's residential pool (not datacenter IPs).
-  //   Costs 25 credits per request but is what gets us past Amazon/Flipkart blocks.
   const params = new URLSearchParams({
-    api_key: SCRAPINGBEE_KEY,
+    api_key: SCRAPINGBEE_KEY.value(),
     url: targetUrl,
     render_js: "false",
     country_code: "in",
@@ -42,8 +32,9 @@ function buildScrapingBeeUrl(targetUrl) {
 exports.fetchPrice = onRequest(
   {
     cors: true,
-    timeoutSeconds: 60,    // ScrapingBee can take 10-30s
-    memory: "256MiB"
+    timeoutSeconds: 60,
+    memory: "256MiB",
+    secrets: [SCRAPINGBEE_KEY]
   },
   async (req, res) => {
     const origin = req.headers.origin || "";
@@ -54,13 +45,6 @@ exports.fetchPrice = onRequest(
 
     if (req.method === "OPTIONS") {
       res.status(204).end();
-      return;
-    }
-
-    // Sanity check that you actually pasted a key
-    if (!SCRAPINGBEE_KEY || SCRAPINGBEE_KEY === "PASTE_YOUR_SCRAPINGBEE_KEY_HERE") {
-      logger.error("SCRAPINGBEE_KEY not set in fetchPrice.js");
-      res.status(500).json({ error: "Proxy API key not configured" });
       return;
     }
 
@@ -101,12 +85,10 @@ exports.fetchPrice = onRequest(
         creditsRemaining: remaining
       });
 
-      // Surface ScrapingBee headers to the client for debugging
       if (cost) res.setHeader("X-ScrapingBee-Cost", cost);
       if (remaining) res.setHeader("X-ScrapingBee-Remaining", remaining);
 
       res.setHeader("Content-Type", "text/html; charset=utf-8");
-      // Cache 6 hours at the edge — repeated searches don't burn credits
       res.setHeader("Cache-Control", "s-maxage=21600, stale-while-revalidate=43200");
       res.status(upstream.status).send(html);
     } catch (err) {
