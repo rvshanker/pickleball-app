@@ -1,27 +1,25 @@
 // Shared scraping helpers used by refresh functions.
-// Reads SCRAPINGBEE_KEY from Firebase Secret Manager at runtime.
+// Final Flipkart attempt: stealth_proxy=true (different IP pool than premium_proxy)
+// plus diagnostic output on failure to see what's actually being returned.
 
 const { defineSecret } = require("firebase-functions/params");
 const SCRAPINGBEE_KEY = defineSecret("SCRAPINGBEE_KEY");
 
-// Site-specific ScrapingBee options.
-// Amazon: cheaper (25 credits) - their HTML is server-rendered with prices visible.
-// Flipkart: needs JS rendering (75 credits with premium proxy + render_js).
 function buildScrapingBeeUrl(targetUrl, site) {
   const params = new URLSearchParams({
     api_key: SCRAPINGBEE_KEY.value(),
     url: targetUrl,
-    country_code: "in",
-    premium_proxy: "true"
+    country_code: "in"
   });
 
   if (site === "flipkart") {
-    // Render JS and let the page settle for 5 seconds.
-    // We deliberately don't use wait_for — Flipkart's class names rotate too often,
-    // and a missing wait_for element causes a hard 500 instead of returning HTML.
+    // Stealth proxy is ScrapingBee's tier for sites with strong bot detection.
+    // Don't combine with premium_proxy — they're alternatives, not stackable.
+    params.set("stealth_proxy", "true");
     params.set("render_js", "true");
     params.set("wait", "5000");
   } else {
+    params.set("premium_proxy", "true");
     params.set("render_js", "false");
   }
 
@@ -35,8 +33,6 @@ async function fetchPage(url, site) {
   return { status: r.status, html, ok: r.ok };
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Amazon
 // ─────────────────────────────────────────────────────────────────────
 function extractAmazonPrice(html) {
   const block = html.match(/corePriceDisplay_desktop_feature_div([\s\S]{0,3000})/);
@@ -64,37 +60,23 @@ function extractAmazonStock(html) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Flipkart — render_js=true means full DOM is in the HTML response.
-// ─────────────────────────────────────────────────────────────────────
 function extractFlipkartPrice(html) {
-  // First check: bot-block page
   if (/Oops!\s*Something broke/i.test(html)) return null;
 
   const head = html.slice(0, 800000);
 
-  // Strategy 1: rendered DOM — look for the primary price near "Buy now at"
   let m = head.match(/Buy now at[^₹]{0,200}₹\s*([\d,]+)/);
   if (m) {
     const price = parseFloat(m[1].replace(/,/g, ""));
     if (price >= 1000 && price <= 500000) return price;
   }
 
-  // Strategy 2: any standalone ₹XX,XXX in a div near a percentage discount
-  // (e.g. "↓10% 69,900 ₹62,900" — the SECOND number after the discount block is the selling price)
-  m = head.match(/↓\s*\d+%[^₹]{0,100}[\d,]+[^₹]{0,100}₹\s*([\d,]+)/);
-  if (m) {
-    const price = parseFloat(m[1].replace(/,/g, ""));
-    if (price >= 1000 && price <= 500000) return price;
-  }
-
-  // Strategy 3: meta tag (Flipkart sometimes puts canonical price here)
   m = head.match(/<meta[^>]*property="product:price:amount"[^>]*content="([\d.]+)"/);
   if (m) {
     const price = parseFloat(m[1]);
     if (price >= 1000 && price <= 500000) return price;
   }
 
-  // Strategy 4: JSON state fallback
   m = head.match(/"finalPrice"\s*:\s*\{[^{}]*?"value"\s*:\s*(\d+(?:\.\d+)?)/);
   if (m) {
     const price = parseFloat(m[1]);
@@ -105,6 +87,19 @@ function extractFlipkartPrice(html) {
   if (m) {
     const price = parseFloat(m[1]);
     if (price >= 1000 && price <= 500000) return price;
+  }
+
+  // Strategy: find any standalone ₹ amount in a sensible price range
+  const allPrices = [...head.matchAll(/₹\s*([\d,]+(?:\.\d{2})?)/g)]
+    .map(x => parseFloat(x[1].replace(/,/g, "")))
+    .filter(p => p >= 5000 && p <= 200000);
+
+  if (allPrices.length > 0) {
+    // Most common price in valid range = likely the actual price
+    const counts = {};
+    allPrices.forEach(p => counts[p] = (counts[p] || 0) + 1);
+    const mostCommon = Object.entries(counts).sort((a,b) => b[1]-a[1])[0];
+    if (mostCommon && mostCommon[1] >= 2) return parseFloat(mostCommon[0]);
   }
 
   return null;
@@ -135,16 +130,16 @@ async function scrapeProduct(site, url) {
     result.htmlLength = html.length;
 
     if (!ok) {
-      result.error = `Upstream HTTP ${status}`;
+      result.error = `Upstream HTTP ${status} (${html.length} bytes)`;
       return result;
     }
     if (html.length < 5000) {
-      result.error = `Response too short (${html.length} bytes)`;
+      result.error = `Response too short (${html.length} bytes): ${html.slice(0, 200)}`;
       return result;
     }
 
     if (site === "flipkart" && /Oops!\s*Something broke/i.test(html)) {
-      result.error = "Flipkart served bot-block page";
+      result.error = `Flipkart bot-block page (${html.length} bytes)`;
       return result;
     }
 
@@ -157,7 +152,14 @@ async function scrapeProduct(site, url) {
     }
 
     if (result.price === null) {
-      result.error = "Could not extract price from HTML";
+      // Diagnostic: include indicators of what's actually in the response
+      const hasRupee = html.includes("₹");
+      const hasBuyNow = /Buy now/i.test(html);
+      const hasAddToCart = /Add to cart/i.test(html);
+      const hasFinalPrice = html.includes("finalPrice");
+      const titleMatch = html.match(/<title>([^<]+)<\/title>/);
+      const title = titleMatch ? titleMatch[1].slice(0, 80) : "no title";
+      result.error = `No price extracted (${html.length} bytes, title="${title}", hasRupee=${hasRupee}, hasBuyNow=${hasBuyNow}, hasAddToCart=${hasAddToCart}, hasFinalPrice=${hasFinalPrice})`;
     }
     return result;
   } catch (e) {
