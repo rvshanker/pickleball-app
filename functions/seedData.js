@@ -1,26 +1,45 @@
 // SEED DATA — used by adminSeedCatalog.js
-// Updated with 2026-current product identifiers
+//
+// To find URLs:
+//   Amazon:   amazon.in → search → click ORGANIC result (skip "Sponsored" tag) → copy URL → keep only /dp/XXXXXXXXXX
+//   Flipkart: flipkart.com → search → click result → copy URL → keep only /p/itmXXXXX
+//
+// Empty URLs are skipped during refresh — won't waste credits.
 
 const SEED_PRODUCTS = [
   {
-    id: "iphone-16-128gb",
-    displayName: "Apple iPhone 16 (128GB)",
+    id: "iphone-air-256gb",
+    displayName: "Apple iPhone Air (256GB)",
+    brand: "Apple",
+    category: "smartphones",
+    searchTerms: ["iphone", "iphone air", "apple iphone air"],
+    amazonUrl: "https://www.amazon.in/dp/B0FQFBDQJ1",
+    flipkartUrl: "",
+    imageUrl: ""
+  },
+  {
+    id: "iphone-16-128gb-ultramarine",
+    displayName: "Apple iPhone 16 (128GB, Ultramarine)",
     brand: "Apple",
     category: "smartphones",
     searchTerms: ["iphone", "iphone 16", "iphone 16 128", "apple iphone 16"],
-    amazonUrl: "https://www.amazon.in/dp/B0DGHP679M",
-    flipkartUrl: "https://www.flipkart.com/apple-iphone-16-black-128-gb/p/itmbe1317e00df03",
-    imageUrl: "https://m.media-amazon.com/images/I/71657UrS8RL._SL1500_.jpg"
+    amazonUrl: "",
+    flipkartUrl: "https://www.flipkart.com/apple-iphone-16-ultramarine-128-gb/p/itmcc210cae43fba",
+    imageUrl: ""
   },
+  // ─────────────────────────────────────────────────────────────────
+  // Skeleton entries below — add real URLs as you find them.
+  // Don't seed them with empty URLs (they'll be skipped) until ready.
+  // ─────────────────────────────────────────────────────────────────
   {
     id: "iphone-16-256gb",
     displayName: "Apple iPhone 16 (256GB)",
     brand: "Apple",
     category: "smartphones",
     searchTerms: ["iphone", "iphone 16", "iphone 16 256", "apple iphone 16"],
-    amazonUrl: "https://www.amazon.in/dp/B0DGHQK3M2",
-    flipkartUrl: "https://www.flipkart.com/apple-iphone-16-ultramarine-256-gb/p/itm533513a968600",
-    imageUrl: "https://m.media-amazon.com/images/I/71657UrS8RL._SL1500_.jpg"
+    amazonUrl: "",
+    flipkartUrl: "",
+    imageUrl: ""
   },
   {
     id: "iphone-16-pro-256gb",
@@ -28,9 +47,9 @@ const SEED_PRODUCTS = [
     brand: "Apple",
     category: "smartphones",
     searchTerms: ["iphone", "iphone 16 pro", "iphone 16 pro 256"],
-    amazonUrl: "https://www.amazon.in/dp/B0DGJ9B9N6",
-    flipkartUrl: "https://www.flipkart.com/apple-iphone-16-pro-desert-titanium-256-gb/p/itm12d46e293623c",
-    imageUrl: "https://m.media-amazon.com/images/I/81LmL9496vL._SL1500_.jpg"
+    amazonUrl: "",
+    flipkartUrl: "",
+    imageUrl: ""
   },
   {
     id: "samsung-s24-256gb",
@@ -38,19 +57,9 @@ const SEED_PRODUCTS = [
     brand: "Samsung",
     category: "smartphones",
     searchTerms: ["samsung", "samsung galaxy s24", "samsung s24", "galaxy s24"],
-    amazonUrl: "https://www.amazon.in/dp/B0CS5X68L6",
-    flipkartUrl: "https://www.flipkart.com/samsung-galaxy-s24-5g-amber-yellow-256-gb/p/itmd4e476be1be02",
-    imageUrl: "https://m.media-amazon.com/images/I/71RQu9Ym+RL._SL1500_.jpg"
-  },
-  {
-    id: "samsung-s24-ultra-256gb",
-    displayName: "Samsung Galaxy S24 Ultra (256GB)",
-    brand: "Samsung",
-    category: "smartphones",
-    searchTerms: ["samsung", "samsung s24 ultra", "galaxy s24 ultra", "s24 ultra"],
-    amazonUrl: "https://www.amazon.in/dp/B0CS6DYC3T",
-    flipkartUrl: "https://www.flipkart.com/samsung-galaxy-s24-ultra-5g-titanium-gray-256-gb/p/itm7e634e7f8e815",
-    imageUrl: "https://m.media-amazon.com/images/I/71XN6PRu71L._SL1500_.jpg"
+    amazonUrl: "",
+    flipkartUrl: "",
+    imageUrl: ""
   },
   {
     id: "oneplus-13-256gb",
@@ -58,9 +67,9 @@ const SEED_PRODUCTS = [
     brand: "OnePlus",
     category: "smartphones",
     searchTerms: ["oneplus", "oneplus 13", "1+ 13"],
-    amazonUrl: "https://www.amazon.in/dp/B0DQV2S8YF",
-    flipkartUrl: "https://www.flipkart.com/oneplus-13-midnight-ocean-256-gb/p/itm123456789", // Note: OnePlus often sells exclusively on Amazon in India
-    imageUrl: "https://m.media-amazon.com/images/I/610nIu6+4ML._SL1500_.jpg"
+    amazonUrl: "",
+    flipkartUrl: "",
+    imageUrl: ""
   }
 ];
 
