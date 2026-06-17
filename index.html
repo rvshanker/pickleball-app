@@ -65,7 +65,7 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
 <script>
   const isNative = !!(window.Capacitor?.isNativePlatform?.());
 
-  const FB_CONFIG = {
+  const FB = {
     apiKey: isNative ? "AIzaSyDjgdzr2gQlWMYnOYeLV56HBk5mdOXEDj8" : "AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
     authDomain: "pickleball-app-1bba7.firebaseapp.com",
     projectId: "pickleball-app-1bba7",
@@ -79,12 +79,12 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
   window.fbOk = false;
 
   try {
-    if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+    if (!firebase.apps.length) firebase.initializeApp(FB);
     window.db = firebase.firestore();
     window.auth = firebase.auth();
     window.fbOk = true;
   } catch (e) {
-    console.error('Firebase Infrastructure Integration Failure:', e);
+    console.error('Firebase Architecture Integration Failure:', e);
   }
 </script>
 </head>
@@ -121,7 +121,44 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
     );
   }
 
-  ...
+  function ChatModal({ player, onClose }) {
+    return (
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+          <div className="modal-handle"></div>
+          <h3 style={{fontFamily:'Syne', marginBottom:'12px'}}>Chatting with {player?.name || 'Player'}</h3>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    );
+  }
+
+  function Inbox({ onClose }) {
+    return (
+      <div style={{position:'fixed', inset:0, background:'var(--navy2)', padding:'24px', zIndex:10000, overflowY:'auto'}}>
+        <h2 style={{fontFamily:'Syne', marginBottom:'16px'}}>Messaging Engine</h2>
+        <button className="btn btn-primary btn-sm" onClick={onClose}>Back to Arena</button>
+      </div>
+    );
+  }
+
+  function ProfileSetup({ onClose }) {
+    return (
+      <div style={{position:'fixed', inset:0, background:'var(--navy2)', padding:'24px', zIndex:10000, overflowY:'auto'}}>
+        <h2 style={{fontFamily:'Syne', marginBottom:'16px'}}>Profile Settings Wizard</h2>
+        <button className="btn btn-primary btn-sm" onClick={onClose}>Save Data</button>
+      </div>
+    );
+  }
+
+  function NotificationSettings({ onClose }) {
+    return (
+      <div style={{position:'fixed', inset:0, background:'var(--navy2)', padding:'24px', zIndex:10000, overflowY:'auto'}}>
+        <h2 style={{fontFamily:'Syne', marginBottom:'16px'}}>Alert Customization Matrix</h2>
+        <button className="btn btn-ghost btn-sm" onClick={onClose}>Close Engine</button>
+      </div>
+    );
+  }
 
   /* --- Application Entry Core --- */
   function App() {
@@ -206,7 +243,7 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
           {tab === 'courts' && (
             <div className="pcn-card">
               <h4 style={{fontFamily:'Syne', marginBottom:'6px'}}>🏟 Court Layout Directory</h4>
-              <p style={{fontSize:'0.82rem', color(--muted)'}}>Querying facility database parameters and open weather schedules...</p>
+              <p style={{fontSize:'0.82rem', color:'var(--muted)'}}>Querying facility database parameters and open weather schedules...</p>
             </div>
           )}
 
