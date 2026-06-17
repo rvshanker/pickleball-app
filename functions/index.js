@@ -804,8 +804,13 @@ exports.onMessageCreated = onDocumentCreated(
 // ─────────────────────────────────────────────────────────────────────────────
 
 exports.tnResults = require("./tnResults").tnResults;
-exports.fetchPrice = require("./fetchPrice").fetchPrice;
-exports.refreshPrices = require("./refreshPrices").refreshPrices;
-exports.searchCatalog = require("./searchCatalog").searchCatalog;
-exports.adminRefreshAll = require("./adminRefreshAll").adminRefreshAll;
-exports.adminSeedCatalog = require("./adminSeedCatalog").adminSeedCatalog;
+
+// Disabled: old price-comparison scraper functions, unrelated to PickleConnect.
+// These pull in SCRAPINGBEE_KEY via Secret Manager, which was blocking the
+// entire deploy with a billing-required 403. Re-enable only if this billing
+// issue is fully resolved and you actually need this functionality again.
+// exports.fetchPrice = require("./fetchPrice").fetchPrice;
+// exports.refreshPrices = require("./refreshPrices").refreshPrices;
+// exports.searchCatalog = require("./searchCatalog").searchCatalog;
+// exports.adminRefreshAll = require("./adminRefreshAll").adminRefreshAll;
+// exports.adminSeedCatalog = require("./adminSeedCatalog").adminSeedCatalog;
