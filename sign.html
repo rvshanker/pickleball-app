@@ -6,10 +6,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // TODO: Replace with YOUR Firebase config
         const firebaseConfig = {
             apiKey: "AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
-            // CHANGE THIS BACK to the firebaseapp version
             authDomain: "pickleball-app-1bba7.firebaseapp.com", 
             projectId: "pickleball-app-1bba7",
             storageBucket: "pickleball-app-1bba7.firebasestorage.app",
@@ -21,7 +19,8 @@
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
 
-        window.signIn = () => {
+        // Bind directly to window so the inline onclick HTML attribute can see it
+        window.signIn = function() {
             signInWithPopup(auth, provider)
                 .then((result) => {
                     document.getElementById('status').innerText = "Hello, " + result.user.displayName;
