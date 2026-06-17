@@ -47,7 +47,6 @@
   .spinner { width: 40px; height: 40px; border: 4px solid var(--border-color); border-top-color: var(--pcn-green); border-radius: 50%; animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   
-  /* Modern High Contrast Component Classes */
   .pcn-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
   .fab-wrap { position: fixed; bottom: 80px; left: 0; right: 0; display: flex; justify-content: center; pointer-events: none; z-index: 900; }
   .fab { pointer-events: auto; background: linear-gradient(135deg, var(--pcn-green), #27AE60); color: white; font-weight: 800; padding: 14px 24px; border-radius: 30px; box-shadow: 0 6px 20px rgba(46,204,113,0.4); cursor: pointer; transition: transform 0.2s; font-size: 0.9rem; letter-spacing: 0.02em; }
@@ -66,10 +65,8 @@
 <script type="text/babel">
   const { useState, useEffect, useRef, useMemo } = React;
 
-  // Runtime environment check
   const isNative = !!(window.Capacitor?.isNativePlatform?.());
 
-  // Unified production project configuration keys safely isolated by platform environment 
   const FB = {
     apiKey: isNative ? "AIzaSyDjgdzr2gQlWMYnOYeLV56HBk5mdOXEDj8" : "AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
     authDomain: "pickleball-app-1bba7.firebaseapp.com",
@@ -84,39 +81,29 @@
   let fbOk = false;
 
   try {
-    if (!firebase.apps.length) {
-      firebase.initializeApp(FB);
-    }
+    if (!firebase.apps.length) firebase.initializeApp(FB);
     db = firebase.firestore();
     auth = firebase.auth();
     fbOk = true;
   } catch (e) {
-    console.error('Firebase Initialization Failure Context:', e);
+    console.error('Firebase Setup Error:', e);
   }
 
   /* Utility Helpers */
-  const haversine = (lat1, lon1, lat2, lon2) => {
-    const R = 3958.8; // Radius of Earth in Miles
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    return R * 2 * Math.asin(Math.sqrt(a));
+  const haversine = (a, b, c, d) => {
+    const R = 3958.8, dL = (c - a) * Math.PI / 180, dN = (d - b) * Math.PI / 180;
+    const x = Math.sin(dL / 2) ** 2 + Math.cos(a * Math.PI / 180) * Math.cos(c * Math.PI / 180) * Math.sin(dN / 2) ** 2;
+    return R * 2 * Math.asin(Math.sqrt(x));
   };
 
   const timeAgo = t => {
     if (!t) return '';
-    const d = Date.now() - t;
-    const m = Math.floor(d / 60000);
-    if (m < 1) return 'now';
-    if (m < 60) return m + 'm';
-    const h = Math.floor(m / 60);
-    if (h < 24) return h + 'h';
+    const d = Date.now() - t, m = Math.floor(d / 60000);
+    if (m < 1) return 'now'; if (m < 60) return m + 'm';
+    const h = Math.floor(m / 60); if (h < 24) return h + 'h';
     return Math.floor(h / 24) + 'd';
   };
 
-  // Main Container Router Component 
   function App() {
     const [tab, setTab] = useState('home');
     const [user, setUser] = useState(null);
@@ -124,12 +111,16 @@
     const [loading, setLoading] = useState(true);
     const [showFab, setShowFab] = useState(false);
     
-    // UI Interface Triggers
+    // Core Layout View Controls
     const [showProfile, setShowProfile] = useState(false);
     const [showInbox, setShowInbox] = useState(false);
     const [showNotifSettingsApp, setShowNotifSettingsApp] = useState(false);
+    const [chatP, setChatP] = useState(null);
+    const [loginPromptPlayer, setLoginPromptPlayer] = useState(undefined);
+    const [allPlayers, setAllPlayers] = useState([]);
+    const [uLat, setULat] = useState(null);
+    const [uLng, setULng] = useState(null);
 
-    // Listen to Auth Changes
     useEffect(() => {
       if (!fbOk) return;
       return auth.onAuthStateChanged(async (usr) => {
@@ -138,12 +129,12 @@
           try {
             const pDoc = await db.collection('profiles').doc(usr.uid).get();
             if (pDoc.exists) {
-              setProfile(pDoc.data());
+              setProfile({ uid: usr.uid, ...pDoc.data() });
             } else {
-              setShowProfile(true); // Open setup wizard for completely fresh profiles
+              setShowProfile(true);
             }
           } catch(err) {
-            console.error("Profile payload sync error:", err);
+            console.error("Profile sync failure:", err);
           }
         } else {
           setProfile(null);
@@ -152,7 +143,6 @@
       });
     }, []);
 
-    // Bind local tab navigation variables with explicit external nav.js bridges
     useEffect(() => {
       window.__pcnSetTab = (tabId) => {
         setTab(tabId);
@@ -163,7 +153,6 @@
       window.__pcnOpenNotifSettings = () => setShowNotifSettingsApp(true);
       window.__pcnOpenInbox = () => setShowInbox(true);
 
-      // Read hash tags on boot if deep linked by programmatic nav bars
       const initialHash = window.location.hash || '';
       if (initialHash.includes('tab=')) {
         const targetTab = initialHash.split('tab=')[1];
@@ -173,8 +162,8 @@
 
     if (loading) {
       return (
-        <div class="loading-screen">
-          <div class="spinner"></div>
+        <div className="loading-screen">
+          <div className="spinner"></div>
           <p style={{color: '#7A9BB5', fontSize: '0.9rem'}}>Loading Player Context...</p>
         </div>
       );
@@ -182,7 +171,6 @@
 
     return (
       <div className="app-container">
-        {/* Navigation Core Display States */}
         <header style={{marginBottom: '20px'}}>
           <h1 style={{fontFamily: 'Syne, sans-serif', fontSize: '1.6rem', fontWeight: 800}}>
             Welcome {profile?.name || user?.email || 'Player'}
@@ -210,19 +198,18 @@
           {tab === 'games' && (
             <div className="pcn-card">
               <h3 style={{marginBottom: '8px'}}>🎮 Scheduled Activities</h3>
-              <p style={{fontSize: '0.9rem', color: 'var(--text-muted)'}}>Manage your reservation rosters, matches, and custom drilling queues.</p>
+              <p style={{fontSize: '0.9rem', color: 'var(--text-muted)'}}>Leagues, tournaments, and custom match queues.</p>
             </div>
           )}
 
           {tab === 'players' && (
             <div className="pcn-card">
               <h3 style={{marginBottom: '8px'}}>👥 Connected Community</h3>
-              <p style={{fontSize: '0.9rem', color: 'var(--text-muted)'}}>Search players sorted dynamically by skill matching levels and geodistance.</p>
+              <p style={{fontSize: '0.9rem', color: 'var(--text-muted)'}}>Connect with local players sorted by geographical proximity.</p>
             </div>
           )}
         </main>
 
-        {/* FAB Actions Layer Context */}
         {tab === 'home' && (
           <div className="fab-wrap">
             <div className="fab" onClick={() => setShowFab(!showFab)}>
@@ -231,4 +218,36 @@
           </div>
         )}
 
-        {/* Temporary Fallback Components Placeholders for Profile/Inbox view
+        {/* View Layout Toggles linked to custom module components */}
+        {showProfile && (
+          <div style={{position:'fixed', inset:0, background:'rgba(13,27,42,0.98)', padding:'30px', zIndex:10000, overflowY:'auto'}}>
+            <h2 style={{fontFamily:'Syne', marginBottom:'15px'}}>Setup Profile</h2>
+            <button style={{background:'var(--pcn-green)', border:'none', color:'white', padding:'10px 20px', borderRadius:'8px', fontWeight:700}} onClick={() => setShowProfile(false)}>Close Wizard</button>
+          </div>
+        )}
+
+        {showInbox && (
+          <div style={{position:'fixed', inset:0, background:'rgba(13,27,42,0.98)', padding:'30px', zIndex:10000, overflowY:'auto'}}>
+            <h2 style={{fontFamily:'Syne', marginBottom:'15px'}}>Messages Inbox</h2>
+            <button style={{background:'var(--pcn-green)', border:'none', color:'white', padding:'10px 20px', borderRadius:'8px', fontWeight:700}} onClick={() => setShowInbox(false)}>Back to App</button>
+          </div>
+        )}
+
+        {showNotifSettingsApp && (
+          <div style={{position:'fixed', inset:0, background:'rgba(13,27,42,0.98)', padding:'30px', zIndex:10000, overflowY:'auto'}}>
+            <h2 style={{fontFamily:'Syne', marginBottom:'15px'}}>Notification Settings</h2>
+            <button style={{background:'var(--pcn-green)', border:'none', color:'white', padding:'10px 20px', borderRadius:'8px', fontWeight:700}} onClick={() => setShowNotifSettingsApp(false)}>Close</button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  root.render(<App />);
+</script>
+
+<script src="nav.js"></script>
+
+</body>
+</html>
