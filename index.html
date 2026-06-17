@@ -44,7 +44,6 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
 .top-bar{display:none!important;}
 .bottom-nav{display:none!important;}
 
-/* Global Action Templates */
 .btn{padding:11px 20px;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px;justify-content:center;}
 .btn-primary{background:linear-gradient(135deg,#2ECC71,#27AE60);color:white;box-shadow:0 4px 14px rgba(46,204,113,0.35);}
 .btn-ghost{background:transparent;color:var(--green);border:1.5px solid rgba(46,204,113,0.35);}
@@ -56,24 +55,17 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
 .modal-sheet{background:var(--navy2);border-radius:24px 24px 0 0;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;overflow-x:hidden;padding:20px 20px 90px;animation:slideUp .28s ease;}
 .modal-handle{width:40px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 18px;}
 
-/* Core Module Containers */
 .pcn-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
 .fab-wrap{position:fixed;bottom:62px;left:50%;transform:translateX(-50%);z-index:200;height:44px;display:flex;align-items:center;justify-content:center;pointer-events:none;width:200px;}
 .fab{pointer-events:all;background:linear-gradient(135deg,#2ECC71,#27AE60);color:#fff;font-family:'Syne',sans-serif;font-size:0.68rem;font-weight:800;letter-spacing:0.06em;padding:0 18px;height:42px;border-radius:24px;display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 4px 16px rgba(46,204,113,0.5);cursor:pointer;border:2px solid rgba(255,255,255,0.2);transition:transform .15s;}
 .fab.open{background:linear-gradient(135deg,#142232,#1A2B3C);}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 </style>
-</head>
-<body>
 
-<div id="root"></div>
-
-<script type="text/babel">
-  const { useState, useEffect, useRef, useMemo } = React;
-
+<script>
   const isNative = !!(window.Capacitor?.isNativePlatform?.());
 
-  const FB = {
+  const FB_CONFIG = {
     apiKey: isNative ? "AIzaSyDjgdzr2gQlWMYnOYeLV56HBk5mdOXEDj8" : "AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
     authDomain: "pickleball-app-1bba7.firebaseapp.com",
     projectId: "pickleball-app-1bba7",
@@ -82,18 +74,26 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
     appId: "1:645604154338:web:b92f87c2cd11d950b737bb"
   };
 
-  let db = null;
-  let auth = null;
-  let fbOk = false;
+  window.db = null;
+  window.auth = null;
+  window.fbOk = false;
 
   try {
-    if (!firebase.apps.length) firebase.initializeApp(FB);
-    db = firebase.firestore();
-    auth = firebase.auth();
-    fbOk = true;
+    if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+    window.db = firebase.firestore();
+    window.auth = firebase.auth();
+    window.fbOk = true;
   } catch (e) {
-    console.error('Firebase Architecture Integration Failure:', e);
+    console.error('Firebase Infrastructure Integration Failure:', e);
   }
+</script>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+  const { useState, useEffect, useRef, useMemo } = React;
 
   /* --- Fallback Component Stubs --- */
   function FabSheet({ onClose }) {
@@ -121,44 +121,7 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
     );
   }
 
-  function ChatModal({ player, onClose }) {
-    return (
-      <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-sheet" onClick={e => e.stopPropagation()}>
-          <div className="modal-handle"></div>
-          <h3 style={{fontFamily:'Syne', marginBottom:'12px'}}>Chatting with {player?.name || 'Player'}</h3>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
-        </div>
-      </div>
-    );
-  }
-
-  function Inbox({ onClose }) {
-    return (
-      <div style={{position:'fixed', inset:0, background:'var(--navy2)', padding:'24px', zIndex:10000, overflowY:'auto'}}>
-        <h2 style={{fontFamily:'Syne', marginBottom:'16px'}}>Messaging Engine</h2>
-        <button className="btn btn-primary btn-sm" onClick={onClose}>Back to Arena</button>
-      </div>
-    );
-  }
-
-  function ProfileSetup({ onClose }) {
-    return (
-      <div style={{position:'fixed', inset:0, background:'var(--navy2)', padding:'24px', zIndex:10000, overflowY:'auto'}}>
-        <h2 style={{fontFamily:'Syne', marginBottom:'16px'}}>Profile Settings Wizard</h2>
-        <button className="btn btn-primary btn-sm" onClick={onClose}>Save Data</button>
-      </div>
-    );
-  }
-
-  function NotificationSettings({ onClose }) {
-    return (
-      <div style={{position:'fixed', inset:0, background:'var(--navy2)', padding:'24px', zIndex:10000, overflowY:'auto'}}>
-        <h2 style={{fontFamily:'Syne', marginBottom:'16px'}}>Alert Customization Matrix</h2>
-        <button className="btn btn-ghost btn-sm" onClick={onClose}>Close Engine</button>
-      </div>
-    );
-  }
+  ...
 
   /* --- Application Entry Core --- */
   function App() {
@@ -176,15 +139,15 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
     const [allPlayers, setAllPlayers] = useState([]);
 
     useEffect(() => {
-      if (!fbOk) {
+      if (!window.fbOk) {
         setLoading(false);
         return;
       }
-      return auth.onAuthStateChanged(async (usr) => {
+      return window.auth.onAuthStateChanged(async (usr) => {
         setUser(usr);
         if (usr) {
           try {
-            const pDoc = await db.collection('profiles').doc(usr.uid).get();
+            const pDoc = await window.db.collection('profiles').doc(usr.uid).get();
             if (pDoc.exists) {
               setProfile({ uid: usr.uid, ...pDoc.data() });
             } else {
@@ -243,7 +206,7 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
           {tab === 'courts' && (
             <div className="pcn-card">
               <h4 style={{fontFamily:'Syne', marginBottom:'6px'}}>🏟 Court Layout Directory</h4>
-              <p style={{fontSize:'0.82rem', color:'var(--muted)'}}>Querying facility database parameters and open weather schedules...</p>
+              <p style={{fontSize:'0.82rem', color(--muted)'}}>Querying facility database parameters and open weather schedules...</p>
             </div>
           )}
 
@@ -262,7 +225,6 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
           )}
         </div>
 
-        {/* Floating Action Button */}
         {tab === 'home' && (
           <div className="fab-wrap">
             <div className={`fab ${showFab ? 'open' : ''}`} onClick={() => setShowFab(!showFab)}>
