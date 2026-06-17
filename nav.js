@@ -1,35 +1,3 @@
-Looking through your updated unified navigation script (`nav.js`), it looks clean, highly functional, and well-structured. However, there are a few edge cases, DOM duplication issues, and timing collisions typical in single-page routing architectures (like the one you are bridging here) that you should optimize or guard against.
-
-Here is a breakdown of the key areas to adjust, along with an optimized version of your script:
-
-### 1. The Multi-Initialization / Duplicate Element Bug
-
-Because this script utilizes `document.readyState` listeners *and* can be embedded in pages that use an external single-page tab-switching routine (`window.__pcnSetTab`), the `init()` function can sometimes be forced to re-run or get injected multiple times if a full DOM teardown doesn't happen.
-
-* **The Issue:** If `init()` runs twice, lines like `document.body.insertBefore(topBar, ...)` and `document.body.appendChild(botNav)` will cause duplicate headers, multi-layered fixed panels, or throw hierarchy errors.
-* **The Fix:** Implement an explicit guard variable or check for existing element IDs (`#pcn-top`, `#pcn-bot`) right at the start of your code execution to instantly bail if the unified nav is already present in the current view.
-
-### 2. Audio Engine Unlock Collisions
-
-Browsers block Web Audio context playback until an explicit user interaction occurs (`click`, `touchstart`, `keydown`). Your script handles this beautifully with `_unlockAudio`, but there is a slight structural problem:
-
-* **The Issue:** `_unlockAudio` tries to instantiate `new AudioContext()` and call `.resume()` inside standard event listeners marked as `{ passive: true }`. In some versions of Chromium or mobile Safari, instantiating or mutating audio inside a passive event context can trigger strict warnings or fail to fully bound-bind the user activation state.
-* **The Fix:** Remove `{ passive: true }` from the `click` listener or structure the `getAudioCtx()` handler to explicitly resolve inside a direct, active user event stack before relying on it inside incoming background snapshot listeners.
-
-### 3. Asynchronous Profile Picture Flickering
-
-You added a "flicker fix" by loading data from `sessionStorage` into `userPill()`. This is an excellent addition. However, right after the user object is pulled, `watchAuth` sets up `auth.onAuthStateChanged(...)`.
-
-* **The Issue:** When Firebase first loads, `onAuthStateChanged` fires with the authenticated user. Your script instantly builds a fresh `userPill(...)` right away, but it defaults `skill` and `city` to empty strings (`''`) because it hasn't yet awaited the asynchronous Firestore document get (`db.collection('profiles').doc(...)`). This creates a quick sub-second visual reset where a user's skill/location disappears from the dropdown headers, only to flash back in once the Firestore promise resolves.
-* **The Fix:** Don't replace or redraw the base profile pill if it already exists from cache unless the user object's critical profile variables actually change, or mutate the sub-elements (like the subtitle container text) directly once the database resolution concludes.
-
----
-
-### Optimized `nav.js` Script
-
-Here is the hardened code with explicit structural guards, fixed event handling context, and structured fallback states for your Firebase profile state engine:
-
-```javascript
 /**
  * PickleConnect — Unified Navigation v3 (Hardened)
  * Add before </body> in every page:  <script src="nav.js"></script>
@@ -680,5 +648,3 @@ Here is the hardened code with explicit structural guards, fixed event handling 
 
   } // end init()
 })();
-
-```
