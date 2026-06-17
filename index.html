@@ -69,7 +69,6 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
 <div id="root"></div>
 
 <script type="text/babel">
-  // Pull directly from React globally. Do NOT use module 'import' statements here.
   const { useState, useEffect, useRef, useMemo } = React;
 
   const isNative = !!(window.Capacitor?.isNativePlatform?.());
@@ -96,12 +95,12 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
     console.error('Firebase Architecture Integration Failure:', e);
   }
 
-  /* --- Fallback Component Stubs to Keep Core App Functioning Seamlessly --- */
+  /* --- Fallback Component Stubs --- */
   function FabSheet({ onClose }) {
     return (
-      <div class="modal-overlay" onClick={onClose}>
-        <div class="modal-sheet" onClick={e => e.stopPropagation()}>
-          <div class="modal-handle"></div>
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+          <div className="modal-handle"></div>
           <h3 style={{fontFamily:'Syne', marginBottom:'12px'}}>Match Setup Menu</h3>
           <p style={{fontSize:'0.85rem', color:'var(--muted)', marginBottom:'20px'}}>Configure real-time matchmaking queue parameters or setup open court layouts.</p>
           <button className="btn btn-primary btn-sm" onClick={onClose}>Dismiss</button>
@@ -112,9 +111,9 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
 
   function LoginPrompt({ onClose }) {
     return (
-      <div class="modal-overlay" onClick={onClose}>
-        <div class="modal-sheet" onClick={e => e.stopPropagation()}>
-          <div class="modal-handle"></div>
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+          <div className="modal-handle"></div>
           <h3 style={{fontFamily:'Syne', marginBottom:'12px'}}>Authentication Required</h3>
           <button className="btn btn-primary" style={{width:'100%'}} onClick={onClose}>Close Window</button>
         </div>
@@ -124,9 +123,9 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
 
   function ChatModal({ player, onClose }) {
     return (
-      <div class="modal-overlay" onClick={onClose}>
-        <div class="modal-sheet" onClick={e => e.stopPropagation()}>
-          <div class="modal-handle"></div>
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+          <div className="modal-handle"></div>
           <h3 style={{fontFamily:'Syne', marginBottom:'12px'}}>Chatting with {player?.name || 'Player'}</h3>
           <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
         </div>
@@ -201,7 +200,6 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
       });
     }, []);
 
-    // Explicit binding to nav.js programmatic execution routines
     useEffect(() => {
       window.__pcnSetTab = (tabId) => {
         setTab(tabId);
@@ -245,7 +243,7 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
           {tab === 'courts' && (
             <div className="pcn-card">
               <h4 style={{fontFamily:'Syne', marginBottom:'6px'}}>🏟 Court Layout Directory</h4>
-              <p style={{fontSize:'0.82rem', color(--muted)'}}>Querying facility database parameters and open weather schedules...</p>
+              <p style={{fontSize:'0.82rem', color:'var(--muted)'}}>Querying facility database parameters and open weather schedules...</p>
             </div>
           )}
 
@@ -259,12 +257,12 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
           {tab === 'players' && (
             <div className="pcn-card">
               <h4 style={{fontFamily:'Syne', marginBottom:'6px'}}>👥 Active Proximate Players</h4>
-              <p style={{fontSize:'0.82rem', color:'var(--muted)'}}>Sorting nearby community members using targeted distance metrics.</p>
+              <p style={{fontSize:'0.82rem', color:'var(--muted)'}}>Scanning community members using targeted distance metrics.</p>
             </div>
           )}
         </div>
 
-        {/* Floating Action Button Core Layout Interface */}
+        {/* Floating Action Button */}
         {tab === 'home' && (
           <div className="fab-wrap">
             <div className={`fab ${showFab ? 'open' : ''}`} onClick={() => setShowFab(!showFab)}>
@@ -283,7 +281,6 @@ body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sa
     );
   }
 
-  // Target initialization mount node directly
   const container = document.getElementById('root');
   const root = ReactDOM.createRoot(container);
   root.render(<App />);
