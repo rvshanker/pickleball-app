@@ -25,44 +25,51 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
 
 <style>
-  :root {
-    --bg-navy: #0D1B2A;
-    --bg-card: #1B263B;
-    --pcn-green: #2ECC71;
-    --text-main: #F0F4F8;
-    --text-muted: #7A9BB5;
-    --border-color: rgba(255, 255, 255, 0.08);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background-color: var(--bg-navy);
-    color: var(--text-main);
-    font-family: 'DM Sans', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
-  }
-  #root { min-height: 100vh; display: flex; flex-direction: column; }
-  .app-container { flex: 1; padding: 16px; max-width: 600px; margin: 0 auto; width: 100%; }
-  .loading-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; gap: 16px; }
-  .spinner { width: 40px; height: 40px; border: 4px solid var(--border-color); border-top-color: var(--pcn-green); border-radius: 50%; animation: spin 1s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  
-  .pcn-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
-  .fab-wrap { position: fixed; bottom: 80px; left: 0; right: 0; display: flex; justify-content: center; pointer-events: none; z-index: 900; }
-  .fab { pointer-events: auto; background: linear-gradient(135deg, var(--pcn-green), #27AE60); color: white; font-weight: 800; padding: 14px 24px; border-radius: 30px; box-shadow: 0 6px 20px rgba(46,204,113,0.4); cursor: pointer; transition: transform 0.2s; font-size: 0.9rem; letter-spacing: 0.02em; }
-  .fab:active { transform: scale(0.96); }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --green:#2ECC71;--green-dark:#27AE60;--green-dim:rgba(46,204,113,0.12);
+  --navy:#0D1B2A;--navy2:#142232;--card:#1A2B3C;--card2:#1F3347;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#F0F4F8;--muted:#7A9BB5;--muted2:rgba(122,155,181,0.5);
+  --accent:#F7C948;--blue:#5B9BF7;--red:#F75B5B;
+  --nav-h:62px;
+}
+html,body,#root{height:100%;overflow:hidden;}
+html,body{max-width:100vw;overflow-x:hidden;}
+body{padding-top:0!important;padding-bottom:0!important;font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);font-size:15px;-webkit-text-size-adjust:100%;}
+
+.app-shell{display:flex;flex-direction:column;position:fixed;top:54px;left:0;right:0;bottom:62px;max-width:480px;margin:0 auto;background:var(--navy);}
+.screen-body{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding-bottom:16px;}
+.screen-body::-webkit-scrollbar{display:none;}
+.top-bar{display:none!important;}
+.bottom-nav{display:none!important;}
+
+/* Global Action Templates */
+.btn{padding:11px 20px;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px;justify-content:center;}
+.btn-primary{background:linear-gradient(135deg,#2ECC71,#27AE60);color:white;box-shadow:0 4px 14px rgba(46,204,113,0.35);}
+.btn-ghost{background:transparent;color:var(--green);border:1.5px solid rgba(46,204,113,0.35);}
+.btn-ghost:hover{background:var(--green-dim);}
+.btn-danger{background:rgba(247,91,91,0.12);color:var(--red);border:1px solid rgba(247,91,91,0.2);}
+.btn-sm{padding:7px 14px;font-size:0.78rem;border-radius:10px;}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(5,10,18,0.82);backdrop-filter:blur(8px);z-index:9950;display:flex;align-items:flex-end;justify-content:center;}
+.modal-sheet{background:var(--navy2);border-radius:24px 24px 0 0;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;overflow-x:hidden;padding:20px 20px 90px;animation:slideUp .28s ease;}
+.modal-handle{width:40px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 18px;}
+
+/* Core Module Containers */
+.pcn-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+.fab-wrap{position:fixed;bottom:62px;left:50%;transform:translateX(-50%);z-index:200;height:44px;display:flex;align-items:center;justify-content:center;pointer-events:none;width:200px;}
+.fab{pointer-events:all;background:linear-gradient(135deg,#2ECC71,#27AE60);color:#fff;font-family:'Syne',sans-serif;font-size:0.68rem;font-weight:800;letter-spacing:0.06em;padding:0 18px;height:42px;border-radius:24px;display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 4px 16px rgba(46,204,113,0.5);cursor:pointer;border:2px solid rgba(255,255,255,0.2);transition:transform .15s;}
+.fab.open{background:linear-gradient(135deg,#142232,#1A2B3C);}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 </style>
 </head>
-<body data-fixed-layout>
+<body>
 
-<div id="root">
-  <div class="loading-screen">
-    <div class="spinner"></div>
-    <p style="color: #7A9BB5; font-size: 0.9rem; font-weight: 500;">Loading PickleConnect...</p>
-  </div>
-</div>
+<div id="root"></div>
 
 <script type="text/babel">
+  // Pull directly from React globally. Do NOT use module 'import' statements here.
   const { useState, useEffect, useRef, useMemo } = React;
 
   const isNative = !!(window.Capacitor?.isNativePlatform?.());
@@ -86,24 +93,75 @@
     auth = firebase.auth();
     fbOk = true;
   } catch (e) {
-    console.error('Firebase Setup Error:', e);
+    console.error('Firebase Architecture Integration Failure:', e);
   }
 
-  /* Utility Helpers */
-  const haversine = (a, b, c, d) => {
-    const R = 3958.8, dL = (c - a) * Math.PI / 180, dN = (d - b) * Math.PI / 180;
-    const x = Math.sin(dL / 2) ** 2 + Math.cos(a * Math.PI / 180) * Math.cos(c * Math.PI / 180) * Math.sin(dN / 2) ** 2;
-    return R * 2 * Math.asin(Math.sqrt(x));
-  };
+  /* --- Fallback Component Stubs to Keep Core App Functioning Seamlessly --- */
+  function FabSheet({ onClose }) {
+    return (
+      <div class="modal-overlay" onClick={onClose}>
+        <div class="modal-sheet" onClick={e => e.stopPropagation()}>
+          <div class="modal-handle"></div>
+          <h3 style={{fontFamily:'Syne', marginBottom:'12px'}}>Match Setup Menu</h3>
+          <p style={{fontSize:'0.85rem', color:'var(--muted)', marginBottom:'20px'}}>Configure real-time matchmaking queue parameters or setup open court layouts.</p>
+          <button className="btn btn-primary btn-sm" onClick={onClose}>Dismiss</button>
+        </div>
+      </div>
+    );
+  }
 
-  const timeAgo = t => {
-    if (!t) return '';
-    const d = Date.now() - t, m = Math.floor(d / 60000);
-    if (m < 1) return 'now'; if (m < 60) return m + 'm';
-    const h = Math.floor(m / 60); if (h < 24) return h + 'h';
-    return Math.floor(h / 24) + 'd';
-  };
+  function LoginPrompt({ onClose }) {
+    return (
+      <div class="modal-overlay" onClick={onClose}>
+        <div class="modal-sheet" onClick={e => e.stopPropagation()}>
+          <div class="modal-handle"></div>
+          <h3 style={{fontFamily:'Syne', marginBottom:'12px'}}>Authentication Required</h3>
+          <button className="btn btn-primary" style={{width:'100%'}} onClick={onClose}>Close Window</button>
+        </div>
+      </div>
+    );
+  }
 
+  function ChatModal({ player, onClose }) {
+    return (
+      <div class="modal-overlay" onClick={onClose}>
+        <div class="modal-sheet" onClick={e => e.stopPropagation()}>
+          <div class="modal-handle"></div>
+          <h3 style={{fontFamily:'Syne', marginBottom:'12px'}}>Chatting with {player?.name || 'Player'}</h3>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    );
+  }
+
+  function Inbox({ onClose }) {
+    return (
+      <div style={{position:'fixed', inset:0, background:'var(--navy2)', padding:'24px', zIndex:10000, overflowY:'auto'}}>
+        <h2 style={{fontFamily:'Syne', marginBottom:'16px'}}>Messaging Engine</h2>
+        <button className="btn btn-primary btn-sm" onClick={onClose}>Back to Arena</button>
+      </div>
+    );
+  }
+
+  function ProfileSetup({ onClose }) {
+    return (
+      <div style={{position:'fixed', inset:0, background:'var(--navy2)', padding:'24px', zIndex:10000, overflowY:'auto'}}>
+        <h2 style={{fontFamily:'Syne', marginBottom:'16px'}}>Profile Settings Wizard</h2>
+        <button className="btn btn-primary btn-sm" onClick={onClose}>Save Data</button>
+      </div>
+    );
+  }
+
+  function NotificationSettings({ onClose }) {
+    return (
+      <div style={{position:'fixed', inset:0, background:'var(--navy2)', padding:'24px', zIndex:10000, overflowY:'auto'}}>
+        <h2 style={{fontFamily:'Syne', marginBottom:'16px'}}>Alert Customization Matrix</h2>
+        <button className="btn btn-ghost btn-sm" onClick={onClose}>Close Engine</button>
+      </div>
+    );
+  }
+
+  /* --- Application Entry Core --- */
   function App() {
     const [tab, setTab] = useState('home');
     const [user, setUser] = useState(null);
@@ -111,18 +169,18 @@
     const [loading, setLoading] = useState(true);
     const [showFab, setShowFab] = useState(false);
     
-    // Core Layout View Controls
     const [showProfile, setShowProfile] = useState(false);
     const [showInbox, setShowInbox] = useState(false);
     const [showNotifSettingsApp, setShowNotifSettingsApp] = useState(false);
     const [chatP, setChatP] = useState(null);
     const [loginPromptPlayer, setLoginPromptPlayer] = useState(undefined);
     const [allPlayers, setAllPlayers] = useState([]);
-    const [uLat, setULat] = useState(null);
-    const [uLng, setULng] = useState(null);
 
     useEffect(() => {
-      if (!fbOk) return;
+      if (!fbOk) {
+        setLoading(false);
+        return;
+      }
       return auth.onAuthStateChanged(async (usr) => {
         setUser(usr);
         if (usr) {
@@ -134,7 +192,7 @@
               setShowProfile(true);
             }
           } catch(err) {
-            console.error("Profile sync failure:", err);
+            console.error("Profile synchronization failure:", err);
           }
         } else {
           setProfile(null);
@@ -143,6 +201,7 @@
       });
     }, []);
 
+    // Explicit binding to nav.js programmatic execution routines
     useEffect(() => {
       window.__pcnSetTab = (tabId) => {
         setTab(tabId);
@@ -153,97 +212,80 @@
       window.__pcnOpenNotifSettings = () => setShowNotifSettingsApp(true);
       window.__pcnOpenInbox = () => setShowInbox(true);
 
-      const initialHash = window.location.hash || '';
-      if (initialHash.includes('tab=')) {
-        const targetTab = initialHash.split('tab=')[1];
+      const hash = window.location.hash || '';
+      if (hash.includes('tab=')) {
+        const targetTab = hash.split('tab=')[1];
         if (targetTab) setTab(targetTab);
       }
     }, []);
 
     if (loading) {
       return (
-        <div className="loading-screen">
-          <div className="spinner"></div>
-          <p style={{color: '#7A9BB5', fontSize: '0.9rem'}}>Loading Player Context...</p>
+        <div style={{display:'flex', height:'100vh', alignItems:'center', justifyContent:'center', background:'var(--navy)', color:'var(--muted)'}}>
+          <p>Syncing Player Profile Matrix...</p>
         </div>
       );
     }
 
     return (
-      <div className="app-container">
-        <header style={{marginBottom: '20px'}}>
-          <h1 style={{fontFamily: 'Syne, sans-serif', fontSize: '1.6rem', fontWeight: 800}}>
-            Welcome {profile?.name || user?.email || 'Player'}
-          </h1>
-          <p style={{color: 'var(--text-muted)', fontSize: '0.85rem'}}>
-            Skill Level: <span style={{color: 'var(--pcn-green)', fontWeight: 700}}>{profile?.skill || 'Unrated'}</span>
-          </p>
-        </header>
+      <div className="app-shell">
+        <div className="screen-body px" style={{paddingTop:'16px'}}>
+          <header style={{marginBottom:'24px'}}>
+            <h2 style={{fontFamily:'Syne', fontWeight:800}}>PickleConnect Arena</h2>
+            <p style={{fontSize:'0.8rem', color:'var(--muted)'}}>Active Node: <span style={{color:'var(--green)'}}>{profile?.name || user?.email || 'Guest Player'}</span></p>
+          </header>
 
-        <main>
           {tab === 'home' && (
             <div className="pcn-card">
-              <h3 style={{marginBottom: '8px'}}>🏓 Live Matches & Open Courts</h3>
-              <p style={{fontSize: '0.9rem', color: 'var(--text-muted)'}}>Explore near real-time open matching groups active in your area.</p>
+              <h4 style={{fontFamily:'Syne', marginBottom:'6px'}}>⚡ Live Match Feed</h4>
+              <p style={{fontSize:'0.82rem', color:'var(--muted)'}}>Scanning local court geolocations for active, non-full match configurations...</p>
             </div>
           )}
 
           {tab === 'courts' && (
             <div className="pcn-card">
-              <h3 style={{marginBottom: '8px'}}>🏟 Court Facilities</h3>
-              <p style={{fontSize: '0.9rem', color: 'var(--text-muted)'}}>Checking local maps for active pickleball layout parameters.</p>
+              <h4 style={{fontFamily:'Syne', marginBottom:'6px'}}>🏟 Court Layout Directory</h4>
+              <p style={{fontSize:'0.82rem', color(--muted)'}}>Querying facility database parameters and open weather schedules...</p>
             </div>
           )}
 
           {tab === 'games' && (
             <div className="pcn-card">
-              <h3 style={{marginBottom: '8px'}}>🎮 Scheduled Activities</h3>
-              <p style={{fontSize: '0.9rem', color: 'var(--text-muted)'}}>Leagues, tournaments, and custom match queues.</p>
+              <h4 style={{fontFamily:'Syne', marginBottom:'6px'}}>🎮 Active Sessions</h4>
+              <p style={{fontSize:'0.82rem', color:'var(--muted)'}}>No upcoming scheduled tournaments found on your timeline.</p>
             </div>
           )}
 
           {tab === 'players' && (
             <div className="pcn-card">
-              <h3 style={{marginBottom: '8px'}}>👥 Connected Community</h3>
-              <p style={{fontSize: '0.9rem', color: 'var(--text-muted)'}}>Connect with local players sorted by geographical proximity.</p>
+              <h4 style={{fontFamily:'Syne', marginBottom:'6px'}}>👥 Active Proximate Players</h4>
+              <p style={{fontSize:'0.82rem', color:'var(--muted)'}}>Sorting nearby community members using targeted distance metrics.</p>
             </div>
           )}
-        </main>
+        </div>
 
+        {/* Floating Action Button Core Layout Interface */}
         {tab === 'home' && (
           <div className="fab-wrap">
-            <div className="fab" onClick={() => setShowFab(!showFab)}>
-              {showFab ? '✕ Close Layout' : '🏓 I WANT TO PLAY'}
+            <div className={`fab ${showFab ? 'open' : ''}`} onClick={() => setShowFab(!showFab)}>
+              {showFab ? '✕ Close Menu' : '🏓 I WANT TO PLAY'}
             </div>
           </div>
         )}
 
-        {/* View Layout Toggles linked to custom module components */}
-        {showProfile && (
-          <div style={{position:'fixed', inset:0, background:'rgba(13,27,42,0.98)', padding:'30px', zIndex:10000, overflowY:'auto'}}>
-            <h2 style={{fontFamily:'Syne', marginBottom:'15px'}}>Setup Profile</h2>
-            <button style={{background:'var(--pcn-green)', border:'none', color:'white', padding:'10px 20px', borderRadius:'8px', fontWeight:700}} onClick={() => setShowProfile(false)}>Close Wizard</button>
-          </div>
-        )}
-
-        {showInbox && (
-          <div style={{position:'fixed', inset:0, background:'rgba(13,27,42,0.98)', padding:'30px', zIndex:10000, overflowY:'auto'}}>
-            <h2 style={{fontFamily:'Syne', marginBottom:'15px'}}>Messages Inbox</h2>
-            <button style={{background:'var(--pcn-green)', border:'none', color:'white', padding:'10px 20px', borderRadius:'8px', fontWeight:700}} onClick={() => setShowInbox(false)}>Back to App</button>
-          </div>
-        )}
-
-        {showNotifSettingsApp && (
-          <div style={{position:'fixed', inset:0, background:'rgba(13,27,42,0.98)', padding:'30px', zIndex:10000, overflowY:'auto'}}>
-            <h2 style={{fontFamily:'Syne', marginBottom:'15px'}}>Notification Settings</h2>
-            <button style={{background:'var(--pcn-green)', border:'none', color:'white', padding:'10px 20px', borderRadius:'8px', fontWeight:700}} onClick={() => setShowNotifSettingsApp(false)}>Close</button>
-          </div>
-        )}
+        {showFab && <FabSheet onClose={() => setShowFab(false)} />}
+        {loginPromptPlayer !== undefined && <LoginPrompt onClose={() => setLoginPromptPlayer(undefined)} />}
+        {chatP && <ChatModal player={chatP} onClose={() => setChatP(null)} />}
+        {showInbox && <Inbox onClose={() => setShowInbox(false)} />}
+        {showProfile && <ProfileSetup onClose={() => setShowProfile(false)} />}
+        {showNotifSettingsApp && <NotificationSettings onClose={() => setShowNotifSettingsApp(false)} />}
       </div>
     );
   }
 
-  const root = ReactDOM.createRoot(document.getElementById('root'));
+  // Target initialization mount node directly
+  const container = document.getElementById('root');
+  const root = ReactDOM.createRoot(container);
   root.render(<App />);
 </script>
 
