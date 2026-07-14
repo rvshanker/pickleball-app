@@ -31,6 +31,7 @@
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.7/babel.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -43,29 +44,39 @@
 html{height:100%;}
 body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);font-size:15px;-webkit-text-size-adjust:100%;min-height:100vh;}
 
+/* 3D background layer */
+#wx3d{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity 1.2s ease;}
+#wx3d.on{opacity:1;}
+#root{position:relative;z-index:1;}
+
 /* Nav */
 .nav{position:sticky;top:0;z-index:100;background:rgba(13,27,42,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:12px 18px;display:flex;align-items:center;gap:12px;}
 .nav-logo{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--green);letter-spacing:-0.02em;cursor:pointer;text-decoration:none;}
 .nav-logo span{color:var(--text);}
 .nav-title{font-size:0.82rem;font-weight:600;color:var(--muted);margin-left:auto;}
+.fx-btn{border:1.5px solid var(--border2);background:var(--card);color:var(--muted);border-radius:9px;padding:5px 9px;font-size:0.68rem;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;line-height:1;}
+.fx-btn.on{border-color:rgba(46,204,113,0.5);background:var(--green-dim);color:var(--green);}
 
 /* Search */
 .search-wrap{max-width:520px;margin:0 auto;padding:20px 16px 0;}
 .search-row{display:flex;gap:8px;}
-.search-input{flex:1;padding:12px 14px 12px 38px;background:var(--card);border:1.5px solid var(--border2);border-radius:12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.9rem;outline:none;transition:border-color .15s;}
+.search-input{flex:1;padding:12px 14px 12px 38px;background:rgba(26,43,60,0.85);border:1.5px solid var(--border2);border-radius:12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.9rem;outline:none;transition:border-color .15s;backdrop-filter:blur(8px);}
 .search-input:focus{border-color:rgba(46,204,113,0.5);}
 .search-input::placeholder{color:var(--muted2);}
 .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:0.9rem;}
-.loc-btn{width:46px;height:46px;border-radius:12px;background:var(--card);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;color:var(--text);transition:all .15s;flex-shrink:0;}
+.loc-btn{width:46px;height:46px;border-radius:12px;background:rgba(26,43,60,0.85);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;color:var(--text);transition:all .15s;flex-shrink:0;backdrop-filter:blur(8px);}
 .loc-btn:hover{border-color:rgba(46,204,113,0.5);background:var(--green-dim);}
 .loc-btn.active{border-color:var(--green);background:var(--green-dim);color:var(--green);}
 
 /* Content */
 .content{max-width:520px;margin:0 auto;padding:16px;}
 
-/* Cards */
-.wx-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;}
+/* Cards — semi-transparent glass so the 3D layer shows through */
+.wx-card{background:rgba(26,43,60,0.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;box-shadow:0 8px 28px rgba(0,0,0,0.22);transition:box-shadow .25s ease;}
 .wx-card-header{padding:14px 16px;font-size:0.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+
+/* 3D tilt wrapper */
+.tilt{transform-style:preserve-3d;will-change:transform;transition:transform .18s ease-out;}
 
 /* Graph-specific */
 .graph-svg{display:block;width:100%;height:auto;touch-action:pan-y;cursor:crosshair;user-select:none;-webkit-user-select:none;}
@@ -79,10 +90,233 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);f
 @keyframes spin{to{transform:rotate(360deg)}}
 .fade-in{animation:fadeIn .25s ease;}
 .fade-up{animation:fadeUp .35s ease;}
+
+@media (prefers-reduced-motion: reduce){
+  #wx3d{display:none !important;}
+  .tilt{transition:none;}
+}
 </style>
 </head>
 <body>
+<div id="wx3d"></div>
 <div id="root"></div>
+
+<script>
+/* ============================================================
+   WX3D — wind-reactive 3D background (Three.js)
+   Particles flow in the real wind direction at real wind speed,
+   tinted by playability. A slow-spinning pickleball floats in
+   the depth; its spin rate scales with wind speed. Rain pulls
+   particles downward with a blue tint.
+   ============================================================ */
+window.WX3D = (function () {
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var container = document.getElementById('wx3d');
+  var inited = false, enabled = false, raf = null;
+  var renderer, scene, camera, points, ball, ballWrap, geo;
+  var positions, seeds, count;
+  var isMobile = /Mobi|Android/i.test(navigator.userAgent) || window.innerWidth < 640;
+  var B = { x: 46, y: 30, z: 34 };            // particle bounds
+  var pointer = { x: 0, y: 0 };
+  var clock = null;
+
+  // live weather state (lerped each frame toward targets)
+  var cur = { speed: 5, dirX: 0.4, dirY: 0.1, rain: 0, spin: 0.004 };
+  var tgt = { speed: 5, dirX: 0.4, dirY: 0.1, rain: 0 };
+  var curColor = new THREE.Color('#2ECC71');
+  var tgtColor = new THREE.Color('#2ECC71');
+  var rainBlue = new THREE.Color('#5B9BF7');
+
+  function makeBallTexture() {
+    var c = document.createElement('canvas');
+    c.width = c.height = 512;
+    var g = c.getContext('2d');
+    var grad = g.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0, '#3ee085');
+    grad.addColorStop(1, '#24a45c');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 512, 512);
+    g.fillStyle = 'rgba(9,38,24,0.9)';
+    for (var y = 40; y < 512; y += 88) {
+      var off = (Math.floor(y / 88) % 2) ? 44 : 0;
+      for (var x = 40 + off; x < 512; x += 88) {
+        g.beginPath();
+        g.arc(x, y, 15, 0, Math.PI * 2);
+        g.fill();
+      }
+    }
+    var t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    return t;
+  }
+
+  function makeDotSprite() {
+    var c = document.createElement('canvas');
+    c.width = c.height = 64;
+    var g = c.getContext('2d');
+    var grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.35, 'rgba(255,255,255,0.6)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 64, 64);
+    return new THREE.CanvasTexture(c);
+  }
+
+  function init() {
+    if (inited || reduced || !window.THREE) return;
+    inited = true;
+    clock = new THREE.Clock();
+
+    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false, powerPreference: 'low-power' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    container.appendChild(renderer.domElement);
+
+    scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x0d1b2a, 40, 90);
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+    camera.position.set(0, 0, 42);
+
+    // Particles
+    count = isMobile ? 320 : 650;
+    positions = new Float32Array(count * 3);
+    seeds = new Float32Array(count);
+    for (var i = 0; i < count; i++) {
+      positions[i * 3] = (Math.random() * 2 - 1) * B.x;
+      positions[i * 3 + 1] = (Math.random() * 2 - 1) * B.y;
+      positions[i * 3 + 2] = (Math.random() * 2 - 1) * B.z;
+      seeds[i] = Math.random() * Math.PI * 2;
+    }
+    geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    var mat = new THREE.PointsMaterial({
+      size: isMobile ? 0.55 : 0.5,
+      map: makeDotSprite(),
+      color: curColor,
+      transparent: true,
+      opacity: 0.55,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    points = new THREE.Points(geo, mat);
+    scene.add(points);
+
+    // Pickleball
+    var ballGeo = new THREE.SphereGeometry(5.2, 40, 40);
+    var ballMat = new THREE.MeshStandardMaterial({
+      map: makeBallTexture(),
+      roughness: 0.55,
+      metalness: 0.05
+    });
+    ball = new THREE.Mesh(ballGeo, ballMat);
+    ballWrap = new THREE.Group();
+    ballWrap.add(ball);
+    ballWrap.position.set(isMobile ? 11 : 17, 10, -14);
+    scene.add(ballWrap);
+
+    scene.add(new THREE.AmbientLight(0x9fd8ff, 0.35));
+    var key = new THREE.DirectionalLight(0xffffff, 0.9);
+    key.position.set(-8, 14, 20);
+    scene.add(key);
+    var rim = new THREE.PointLight(0x2ecc71, 0.6, 60);
+    rim.position.set(14, -6, 4);
+    scene.add(rim);
+
+    window.addEventListener('resize', onResize);
+    window.addEventListener('pointermove', function (e) {
+      pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+      pointer.y = (e.clientY / window.innerHeight) * 2 - 1;
+    }, { passive: true });
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) stopLoop(); else if (enabled) startLoop();
+    });
+  }
+
+  function onResize() {
+    if (!inited) return;
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  function frame() {
+    raf = requestAnimationFrame(frame);
+    var dt = Math.min(clock.getDelta(), 0.05);
+    var t = clock.elapsedTime;
+
+    // Ease toward target weather state
+    var k = 1 - Math.pow(0.02, dt); // smooth lerp factor
+    cur.speed += (tgt.speed - cur.speed) * k;
+    cur.dirX += (tgt.dirX - cur.dirX) * k;
+    cur.dirY += (tgt.dirY - cur.dirY) * k;
+    cur.rain += (tgt.rain - cur.rain) * k;
+    curColor.lerp(tgtColor, k);
+
+    // Blend particle color toward blue when rain probability is high
+    var pc = curColor.clone();
+    if (cur.rain > 0.01) pc.lerp(rainBlue, Math.min(cur.rain, 0.7));
+    points.material.color.copy(pc);
+
+    // Particle motion: base flow = wind vector, rain adds downward pull
+    var flow = 0.6 + cur.speed * 0.5;             // world units/sec
+    var vx = cur.dirX * flow;
+    var vy = cur.dirY * flow - cur.rain * 8;
+    var pos = geo.attributes.position.array;
+    for (var i = 0; i < count; i++) {
+      var j = i * 3;
+      var wob = Math.sin(t * 1.4 + seeds[i]) * 0.35; // gentle per-particle wobble
+      pos[j] += (vx + wob * cur.dirY) * dt;
+      pos[j + 1] += (vy - wob * cur.dirX) * dt;
+      if (pos[j] > B.x) pos[j] = -B.x; else if (pos[j] < -B.x) pos[j] = B.x;
+      if (pos[j + 1] > B.y) pos[j + 1] = -B.y; else if (pos[j + 1] < -B.y) pos[j + 1] = B.y;
+    }
+    geo.attributes.position.needsUpdate = true;
+
+    // Ball: spin rate scales with wind, gentle bob
+    cur.spin = 0.15 + cur.speed * 0.05;
+    ball.rotation.y += cur.spin * dt;
+    ball.rotation.x += cur.spin * 0.35 * dt;
+    ballWrap.position.y = 10 + Math.sin(t * 0.6) * 1.4;
+
+    // Camera parallax
+    camera.position.x += (pointer.x * 3 - camera.position.x) * 0.03;
+    camera.position.y += (-pointer.y * 2 - camera.position.y) * 0.03;
+    camera.lookAt(0, 0, 0);
+
+    renderer.render(scene, camera);
+  }
+
+  function startLoop() { if (!raf && inited) { clock.getDelta(); raf = requestAnimationFrame(frame); } }
+  function stopLoop() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+
+  return {
+    supported: !reduced && !!window.THREE,
+    setEnabled: function (on) {
+      enabled = !!on && !reduced && !!window.THREE;
+      if (enabled) {
+        init();
+        container.classList.add('on');
+        if (!document.hidden) startLoop();
+      } else {
+        container.classList.remove('on');
+        stopLoop();
+      }
+    },
+    update: function (o) {
+      // o: { wind (mph), deg (meteorological FROM), rain (0-100), color (hex) }
+      if (!o) return;
+      tgt.speed = Math.max(0.5, Math.min((o.wind || 0) / 4, 8));
+      var toward = (((o.deg == null ? 200 : o.deg) + 180) % 360) * Math.PI / 180;
+      tgt.dirX = Math.sin(toward);   // east = +x
+      tgt.dirY = Math.cos(toward);   // north = +y
+      tgt.rain = (o.rain || 0) >= 50 ? Math.min((o.rain - 30) / 70, 1) : 0;
+      if (o.color) tgtColor.set(o.color);
+    }
+  };
+})();
+</script>
+
 <script type="text/babel">
 const {useState, useEffect, useRef} = React;
 
@@ -105,6 +339,31 @@ const windArrow = deg => {
   return arrows[Math.round(d / 45) % 8];
 };
 
+// 3D perspective tilt on pointer (desktop); inert on touch so mobile stays smooth
+function TiltCard({ children, className = '', style = {} }) {
+  const ref = useRef(null);
+  const onMove = (e) => {
+    const el = ref.current;
+    if (!el || e.pointerType === 'touch') return;
+    const r = el.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5;
+    const y = (e.clientY - r.top) / r.height - 0.5;
+    el.style.transform = `perspective(900px) rotateX(${(-y * 4).toFixed(2)}deg) rotateY(${(x * 6).toFixed(2)}deg) translateZ(4px)`;
+    el.style.boxShadow = '0 18px 44px rgba(0,0,0,0.38)';
+  };
+  const onLeave = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.transform = '';
+    el.style.boxShadow = '';
+  };
+  return (
+    <div ref={ref} className={`tilt ${className}`} style={style} onPointerMove={onMove} onPointerLeave={onLeave}>
+      {children}
+    </div>
+  );
+}
+
 function App() {
   const [weather, setWeather] = useState(null);
   const [forecast, setForecast] = useState([]);
@@ -115,6 +374,9 @@ function App() {
   const [usingGps, setUsingGps] = useState(false);
   const [coords, setCoords] = useState(null);
   const [scrubX, setScrubX] = useState(null);
+  const [fx, setFx] = useState(() => {
+    try { return localStorage.getItem('pc_fx3d') !== 'off'; } catch { return true; }
+  });
   const inputRef = useRef(null);
 
   const fetchWeather = async (lat, lng) => {
@@ -194,6 +456,12 @@ function App() {
 
   useEffect(() => { useMyLocation(); }, []);
 
+  // 3D toggle → drive the WebGL layer
+  useEffect(() => {
+    window.WX3D?.setEnabled(fx);
+    try { localStorage.setItem('pc_fx3d', fx ? 'on' : 'off'); } catch {}
+  }, [fx]);
+
   const handleSearch = (e) => {
     e?.preventDefault();
     if (searchVal.trim()) geocodeSearch(searchVal.trim());
@@ -201,6 +469,18 @@ function App() {
 
   // Computed
   const p = weather ? getPlayability(weather.wind, weather.gust, forecast[0]?.rain || 0) : null;
+
+  // Feed live conditions to the 3D layer (direction, speed, rain, playability tint)
+  useEffect(() => {
+    if (weather && window.WX3D) {
+      window.WX3D.update({
+        wind: weather.wind,
+        deg: forecast[0]?.windDeg,
+        rain: forecast[0]?.rain || 0,
+        color: p?.c
+      });
+    }
+  }, [weather, forecast]);
 
   // === GRAPH SETUP (Apple Weather-style responsive) ===
   // Y-axis in increments of 5
@@ -300,6 +580,14 @@ function App() {
       <div className="nav">
         <a href="https://pickleconnect.live" className="nav-logo"><span>Pickle</span>Connect</a>
         <div className="nav-title">🏓 Pickleball Weather</div>
+        {window.WX3D?.supported && (
+          <button
+            type="button"
+            className={`fx-btn ${fx ? 'on' : ''}`}
+            onClick={() => setFx(v => !v)}
+            title={fx ? 'Turn off 3D effects' : 'Turn on 3D effects'}
+          >✨ 3D</button>
+        )}
       </div>
 
       {/* Search */}
@@ -346,7 +634,7 @@ function App() {
         {weather && !loading && (
           <div className="fade-up">
             {/* Current + Playability */}
-            <div className="wx-card">
+            <TiltCard className="wx-card">
               <div style={{ padding: '18px 18px 14px', display: 'flex', alignItems: 'center', gap: 14, background: p.c + '12', borderBottom: '1px solid ' + p.c + '22' }}>
                 <div style={{ fontSize: '2.8rem', lineHeight: 1 }}>{wxIcon(weather.temp, weather.wind)}</div>
                 <div style={{ flex: 1 }}>
@@ -363,7 +651,7 @@ function App() {
               <div style={{ padding: '10px 18px', fontSize: '0.78rem', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ color: p.c }}>💡</span> {p.tip}
               </div>
-            </div>
+            </TiltCard>
 
             {/* Wind & Gusts 24h Graph */}
             {forecast.length > 1 && (
@@ -544,7 +832,7 @@ function App() {
             </div>
 
             {/* CTA */}
-            <div style={{ background: 'var(--green-dim)', border: '1px solid rgba(46,204,113,0.25)', borderRadius: 14, padding: '18px', textAlign: 'center', marginBottom: 14 }}>
+            <TiltCard style={{ background: 'var(--green-dim)', border: '1px solid rgba(46,204,113,0.25)', borderRadius: 14, padding: '18px', textAlign: 'center', marginBottom: 14, backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
               <div style={{ fontSize: '1.1rem', marginBottom: 4 }}>🏓</div>
               <div style={{ fontSize: '0.88rem', fontWeight: 700, marginBottom: 4 }}>Check in & find players</div>
               <div style={{ fontSize: '0.72rem', color: 'var(--muted)', marginBottom: 12 }}>See who's playing at courts near you</div>
@@ -553,7 +841,7 @@ function App() {
                 padding: '10px 24px', borderRadius: 10, fontSize: '0.82rem', fontWeight: 700, textDecoration: 'none',
                 boxShadow: '0 4px 14px rgba(46,204,113,0.35)'
               }}>Open PickleConnect</a>
-            </div>
+            </TiltCard>
           </div>
         )}
 
