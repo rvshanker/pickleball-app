@@ -49,24 +49,66 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);f
 #wx3d.on{opacity:1;}
 #root{position:relative;z-index:1;}
 
-/* Nav */
-.nav{position:sticky;top:0;z-index:100;background:rgba(13,27,42,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:12px 18px;display:flex;align-items:center;gap:12px;}
-.nav-logo{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--green);letter-spacing:-0.02em;cursor:pointer;text-decoration:none;}
+/* Nav — title left, search right */
+.nav{position:sticky;top:0;z-index:100;background:rgba(13,27,42,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.nav-logo{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;color:var(--green);letter-spacing:-0.02em;cursor:pointer;text-decoration:none;white-space:nowrap;}
 .nav-logo span{color:var(--text);}
-.nav-title{font-size:0.82rem;font-weight:600;color:var(--muted);margin-left:auto;}
+.nav-logo em{font-style:normal;color:var(--muted);font-weight:700;font-size:0.85rem;margin-left:6px;}
+.nav-search{display:flex;gap:8px;margin-left:auto;flex:0 1 380px;min-width:230px;align-items:center;}
+@media (max-width:680px){
+  .nav-search{flex:1 1 100%;order:3;margin-left:0;}
+}
 .fx-btn{border:1.5px solid var(--border2);background:var(--card);color:var(--muted);border-radius:9px;padding:5px 9px;font-size:0.68rem;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;line-height:1;}
 .fx-btn.on{border-color:rgba(46,204,113,0.5);background:var(--green-dim);color:var(--green);}
 
-/* Search */
-.search-wrap{max-width:520px;margin:0 auto;padding:20px 16px 0;}
-.search-row{display:flex;gap:8px;}
-.search-input{flex:1;padding:12px 14px 12px 38px;background:rgba(26,43,60,0.85);border:1.5px solid var(--border2);border-radius:12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.9rem;outline:none;transition:border-color .15s;backdrop-filter:blur(8px);}
+/* Search (lives in the nav, top right) */
+.search-input{flex:1;min-width:0;padding:9px 12px 9px 34px;background:rgba(26,43,60,0.85);border:1.5px solid var(--border2);border-radius:11px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;transition:border-color .15s;backdrop-filter:blur(8px);}
 .search-input:focus{border-color:rgba(46,204,113,0.5);}
 .search-input::placeholder{color:var(--muted2);}
-.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:0.9rem;}
-.loc-btn{width:46px;height:46px;border-radius:12px;background:rgba(26,43,60,0.85);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;color:var(--text);transition:all .15s;flex-shrink:0;backdrop-filter:blur(8px);}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:0.85rem;}
+.loc-btn{width:38px;height:38px;border-radius:11px;background:rgba(26,43,60,0.85);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;color:var(--text);transition:all .15s;flex-shrink:0;backdrop-filter:blur(8px);}
 .loc-btn:hover{border-color:rgba(46,204,113,0.5);background:var(--green-dim);}
 .loc-btn.active{border-color:var(--green);background:var(--green-dim);color:var(--green);}
+
+/* ============ 3D STAT CAROUSEL (poll-page style ring) ============ */
+:root{--stat-w:200px;--stat-h:258px;--stat-ring:265px;--ball-size:215px;}
+.stage{height:400px;display:flex;align-items:center;justify-content:center;perspective:1250px;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab;margin:2px 0 0;}
+.stage:active{cursor:grabbing;}
+.world{position:relative;width:var(--stat-w);height:var(--stat-h);transform-style:preserve-3d;}
+.ball-holder{position:absolute;left:50%;top:50%;width:var(--ball-size);height:var(--ball-size);transform:translate(-50%,-50%) translateZ(0);pointer-events:none;display:flex;align-items:center;justify-content:center;}
+.ball-holder canvas{width:100% !important;height:100% !important;filter:drop-shadow(0 22px 30px rgba(0,0,0,.45));}
+.ball-fallback{font-size:100px;line-height:1;filter:drop-shadow(0 14px 24px rgba(0,0,0,.5));animation:bobble 3.4s ease-in-out infinite;}
+@keyframes bobble{0%,100%{transform:translateY(-5px)}50%{transform:translateY(5px)}}
+.carousel3d{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform;}
+.stat-card{
+  position:absolute;inset:0;border-radius:18px;
+  background:linear-gradient(165deg, rgba(255,255,255,.10), rgba(255,255,255,.02) 45%), #16273A;
+  border:1px solid var(--border2);
+  box-shadow:0 26px 52px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.12);
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  padding:20px 16px 18px;backface-visibility:hidden;
+}
+.stat-card::before{
+  content:'';position:absolute;inset:-1px;border-radius:18px;padding:1px;pointer-events:none;
+  background:linear-gradient(180deg, var(--stat) 0%, transparent 65%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;opacity:.85;
+}
+.stat-card .ico{font-size:44px;line-height:1;filter:drop-shadow(0 8px 16px rgba(0,0,0,.45));}
+.stat-card .lbl{font-size:0.62rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}
+.stat-card .val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;letter-spacing:-0.02em;color:var(--text);line-height:1;}
+.stat-card .val small{font-size:0.95rem;font-weight:700;color:var(--muted);margin-left:2px;}
+.stat-card .sub{font-size:0.7rem;font-weight:600;color:var(--stat);min-height:1em;}
+.stage-hint{text-align:center;color:var(--muted2);font-size:0.7rem;margin:-4px 0 12px;letter-spacing:.05em;}
+@media (max-width:640px){
+  :root{--stat-w:162px;--stat-h:220px;--stat-ring:205px;--ball-size:165px;}
+  .stage{height:330px;}
+  .stat-card .ico{font-size:36px;}
+  .stat-card .val{font-size:1.6rem;}
+}
+@media (prefers-reduced-motion: reduce){
+  .ball-fallback{animation:none;}
+}
 
 /* Content */
 .content{max-width:520px;margin:0 auto;padding:16px;}
@@ -281,6 +323,7 @@ window.WX3D = (function () {
     ballWrap = new THREE.Group();
     ballWrap.add(ball);
     ballWrap.position.copy(perchPos());
+    ballWrap.visible = false; /* ball now lives in the stat carousel center */
     scene.add(ballWrap);
 
     scene.add(new THREE.AmbientLight(0x9fd8ff, 0.4));
@@ -483,6 +526,161 @@ function TiltCard({ children, className = '', style = {}, ...rest }) {
   );
 }
 
+/* Spinning WebGL pickleball floating in the middle of the stat ring.
+   Spin rate scales with live wind speed. Falls back to an emoji if
+   WebGL/Three is unavailable or the user prefers reduced motion. */
+function CenterBall({ wind }) {
+  const holder = useRef(null);
+  const windRef = useRef(wind);
+  const [fallback, setFallback] = useState(false);
+  useEffect(() => { windRef.current = wind; }, [wind]);
+  useEffect(() => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!window.THREE || reduced) { setFallback(true); return; }
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    } catch (e) { setFallback(true); return; }
+    const SIZE = 300; // internal res; CSS scales it to --ball-size
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(SIZE, SIZE);
+    holder.current.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const cam = new THREE.PerspectiveCamera(42, 1, 0.1, 60);
+    cam.position.z = 15.5;
+
+    // Pickleball texture: green gradient + hole pattern
+    const c = document.createElement('canvas');
+    c.width = c.height = 512;
+    const g = c.getContext('2d');
+    const grad = g.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0, '#3ee085');
+    grad.addColorStop(1, '#24a45c');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 512, 512);
+    g.fillStyle = 'rgba(9,38,24,0.9)';
+    for (let y = 40; y < 512; y += 88) {
+      const off = (Math.floor(y / 88) % 2) ? 44 : 0;
+      for (let x = 40 + off; x < 512; x += 88) {
+        g.beginPath(); g.arc(x, y, 15, 0, Math.PI * 2); g.fill();
+      }
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+
+    const ball = new THREE.Mesh(
+      new THREE.SphereGeometry(5.4, 48, 48),
+      new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5, metalness: 0.06 })
+    );
+    const group = new THREE.Group();
+    group.add(ball);
+    scene.add(group);
+
+    scene.add(new THREE.AmbientLight(0x9fd8ff, 0.45));
+    const key = new THREE.DirectionalLight(0xffffff, 1.0);
+    key.position.set(-7, 12, 16);
+    scene.add(key);
+    const rim = new THREE.PointLight(0x2ecc71, 0.7, 50);
+    rim.position.set(10, -5, 6);
+    scene.add(rim);
+
+    const clock = new THREE.Clock();
+    let raf = null;
+    const loop = () => {
+      raf = requestAnimationFrame(loop);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const spin = 0.35 + (windRef.current || 4) * 0.055; // windier = faster spin
+      ball.rotation.y += spin * dt;
+      ball.rotation.x += spin * 0.32 * dt;
+      group.position.y = Math.sin(clock.elapsedTime * 0.8) * 0.4; // gentle float
+      renderer.render(scene, cam);
+    };
+    const onVis = () => {
+      if (document.hidden) { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+      else if (!raf) { clock.getDelta(); loop(); }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    loop();
+    return () => {
+      document.removeEventListener('visibilitychange', onVis);
+      if (raf) cancelAnimationFrame(raf);
+      renderer.dispose();
+      tex.dispose();
+      if (holder.current) holder.current.innerHTML = '';
+    };
+  }, []);
+  return (
+    <div className="ball-holder" ref={holder}>
+      {fallback && <div className="ball-fallback">🏓</div>}
+    </div>
+  );
+}
+
+/* Poll-style 3D ring of stat cards — drag to spin, auto-rotates,
+   pickleball floats at the center of the ring. */
+function StatCarousel({ stats, wind }) {
+  const carRef = useRef(null);
+  const s = useRef({ rot: 0, target: 0, drag: false, lastX: 0, auto: true, timer: null });
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  useEffect(() => {
+    let raf;
+    const tick = () => {
+      raf = requestAnimationFrame(tick);
+      const st = s.current;
+      if (!st.drag) {
+        if (st.auto && !reduced) st.target += 0.1;
+        st.rot += (st.target - st.rot) * 0.08;
+      }
+      if (carRef.current) carRef.current.style.transform = `rotateY(${st.rot}deg)`;
+    };
+    tick();
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const onDown = (e) => {
+    const st = s.current;
+    st.drag = true; st.auto = false; st.lastX = e.clientX;
+    if (st.timer) clearTimeout(st.timer);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onMove = (e) => {
+    const st = s.current;
+    if (!st.drag) return;
+    st.target += (e.clientX - st.lastX) * 0.45;
+    st.rot = st.target;
+    st.lastX = e.clientX;
+  };
+  const onUp = () => {
+    const st = s.current;
+    st.drag = false;
+    st.timer = setTimeout(() => { st.auto = true; }, 5000);
+  };
+
+  return (
+    <div className="stage" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
+      <div className="world">
+        <CenterBall wind={wind} />
+        <div className="carousel3d" ref={carRef}>
+          {stats.map((st, i) => (
+            <div
+              key={st.lbl}
+              className="stat-card"
+              style={{ '--stat': st.color, transform: `rotateY(${i * 90}deg) translateZ(var(--stat-ring))` }}
+            >
+              <div className="ico">{st.ico}</div>
+              <div className="lbl">{st.lbl}</div>
+              <div className="val">{st.val}<small>{st.unit}</small></div>
+              <div className="sub">{st.sub || '\u00A0'}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [weather, setWeather] = useState(null);
   const [forecast, setForecast] = useState([]);
@@ -501,21 +699,23 @@ function App() {
   const fetchWeather = async (lat, lng) => {
     setLoading(true); setError(null);
     try {
-      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,wind_gusts_10m,precipitation&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m,winddirection_10m,precipitation_probability&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_hours=25&timezone=auto`);
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,precipitation&hourly=temperature_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,winddirection_10m,precipitation_probability&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_hours=25&timezone=auto`);
       const d = await r.json();
       const now = new Date();
       const hourly = d.hourly.time.map((t, i) => ({
         dt: new Date(t),
         temp: Math.round(d.hourly.temperature_2m[i]),
+        feels: Math.round(d.hourly.apparent_temperature?.[i] ?? d.hourly.temperature_2m[i]),
         wind: Math.round(d.hourly.wind_speed_10m[i]),
         gust: Math.round(d.hourly.wind_gusts_10m?.[i] || 0),
         windDeg: d.hourly.winddirection_10m?.[i],
         rain: d.hourly.precipitation_probability?.[i] || 0
       })).filter(h => h.dt >= new Date(now.getTime() - 60 * 60 * 1000)).slice(0, 24);
       setForecast(hourly);
-      const cur = hourly[0] || { temp: Math.round(d.current.temperature_2m), wind: Math.round(d.current.wind_speed_10m), gust: Math.round(d.current.wind_gusts_10m || 0) };
+      const cur = hourly[0] || { temp: Math.round(d.current.temperature_2m), feels: Math.round(d.current.apparent_temperature ?? d.current.temperature_2m), wind: Math.round(d.current.wind_speed_10m), gust: Math.round(d.current.wind_gusts_10m || 0) };
       setWeather({
         temp: cur.temp,
+        feels: cur.feels ?? cur.temp,
         wind: cur.wind,
         gust: cur.gust,
         rain: cur.rain || 0
@@ -696,42 +896,31 @@ function App() {
 
   return (
     <div>
-      {/* Nav */}
+      {/* Nav — title top-left, search top-right */}
       <div className="nav">
-        <a href="https://pickleconnect.live" className="nav-logo"><span>Pickle</span>Connect</a>
-        <div className="nav-title">🏓 Pickleball Weather</div>
-        {window.WX3D?.supported && (
-          <button
-            type="button"
-            className={`fx-btn ${fx ? 'on' : ''}`}
-            onClick={() => setFx(v => !v)}
-            title={fx ? 'Turn off 3D effects' : 'Turn on 3D effects'}
-          >✨ 3D</button>
-        )}
-      </div>
-
-      {/* Search */}
-      <div className="search-wrap">
-        <form className="search-row" onSubmit={handleSearch}>
-          <div style={{ position: 'relative', flex: 1 }}>
+        <a href="https://pickleconnect.live" className="nav-logo"><span>Pickle</span>Connect<em>🏓 Weather</em></a>
+        <form className="nav-search" onSubmit={handleSearch}>
+          <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
             <span className="search-icon">🔍</span>
             <input
               ref={inputRef}
               className="search-input"
               value={searchVal}
               onChange={e => setSearchVal(e.target.value)}
-              placeholder="City, zip code, or location…"
+              placeholder="City or zip code…"
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
             />
           </div>
           <button type="button" onClick={useMyLocation} className={`loc-btn ${usingGps ? 'active' : ''}`} title="Use my location">📍</button>
+          {window.WX3D?.supported && (
+            <button
+              type="button"
+              className={`fx-btn ${fx ? 'on' : ''}`}
+              onClick={() => setFx(v => !v)}
+              title={fx ? 'Turn off 3D effects' : 'Turn on 3D effects'}
+            >✨ 3D</button>
+          )}
         </form>
-        {locationName && !loading && (
-          <div style={{ fontSize: '0.75rem', color: 'var(--green)', marginTop: 8, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
-            {usingGps && <span>📍</span>}
-            {locationName}
-          </div>
-        )}
       </div>
 
       <div className="content">
@@ -752,36 +941,38 @@ function App() {
 
         {/* Weather content */}
         {weather && !loading && (
-          <div className="fade-up wx-grid">
-            <div className="wx-col">
-{/* Current + Playability */}
-            <TiltCard className="wx-card o1" onClick={() => window.WX3D?.flyNow?.()} title="Tap to launch a fly-by">
-              <div style={{ padding: '18px 18px 14px', display: 'flex', alignItems: 'center', gap: 14, background: p.c + '12', borderBottom: '1px solid ' + p.c + '22' }}>
-                <div style={{ fontSize: '2.8rem', lineHeight: 1 }}>{wxIcon(weather.temp, weather.wind)}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '2rem', fontWeight: 800, lineHeight: 1, letterSpacing: '-0.02em' }}>{weather.temp}°F</div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--muted)', marginTop: 4 }}>
-                    Wind {weather.wind} mph · Gusts {weather.gust} mph
-                  </div>
-                </div>
-                <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                  <div style={{ fontSize: '1.6rem' }}>{p.e}</div>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: p.c, marginTop: 2 }}>{p.l}</div>
-                </div>
-              </div>
-              <div style={{ padding: '10px 18px', fontSize: '0.78rem', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ color: p.c }}>💡</span>
-                <span style={{ flex: 1 }}>{p.tip}</span>
-                {forecast[0]?.windDeg != null && (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 8px' }} title={`Wind blowing from ${windDir(forecast[0].windDeg)}`}>
-                    <span style={{ display: 'inline-block', transform: `rotate(${(forecast[0].windDeg + 180) % 360}deg)`, transition: 'transform .6s ease', fontSize: '0.85rem', lineHeight: 1, color: 'var(--green)' }}>↑</span>
-                    <span style={{ fontWeight: 700, color: 'var(--text)', fontSize: '0.7rem' }}>{windDir(forecast[0].windDeg)}</span>
-                  </span>
-                )}
-              </div>
-            </TiltCard>
+          <div className="fade-up">
 
-{/* Wind & Gusts 24h Graph */}
+{/* Section 1 · Location + playability strip */}
+            <div className="wx-card" style={{ marginBottom: 6 }}>
+              <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '1.2rem' }}>{wxIcon(weather.temp, weather.wind)}</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>
+                  {usingGps && '📍 '}{locationName || 'Current conditions'}
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
+                  <span style={{ fontSize: '1rem' }}>{p.e}</span>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: p.c }}>{p.l}</span>
+                </span>
+                <span style={{ flexBasis: '100%', fontSize: '0.72rem', color: 'var(--muted)' }}>💡 {p.tip}</span>
+              </div>
+            </div>
+
+{/* Section 2 · 3D stat ring with floating pickleball */}
+            <StatCarousel
+              wind={weather.wind}
+              stats={[
+                { lbl: 'Temperature', ico: wxIcon(weather.temp, 0), val: weather.temp + '°', unit: 'F', color: '#F75B5B', sub: '\u00A0' },
+                { lbl: 'Feels Like', ico: '🌡️', val: weather.feels + '°', unit: 'F', color: '#F7943E', sub: weather.feels !== weather.temp ? (weather.feels > weather.temp ? 'warmer than actual' : 'cooler than actual') : 'same as actual' },
+                { lbl: 'Wind', ico: '💨', val: weather.wind, unit: ' mph', color: '#2ECC71', sub: forecast[0]?.windDeg != null ? `${windArrow(forecast[0].windDeg)} from ${windDir(forecast[0].windDeg)}` : '' },
+                { lbl: 'Gusts', ico: '🌪️', val: weather.gust, unit: ' mph', color: '#F7C948', sub: weather.gust >= 20 ? 'lobs will drift' : weather.gust >= 15 ? 'noticeable on dinks' : 'barely a factor' },
+              ]}
+            />
+            <div className="stage-hint">Drag to spin · ball spins with the wind</div>
+
+            <div className="wx-grid">
+            <div className="wx-col">
+{/* Section 3 · Wind & Gusts 24h Graph */}
             {forecast.length > 1 && (
               <div className="wx-card o2">
                 <div className="wx-card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -910,7 +1101,7 @@ function App() {
             <div className="wx-col">
 {/* Hourly Forecast — next 12h */}
             <div className="wx-card o3">
-              <div className="wx-card-header">Hourly Forecast · Next 12h</div>
+              <div className="wx-card-header">🕐 Hourly Forecast · Next 12h</div>
               {forecast.slice(0, 12).map((h, i) => {
                 const hp = getPlayability(h.wind, h.gust, h.rain);
                 const t = h.dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
@@ -970,6 +1161,7 @@ function App() {
                   </div>
                 ))}
               </div>
+            </div>
             </div>
             </div>
           </div>
