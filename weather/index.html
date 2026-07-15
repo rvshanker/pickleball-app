@@ -58,8 +58,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);f
 @media (max-width:680px){
   .nav-search{flex:1 1 100%;order:3;margin-left:0;}
 }
-.fx-btn{border:1.5px solid var(--border2);background:var(--card);color:var(--muted);border-radius:9px;padding:5px 9px;font-size:0.68rem;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;line-height:1;}
-.fx-btn.on{border-color:rgba(46,204,113,0.5);background:var(--green-dim);color:var(--green);}
 
 /* Search (lives in the nav, top right) */
 .search-input{flex:1;min-width:0;padding:9px 12px 9px 34px;background:rgba(26,43,60,0.85);border:1.5px solid var(--border2);border-radius:11px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;transition:border-color .15s;backdrop-filter:blur(8px);}
@@ -630,7 +628,7 @@ function StatCarousel({ stats, wind }) {
       raf = requestAnimationFrame(tick);
       const st = s.current;
       if (!st.drag) {
-        if (st.auto && !reduced) st.target += 0.1;
+        if (st.auto && !reduced) st.target += 0.3;
         st.rot += (st.target - st.rot) * 0.08;
       }
       if (carRef.current) carRef.current.style.transform = `rotateY(${st.rot}deg)`;
@@ -691,9 +689,6 @@ function App() {
   const [usingGps, setUsingGps] = useState(false);
   const [coords, setCoords] = useState(null);
   const [scrubX, setScrubX] = useState(null);
-  const [fx, setFx] = useState(() => {
-    try { return localStorage.getItem('pc_fx3d') !== 'off'; } catch { return true; }
-  });
   const inputRef = useRef(null);
 
   const fetchWeather = async (lat, lng) => {
@@ -775,11 +770,10 @@ function App() {
 
   useEffect(() => { useMyLocation(); }, []);
 
-  // 3D toggle → drive the WebGL layer
+  // 3D background layer — always on (respects reduced-motion internally)
   useEffect(() => {
-    window.WX3D?.setEnabled(fx);
-    try { localStorage.setItem('pc_fx3d', fx ? 'on' : 'off'); } catch {}
-  }, [fx]);
+    window.WX3D?.setEnabled(true);
+  }, []);
 
   const handleSearch = (e) => {
     e?.preventDefault();
@@ -912,14 +906,6 @@ function App() {
             />
           </div>
           <button type="button" onClick={useMyLocation} className={`loc-btn ${usingGps ? 'active' : ''}`} title="Use my location">📍</button>
-          {window.WX3D?.supported && (
-            <button
-              type="button"
-              className={`fx-btn ${fx ? 'on' : ''}`}
-              onClick={() => setFx(v => !v)}
-              title={fx ? 'Turn off 3D effects' : 'Turn on 3D effects'}
-            >✨ 3D</button>
-          )}
         </form>
       </div>
 
