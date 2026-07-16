@@ -133,7 +133,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);f
 
 /* Graph-specific */
 .graph-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(140,160,196,.3) transparent;}
-.graph-svg{display:block;height:auto;touch-action:pan-x pan-y;cursor:crosshair;user-select:none;-webkit-user-select:none;}
+.graph-svg{display:block;height:auto;touch-action:pan-y;cursor:crosshair;user-select:none;-webkit-user-select:none;}
 
 /* Footer */
 .footer{text-align:center;padding:24px 16px 32px;font-size:0.72rem;color:var(--muted);}
@@ -633,6 +633,8 @@ function App() {
   const [usingGps, setUsingGps] = useState(false);
   const [coords, setCoords] = useState(null);
   const [scrubX, setScrubX] = useState(null);
+  const graphScrollRef = useRef(null);
+  const edgeScroll = useRef({ raf: null, dir: 0, clientX: 0, svg: null });
   const inputRef = useRef(null);
 
   const fetchWeather = async (lat, lng) => {
@@ -828,11 +830,33 @@ function App() {
     const svg = e.currentTarget;
     const rect = svg.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const xPx = clientX - rect.left;
-    const scale = GRAPH_W / rect.width;
-    setScrubX(xPx * scale);
+    setScrubX((clientX - rect.left) * (GRAPH_W / rect.width));
+
+    // While scrubbing with a finger, auto-scroll the chart when the
+    // finger nears the visible left/right edge to reveal more hours.
+    if (e.touches && graphScrollRef.current) {
+      const es = edgeScroll.current;
+      es.clientX = clientX;
+      es.svg = svg;
+      const c = graphScrollRef.current.getBoundingClientRect();
+      const EDGE = 52;
+      es.dir = clientX > c.right - EDGE ? 1 : (clientX < c.left + EDGE ? -1 : 0);
+      if (es.dir && !es.raf) {
+        const step = () => {
+          const s2 = edgeScroll.current;
+          const box = graphScrollRef.current;
+          if (!s2.dir || !box) { s2.raf = null; return; }
+          box.scrollLeft += s2.dir * 6;
+          // keep the tooltip under the (possibly stationary) finger as content slides
+          const r = s2.svg.getBoundingClientRect();
+          setScrubX((s2.clientX - r.left) * (GRAPH_W / r.width));
+          s2.raf = requestAnimationFrame(step);
+        };
+        es.raf = requestAnimationFrame(step);
+      }
+    }
   };
-  const handleScrubEnd = () => setScrubX(null);
+  const handleScrubEnd = () => { setScrubX(null); edgeScroll.current.dir = 0; };
 
   return (
     <div>
@@ -908,9 +932,9 @@ function App() {
               <div className="wx-card o2">
                 <div className="wx-card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span>💨 Wind & Gusts · Next 24h</span>
-                  <span style={{ fontSize: '0.6rem', color: 'var(--muted2)', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>Tap to inspect · scroll for 24h</span>
+                  <span style={{ fontSize: '0.6rem', color: 'var(--muted2)', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>Drag to scrub · edges reveal 24h</span>
                 </div>
-                <div className="graph-scroll" style={{ padding: '0 10px 10px' }}>
+                <div className="graph-scroll" ref={graphScrollRef} style={{ padding: '0 10px 10px' }}>
                   <svg
                     viewBox={`0 0 ${GRAPH_W} ${GRAPH_H}`}
                     className="graph-svg"
@@ -918,7 +942,9 @@ function App() {
                     onMouseMove={handleScrubMove}
                     onMouseLeave={handleScrubEnd}
                     onTouchStart={handleScrubMove}
+                    onTouchMove={handleScrubMove}
                     onTouchEnd={handleScrubEnd}
+                    onTouchCancel={handleScrubEnd}
                   >
                     <defs>
                       <linearGradient id="windFill" x1="0" y1="0" x2="0" y2="1">
