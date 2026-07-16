@@ -8,12 +8,9 @@
 <meta name="keywords" content="pickleball weather, pickleball wind, pickleball conditions, pickleball forecast, court weather, outdoor pickleball">
 <meta name="author" content="PickleConnect">
 <meta name="robots" content="index, follow">
-<meta property="og:image" content="https://pickleconnect.live/weather/weather-og.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:type" content="image/png">
-<meta name="twitter:image" content="https://pickleconnect.live/weather/weather-og.png">
-<meta property="og:url" content="https://pickleconnect.live/weather/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://pickleconnect.live/weather.html">
+<meta property="og:title" content="PickleConnect – Pickleball Weather">
 <meta property="og:description" content="Real-time pickleball weather and playability forecast. Check wind, gusts, rain, and court conditions before you play.">
 <meta property="twitter:card" content="summary_large_image">
 <link rel="canonical" href="https://pickleconnect.live/weather.html">
@@ -77,8 +74,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);f
 .stage:active{cursor:grabbing;}
 .world{position:relative;width:var(--stat-w);height:var(--stat-h);transform-style:preserve-3d;}
 .ball-holder{position:absolute;left:50%;top:50%;width:var(--ball-size);height:var(--ball-size);transform:translate(-50%,-50%) translateZ(0);pointer-events:none;display:flex;align-items:center;justify-content:center;}
-.ball-holder canvas{width:100% !important;height:100% !important;filter:drop-shadow(0 22px 30px rgba(0,0,0,.45));}
-.ball-fallback{font-size:100px;line-height:1;filter:drop-shadow(0 14px 24px rgba(0,0,0,.5));animation:bobble 3.4s ease-in-out infinite;}
+.mascot-img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 22px 30px rgba(0,0,0,.5));animation:bobble 3.4s ease-in-out infinite;user-select:none;-webkit-user-drag:none;}
 @keyframes bobble{0%,100%{transform:translateY(-5px)}50%{transform:translateY(5px)}}
 .carousel3d{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform;}
 .stat-card{
@@ -108,7 +104,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);f
   .stat-card .val{font-size:1.6rem;}
 }
 @media (prefers-reduced-motion: reduce){
-  .ball-fallback{animation:none;}
+  .mascot-img{animation:none;}
 }
 
 /* Content */
@@ -527,100 +523,39 @@ function TiltCard({ children, className = '', style = {}, ...rest }) {
   );
 }
 
-/* Spinning WebGL pickleball floating in the middle of the stat ring.
-   Spin rate scales with live wind speed. Falls back to an emoji if
-   WebGL/Three is unavailable or the user prefers reduced motion. */
-function CenterBall({ wind }) {
-  const holder = useRef(null);
-  const windRef = useRef(wind);
-  const [fallback, setFallback] = useState(false);
-  useEffect(() => { windRef.current = wind; }, [wind]);
+/* Mood mascot floating in the middle of the stat ring.
+   Swaps based on live playability: thumbs-up when it's great,
+   sunglasses when okay, game-face when marginal, umbrella when
+   it's rainy or worth skipping. */
+const MASCOTS = {
+  great:    'mascot-great.png',
+  okay:     'mascot-okay.png',
+  marginal: 'mascot-marginal.png',
+  rain:     'mascot-rain.png',
+};
+function mascotKey(p, rain) {
+  if (!p) return 'great';
+  if (rain >= 20 || p.l === 'Skip It') return 'rain';
+  if (p.l === 'Great') return 'great';
+  if (p.l === 'Okay') return 'okay';
+  return 'marginal';
+}
+function CenterMascot({ p, rain }) {
+  // preload all moods once so swaps are instant
   useEffect(() => {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!window.THREE || reduced) { setFallback(true); return; }
-    let renderer;
-    try {
-      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    } catch (e) { setFallback(true); return; }
-    const SIZE = 300; // internal res; CSS scales it to --ball-size
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(SIZE, SIZE);
-    holder.current.appendChild(renderer.domElement);
-
-    const scene = new THREE.Scene();
-    const cam = new THREE.PerspectiveCamera(42, 1, 0.1, 60);
-    cam.position.z = 15.5;
-
-    // Pickleball texture: green gradient + hole pattern
-    const c = document.createElement('canvas');
-    c.width = c.height = 512;
-    const g = c.getContext('2d');
-    const grad = g.createLinearGradient(0, 0, 0, 512);
-    grad.addColorStop(0, '#3ee085');
-    grad.addColorStop(1, '#24a45c');
-    g.fillStyle = grad;
-    g.fillRect(0, 0, 512, 512);
-    g.fillStyle = 'rgba(9,38,24,0.9)';
-    for (let y = 40; y < 512; y += 88) {
-      const off = (Math.floor(y / 88) % 2) ? 44 : 0;
-      for (let x = 40 + off; x < 512; x += 88) {
-        g.beginPath(); g.arc(x, y, 15, 0, Math.PI * 2); g.fill();
-      }
-    }
-    const tex = new THREE.CanvasTexture(c);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-
-    const ball = new THREE.Mesh(
-      new THREE.SphereGeometry(5.4, 48, 48),
-      new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5, metalness: 0.06 })
-    );
-    const group = new THREE.Group();
-    group.add(ball);
-    scene.add(group);
-
-    scene.add(new THREE.AmbientLight(0x9fd8ff, 0.45));
-    const key = new THREE.DirectionalLight(0xffffff, 1.0);
-    key.position.set(-7, 12, 16);
-    scene.add(key);
-    const rim = new THREE.PointLight(0x2ecc71, 0.7, 50);
-    rim.position.set(10, -5, 6);
-    scene.add(rim);
-
-    const clock = new THREE.Clock();
-    let raf = null;
-    const loop = () => {
-      raf = requestAnimationFrame(loop);
-      const dt = Math.min(clock.getDelta(), 0.05);
-      const spin = 0.35 + (windRef.current || 4) * 0.055; // windier = faster spin
-      ball.rotation.y += spin * dt;
-      ball.rotation.x += spin * 0.32 * dt;
-      group.position.y = Math.sin(clock.elapsedTime * 0.8) * 0.4; // gentle float
-      renderer.render(scene, cam);
-    };
-    const onVis = () => {
-      if (document.hidden) { if (raf) { cancelAnimationFrame(raf); raf = null; } }
-      else if (!raf) { clock.getDelta(); loop(); }
-    };
-    document.addEventListener('visibilitychange', onVis);
-    loop();
-    return () => {
-      document.removeEventListener('visibilitychange', onVis);
-      if (raf) cancelAnimationFrame(raf);
-      renderer.dispose();
-      tex.dispose();
-      if (holder.current) holder.current.innerHTML = '';
-    };
+    Object.values(MASCOTS).forEach(src => { const i = new window.Image(); i.src = src; });
   }, []);
+  const key = mascotKey(p, rain);
   return (
-    <div className="ball-holder" ref={holder}>
-      {fallback && <div className="ball-fallback">🏓</div>}
+    <div className="ball-holder">
+      <img className="mascot-img" src={MASCOTS[key]} alt={'PickleConnect mascot — conditions: ' + (p ? p.l : '')} draggable="false" />
     </div>
   );
 }
 
 /* Poll-style 3D ring of stat cards — drag to spin, auto-rotates,
    pickleball floats at the center of the ring. */
-function StatCarousel({ stats, wind }) {
+function StatCarousel({ stats, p, rain }) {
   const carRef = useRef(null);
   const s = useRef({ rot: 0, target: 0, drag: false, lastX: 0, auto: true, timer: null });
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -662,7 +597,7 @@ function StatCarousel({ stats, wind }) {
   return (
     <div className="stage" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
       <div className="world">
-        <CenterBall wind={wind} />
+        <CenterMascot p={p} rain={rain} />
         <div className="carousel3d" ref={carRef}>
           {stats.map((st, i) => (
             <div
@@ -949,7 +884,8 @@ function App() {
 
 {/* Section 2 · 3D stat ring with floating pickleball */}
             <StatCarousel
-              wind={weather.wind}
+              p={p}
+              rain={weather.rain || 0}
               stats={[
                 { lbl: 'Temperature', ico: wxIcon(weather.temp, 0), val: weather.temp + '°', unit: 'F', color: '#F75B5B', sub: '\u00A0' },
                 { lbl: 'Feels Like', ico: '🌡️', val: weather.feels + '°', unit: 'F', color: '#F7943E', sub: weather.feels !== weather.temp ? (weather.feels > weather.temp ? 'warmer than actual' : 'cooler than actual') : 'same as actual' },
@@ -957,7 +893,7 @@ function App() {
                 { lbl: 'Gusts', ico: '🌪️', val: weather.gust, unit: ' mph', color: '#F7C948', sub: weather.gust >= 20 ? 'lobs will drift' : weather.gust >= 15 ? 'noticeable on dinks' : 'barely a factor' },
               ]}
             />
-            <div className="stage-hint">Drag to spin · ball spins with the wind</div>
+            <div className="stage-hint">Drag to spin the stats</div>
 
             <div className="wx-grid">
             <div className="wx-col">
