@@ -74,7 +74,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);f
 .stage:active{cursor:grabbing;}
 .world{position:relative;width:var(--stat-w);height:var(--stat-h);transform-style:preserve-3d;}
 .ball-holder{position:absolute;left:50%;top:50%;width:var(--ball-size);height:var(--ball-size);transform:translate(-50%,-50%) translateZ(0);pointer-events:none;display:flex;align-items:center;justify-content:center;}
-.mascot-img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 22px 30px rgba(0,0,0,.5));animation:bobble 3.4s ease-in-out infinite;user-select:none;-webkit-user-drag:none;}
+.mascot-img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 22px 30px rgba(0,0,0,.5));animation:mascotIn .4s cubic-bezier(.34,1.56,.64,1), bobble 3.4s ease-in-out .4s infinite;user-select:none;-webkit-user-drag:none;}
+@keyframes mascotIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
 @keyframes bobble{0%,100%{transform:translateY(-5px)}50%{transform:translateY(5px)}}
 .carousel3d{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform;}
 .stat-card{
@@ -131,7 +132,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);f
 .tilt{transform-style:preserve-3d;will-change:transform;transition:transform .18s ease-out;}
 
 /* Graph-specific */
-.graph-svg{display:block;width:100%;height:auto;touch-action:pan-y;cursor:crosshair;user-select:none;-webkit-user-select:none;}
+.graph-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(140,160,196,.3) transparent;}
+.graph-svg{display:block;height:auto;touch-action:pan-x pan-y;cursor:crosshair;user-select:none;-webkit-user-select:none;}
 
 /* Footer */
 .footer{text-align:center;padding:24px 16px 32px;font-size:0.72rem;color:var(--muted);}
@@ -523,41 +525,35 @@ function TiltCard({ children, className = '', style = {}, ...rest }) {
   );
 }
 
-/* Mood mascot floating in the middle of the stat ring.
-   Swaps based on live playability: thumbs-up when it's great,
-   sunglasses when okay, game-face when marginal, umbrella when
-   it's rainy or worth skipping. */
-const MASCOTS = {
-  great:    'mascot-great.png',
-  okay:     'mascot-okay.png',
-  marginal: 'mascot-marginal.png',
-  rain:     'mascot-rain.png',
-};
-function mascotKey(p, rain) {
-  if (!p) return 'great';
-  if (rain >= 20 || p.l === 'Skip It') return 'rain';
-  if (p.l === 'Great') return 'great';
-  if (p.l === 'Okay') return 'okay';
-  return 'marginal';
-}
-function CenterMascot({ p, rain }) {
-  // preload all moods once so swaps are instant
+/* Mascot floating in the middle of the stat ring.
+   Every time a card sweeps across the front (each 90 degrees of ring
+   rotation), a new random mascot pops in. */
+const ALL_MASCOTS = [
+  'mascot-great.png',
+  'mascot-okay.png',
+  'mascot-marginal.png',
+  'mascot-rain.png',
+  'mascot-hello.png',
+];
+function CenterMascot({ src }) {
+  // preload every mascot once so swaps are instant
   useEffect(() => {
-    Object.values(MASCOTS).forEach(src => { const i = new window.Image(); i.src = src; });
+    ALL_MASCOTS.forEach(s => { const i = new window.Image(); i.src = s; });
   }, []);
-  const key = mascotKey(p, rain);
   return (
     <div className="ball-holder">
-      <img className="mascot-img" src={MASCOTS[key]} alt={'PickleConnect mascot — conditions: ' + (p ? p.l : '')} draggable="false" />
+      <img key={src} className="mascot-img" src={src} alt="PickleConnect mascot" draggable="false" />
     </div>
   );
 }
 
 /* Poll-style 3D ring of stat cards — drag to spin, auto-rotates,
    pickleball floats at the center of the ring. */
-function StatCarousel({ stats, p, rain }) {
+function StatCarousel({ stats }) {
   const carRef = useRef(null);
   const s = useRef({ rot: 0, target: 0, drag: false, lastX: 0, auto: true, timer: null });
+  const [mascot, setMascot] = useState(ALL_MASCOTS[0]);
+  const lastSeg = useRef(0);
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   useEffect(() => {
@@ -570,6 +566,16 @@ function StatCarousel({ stats, p, rain }) {
         st.rot += (st.target - st.rot) * 0.08;
       }
       if (carRef.current) carRef.current.style.transform = `rotateY(${st.rot}deg)`;
+      // a card crosses the front every 90° — swap in a new random mascot
+      const seg = Math.floor(Math.abs(st.rot) / 90);
+      if (seg !== lastSeg.current) {
+        lastSeg.current = seg;
+        setMascot(prev => {
+          let next;
+          do { next = ALL_MASCOTS[Math.floor(Math.random() * ALL_MASCOTS.length)]; } while (next === prev);
+          return next;
+        });
+      }
     };
     tick();
     return () => cancelAnimationFrame(raf);
@@ -597,7 +603,7 @@ function StatCarousel({ stats, p, rain }) {
   return (
     <div className="stage" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
       <div className="world">
-        <CenterMascot p={p} rain={rain} />
+        <CenterMascot src={mascot} />
         <div className="carousel3d" ref={carRef}>
           {stats.map((st, i) => (
             <div
@@ -741,9 +747,11 @@ function App() {
   const yTicks = [];
   for (let v = 0; v <= maxWind; v += 5) yTicks.push(v);
 
-  // Fixed viewBox - SVG scales via width="100%" with aspect ratio preserved
-  // Aspect ~1.82 matches typical mobile width / desired chart height so text stays crisp
-  const GRAPH_W = 400;
+  // 12 hours fill the visible width; the rest scrolls horizontally.
+  // viewBox width grows with data so on-screen point spacing stays constant.
+  const HOURS_VISIBLE = 12;
+  const viewScale = Math.max(1, (forecast.length - 1) / (HOURS_VISIBLE - 1));
+  const GRAPH_W = Math.round(400 * viewScale);
   const GRAPH_H = 220;
   const padL = 26, padR = 14, padT = 36, padB = 30;
   const plotW = GRAPH_W - padL - padR;
@@ -783,7 +791,7 @@ function App() {
   // Which indices get x-axis labels / arrows (every 6 hours)
   const tickIndices = forecast.reduce((acc, h, i) => {
     if (i === 0) acc.push(i);
-    else if (h.dt.getHours() % 6 === 0) acc.push(i);
+    else if (h.dt.getHours() % 3 === 0) acc.push(i);
     return acc;
   }, []);
 
@@ -884,8 +892,6 @@ function App() {
 
 {/* Section 2 · 3D stat ring with floating pickleball */}
             <StatCarousel
-              p={p}
-              rain={weather.rain || 0}
               stats={[
                 { lbl: 'Temperature', ico: wxIcon(weather.temp, 0), val: weather.temp + '°', unit: 'F', color: '#F75B5B', sub: '\u00A0' },
                 { lbl: 'Feels Like', ico: '🌡️', val: weather.feels + '°', unit: 'F', color: '#F7943E', sub: weather.feels !== weather.temp ? (weather.feels > weather.temp ? 'warmer than actual' : 'cooler than actual') : 'same as actual' },
@@ -902,16 +908,16 @@ function App() {
               <div className="wx-card o2">
                 <div className="wx-card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span>💨 Wind & Gusts · Next 24h</span>
-                  <span style={{ fontSize: '0.6rem', color: 'var(--muted2)', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>Drag across to scrub</span>
+                  <span style={{ fontSize: '0.6rem', color: 'var(--muted2)', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>Tap to inspect · scroll for 24h</span>
                 </div>
-                <div style={{ padding: '0 10px 10px' }}>
+                <div className="graph-scroll" style={{ padding: '0 10px 10px' }}>
                   <svg
                     viewBox={`0 0 ${GRAPH_W} ${GRAPH_H}`}
                     className="graph-svg"
+                    style={{ width: (viewScale * 100) + '%' }}
                     onMouseMove={handleScrubMove}
                     onMouseLeave={handleScrubEnd}
                     onTouchStart={handleScrubMove}
-                    onTouchMove={handleScrubMove}
                     onTouchEnd={handleScrubEnd}
                   >
                     <defs>
