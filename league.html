@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PickleConnect – League Night</title>
+    <meta name="description" content="Weekly pickleball doubles league: random partners with no repeats, custom court numbers, live score entry and a points-based leaderboard.">
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8VE2FTD711"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-8VE2FTD711');
+    </script>
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23059669'/><ellipse cx='50' cy='50' rx='20' ry='20' fill='none' stroke='white' stroke-width='3'/><line x1='30' y1='50' x2='70' y2='50' stroke='white' stroke-width='3'/><line x1='50' y1='30' x2='50' y2='70' stroke='white' stroke-width='3'/><circle cx='50' cy='50' r='6' fill='white'/></svg>" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.7/babel.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="league-scheduler.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Outfit',sans-serif;background:#f1f5f9;font-size:16px;color:#1e293b;-webkit-text-size-adjust:100%;}
+        .fd{font-family:'Barlow Condensed',sans-serif;}
+        .hero-bg{background:linear-gradient(135deg,#0f172a 0%,#1e3a2f 50%,#052e16 100%);}
+        .pg{padding:16px;max-width:760px;width:100%;margin:0 auto;}
+        .card{background:white;border-radius:14px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.06);}
+        .slbl{font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:8px;}
+        .muted{color:#64748b;font-size:14px;}
+
+        .inp{width:100%;background:#f1f5f9;border:2px solid transparent;border-radius:10px;padding:11px 14px;font-size:16px;font-family:'Outfit',sans-serif;transition:all .15s;outline:none;color:#1e293b;}
+        .inp:focus{border-color:#059669;background:white;box-shadow:0 0 0 3px rgba(5,150,105,.1);}
+        .score-inp{width:56px;text-align:center;border:2px solid #e2e8f0;border-radius:8px;padding:8px 2px;font-size:18px;font-weight:700;font-family:'Outfit',sans-serif;outline:none;background:white;color:#0f172a;}
+        .score-inp:focus{border-color:#059669;}
+        .score-inp:disabled{background:#f8fafc;color:#0f172a;border-color:#f1f5f9;}
+        input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+        input[type=number]{-moz-appearance:textfield;}
+
+        .btn{border:none;border-radius:10px;padding:11px 18px;font-weight:700;font-size:15px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .15s;}
+        .btn-g{background:linear-gradient(135deg,#059669,#10b981);color:white;box-shadow:0 4px 12px rgba(5,150,105,.25);}
+        .btn-g:hover{background:linear-gradient(135deg,#047857,#059669);}
+        .btn-g:disabled{background:#a7f3d0;box-shadow:none;cursor:not-allowed;}
+        .btn-out{background:white;color:#059669;border:2px solid #059669;padding:9px 16px;}
+        .btn-ghost{background:#f1f5f9;color:#334155;}
+        .btn-ghost:hover{background:#e2e8f0;}
+        .btn-red{background:#fef2f2;color:#dc2626;}
+        .btn-sm{padding:7px 12px;font-size:13px;}
+
+        .nav{background:#0f172a;padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20;}
+        .nav a,.nav button.link{color:#94a3b8;text-decoration:none;font-size:14px;font-weight:600;background:none;border:none;cursor:pointer;font-family:'Outfit',sans-serif;}
+
+        .tabs{display:flex;gap:6px;background:white;border-radius:12px;padding:5px;box-shadow:0 2px 10px rgba(0,0,0,.05);margin-bottom:14px;}
+        .tab{flex:1;border:none;background:none;padding:10px 6px;border-radius:9px;font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;color:#64748b;cursor:pointer;white-space:nowrap;}
+        .tab.on{background:#0f172a;color:white;}
+
+        .chip{border:1px solid #e2e8f0;background:white;border-radius:99px;padding:7px 13px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;white-space:nowrap;font-family:'Outfit',sans-serif;}
+        .chip.on{background:#059669;border-color:#059669;color:white;}
+        .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;}
+
+        .round-card{background:white;border-radius:14px;border:1px solid #e2e8f0;margin-bottom:14px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+        .round-hd{background:linear-gradient(90deg,#0f172a,#1e3a2f);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;color:white;}
+        .match{display:flex;align-items:stretch;gap:10px;padding:12px 14px;border-bottom:1px solid #f1f5f9;}
+        .match:last-child{border-bottom:none;}
+        .court{flex-shrink:0;width:52px;border-radius:10px;background:#f0fdf4;color:#047857;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid #bbf7d0;}
+        .court small{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;}
+        .court b{font-family:'Barlow Condensed',sans-serif;font-size:24px;line-height:1;}
+        .teams{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;}
+        .team{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+        .tnames{font-size:15px;font-weight:500;line-height:1.3;word-break:break-word;}
+        .team.win .tnames{font-weight:700;color:#047857;}
+        .vs{font-size:10px;font-weight:800;color:#cbd5e1;letter-spacing:1.5px;}
+        .sit{background:#fffbeb;padding:9px 16px;font-size:13px;color:#92400e;border-top:1px dashed #fcd34d;}
+
+        table.lb{width:100%;border-collapse:collapse;font-size:14px;}
+        table.lb th{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:#64748b;text-align:right;padding:8px 6px;border-bottom:2px solid #e2e8f0;font-weight:700;cursor:pointer;white-space:nowrap;}
+        table.lb th.l,table.lb td.l{text-align:left;}
+        table.lb th.on{color:#059669;}
+        table.lb td{padding:10px 6px;border-bottom:1px solid #f1f5f9;text-align:right;font-variant-numeric:tabular-nums;}
+        table.lb td.pts{font-weight:800;font-size:16px;color:#0f172a;}
+        .rank{display:inline-flex;width:24px;height:24px;border-radius:50%;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:#f1f5f9;color:#475569;}
+        .rank.g1{background:#fbbf24;color:#78350f;}.rank.g2{background:#cbd5e1;color:#1e293b;}.rank.g3{background:#d97706;color:white;}
+
+        .modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:50;display:flex;align-items:flex-end;justify-content:center;}
+        .modal{background:white;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:20px;}
+        @media(min-width:600px){.modal-bg{align-items:center;}.modal{border-radius:18px;}}
+
+        .stepper{display:flex;align-items:center;border:2px solid #e2e8f0;border-radius:10px;overflow:hidden;width:max-content;}
+        .stepper button{width:40px;height:42px;border:none;background:#f1f5f9;font-size:20px;font-weight:700;cursor:pointer;color:#0f172a;}
+        .stepper span{min-width:46px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;}
+
+        .ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#047857;border-radius:10px;padding:9px 12px;font-size:13px;}
+        .warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:10px;padding:9px 12px;font-size:13px;}
+        .err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:10px;padding:9px 12px;font-size:13px;}
+        .row{display:flex;gap:8px;align-items:center;}
+        .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+        .check{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;background:#f8fafc;border:1px solid #e2e8f0;font-size:14px;cursor:pointer;min-width:0;}
+        .check span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .check.off{opacity:.5;}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .spinner{width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#059669;border-radius:50%;animation:spin .8s linear infinite;}
+
+        @media print{
+            .nav,.tabs,.no-print{display:none!important;}
+            body{background:white;}
+            .round-card{break-inside:avoid;box-shadow:none;}
+        }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useMemo,useRef,useCallback} = React;
+const S = window.LeagueScheduler;
+
+// ── Firebase ──────────────────────────────────────────────────────────
+const FB = {
+    apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
+    authDomain:"pickleball-app-1bba7.firebaseapp.com",
+    projectId:"pickleball-app-1bba7",
+    storageBucket:"pickleball-app-1bba7.firebasestorage.app",
+    messagingSenderId:"645604154338",
+    appId:"1:645604154338:web:b92f87c2cd11d950b737bb"
+};
+let db=null,auth=null,fbOk=false;
+try{firebase.initializeApp(FB);db=firebase.firestore();auth=firebase.auth();fbOk=true;}catch(e){console.warn('Firebase init failed',e);}
+
+// ── Helpers ───────────────────────────────────────────────────────────
+const uid6 = () => Math.random().toString(36).slice(2,8);
+const newId = () => (Date.now().toString(36)+Math.random().toString(36).slice(2,6)).toUpperCase();
+const parseCourts = s => String(s||'').split(/[,\s]+/).map(x=>x.trim()).filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i);
+const isNum = v => v!==null && v!==undefined && v!=='' && !isNaN(v);
+function nextThursday(){
+    const d=new Date(); const add=(4-d.getDay()+7)%7; d.setDate(d.getDate()+add);
+    const p=n=>String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; // local date, not UTC
+}
+function fmtDate(iso){
+    if(!iso)return'';
+    const [y,m,d]=iso.split('-').map(Number);
+    return new Date(y,m-1,d).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+}
+function rememberLeague(id,name){
+    try{const r=JSON.parse(localStorage.getItem('recentLeagues')||'[]').filter(x=>x.id!==id);r.unshift({id,name,at:Date.now()});localStorage.setItem('recentLeagues',JSON.stringify(r.slice(0,10)));}catch(e){}
+}
+function recentLeagues(){try{return JSON.parse(localStorage.getItem('recentLeagues')||'[]');}catch(e){return[];}}
+
+// ── Storage (Firestore, with on-device fallback) ──────────────────────
+const LS = id => 'league:'+id;
+const lsGet = id => {try{return JSON.parse(localStorage.getItem(LS(id)));}catch(e){return null;}};
+const lsSet = d => {try{localStorage.setItem(LS(d.id),JSON.stringify(d));}catch(e){}};
+const localSubs = {};
+function applyPatch(d,patch){
+    const n={...d};
+    Object.entries(patch).forEach(([k,v])=>{
+        if(k.startsWith('scores.'))n.scores={...(n.scores||{}),[k.slice(7)]:v};
+        else n[k]=v;
+    });
+    return n;
+}
+const store = {
+    async create(d){
+        if(fbOk)try{await db.collection('leagues').doc(d.id).set(d);return'cloud';}catch(e){console.warn('Cloud save failed, using this device:',e.code||e.message);}
+        lsSet({...d,_local:true});return'local';
+    },
+    listen(id,cb){
+        const local=lsGet(id);
+        if(local&&local._local||!fbOk){
+            const fn=d=>cb(d?{...d,_src:'local'}:null);
+            (localSubs[id]=localSubs[id]||[]).push(fn);fn(local);
+            return()=>{localSubs[id]=(localSubs[id]||[]).filter(f=>f!==fn);};
+        }
+        return db.collection('leagues').doc(id).onSnapshot(
+            doc=>cb(doc.exists?{...doc.data(),_src:'cloud'}:null),
+            err=>{console.warn('listen failed',err.code);cb({_error:err.code||'error'});}
+        );
+    },
+    async update(league,patch){
+        patch={...patch,updatedAt:Date.now()};
+        if(league._src==='local'){
+            const n=applyPatch(lsGet(league.id)||league,patch);lsSet(n);
+            (localSubs[league.id]||[]).forEach(f=>f(n));return;
+        }
+        await db.collection('leagues').doc(league.id).update(patch);
+    },
+    async mine(uid){
+        const out=[];
+        if(fbOk&&uid)try{(await db.collection('leagues').where('createdBy','==',uid).get()).docs.forEach(d=>out.push(d.data()));}catch(e){console.warn('list failed',e.code);}
+        for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('league:')){const d=lsGet(k.slice(7));if(d&&d.createdBy===uid&&!out.find(x=>x.id===d.id))out.push({...d,_src:'local'});}}
+        return out.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    },
+    async remove(league){
+        if(league._src==='local'){localStorage.removeItem(LS(league.id));return;}
+        await db.collection('leagues').doc(league.id).delete();
+    }
+};
+
+// ── Leaderboard ───────────────────────────────────────────────────────
+function calcBoard(league,weekId){
+    const nameOf={};league.players.forEach(p=>nameOf[p.id]=p.name);
+    const st={};
+    const touch=id=>st[id]=st[id]||{id,name:nameOf[id]||'(removed)',pts:0,pa:0,gp:0,w:0,l:0,nights:new Set()};
+    (league.weeks||[]).forEach(w=>{
+        if(weekId&&w.id!==weekId)return;
+        (w.rounds||[]).forEach(r=>(r.matches||[]).forEach(m=>{
+            const s=(league.scores||{})[m.id];
+            if(!s||!isNum(s.a)||!isNum(s.b))return;
+            const a=+s.a,b=+s.b;
+            const side=(team,f,ag)=>team.forEach(p=>{const x=touch(p);x.pts+=f;x.pa+=ag;x.gp++;if(f>ag)x.w++;else if(f<ag)x.l++;x.nights.add(w.id);});
+            side(m.team1,a,b);side(m.team2,b,a);
+        }));
+    });
+    // include players with no scored games yet (current roster, active)
+    league.players.filter(p=>p.active!==false).forEach(p=>touch(p.id));
+    return Object.values(st).map(x=>({...x,diff:x.pts-x.pa,avg:x.gp?x.pts/x.gp:0,nights:x.nights.size}));
+}
+const SORTS={
+    pts:{label:'Points',fn:(a,b)=>b.pts-a.pts||b.w-a.w||b.diff-a.diff},
+    avg:{label:'Avg / game',fn:(a,b)=>b.avg-a.avg||b.pts-a.pts},
+    w:{label:'Wins',fn:(a,b)=>b.w-a.w||b.pts-a.pts},
+    diff:{label:'+/-',fn:(a,b)=>b.diff-a.diff||b.pts-a.pts},
+};
+
+// ── App ───────────────────────────────────────────────────────────────
+function App(){
+    const [user,setUser]=useState(null);
+    const [ready,setReady]=useState(false);
+    const [leagueId,setLeagueId]=useState(()=>new URLSearchParams(location.search).get('id'));
+
+    useEffect(()=>{
+        if(!fbOk){setReady(true);return;}
+        return auth.onAuthStateChanged(u=>{
+            setUser(u&&!u.isAnonymous?{uid:u.uid,email:u.email,name:u.displayName||(u.email||'').split('@')[0]}:null);
+            setReady(true);
+        });
+    },[]);
+    useEffect(()=>{
+        const f=()=>setLeagueId(new URLSearchParams(location.search).get('id'));
+        window.addEventListener('popstate',f);return()=>window.removeEventListener('popstate',f);
+    },[]);
+    const open=id=>{history.pushState({},'',id?`?id=${id}`:location.pathname);setLeagueId(id);window.scrollTo(0,0);};
+
+    if(!ready)return<Center><div className="spinner"/></Center>;
+    if(leagueId)return<LeagueView id={leagueId} user={user} onHome={()=>open(null)}/>;
+    if(!user)return<LoginView/>;
+    return<Dashboard user={user} onOpen={open}/>;
+}
+
+const Center=({children})=><div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:12}}>{children}</div>;
+
+function Nav({children,onHome,user}){
+    return(
+        <div className="nav no-print">
+            {onHome?<button className="link" onClick={onHome}>← Leagues</button>:<a href="index.html">← Home</a>}
+            <div className="fd" style={{color:'white',fontWeight:800,fontSize:20,flex:1,textAlign:'center',letterSpacing:.5}}>
+                LEAGUE<span style={{color:'#34d399'}}>NIGHT</span>
+            </div>
+            {user?<button className="link" onClick={()=>auth.signOut()}>Log out</button>:<span style={{width:60}}/>}
+            {children}
+        </div>
+    );
+}
+
+// ── Login ─────────────────────────────────────────────────────────────
+function LoginView(){
+    const [email,setEmail]=useState('');const [pw,setPw]=useState('');
+    const [signup,setSignup]=useState(false);const [err,setErr]=useState('');const [busy,setBusy]=useState(false);
+    const submit=async e=>{
+        e.preventDefault();setErr('');setBusy(true);
+        try{
+            if(signup)await auth.createUserWithEmailAndPassword(email,pw);
+            else await auth.signInWithEmailAndPassword(email,pw);
+        }catch(e){setErr({'auth/invalid-credential':'Incorrect email or password.','auth/email-already-in-use':'Email already registered — log in instead.','auth/weak-password':'Password must be 6+ characters.'}[e.code]||e.message);}
+        setBusy(false);
+    };
+    return(
+        <div style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
+            <div className="hero-bg" style={{padding:'44px 20px 56px',textAlign:'center'}}>
+                <div style={{color:'#6ee7b7',fontSize:12,fontWeight:700,letterSpacing:1.4,marginBottom:12}}>PICKLECONNECT</div>
+                <h1 className="fd" style={{fontSize:'clamp(44px,10vw,72px)',color:'white',lineHeight:1,fontWeight:800}}>LEAGUE<span style={{color:'#34d399'}}>NIGHT</span></h1>
+                <p style={{color:'#94a3b8',maxWidth:440,margin:'14px auto 0',lineHeight:1.6}}>Random doubles every week with no repeat partners, your own court numbers, and a leaderboard by points scored.</p>
+            </div>
+            <div className="pg" style={{marginTop:-30}}>
+                <div className="card" style={{maxWidth:420,margin:'0 auto'}}>
+                    <div className="fd" style={{fontSize:26,fontWeight:800,marginBottom:4}}>{signup?'CREATE ACCOUNT':'LOG IN'}</div>
+                    <div className="muted" style={{marginBottom:16}}>Organizers log in to create and run a league. Players can view a shared league link without an account.</div>
+                    <form onSubmit={submit} style={{display:'flex',flexDirection:'column',gap:12}}>
+                        <input className="inp" type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} required/>
+                        <input className="inp" type="password" placeholder="Password" value={pw} onChange={e=>setPw(e.target.value)} required minLength={6}/>
+                        {err&&<div className="err">{err}</div>}
+                        <button className="btn btn-g" disabled={busy}>{busy?'Please wait…':signup?'Create account':'Log in'}</button>
+                    </form>
+                    <button onClick={()=>setSignup(!signup)} style={{marginTop:12,background:'none',border:'none',color:'#059669',fontWeight:600,cursor:'pointer',fontFamily:'Outfit',fontSize:14,width:'100%'}}>
+                        {signup?'Have an account? Log in':'New here? Create an account'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────
+function Dashboard({user,onOpen}){
+    const [list,setList]=useState(null);
+    const [creating,setCreating]=useState(false);
+    useEffect(()=>{store.mine(user.uid).then(setList);},[user.uid]);
+    const recent=recentLeagues().filter(r=>!(list||[]).find(l=>l.id===r.id));
+    return(
+        <div>
+            <Nav user={user}/>
+            <div className="pg">
+                <div className="hero-bg" style={{borderRadius:16,padding:'20px 22px',marginBottom:14,color:'white',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
+                    <div>
+                        <div className="fd" style={{fontSize:28,fontWeight:800}}>YOUR LEAGUES</div>
+                        <div style={{color:'#6ee7b7',fontSize:14}}>Weekly doubles · points leaderboard</div>
+                    </div>
+                    <button className="btn btn-g" onClick={()=>setCreating(true)}>+ New league</button>
+                </div>
+                {list===null?<Center><div className="spinner"/></Center>:
+                 list.length===0&&!recent.length?
+                    <div className="card" style={{textAlign:'center',padding:'34px 18px'}}>
+                        <div style={{fontSize:40}}>🏅</div>
+                        <div className="fd" style={{fontSize:22,fontWeight:800,margin:'6px 0'}}>NO LEAGUES YET</div>
+                        <div className="muted" style={{marginBottom:16}}>Set up your Thursday group once — then generate each week in one tap.</div>
+                        <button className="btn btn-g" onClick={()=>setCreating(true)}>Create your league</button>
+                    </div>:
+                    <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                        {list.map(l=><LeagueRow key={l.id} l={l} onOpen={onOpen}/>)}
+                        {recent.length>0&&<div className="slbl" style={{marginTop:10}}>Recently viewed</div>}
+                        {recent.map(r=><LeagueRow key={r.id} l={{id:r.id,name:r.name}} onOpen={onOpen}/>)}
+                    </div>}
+            </div>
+            {creating&&<CreateLeague user={user} onClose={()=>setCreating(false)} onCreated={id=>{setCreating(false);onOpen(id);}}/>}
+        </div>
+    );
+}
+function LeagueRow({l,onOpen}){
+    return(
+        <div className="card" onClick={()=>onOpen(l.id)} style={{cursor:'pointer',display:'flex',alignItems:'center',gap:12}}>
+            <div style={{fontSize:28}}>🏅</div>
+            <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:700,fontSize:17}}>{l.name}</div>
+                {l.players&&<div className="muted">{l.players.filter(p=>p.active!==false).length} players · {(l.weeks||[]).length} week{(l.weeks||[]).length===1?'':'s'} · courts {(l.defaultCourts||[]).join(', ')}{l._src==='local'?' · this device only':''}</div>}
+            </div>
+            <div style={{color:'#059669',fontWeight:700}}>Open →</div>
+        </div>
+    );
+}
+
+function CreateLeague({user,onClose,onCreated}){
+    const [name,setName]=useState('Thursday Night League');
+    const [names,setNames]=useState(()=>Array.from({length:12},()=>''));
+    const [courts,setCourts]=useState('4, 5, 7');
+    const [rounds,setRounds]=useState(8);
+    const [busy,setBusy]=useState(false);const [err,setErr]=useState('');
+    const filled=names.map(n=>n.trim()).filter(Boolean);
+    const dup=filled.find((n,i)=>filled.findIndex(x=>x.toLowerCase()===n.toLowerCase())!==i);
+    const cs=parseCourts(courts);
+    const create=async()=>{
+        if(filled.length<4){setErr('Add at least 4 players.');return;}
+        if(dup){setErr(`"${dup}" is listed twice.`);return;}
+        if(!cs.length){setErr('Enter at least one court number.');return;}
+        setBusy(true);
+        const id=newId();
+        const doc={id,name:name.trim()||'League',createdBy:user.uid,ownerName:user.name,createdAt:Date.now(),updatedAt:Date.now(),
+            isPublic:true,publicMode:'read',
+            players:filled.map(n=>({id:uid6(),name:n,active:true})),
+            defaultCourts:cs,defaultRounds:rounds,weeks:[],scores:{}};
+        await store.create(doc);
+        rememberLeague(id,doc.name);
+        onCreated(id);
+    };
+    return(
+        <Modal onClose={onClose} title="New league">
+            <label className="slbl">League name</label>
+            <input className="inp" value={name} onChange={e=>setName(e.target.value)}/>
+            <div className="row" style={{justifyContent:'space-between',margin:'16px 0 8px'}}>
+                <label className="slbl" style={{margin:0}}>Players ({filled.length})</label>
+                <button className="btn btn-ghost btn-sm" onClick={()=>setNames([...names,''])}>+ Add</button>
+            </div>
+            <div className="grid2">
+                {names.map((n,i)=>(
+                    <input key={i} className="inp" style={{padding:'10px 12px'}} placeholder={`Player ${i+1}`} value={n}
+                        onChange={e=>{const c=[...names];c[i]=e.target.value;setNames(c);}}/>
+                ))}
+            </div>
+            <div className="muted" style={{fontSize:12,marginTop:6}}>You can rename players or add subs anytime later.</div>
+            <div className="grid2" style={{marginTop:16}}>
+                <div>
+                    <label className="slbl">Usual courts</label>
+                    <input className="inp" value={courts} onChange={e=>setCourts(e.target.value)} placeholder="4, 5, 7"/>
+                    <div className="muted" style={{fontSize:12,marginTop:4}}>Change per week if needed</div>
+                </div>
+                <div>
+                    <label className="slbl">Games per night</label>
+                    <Stepper value={rounds} min={1} max={20} onChange={setRounds}/>
+                </div>
+            </div>
+            {err&&<div className="err" style={{marginTop:12}}>{err}</div>}
+            <button className="btn btn-g" style={{width:'100%',marginTop:16}} disabled={busy} onClick={create}>{busy?'Creating…':'Create league'}</button>
+        </Modal>
+    );
+}
+
+// ── League view ───────────────────────────────────────────────────────
+function LeagueView({id,user,onHome}){
+    const [league,setLeague]=useState(undefined);
+    const [tab,setTab]=useState('week');
+    const [weekId,setWeekId]=useState(null);
+    useEffect(()=>store.listen(id,d=>{
+        setLeague(d);
+        if(d&&d.name)rememberLeague(id,d.name);
+    }),[id]);
+
+    const weeks=(league&&league.weeks)||[];
+    useEffect(()=>{if(weeks.length&&!weeks.find(w=>w.id===weekId))setWeekId(weeks[weeks.length-1].id);},[weeks.length]);
+
+    if(league===undefined)return<Center><div className="spinner"/></Center>;
+    if(!league||league._error)return(
+        <div><Nav onHome={user?onHome:null} user={user}/>
+            <div className="pg"><div className="card" style={{textAlign:'center',padding:30}}>
+                <div style={{fontSize:36}}>🔒</div>
+                <div className="fd" style={{fontSize:22,fontWeight:800,margin:'6px 0'}}>LEAGUE NOT AVAILABLE</div>
+                <div className="muted">{league&&league._error==='permission-denied'?'This league is private. Ask the organizer to make it public, or log in as the organizer.':'We couldn\'t find this league. Check the link.'}</div>
+                {!user&&<a href="league.html" className="btn btn-g" style={{display:'inline-block',marginTop:14,textDecoration:'none'}}>Log in</a>}
+            </div></div>
+        </div>
+    );
+
+    const isOwner=!!user&&user.uid===league.createdBy;
+    const canScore=isOwner||(league.isPublic&&league.publicMode==='edit');
+    const update=async patch=>{
+        try{await store.update(league,patch);}
+        catch(e){alert('Could not save: '+(e.code||e.message));}
+    };
+
+    return(
+        <div>
+            <Nav onHome={user?onHome:null} user={user}/>
+            <div className="pg">
+                <div className="row no-print" style={{justifyContent:'space-between',marginBottom:12,flexWrap:'wrap'}}>
+                    <div style={{minWidth:0}}>
+                        <div className="fd" style={{fontSize:26,fontWeight:800,lineHeight:1.1}}>{league.name}</div>
+                        <div className="muted">{league.players.filter(p=>p.active!==false).length} players · {weeks.length} week{weeks.length===1?'':'s'}{league._src==='local'?' · saved on this device':''}</div>
+                    </div>
+                    <ShareButton league={league}/>
+                </div>
+                {league._src==='local'&&isOwner&&<div className="warn no-print" style={{marginBottom:12}}>Saved on this device only — cloud sync needs the <b>leagues</b> Firestore rule deployed. Sharing won't work until then.</div>}
+                <div className="tabs">
+                    {[['week','📅 Weeks'],['board','🏆 Leaderboard'],['players','👥 Players'],...(isOwner?[['settings','⚙️']]:[])].map(([k,l])=>
+                        <button key={k} className={'tab'+(tab===k?' on':'')} onClick={()=>setTab(k)} style={k==='settings'?{flex:'0 0 46px'}:null}>{l}</button>)}
+                </div>
+                {tab==='week'&&<WeeksTab league={league} isOwner={isOwner} canScore={canScore} weekId={weekId} setWeekId={setWeekId} update={update}/>}
+                {tab==='board'&&<Leaderboard league={league}/>}
+                {tab==='players'&&<PlayersTab league={league} isOwner={isOwner} update={update}/>}
+                {tab==='settings'&&isOwner&&<SettingsTab league={league} update={update} onDeleted={onHome}/>}
+            </div>
+        </div>
+    );
+}
+
+function ShareButton({league}){
+    const [msg,setMsg]=useState('');
+    const url=`${location.origin}${location.pathname}?id=${league.id}`;
+    const share=async()=>{
+        if(navigator.share){try{await navigator.share({title:league.name,text:`${league.name} — schedule & leaderboard`,url});return;}catch(e){}}
+        try{await navigator.clipboard.writeText(url);setMsg('Link copied');}catch(e){prompt('Copy this link',url);}
+        setTimeout(()=>setMsg(''),2000);
+    };
+    return<button className="btn btn-out btn-sm" onClick={share}>{msg||'📤 Share'}</button>;
+}
+
+// ── Weeks tab ─────────────────────────────────────────────────────────
+function WeeksTab({league,isOwner,canScore,weekId,setWeekId,update}){
+    const [showNew,setShowNew]=useState(false);
+    const weeks=league.weeks||[];
+    const week=weeks.find(w=>w.id===weekId);
+    return(
+        <div>
+            <div className="row no-print" style={{marginBottom:12}}>
+                <div className="chips" style={{flex:1}}>
+                    {weeks.map((w,i)=><button key={w.id} className={'chip'+(w.id===weekId?' on':'')} onClick={()=>setWeekId(w.id)}>Wk {i+1} · {fmtDate(w.date)}</button>)}
+                </div>
+                {isOwner&&<button className="btn btn-g btn-sm" onClick={()=>setShowNew(true)} style={{flexShrink:0}}>+ Week</button>}
+            </div>
+            {!weeks.length&&<div className="card" style={{textAlign:'center',padding:'30px 18px'}}>
+                <div style={{fontSize:36}}>📅</div>
+                <div className="fd" style={{fontSize:22,fontWeight:800,margin:'6px 0'}}>NO WEEKS SCHEDULED</div>
+                <div className="muted" style={{marginBottom:14}}>{isOwner?'Generate this Thursday\'s games — pick who\'s playing and which courts you got.':'The organizer hasn\'t scheduled a week yet.'}</div>
+                {isOwner&&<button className="btn btn-g" onClick={()=>setShowNew(true)}>Schedule a week</button>}
+            </div>}
+            {week&&<WeekView league={league} week={week} index={weeks.indexOf(week)} isOwner={isOwner} canScore={canScore} update={update}/>}
+            {showNew&&<NewWeekModal league={league} onClose={()=>setShowNew(false)} onSave={async w=>{await update({weeks:[...weeks,w]});setWeekId(w.id);setShowNew(false);}}/>}
+        </div>
+    );
+}
+
+function generateWeek(league,{date,courts,rounds,playerIds},weekId){
+    const hist=S.buildHistory(league.weeks,weekId);
+    const res=S.generateNight(playerIds,courts,rounds,hist);
+    const id=weekId||('W'+uid6());
+    const out=res.rounds.map((r,ri)=>({
+        matches:r.matches.map((m,mi)=>({id:`${id}_r${ri+1}_${mi+1}_${uid6()}`,court:m.court,team1:m.team1,team2:m.team2})),
+        sitOut:r.sitOut,
+    }));
+    return{id,date,courts,playerIds,numRounds:rounds,rounds:out,repeatPartners:res.stats.repeatPartners,createdAt:Date.now()};
+}
+
+function NewWeekModal({league,onClose,onSave,editWeek}){
+    const active=league.players.filter(p=>p.active!==false);
+    const [date,setDate]=useState(editWeek?editWeek.date:nextThursday());
+    const [courts,setCourts]=useState((editWeek?editWeek.courts:league.defaultCourts||[]).join(', '));
+    const [rounds,setRounds]=useState(editWeek?editWeek.numRounds:(league.defaultRounds||8));
+    const [ids,setIds]=useState(editWeek?editWeek.playerIds:active.map(p=>p.id));
+    const [busy,setBusy]=useState(false);
+    const cs=parseCourts(courts);
+    const used=Math.min(cs.length,Math.floor(ids.length/4));
+    const sit=ids.length-used*4;
+    const maxNR=S.maxNoRepeatRounds(ids.length);
+    const shown=editWeek?league.players.filter(p=>p.active!==false||editWeek.playerIds.includes(p.id)):active;
+    const go=()=>{
+        setBusy(true);
+        setTimeout(async()=>{ // let the spinner paint
+            const w=generateWeek(league,{date,courts:cs,rounds,playerIds:ids},editWeek&&editWeek.id);
+            await onSave(w);
+        },30);
+    };
+    return(
+        <Modal onClose={onClose} title={editWeek?'Reshuffle week':'Schedule a week'}>
+            <div className="grid2">
+                <div><label className="slbl">Date</label><input className="inp" type="date" value={date} onChange={e=>setDate(e.target.value)}/></div>
+                <div><label className="slbl">Games</label><Stepper value={rounds} min={1} max={20} onChange={setRounds}/></div>
+            </div>
+            <label className="slbl" style={{marginTop:14}}>Court numbers you got</label>
+            <input className="inp" value={courts} onChange={e=>setCourts(e.target.value)} placeholder="e.g. 4, 5, 7"/>
+            <div className="row" style={{justifyContent:'space-between',margin:'14px 0 8px'}}>
+                <label className="slbl" style={{margin:0}}>Who's playing ({ids.length})</label>
+                <button className="btn btn-ghost btn-sm" onClick={()=>setIds(ids.length===shown.length?[]:shown.map(p=>p.id))}>{ids.length===shown.length?'None':'All'}</button>
+            </div>
+            <div className="grid2">
+                {shown.map(p=>{const on=ids.includes(p.id);return(
+                    <label key={p.id} className={'check'+(on?'':' off')}>
+                        <input type="checkbox" checked={on} onChange={()=>setIds(on?ids.filter(x=>x!==p.id):[...ids,p.id])}/>
+                        <span>{p.name}</span>
+                    </label>);})}
+            </div>
+            <div style={{marginTop:14,display:'flex',flexDirection:'column',gap:8}}>
+                {used<1?<div className="err">Need at least 4 players and 1 court.</div>:
+                 <div className="ok">{used} court{used>1?'s':''} in use ({cs.slice(0,used).join(', ')}) · {used*4} playing each game{sit>0?` · ${sit} sit out each game (rotated fairly)`:''}</div>}
+                {used<cs.length&&used>=1&&<div className="warn">Only {used} of {cs.length} courts needed for {ids.length} players.</div>}
+                {rounds>maxNR&&<div className="warn">With {ids.length} players, at most {maxNR} games can have all-new partners. Games after that will repeat a partner.</div>}
+                {editWeek&&<div className="warn">This replaces the current matchups. Scores already entered for this week will no longer show.</div>}
+            </div>
+            <button className="btn btn-g" style={{width:'100%',marginTop:14}} disabled={busy||used<1} onClick={go}>{busy?'Generating…':editWeek?'🔀 Reshuffle':'🎲 Generate matchups'}</button>
+        </Modal>
+    );
+}
+
+function WeekView({league,week,index,isOwner,canScore,update}){
+    const [reshuffle,setReshuffle]=useState(false);
+    const [copied,setCopied]=useState(false);
+    const name=id=>(league.players.find(p=>p.id===id)||{name:'?'}).name;
+    const scores=league.scores||{};
+    const scored=week.rounds.reduce((n,r)=>n+r.matches.filter(m=>scores[m.id]&&isNum(scores[m.id].a)&&isNum(scores[m.id].b)).length,0);
+    const total=week.rounds.reduce((n,r)=>n+r.matches.length,0);
+
+    const setScore=(mid,side,val)=>{
+        const cur=scores[mid]||{a:null,b:null};
+        const v=val===''?null:Math.max(0,Math.min(99,parseInt(val,10)||0));
+        update({['scores.'+mid]:{...cur,[side]:v}});
+    };
+    const copyText=async()=>{
+        let t=`${league.name} — ${fmtDate(week.date)}\n`;
+        week.rounds.forEach((r,i)=>{
+            t+=`\nGame ${i+1}\n`;
+            r.matches.forEach(m=>{t+=`Ct ${m.court}: ${m.team1.map(name).join(' & ')} vs ${m.team2.map(name).join(' & ')}\n`;});
+            if(r.sitOut.length)t+=`Sit: ${r.sitOut.map(name).join(', ')}\n`;
+        });
+        t+=`\nScores & leaderboard: ${location.origin}${location.pathname}?id=${league.id}`;
+        try{await navigator.clipboard.writeText(t);setCopied(true);setTimeout(()=>setCopied(false),2000);}catch(e){prompt('Copy the schedule',t);}
+    };
+    const del=()=>{if(confirm(`Delete week ${index+1} (${fmtDate(week.date)}) and its scores?`))update({weeks:league.weeks.filter(w=>w.id!==week.id)});};
+
+    return(
+        <div>
+            <div className="card no-print" style={{marginBottom:12,padding:14}}>
+                <div className="row" style={{justifyContent:'space-between',flexWrap:'wrap',gap:8}}>
+                    <div>
+                        <div style={{fontWeight:700}}>Week {index+1} · {fmtDate(week.date)}</div>
+                        <div className="muted" style={{fontSize:13}}>Courts {week.courts.join(', ')} · {week.playerIds.length} players · {scored}/{total} games scored</div>
+                    </div>
+                    <div className="row" style={{flexWrap:'wrap'}}>
+                        <button className="btn btn-ghost btn-sm" onClick={copyText}>{copied?'✓ Copied':'📋 Copy'}</button>
+                        <button className="btn btn-ghost btn-sm" onClick={()=>window.print()}>🖨️</button>
+                        {isOwner&&<button className="btn btn-ghost btn-sm" onClick={()=>setReshuffle(true)}>🔀 Reshuffle</button>}
+                        {isOwner&&<button className="btn btn-red btn-sm" onClick={del}>Delete</button>}
+                    </div>
+                </div>
+                <div style={{marginTop:10}} className={week.repeatPartners?'warn':'ok'}>
+                    {week.repeatPartners?`${week.repeatPartners} repeat partnership${week.repeatPartners>1?'s':''} tonight (more games than unique partners).`:'✓ No one plays with the same partner twice tonight.'}
+                </div>
+            </div>
+            {week.rounds.map((r,ri)=>(
+                <div key={ri} className="round-card">
+                    <div className="round-hd">
+                        <span className="fd" style={{fontSize:18,fontWeight:800,letterSpacing:.5}}>GAME {ri+1}</span>
+                        <span style={{fontSize:12,color:'#6ee7b7'}}>{r.matches.filter(m=>scores[m.id]&&isNum(scores[m.id].a)&&isNum(scores[m.id].b)).length}/{r.matches.length} scored</span>
+                    </div>
+                    {r.matches.map(m=>{
+                        const s=scores[m.id]||{};const done=isNum(s.a)&&isNum(s.b);
+                        return(
+                            <div key={m.id} className="match">
+                                <div className="court"><small>Court</small><b>{m.court}</b></div>
+                                <div className="teams">
+                                    <div className={'team'+(done&&+s.a>+s.b?' win':'')}>
+                                        <div className="tnames">{m.team1.map(name).join(' & ')}</div>
+                                        <ScoreInput value={s.a} disabled={!canScore} onCommit={v=>setScore(m.id,'a',v)}/>
+                                    </div>
+                                    <div className="vs">VS</div>
+                                    <div className={'team'+(done&&+s.b>+s.a?' win':'')}>
+                                        <div className="tnames">{m.team2.map(name).join(' & ')}</div>
+                                        <ScoreInput value={s.b} disabled={!canScore} onCommit={v=>setScore(m.id,'b',v)}/>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {r.sitOut.length>0&&<div className="sit">🪑 Sitting out: {r.sitOut.map(name).join(', ')}</div>}
+                </div>
+            ))}
+            {!canScore&&<div className="muted" style={{textAlign:'center',fontSize:13}}>Only the organizer can enter scores for this league.</div>}
+            {reshuffle&&<NewWeekModal league={league} editWeek={week} onClose={()=>setReshuffle(false)}
+                onSave={async w=>{await update({weeks:league.weeks.map(x=>x.id===w.id?w:x)});setReshuffle(false);}}/>}
+        </div>
+    );
+}
+
+function ScoreInput({value,disabled,onCommit}){
+    const [v,setV]=useState(isNum(value)?String(value):'');
+    const focused=useRef(false);
+    useEffect(()=>{if(!focused.current)setV(isNum(value)?String(value):'');},[value]);
+    const commit=()=>{const cur=isNum(value)?String(value):'';if(v!==cur)onCommit(v);};
+    if(disabled)return<div className="score-inp" style={{border:'none',background:'transparent'}}>{isNum(value)?value:'–'}</div>;
+    return<input className="score-inp" type="number" inputMode="numeric" min="0" max="99" value={v} placeholder="–"
+        onFocus={e=>{focused.current=true;e.target.select();}}
+        onChange={e=>setV(e.target.value.slice(0,2))}
+        onBlur={()=>{focused.current=false;commit();}}
+        onKeyDown={e=>{if(e.key==='Enter')e.target.blur();}}/>;
+}
+
+// ── Leaderboard ───────────────────────────────────────────────────────
+function Leaderboard({league}){
+    const [scope,setScope]=useState('season');
+    const [sort,setSort]=useState('pts');
+    const weeks=league.weeks||[];
+    const rows=useMemo(()=>calcBoard(league,scope==='season'?null:scope).sort(SORTS[sort].fn),[league,scope,sort]);
+    const anyScores=rows.some(r=>r.gp>0);
+    const Th=({k,children,cls})=><th className={(cls||'')+(sort===k?' on':'')} onClick={()=>setSort(k)}>{children}{sort===k?' ▾':''}</th>;
+    return(
+        <div>
+            <div className="chips" style={{marginBottom:10}}>
+                <button className={'chip'+(scope==='season'?' on':'')} onClick={()=>setScope('season')}>Season</button>
+                {weeks.map((w,i)=><button key={w.id} className={'chip'+(scope===w.id?' on':'')} onClick={()=>setScope(w.id)}>Wk {i+1} · {fmtDate(w.date)}</button>)}
+            </div>
+            <div className="card" style={{padding:'10px 8px',overflowX:'auto'}}>
+                <table className="lb">
+                    <thead><tr>
+                        <th className="l" style={{width:34}}>#</th>
+                        <th className="l" style={{cursor:'default'}}>Player</th>
+                        <Th k="pts">Pts</Th>
+                        <th style={{cursor:'default'}}>GP</th>
+                        <Th k="w">W-L</Th>
+                        <Th k="avg">Avg</Th>
+                        <Th k="diff">+/-</Th>
+                    </tr></thead>
+                    <tbody>
+                        {rows.map((r,i)=>(
+                            <tr key={r.id}>
+                                <td className="l"><span className={'rank'+(anyScores&&i<3?' g'+(i+1):'')}>{i+1}</span></td>
+                                <td className="l" style={{fontWeight:600}}>{r.name}</td>
+                                <td className="pts">{r.pts}</td>
+                                <td>{r.gp}</td>
+                                <td>{r.w}-{r.l}</td>
+                                <td>{r.gp?r.avg.toFixed(1):'–'}</td>
+                                <td style={{color:r.diff>0?'#059669':r.diff<0?'#dc2626':'#64748b',fontWeight:600}}>{r.diff>0?'+':''}{r.diff}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                {!anyScores&&<div className="muted" style={{textAlign:'center',padding:'14px 0 6px'}}>Scores will show up here as games are entered.</div>}
+            </div>
+            <div className="muted" style={{fontSize:12,marginTop:8,lineHeight:1.5}}>
+                Ranked by total points scored (your team's score in every game you played). Ties go to wins, then +/-. Tap a column to re-sort — <b>Avg</b> is fairest when someone missed a week.
+            </div>
+        </div>
+    );
+}
+
+// ── Players tab ───────────────────────────────────────────────────────
+function PlayersTab({league,isOwner,update}){
+    const [editing,setEditing]=useState(null);const [val,setVal]=useState('');
+    const [newName,setNewName]=useState('');const [err,setErr]=useState('');
+    const players=league.players;
+    const partnerCounts=useMemo(()=>S.buildHistory(league.weeks).partner,[league.weeks]);
+    const taken=(n,except)=>players.some(p=>p.id!==except&&p.name.trim().toLowerCase()===n.trim().toLowerCase());
+    const save=id=>{
+        const n=val.trim();
+        if(!n){setErr('Name can\'t be empty.');return;}
+        if(taken(n,id)){setErr(`"${n}" is already on the roster.`);return;}
+        update({players:players.map(p=>p.id===id?{...p,name:n}:p)});setEditing(null);setErr('');
+    };
+    const add=()=>{
+        const n=newName.trim();if(!n)return;
+        if(taken(n)){setErr(`"${n}" is already on the roster.`);return;}
+        update({players:[...players,{id:uid6(),name:n,active:true}]});setNewName('');setErr('');
+    };
+    const toggle=p=>update({players:players.map(x=>x.id===p.id?{...x,active:x.active===false}:x)});
+    const partnersOf=id=>{
+        const others=players.filter(p=>p.id!==id&&p.active!==false);
+        const played=others.filter(o=>partnerCounts[S._key(id,o.id)]).length;
+        return{played,of:others.length};
+    };
+    return(
+        <div>
+            <div className="card" style={{padding:0,overflow:'hidden'}}>
+                {players.map((p,i)=>{const pc=partnersOf(p.id);return(
+                    <div key={p.id} style={{display:'flex',alignItems:'center',gap:10,padding:'11px 14px',borderBottom:i<players.length-1?'1px solid #f1f5f9':'none',opacity:p.active===false?.5:1}}>
+                        <div style={{width:30,height:30,borderRadius:'50%',background:'#ecfdf5',color:'#047857',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:13,flexShrink:0}}>{p.name.slice(0,1).toUpperCase()}</div>
+                        {editing===p.id?(
+                            <>
+                                <input className="inp" style={{padding:'8px 10px'}} autoFocus value={val} onChange={e=>setVal(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')save(p.id);if(e.key==='Escape')setEditing(null);}}/>
+                                <button className="btn btn-g btn-sm" onClick={()=>save(p.id)}>Save</button>
+                                <button className="btn btn-ghost btn-sm" onClick={()=>{setEditing(null);setErr('');}}>✕</button>
+                            </>
+                        ):(
+                            <>
+                                <div style={{flex:1,minWidth:0}}>
+                                    <div style={{fontWeight:600}}>{p.name}{p.active===false&&<span className="muted" style={{fontSize:12}}> · inactive</span>}</div>
+                                    {(league.weeks||[]).length>0&&p.active!==false&&<div className="muted" style={{fontSize:12}}>{pc.played}/{pc.of} partners so far</div>}
+                                </div>
+                                {isOwner&&<button className="btn btn-ghost btn-sm" onClick={()=>{setEditing(p.id);setVal(p.name);setErr('');}}>✏️ Rename</button>}
+                                {/* rename keeps the player's id, so all past games follow the new name */}
+                                {isOwner&&<button className="btn btn-ghost btn-sm" onClick={()=>toggle(p)} title={p.active===false?'Bring back':'Remove from roster (keeps history)'}>{p.active===false?'↩︎':'🚫'}</button>}
+                            </>
+                        )}
+                    </div>
+                );})}
+            </div>
+            {err&&<div className="err" style={{marginTop:10}}>{err}</div>}
+            {isOwner&&<div className="row" style={{marginTop:12}}>
+                <input className="inp" placeholder="Add a player or sub" value={newName} onChange={e=>setNewName(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')add();}}/>
+                <button className="btn btn-g" onClick={add} style={{flexShrink:0}}>Add</button>
+            </div>}
+            <div className="muted" style={{fontSize:12,marginTop:8,lineHeight:1.5}}>
+                Renaming updates every past schedule and the leaderboard. 🚫 takes someone off the roster without erasing their scores. Who plays on a given night is picked when you schedule the week.
+            </div>
+        </div>
+    );
+}
+
+// ── Settings tab ──────────────────────────────────────────────────────
+function SettingsTab({league,update,onDeleted}){
+    const [name,setName]=useState(league.name);
+    const [courts,setCourts]=useState((league.defaultCourts||[]).join(', '));
+    const [rounds,setRounds]=useState(league.defaultRounds||8);
+    const [saved,setSaved]=useState(false);
+    const save=async()=>{await update({name:name.trim()||league.name,defaultCourts:parseCourts(courts),defaultRounds:rounds});setSaved(true);setTimeout(()=>setSaved(false),1800);};
+    const mode=!league.isPublic?'private':league.publicMode==='edit'?'edit':'read';
+    const setMode=m=>update(m==='private'?{isPublic:false}:{isPublic:true,publicMode:m});
+    return(
+        <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div className="card">
+                <label className="slbl">League name</label>
+                <input className="inp" value={name} onChange={e=>setName(e.target.value)}/>
+                <div className="grid2" style={{marginTop:12}}>
+                    <div><label className="slbl">Usual courts</label><input className="inp" value={courts} onChange={e=>setCourts(e.target.value)}/></div>
+                    <div><label className="slbl">Games per night</label><Stepper value={rounds} min={1} max={20} onChange={setRounds}/></div>
+                </div>
+                <button className="btn btn-g" style={{marginTop:14}} onClick={save}>{saved?'✓ Saved':'Save'}</button>
+            </div>
+            <div className="card">
+                <label className="slbl">Who can see the shared link</label>
+                <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                    {[['private','🔒 Only me'],['read','👀 Anyone with the link can view'],['edit','✏️ Anyone with the link can view and enter scores']].map(([k,l])=>(
+                        <label key={k} className="check" style={{background:mode===k?'#ecfdf5':'#f8fafc',borderColor:mode===k?'#6ee7b7':'#e2e8f0'}}>
+                            <input type="radio" checked={mode===k} onChange={()=>setMode(k)}/><span style={{whiteSpace:'normal'}}>{l}</span>
+                        </label>
+                    ))}
+                </div>
+                <div className="muted" style={{fontSize:12,marginTop:8}}>"Enter scores" lets players fill in their own games from their phones on the night. They can't change the schedule or roster.</div>
+            </div>
+            <div className="card">
+                <label className="slbl">Danger zone</label>
+                <button className="btn btn-red" onClick={async()=>{if(confirm(`Delete "${league.name}" and all its weeks and scores? This can't be undone.`)){await store.remove(league);onDeleted();}}}>Delete league</button>
+            </div>
+        </div>
+    );
+}
+
+// ── Small components ──────────────────────────────────────────────────
+function Modal({title,onClose,children}){
+    useEffect(()=>{const f=e=>{if(e.key==='Escape')onClose();};window.addEventListener('keydown',f);return()=>window.removeEventListener('keydown',f);},[]);
+    return(
+        <div className="modal-bg" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+            <div className="modal">
+                <div className="row" style={{justifyContent:'space-between',marginBottom:14}}>
+                    <div className="fd" style={{fontSize:24,fontWeight:800}}>{title.toUpperCase()}</div>
+                    <button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:34,height:34,fontSize:18,cursor:'pointer'}}>✕</button>
+                </div>
+                {children}
+            </div>
+        </div>
+    );
+}
+function Stepper({value,min,max,onChange}){
+    return(
+        <div className="stepper">
+            <button type="button" onClick={()=>onChange(Math.max(min,value-1))}>−</button>
+            <span>{value}</span>
+            <button type="button" onClick={()=>onChange(Math.min(max,value+1))}>+</button>
+        </div>
+    );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
