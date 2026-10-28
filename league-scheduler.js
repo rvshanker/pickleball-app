@@ -107,7 +107,7 @@
      * @param {string[]} courts     court labels, e.g. ['4','5','7']
      * @param {number}   numRounds  games per player-slot (rounds)
      * @param {object}   history    from buildHistory()
-     * @param {object}   [opts]     { attempts, samples, seed }
+     * @param {object}   [opts]     { attempts, samples, random, priorRounds }
      * @returns {{rounds: Array, stats: object}}
      */
     function generateNight(playerIds, courts, numRounds, history, opts) {
@@ -124,14 +124,27 @@
         const samples = opts.samples || (big ? 10 : 40);
 
         let best = null;
+        // Games already played tonight (kept when players change mid-night)
+        const prior = opts.priorRounds || [];
         for (let a = 0; a < attempts; a++) {
             const nightPartner = {}, nightOpp = {}, nightSit = {}, nightGames = {};
+            prior.forEach(r => {
+                (r.matches || []).forEach(m => {
+                    bump(nightPartner, m.team1[0], m.team1[1]);
+                    bump(nightPartner, m.team2[0], m.team2[1]);
+                    m.team1.forEach(x => m.team2.forEach(y => bump(nightOpp, x, y)));
+                    [...m.team1, ...m.team2].forEach(p => { nightGames[p] = (nightGames[p] || 0) + 1; });
+                });
+                (r.sitOut || []).forEach(p => { nightSit[p] = (nightSit[p] || 0) + 1; });
+            });
             const rounds = [];
             let total = 0;
 
             for (let r = 0; r < numRounds; r++) {
-                // Who sits out: fewest sit-outs tonight, then fewest this season, then random
+                // Who sits out: most games played tonight (so late arrivals play first),
+                // then fewest sit-outs tonight, then fewest this season, then random
                 const ranked = shuffle(playerIds, rnd).sort((x, y) =>
+                    (nightGames[y] || 0) - (nightGames[x] || 0) ||
                     (nightSit[x] || 0) - (nightSit[y] || 0) || (hist.sit[x] || 0) - (hist.sit[y] || 0));
                 const sitCount = playerIds.length - slots;
                 const sitOut = sitCount > 0 ? ranked.slice(0, sitCount) : [];

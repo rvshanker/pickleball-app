@@ -40,6 +40,15 @@
         .score-inp{width:56px;text-align:center;border:2px solid #e2e8f0;border-radius:8px;padding:8px 2px;font-size:18px;font-weight:700;font-family:'Outfit',sans-serif;outline:none;background:white;color:#0f172a;}
         .score-inp:focus{border-color:#059669;}
         .score-inp:disabled{background:#f8fafc;color:#0f172a;border-color:#f1f5f9;}
+        .score-inp.win{color:#047857;border-color:#6ee7b7;background:#ecfdf5;}
+        .score-ro{width:56px;text-align:center;font-size:18px;font-weight:700;color:#0f172a;padding:8px 2px;border-radius:8px;}
+        .score-ro.win{color:#047857;background:#ecfdf5;}
+        .pbtn{background:none;border:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:#cbd5e1;text-underline-offset:3px;}
+        .pbtn:hover{color:#047857;text-decoration-color:#059669;}
+        .pg-row{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #f1f5f9;}
+        .pg-row:last-child{border-bottom:none;}
+        .res{font-weight:800;font-size:12px;border-radius:6px;padding:3px 7px;}
+        .res.w{background:#ecfdf5;color:#047857;}.res.l{background:#fef2f2;color:#b91c1c;}.res.p{background:#f1f5f9;color:#64748b;}
         input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
         input[type=number]{-moz-appearance:textfield;}
 
@@ -201,30 +210,51 @@ const store = {
     }
 };
 
+// ── Scoring ───────────────────────────────────────────────────────────
+// mode 'capped': a game that runs past gameTo (e.g. 15-13) counts as gameTo to gameTo-minus-margin (11-9),
+// so long win-by-2 games don't hand out bonus points. 'raw' counts the real score.
+const DEFAULT_SCORING={mode:'capped',gameTo:11,minPct:50};
+const scoringOf=l=>({...DEFAULT_SCORING,...((l&&l.scoring)||{})});
+function counted(a,b,sc){
+    a=+a;b=+b;
+    if(sc.mode!=='capped'||a===b)return[a,b];
+    const hi=Math.max(a,b),lo=Math.min(a,b);
+    if(hi<=sc.gameTo)return[a,b];
+    const cl=Math.max(0,sc.gameTo-(hi-lo));
+    return a>b?[sc.gameTo,cl]:[cl,sc.gameTo];
+}
+const scoreOf=(league,mid)=>{const s=(league.scores||{})[mid];return s&&isNum(s.a)&&isNum(s.b)?s:null;};
+
 // ── Leaderboard ───────────────────────────────────────────────────────
 function calcBoard(league,weekId){
+    const sc=scoringOf(league);
     const nameOf={};league.players.forEach(p=>nameOf[p.id]=p.name);
     const st={};
-    const touch=id=>st[id]=st[id]||{id,name:nameOf[id]||'(removed)',pts:0,pa:0,gp:0,w:0,l:0,nights:new Set()};
+    const touch=id=>st[id]=st[id]||{id,name:nameOf[id]||'(removed)',pts:0,pa:0,gp:0,w:0,l:0,sat:0};
+    let gamesPlayed=0; // game slots (rounds) that have at least one score
     (league.weeks||[]).forEach(w=>{
         if(weekId&&w.id!==weekId)return;
-        (w.rounds||[]).forEach(r=>(r.matches||[]).forEach(m=>{
-            const s=(league.scores||{})[m.id];
-            if(!s||!isNum(s.a)||!isNum(s.b))return;
-            const a=+s.a,b=+s.b;
-            const side=(team,f,ag)=>team.forEach(p=>{const x=touch(p);x.pts+=f;x.pa+=ag;x.gp++;if(f>ag)x.w++;else if(f<ag)x.l++;x.nights.add(w.id);});
-            side(m.team1,a,b);side(m.team2,b,a);
-        }));
+        (w.rounds||[]).forEach(r=>{
+            let any=false;
+            (r.matches||[]).forEach(m=>{
+                const s=scoreOf(league,m.id);if(!s)return;any=true;
+                const [a,b]=counted(s.a,s.b,sc);
+                const side=(team,f,ag)=>team.forEach(p=>{const x=touch(p);x.pts+=f;x.pa+=ag;x.gp++;if(f>ag)x.w++;else if(f<ag)x.l++;});
+                side(m.team1,a,b);side(m.team2,b,a);
+            });
+            if(any){gamesPlayed++;(r.sitOut||[]).forEach(p=>touch(p).sat++);}
+        });
     });
     // include players with no scored games yet (current roster, active)
     league.players.filter(p=>p.active!==false).forEach(p=>touch(p.id));
-    return Object.values(st).map(x=>({...x,diff:x.pts-x.pa,avg:x.gp?x.pts/x.gp:0,nights:x.nights.size}));
+    const need=weekId?0:Math.ceil(gamesPlayed*(sc.minPct||0)/100);
+    return Object.values(st).map(x=>({...x,diff:x.pts-x.pa,avg:x.gp?x.pts/x.gp:0,qualified:x.gp>=need,need}));
 }
 const SORTS={
-    pts:{label:'Points',fn:(a,b)=>b.pts-a.pts||b.w-a.w||b.diff-a.diff},
-    avg:{label:'Avg / game',fn:(a,b)=>b.avg-a.avg||b.pts-a.pts},
-    w:{label:'Wins',fn:(a,b)=>b.w-a.w||b.pts-a.pts},
-    diff:{label:'+/-',fn:(a,b)=>b.diff-a.diff||b.pts-a.pts},
+    avg:{label:'Avg / game',fn:(a,b)=>b.avg-a.avg||b.diff-a.diff||b.w-a.w},
+    pts:{label:'Points',fn:(a,b)=>b.pts-a.pts||b.diff-a.diff||b.w-a.w},
+    w:{label:'Wins',fn:(a,b)=>b.w-a.w||b.avg-a.avg},
+    diff:{label:'+/-',fn:(a,b)=>b.diff-a.diff||b.avg-a.avg},
 };
 
 // ── App ───────────────────────────────────────────────────────────────
@@ -413,6 +443,7 @@ function LeagueView({id,user,onHome}){
     const [league,setLeague]=useState(undefined);
     const [tab,setTab]=useState('week');
     const [weekId,setWeekId]=useState(null);
+    const [pv,setPv]=useState(null); // {pid, weekId} for the player-games popup
     useEffect(()=>store.listen(id,d=>{
         setLeague(d);
         if(d&&d.name)rememberLeague(id,d.name);
@@ -456,8 +487,9 @@ function LeagueView({id,user,onHome}){
                     {[['week','📅 Weeks'],['board','🏆 Leaderboard'],['players','👥 Players'],...(isOwner?[['settings','⚙️']]:[])].map(([k,l])=>
                         <button key={k} className={'tab'+(tab===k?' on':'')} onClick={()=>setTab(k)} style={k==='settings'?{flex:'0 0 46px'}:null}>{l}</button>)}
                 </div>
-                {tab==='week'&&<WeeksTab league={league} isOwner={isOwner} canScore={canScore} weekId={weekId} setWeekId={setWeekId} update={update}/>}
-                {tab==='board'&&<Leaderboard league={league}/>}
+                {tab==='week'&&<WeeksTab league={league} isOwner={isOwner} canScore={canScore} weekId={weekId} setWeekId={setWeekId} update={update} onPlayer={(pid,wid)=>setPv({pid,weekId:wid})}/>}
+                {tab==='board'&&<Leaderboard league={league} onPlayer={(pid,wid)=>setPv({pid,weekId:wid})}/>}
+                {pv&&<PlayerGames league={league} pid={pv.pid} weekId={pv.weekId} onClose={()=>setPv(null)}/>}
                 {tab==='players'&&<PlayersTab league={league} isOwner={isOwner} update={update}/>}
                 {tab==='settings'&&isOwner&&<SettingsTab league={league} update={update} onDeleted={onHome}/>}
             </div>
@@ -477,7 +509,7 @@ function ShareButton({league}){
 }
 
 // ── Weeks tab ─────────────────────────────────────────────────────────
-function WeeksTab({league,isOwner,canScore,weekId,setWeekId,update}){
+function WeeksTab({league,isOwner,canScore,weekId,setWeekId,update,onPlayer}){
     const [showNew,setShowNew]=useState(false);
     const weeks=league.weeks||[];
     const week=weeks.find(w=>w.id===weekId);
@@ -495,47 +527,81 @@ function WeeksTab({league,isOwner,canScore,weekId,setWeekId,update}){
                 <div className="muted" style={{marginBottom:14}}>{isOwner?'Generate this Thursday\'s games — pick who\'s playing and which courts you got.':'The organizer hasn\'t scheduled a week yet.'}</div>
                 {isOwner&&<button className="btn btn-g" onClick={()=>setShowNew(true)}>Schedule a week</button>}
             </div>}
-            {week&&<WeekView league={league} week={week} index={weeks.indexOf(week)} isOwner={isOwner} canScore={canScore} update={update}/>}
-            {showNew&&<NewWeekModal league={league} onClose={()=>setShowNew(false)} onSave={async w=>{await update({weeks:[...weeks,w]});setWeekId(w.id);setShowNew(false);}}/>}
+            {week&&<WeekView league={league} week={week} index={weeks.indexOf(week)} isOwner={isOwner} canScore={canScore} update={update} onPlayer={onPlayer}/>}
+            {showNew&&<NewWeekModal league={league} update={update} onClose={()=>setShowNew(false)} onSave={async w=>{await update({weeks:[...weeks,w]});setWeekId(w.id);setShowNew(false);}}/>}
         </div>
     );
 }
 
-function generateWeek(league,{date,courts,rounds,playerIds},weekId){
-    const hist=S.buildHistory(league.weeks,weekId);
-    const res=S.generateNight(playerIds,courts,rounds,hist);
-    const id=weekId||('W'+uid6());
-    const out=res.rounds.map((r,ri)=>({
-        matches:r.matches.map((m,mi)=>({id:`${id}_r${ri+1}_${mi+1}_${uid6()}`,court:m.court,team1:m.team1,team2:m.team2})),
-        sitOut:r.sitOut,
-    }));
-    return{id,date,courts,playerIds,numRounds:rounds,rounds:out,repeatPartners:res.stats.repeatPartners,createdAt:Date.now()};
+// Number of leading games to keep when changing players: everything up to the last game with a score
+function keptRounds(league,week){
+    if(!week)return 0;
+    let k=0;
+    week.rounds.forEach((r,i)=>{if(r.matches.some(m=>(league.scores||{})[m.id]&&(isNum(league.scores[m.id].a)||isNum(league.scores[m.id].b))))k=i+1;});
+    return k;
 }
 
-function NewWeekModal({league,onClose,onSave,editWeek}){
+function generateWeek(league,{date,courts,rounds,playerIds},existing,keep){
+    const id=existing?existing.id:('W'+uid6());
+    const prior=existing&&keep?existing.rounds.slice(0,keep):[];
+    const hist=S.buildHistory(league.weeks,id);
+    const res=S.generateNight(playerIds,courts,rounds-prior.length,hist,{priorRounds:prior});
+    const fresh=res.rounds.map((r,ri)=>({
+        matches:r.matches.map((m,mi)=>({id:`${id}_r${prior.length+ri+1}_${mi+1}_${uid6()}`,court:m.court,team1:m.team1,team2:m.team2})),
+        sitOut:r.sitOut,
+    }));
+    return{id,date,courts,playerIds,numRounds:rounds,rounds:prior.concat(fresh),repeatPartners:res.stats.repeatPartners,
+        createdAt:existing?existing.createdAt:Date.now(),...(existing?{updatedAt:Date.now()}:{})};
+}
+
+function NewWeekModal({league,onClose,onSave,editWeek,update}){
     const active=league.players.filter(p=>p.active!==false);
+    const keep=keptRounds(league,editWeek);
     const [date,setDate]=useState(editWeek?editWeek.date:nextThursday());
     const [courts,setCourts]=useState((editWeek?editWeek.courts:league.defaultCourts||[]).join(', '));
     const [rounds,setRounds]=useState(editWeek?editWeek.numRounds:(league.defaultRounds||8));
     const [ids,setIds]=useState(editWeek?editWeek.playerIds:active.map(p=>p.id));
+    const [newName,setNewName]=useState('');const [err,setErr]=useState('');
     const [busy,setBusy]=useState(false);
     const cs=parseCourts(courts);
     const used=Math.min(cs.length,Math.floor(ids.length/4));
     const sit=ids.length-used*4;
     const maxNR=S.maxNoRepeatRounds(ids.length);
-    const shown=editWeek?league.players.filter(p=>p.active!==false||editWeek.playerIds.includes(p.id)):active;
+    // show the active roster plus anyone already in this week (even if since deactivated)
+    const shown=league.players.filter(p=>p.active!==false||ids.includes(p.id));
+    const minRounds=Math.max(1,keep+1);
+    useEffect(()=>{if(rounds<minRounds)setRounds(minRounds);},[minRounds]);
+
+    const addPlayer=async()=>{
+        const n=newName.trim();if(!n)return;
+        setErr('');
+        const existing=league.players.find(p=>p.name.trim().toLowerCase()===n.toLowerCase());
+        if(existing){
+            // already on the roster (maybe removed earlier) — bring them back and tick them
+            if(existing.active===false)await update({players:league.players.map(p=>p.id===existing.id?{...p,active:true}:p)});
+            if(!ids.includes(existing.id))setIds([...ids,existing.id]);
+            setNewName('');return;
+        }
+        const p={id:uid6(),name:n,active:true};
+        await update({players:[...league.players,p]});
+        setIds(prev=>[...prev,p.id]);setNewName('');
+    };
     const go=()=>{
         setBusy(true);
         setTimeout(async()=>{ // let the spinner paint
-            const w=generateWeek(league,{date,courts:cs,rounds,playerIds:ids},editWeek&&editWeek.id);
+            const w=generateWeek(league,{date,courts:cs,rounds,playerIds:ids},editWeek,keep);
             await onSave(w);
         },30);
     };
     return(
-        <Modal onClose={onClose} title={editWeek?'Reshuffle week':'Schedule a week'}>
+        <Modal onClose={onClose} title={editWeek?'Change players':'Schedule a week'}>
+            {editWeek&&<div className={keep?'ok':'warn'} style={{marginBottom:14}}>
+                {keep?`Games 1–${keep} are kept as played (with their scores). Games ${keep+1}–${rounds} will be redrawn with the players ticked below.`
+                     :'No scores yet, so all games will be redrawn with the players ticked below.'}
+            </div>}
             <div className="grid2">
                 <div><label className="slbl">Date</label><input className="inp" type="date" value={date} onChange={e=>setDate(e.target.value)}/></div>
-                <div><label className="slbl">Games</label><Stepper value={rounds} min={1} max={20} onChange={setRounds}/></div>
+                <div><label className="slbl">Total games</label><Stepper value={rounds} min={minRounds} max={20} onChange={setRounds}/></div>
             </div>
             <label className="slbl" style={{marginTop:14}}>Court numbers you got</label>
             <input className="inp" value={courts} onChange={e=>setCourts(e.target.value)} placeholder="e.g. 4, 5, 7"/>
@@ -550,23 +616,30 @@ function NewWeekModal({league,onClose,onSave,editWeek}){
                         <span>{p.name}</span>
                     </label>);})}
             </div>
+            <div className="row" style={{marginTop:8}}>
+                <input className="inp" style={{padding:'9px 12px'}} placeholder="New player or sub" value={newName}
+                    onChange={e=>setNewName(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')addPlayer();}}/>
+                <button className="btn btn-out btn-sm" onClick={addPlayer} style={{flexShrink:0}}>+ Add</button>
+            </div>
+            <div className="muted" style={{fontSize:12,marginTop:4}}>Untick anyone who isn't playing. New names are added to the league roster too.</div>
             <div style={{marginTop:14,display:'flex',flexDirection:'column',gap:8}}>
+                {err&&<div className="err">{err}</div>}
                 {used<1?<div className="err">Need at least 4 players and 1 court.</div>:
                  <div className="ok">{used} court{used>1?'s':''} in use ({cs.slice(0,used).join(', ')}) · {used*4} playing each game{sit>0?` · ${sit} sit out each game (rotated fairly)`:''}</div>}
                 {used<cs.length&&used>=1&&<div className="warn">Only {used} of {cs.length} courts needed for {ids.length} players.</div>}
                 {rounds>maxNR&&<div className="warn">With {ids.length} players, at most {maxNR} games can have all-new partners. Games after that will repeat a partner.</div>}
-                {editWeek&&<div className="warn">This replaces the current matchups. Scores already entered for this week will no longer show.</div>}
             </div>
-            <button className="btn btn-g" style={{width:'100%',marginTop:14}} disabled={busy||used<1} onClick={go}>{busy?'Generating…':editWeek?'🔀 Reshuffle':'🎲 Generate matchups'}</button>
+            <button className="btn btn-g" style={{width:'100%',marginTop:14}} disabled={busy||used<1} onClick={go}>{busy?'Generating…':editWeek?(keep?`🔀 Redraw games ${keep+1}–${rounds}`:'🔀 Redraw all games'):'🎲 Generate matchups'}</button>
         </Modal>
     );
 }
 
-function WeekView({league,week,index,isOwner,canScore,update}){
+function WeekView({league,week,index,isOwner,canScore,update,onPlayer}){
     const [reshuffle,setReshuffle]=useState(false);
     const [copied,setCopied]=useState(false);
     const name=id=>(league.players.find(p=>p.id===id)||{name:'?'}).name;
     const scores=league.scores||{};
+    const sc=scoringOf(league);
     const scored=week.rounds.reduce((n,r)=>n+r.matches.filter(m=>scores[m.id]&&isNum(scores[m.id].a)&&isNum(scores[m.id].b)).length,0);
     const total=week.rounds.reduce((n,r)=>n+r.matches.length,0);
 
@@ -598,7 +671,7 @@ function WeekView({league,week,index,isOwner,canScore,update}){
                     <div className="row" style={{flexWrap:'wrap'}}>
                         <button className="btn btn-ghost btn-sm" onClick={copyText}>{copied?'✓ Copied':'📋 Copy'}</button>
                         <button className="btn btn-ghost btn-sm" onClick={()=>window.print()}>🖨️</button>
-                        {isOwner&&<button className="btn btn-ghost btn-sm" onClick={()=>setReshuffle(true)}>🔀 Reshuffle</button>}
+                        {isOwner&&<button className="btn btn-ghost btn-sm" onClick={()=>setReshuffle(true)}>👥 Change players</button>}
                         {isOwner&&<button className="btn btn-red btn-sm" onClick={del}>Delete</button>}
                     </div>
                 </div>
@@ -614,53 +687,123 @@ function WeekView({league,week,index,isOwner,canScore,update}){
                     </div>
                     {r.matches.map(m=>{
                         const s=scores[m.id]||{};const done=isNum(s.a)&&isNum(s.b);
+                        const aWin=done&&+s.a>+s.b,bWin=done&&+s.b>+s.a;
+                        const [ca,cb]=done?counted(s.a,s.b,sc):[0,0];
+                        const adjusted=done&&(ca!==+s.a||cb!==+s.b);
+                        const names=t=>t.map((id,i)=><React.Fragment key={id}>{i>0&&' & '}<button className="pbtn" onClick={()=>onPlayer(id,week.id)}>{name(id)}</button></React.Fragment>);
                         return(
                             <div key={m.id} className="match">
                                 <div className="court"><small>Court</small><b>{m.court}</b></div>
                                 <div className="teams">
-                                    <div className={'team'+(done&&+s.a>+s.b?' win':'')}>
-                                        <div className="tnames">{m.team1.map(name).join(' & ')}</div>
-                                        <ScoreInput value={s.a} disabled={!canScore} onCommit={v=>setScore(m.id,'a',v)}/>
+                                    <div className={'team'+(aWin?' win':'')}>
+                                        <div className="tnames">{names(m.team1)}</div>
+                                        <ScoreInput value={s.a} win={aWin} disabled={!canScore} onCommit={v=>setScore(m.id,'a',v)}/>
                                     </div>
                                     <div className="vs">VS</div>
-                                    <div className={'team'+(done&&+s.b>+s.a?' win':'')}>
-                                        <div className="tnames">{m.team2.map(name).join(' & ')}</div>
-                                        <ScoreInput value={s.b} disabled={!canScore} onCommit={v=>setScore(m.id,'b',v)}/>
+                                    <div className={'team'+(bWin?' win':'')}>
+                                        <div className="tnames">{names(m.team2)}</div>
+                                        <ScoreInput value={s.b} win={bWin} disabled={!canScore} onCommit={v=>setScore(m.id,'b',v)}/>
                                     </div>
+                                    {adjusted&&<div style={{fontSize:11,color:'#64748b',textAlign:'right'}}>Overtime — counts as {ca}–{cb} on the leaderboard</div>}
                                 </div>
                             </div>
                         );
                     })}
-                    {r.sitOut.length>0&&<div className="sit">🪑 Sitting out: {r.sitOut.map(name).join(', ')}</div>}
+                    {r.sitOut.length>0&&<div className="sit">🪑 Sitting out: {r.sitOut.map((id,i)=><React.Fragment key={id}>{i>0&&', '}<button className="pbtn" onClick={()=>onPlayer(id,week.id)}>{name(id)}</button></React.Fragment>)}</div>}
                 </div>
             ))}
             {!canScore&&<div className="muted" style={{textAlign:'center',fontSize:13}}>Only the organizer can enter scores for this league.</div>}
-            {reshuffle&&<NewWeekModal league={league} editWeek={week} onClose={()=>setReshuffle(false)}
+            {reshuffle&&<NewWeekModal league={league} editWeek={week} update={update} onClose={()=>setReshuffle(false)}
                 onSave={async w=>{await update({weeks:league.weeks.map(x=>x.id===w.id?w:x)});setReshuffle(false);}}/>}
         </div>
     );
 }
 
-function ScoreInput({value,disabled,onCommit}){
+function ScoreInput({value,disabled,onCommit,win}){
     const [v,setV]=useState(isNum(value)?String(value):'');
     const focused=useRef(false);
     useEffect(()=>{if(!focused.current)setV(isNum(value)?String(value):'');},[value]);
     const commit=()=>{const cur=isNum(value)?String(value):'';if(v!==cur)onCommit(v);};
-    if(disabled)return<div className="score-inp" style={{border:'none',background:'transparent'}}>{isNum(value)?value:'–'}</div>;
-    return<input className="score-inp" type="number" inputMode="numeric" min="0" max="99" value={v} placeholder="–"
+    if(disabled)return<div className={'score-ro'+(win?' win':'')}>{isNum(value)?value:'–'}</div>;
+    return<input className={'score-inp'+(win?' win':'')} type="number" inputMode="numeric" min="0" max="99" value={v} placeholder="–"
         onFocus={e=>{focused.current=true;e.target.select();}}
         onChange={e=>setV(e.target.value.slice(0,2))}
         onBlur={()=>{focused.current=false;commit();}}
         onKeyDown={e=>{if(e.key==='Enter')e.target.blur();}}/>;
 }
 
-// ── Leaderboard ───────────────────────────────────────────────────────
-function Leaderboard({league}){
-    const [scope,setScope]=useState('season');
-    const [sort,setSort]=useState('pts');
+// ── One player's games ────────────────────────────────────────────────
+function PlayerGames({league,pid,weekId,onClose}){
     const weeks=league.weeks||[];
-    const rows=useMemo(()=>calcBoard(league,scope==='season'?null:scope).sort(SORTS[sort].fn),[league,scope,sort]);
+    const [wid,setWid]=useState(weekId||(weeks.length?weeks[weeks.length-1].id:null));
+    const sc=scoringOf(league);
+    const name=id=>(league.players.find(p=>p.id===id)||{name:'?'}).name;
+    const week=weeks.find(w=>w.id===wid);
+    const rows=[];
+    if(week)week.rounds.forEach((r,ri)=>{
+        if(r.sitOut.includes(pid)){rows.push({ri,sat:true});return;}
+        const m=r.matches.find(m=>m.team1.includes(pid)||m.team2.includes(pid));
+        if(!m)return; // not playing that game (joined later / left early)
+        const mine=m.team1.includes(pid)?m.team1:m.team2, opp=m.team1.includes(pid)?m.team2:m.team1;
+        const s=scoreOf(league,m.id);
+        let my=null,their=null,cm=null,ct=null;
+        if(s){const t1=m.team1.includes(pid);my=t1?+s.a:+s.b;their=t1?+s.b:+s.a;const [ca,cb]=counted(s.a,s.b,sc);cm=t1?ca:cb;ct=t1?cb:ca;}
+        rows.push({ri,court:m.court,partner:mine.find(x=>x!==pid),opp,my,their,cm,ct});
+    });
+    const played=rows.filter(r=>!r.sat&&r.my!==null);
+    const pts=played.reduce((n,r)=>n+r.cm,0),pa=played.reduce((n,r)=>n+r.ct,0);
+    const w=played.filter(r=>r.my>r.their).length,l=played.filter(r=>r.my<r.their).length;
+    return(
+        <Modal onClose={onClose} title={name(pid)}>
+            {weeks.length>1&&<div className="chips" style={{marginBottom:12}}>
+                {weeks.map((x,i)=><button key={x.id} className={'chip'+(x.id===wid?' on':'')} onClick={()=>setWid(x.id)}>Wk {i+1} · {fmtDate(x.date)}</button>)}
+            </div>}
+            {!week?<div className="muted">No weeks scheduled yet.</div>:<>
+                <div className="grid2" style={{gridTemplateColumns:'repeat(4,minmax(0,1fr))',marginBottom:10}}>
+                    {[['Pts',pts],['W-L',`${w}-${l}`],['Avg',played.length?(pts/played.length).toFixed(1):'–'],['+/-',(pts-pa>0?'+':'')+(pts-pa)]].map(([k,v])=>(
+                        <div key={k} style={{background:'#f8fafc',borderRadius:10,padding:'8px 4px',textAlign:'center'}}>
+                            <div className="fd" style={{fontSize:22,fontWeight:800}}>{v}</div>
+                            <div style={{fontSize:11,color:'#64748b',fontWeight:700,textTransform:'uppercase'}}>{k}</div>
+                        </div>))}
+                </div>
+                {rows.length===0&&<div className="muted">Not playing this week.</div>}
+                {rows.map(r=>(
+                    <div key={r.ri} className="pg-row">
+                        <div style={{width:54,flexShrink:0}}>
+                            <div style={{fontWeight:800,fontSize:13}}>Game {r.ri+1}</div>
+                            {!r.sat&&<div style={{fontSize:11,color:'#047857',fontWeight:700}}>Court {r.court}</div>}
+                        </div>
+                        {r.sat?<div className="muted" style={{flex:1}}>🪑 Sat out</div>:<>
+                            <div style={{flex:1,minWidth:0,fontSize:14,lineHeight:1.35}}>
+                                <div>with <b>{name(r.partner)}</b></div>
+                                <div className="muted" style={{fontSize:13}}>vs {r.opp.map(name).join(' & ')}</div>
+                            </div>
+                            <div style={{textAlign:'right',flexShrink:0}}>
+                                {r.my===null?<span className="res p">not scored</span>:<>
+                                    <div style={{fontWeight:800,fontSize:16}}><span style={{color:r.my>r.their?'#047857':'#0f172a'}}>{r.my}</span>–{r.their} <span className={'res '+(r.my>r.their?'w':r.my<r.their?'l':'p')}>{r.my>r.their?'W':r.my<r.their?'L':'T'}</span></div>
+                                    {(r.cm!==r.my||r.ct!==r.their)&&<div style={{fontSize:11,color:'#64748b'}}>counts {r.cm}–{r.ct}</div>}
+                                </>}
+                            </div>
+                        </>}
+                    </div>
+                ))}
+            </>}
+        </Modal>
+    );
+}
+
+// ── Leaderboard ───────────────────────────────────────────────────────
+function Leaderboard({league,onPlayer}){
+    const [scope,setScope]=useState('season');
+    const [sort,setSort]=useState('avg');
+    const weeks=league.weeks||[];
+    const sc=scoringOf(league);
+    const rows=useMemo(()=>{
+        const all=calcBoard(league,scope==='season'?null:scope).sort(SORTS[sort].fn);
+        return all.filter(r=>r.qualified).concat(all.filter(r=>!r.qualified)); // non-qualifiers go to the bottom
+    },[league,scope,sort]);
     const anyScores=rows.some(r=>r.gp>0);
+    const latestWeek=weeks.length?weeks[weeks.length-1].id:null;
     const Th=({k,children,cls})=><th className={(cls||'')+(sort===k?' on':'')} onClick={()=>setSort(k)}>{children}{sort===k?' ▾':''}</th>;
     return(
         <div>
@@ -681,9 +824,14 @@ function Leaderboard({league}){
                     </tr></thead>
                     <tbody>
                         {rows.map((r,i)=>(
-                            <tr key={r.id}>
-                                <td className="l"><span className={'rank'+(anyScores&&i<3?' g'+(i+1):'')}>{i+1}</span></td>
-                                <td className="l" style={{fontWeight:600}}>{r.name}</td>
+                            <tr key={r.id} style={r.qualified?null:{opacity:.55}}>
+                                <td className="l">{r.qualified?<span className={'rank'+(anyScores&&i<3?' g'+(i+1):'')}>{i+1}</span>:<span className="rank">–</span>}</td>
+                                <td className="l">
+                                    <button className="pbtn" style={{fontWeight:600}} onClick={()=>onPlayer(r.id,scope==='season'?latestWeek:scope)}>{r.name}</button>
+                                    {(r.sat>0||!r.qualified)&&<div style={{fontSize:11,color:'#94a3b8'}}>
+                                        {r.sat>0?`sat out ${r.sat}`:''}{r.sat>0&&!r.qualified?' · ':''}{!r.qualified?`needs ${r.need} games to qualify`:''}
+                                    </div>}
+                                </td>
                                 <td className="pts">{r.pts}</td>
                                 <td>{r.gp}</td>
                                 <td>{r.w}-{r.l}</td>
@@ -695,8 +843,11 @@ function Leaderboard({league}){
                 </table>
                 {!anyScores&&<div className="muted" style={{textAlign:'center',padding:'14px 0 6px'}}>Scores will show up here as games are entered.</div>}
             </div>
-            <div className="muted" style={{fontSize:12,marginTop:8,lineHeight:1.5}}>
-                Ranked by total points scored (your team's score in every game you played). Ties go to wins, then +/-. Tap a column to re-sort — <b>Avg</b> is fairest when someone missed a week.
+            <div className="muted" style={{fontSize:12,marginTop:8,lineHeight:1.6}}>
+                <b>How it's ranked:</b> average points per game (Avg = Pts ÷ GP), so sitting out doesn't hurt you. Ties go to +/-, then wins.
+                {sc.mode==='capped'&&<> Games that go past {sc.gameTo} count as {sc.gameTo} to {sc.gameTo}-minus-the-margin (15–13 counts as {sc.gameTo}–{sc.gameTo-2}).</>}
+                {scope==='season'&&sc.minPct>0&&<> To qualify for the season, play at least {sc.minPct}% of games.</>}
+                {' '}Tap a name to see that player's games. Tap a column to re-sort.
             </div>
         </div>
     );
@@ -784,6 +935,7 @@ function SettingsTab({league,update,onDeleted}){
                 </div>
                 <button className="btn btn-g" style={{marginTop:14}} onClick={save}>{saved?'✓ Saved':'Save'}</button>
             </div>
+            <ScoringCard league={league} update={update}/>
             <div className="card">
                 <label className="slbl">Who can see the shared link</label>
                 <div style={{display:'flex',flexDirection:'column',gap:8}}>
@@ -803,6 +955,36 @@ function SettingsTab({league,update,onDeleted}){
     );
 }
 
+function ScoringCard({league,update}){
+    const sc=scoringOf(league);
+    const set=patch=>update({scoring:{...sc,...patch}});
+    return(
+        <div className="card">
+            <label className="slbl">Scoring</label>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                {[['capped',`Overtime counts as ${sc.gameTo} minus the margin (recommended)`,`15–13 counts as ${sc.gameTo}–${sc.gameTo-2}, so long games don't give bonus points`],
+                  ['raw','Count the actual score','15–13 counts as 15–13']].map(([k,l,d])=>(
+                    <label key={k} className="check" style={{alignItems:'flex-start',background:sc.mode===k?'#ecfdf5':'#f8fafc',borderColor:sc.mode===k?'#6ee7b7':'#e2e8f0'}}>
+                        <input type="radio" checked={sc.mode===k} onChange={()=>set({mode:k})} style={{marginTop:3}}/>
+                        <span style={{whiteSpace:'normal'}}><b style={{fontWeight:600}}>{l}</b><br/><span className="muted" style={{fontSize:12}}>{d}</span></span>
+                    </label>
+                ))}
+            </div>
+            <div className="grid2" style={{marginTop:12}}>
+                <div>
+                    <label className="slbl">Games to</label>
+                    <div className="row">{[11,15,21].map(n=><button key={n} className={'chip'+(sc.gameTo===n?' on':'')} onClick={()=>set({gameTo:n})}>{n}</button>)}</div>
+                </div>
+                <div>
+                    <label className="slbl">Season: min % of games</label>
+                    <Stepper value={sc.minPct} min={0} max={100} step={10} onChange={v=>set({minPct:v})}/>
+                </div>
+            </div>
+            <div className="muted" style={{fontSize:12,marginTop:8}}>Players under the minimum still show on the season board, but at the bottom and unranked. Set to 0 to turn this off.</div>
+        </div>
+    );
+}
+
 // ── Small components ──────────────────────────────────────────────────
 function Modal({title,onClose,children}){
     useEffect(()=>{const f=e=>{if(e.key==='Escape')onClose();};window.addEventListener('keydown',f);return()=>window.removeEventListener('keydown',f);},[]);
@@ -818,12 +1000,12 @@ function Modal({title,onClose,children}){
         </div>
     );
 }
-function Stepper({value,min,max,onChange}){
+function Stepper({value,min,max,onChange,step=1}){
     return(
         <div className="stepper">
-            <button type="button" onClick={()=>onChange(Math.max(min,value-1))}>−</button>
+            <button type="button" onClick={()=>onChange(Math.max(min,value-step))}>−</button>
             <span>{value}</span>
-            <button type="button" onClick={()=>onChange(Math.min(max,value+1))}>+</button>
+            <button type="button" onClick={()=>onChange(Math.min(max,value+step))}>+</button>
         </div>
     );
 }
