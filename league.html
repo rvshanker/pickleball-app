@@ -158,6 +158,8 @@ function fmtDate(iso){
 function rememberLeague(id,name){
     try{const r=JSON.parse(localStorage.getItem('recentLeagues')||'[]').filter(x=>x.id!==id);r.unshift({id,name,at:Date.now()});localStorage.setItem('recentLeagues',JSON.stringify(r.slice(0,10)));}catch(e){}
 }
+const lc=e=>String(e||'').trim().toLowerCase();
+const isAdminOf=(league,user)=>!!user&&!!user.email&&(league.adminEmails||[]).includes(lc(user.email));
 function recentLeagues(){try{return JSON.parse(localStorage.getItem('recentLeagues')||'[]');}catch(e){return[];}}
 
 // ── Storage (Firestore, with on-device fallback) ──────────────────────
@@ -198,9 +200,10 @@ const store = {
         }
         await db.collection('leagues').doc(league.id).update(patch);
     },
-    async mine(uid){
+    async mine(uid,email){
         const out=[];
         if(fbOk&&uid)try{(await db.collection('leagues').where('createdBy','==',uid).get()).docs.forEach(d=>out.push(d.data()));}catch(e){console.warn('list failed',e.code);}
+        if(fbOk&&email)try{(await db.collection('leagues').where('adminEmails','array-contains',lc(email)).get()).docs.forEach(d=>{if(!out.find(x=>x.id===d.id))out.push({...d.data(),_coAdmin:true});});}catch(e){console.warn('admin list failed',e.code);}
         for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('league:')){const d=lsGet(k.slice(7));if(d&&d.createdBy===uid&&!out.find(x=>x.id===d.id))out.push({...d,_src:'local'});}}
         return out.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
     },
@@ -339,7 +342,7 @@ function LoginView(){
 function Dashboard({user,onOpen}){
     const [list,setList]=useState(null);
     const [creating,setCreating]=useState(false);
-    useEffect(()=>{store.mine(user.uid).then(setList);},[user.uid]);
+    useEffect(()=>{store.mine(user.uid,user.email).then(setList);},[user.uid]);
     const recent=recentLeagues().filter(r=>!(list||[]).find(l=>l.id===r.id));
     return(
         <div>
@@ -376,7 +379,7 @@ function LeagueRow({l,onOpen}){
             <div style={{fontSize:28}}>🏅</div>
             <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:700,fontSize:17}}>{l.name}</div>
-                {l.players&&<div className="muted">{l.players.filter(p=>p.active!==false).length} players · {(l.weeks||[]).length} week{(l.weeks||[]).length===1?'':'s'} · courts {(l.defaultCourts||[]).join(', ')}{l._src==='local'?' · this device only':''}</div>}
+                {l.players&&<div className="muted">{l.players.filter(p=>p.active!==false).length} players · {(l.weeks||[]).length} week{(l.weeks||[]).length===1?'':'s'} · courts {(l.defaultCourts||[]).join(', ')}{l._src==='local'?' · this device only':''}{l._coAdmin?' · you\'re an admin':''}</div>}
             </div>
             <div style={{color:'#059669',fontWeight:700}}>Open →</div>
         </div>
@@ -399,7 +402,7 @@ function CreateLeague({user,onClose,onCreated}){
         setBusy(true);
         const id=newId();
         const doc={id,name:name.trim()||'League',createdBy:user.uid,ownerName:user.name,createdAt:Date.now(),updatedAt:Date.now(),
-            isPublic:true,publicMode:'read',
+            isPublic:true,publicMode:'read',adminEmails:[],
             players:filled.map(n=>({id:uid6(),name:n,active:true})),
             defaultCourts:cs,defaultRounds:rounds,weeks:[],scores:{}};
         await store.create(doc);
@@ -464,8 +467,9 @@ function LeagueView({id,user,onHome}){
         </div>
     );
 
-    const isOwner=!!user&&user.uid===league.createdBy;
-    const canScore=isOwner||(league.isPublic&&league.publicMode==='edit');
+    const isOwner=!!user&&user.uid===league.createdBy;          // created the league: everything
+    const canManage=isOwner||isAdminOf(league,user);             // owner or co-admin: weeks, players, scores, settings
+    const canScore=canManage||(league.isPublic&&league.publicMode==='edit');
     const update=async patch=>{
         try{await store.update(league,patch);}
         catch(e){alert('Could not save: '+(e.code||e.message));}
@@ -482,16 +486,16 @@ function LeagueView({id,user,onHome}){
                     </div>
                     <ShareButton league={league}/>
                 </div>
-                {league._src==='local'&&isOwner&&<div className="warn no-print" style={{marginBottom:12}}>Saved on this device only — cloud sync needs the <b>leagues</b> Firestore rule deployed. Sharing won't work until then.</div>}
+                {league._src==='local'&&canManage&&<div className="warn no-print" style={{marginBottom:12}}>Saved on this device only — cloud sync needs the <b>leagues</b> Firestore rule deployed. Sharing won't work until then.</div>}
                 <div className="tabs">
-                    {[['week','📅 Weeks'],['board','🏆 Leaderboard'],['players','👥 Players'],...(isOwner?[['settings','⚙️']]:[])].map(([k,l])=>
+                    {[['week','📅 Weeks'],['board','🏆 Leaderboard'],['players','👥 Players'],...(canManage?[['settings','⚙️']]:[])].map(([k,l])=>
                         <button key={k} className={'tab'+(tab===k?' on':'')} onClick={()=>setTab(k)} style={k==='settings'?{flex:'0 0 46px'}:null}>{l}</button>)}
                 </div>
-                {tab==='week'&&<WeeksTab league={league} isOwner={isOwner} canScore={canScore} weekId={weekId} setWeekId={setWeekId} update={update} onPlayer={(pid,wid)=>setPv({pid,weekId:wid})}/>}
+                {tab==='week'&&<WeeksTab league={league} isOwner={canManage} canScore={canScore} weekId={weekId} setWeekId={setWeekId} update={update} onPlayer={(pid,wid)=>setPv({pid,weekId:wid})}/>}
                 {tab==='board'&&<Leaderboard league={league} onPlayer={(pid,wid)=>setPv({pid,weekId:wid})}/>}
                 {pv&&<PlayerGames league={league} pid={pv.pid} weekId={pv.weekId} onClose={()=>setPv(null)}/>}
-                {tab==='players'&&<PlayersTab league={league} isOwner={isOwner} update={update}/>}
-                {tab==='settings'&&isOwner&&<SettingsTab league={league} update={update} onDeleted={onHome}/>}
+                {tab==='players'&&<PlayersTab league={league} isOwner={canManage} update={update}/>}
+                {tab==='settings'&&canManage&&<SettingsTab league={league} update={update} onDeleted={onHome} isOwner={isOwner}/>}
             </div>
         </div>
     );
@@ -916,7 +920,7 @@ function PlayersTab({league,isOwner,update}){
 }
 
 // ── Settings tab ──────────────────────────────────────────────────────
-function SettingsTab({league,update,onDeleted}){
+function SettingsTab({league,update,onDeleted,isOwner}){
     const [name,setName]=useState(league.name);
     const [courts,setCourts]=useState((league.defaultCourts||[]).join(', '));
     const [rounds,setRounds]=useState(league.defaultRounds||8);
@@ -939,7 +943,7 @@ function SettingsTab({league,update,onDeleted}){
             <div className="card">
                 <label className="slbl">Who can see the shared link</label>
                 <div style={{display:'flex',flexDirection:'column',gap:8}}>
-                    {[['private','🔒 Only me'],['read','👀 Anyone with the link can view'],['edit','✏️ Anyone with the link can view and enter scores']].map(([k,l])=>(
+                    {[['private','🔒 Only me and admins'],['read','👀 Anyone with the link can view'],['edit','✏️ Anyone with the link can view and enter scores']].map(([k,l])=>(
                         <label key={k} className="check" style={{background:mode===k?'#ecfdf5':'#f8fafc',borderColor:mode===k?'#6ee7b7':'#e2e8f0'}}>
                             <input type="radio" checked={mode===k} onChange={()=>setMode(k)}/><span style={{whiteSpace:'normal'}}>{l}</span>
                         </label>
@@ -947,10 +951,51 @@ function SettingsTab({league,update,onDeleted}){
                 </div>
                 <div className="muted" style={{fontSize:12,marginTop:8}}>"Enter scores" lets players fill in their own games from their phones on the night. They can't change the schedule or roster.</div>
             </div>
-            <div className="card">
+            <AdminsCard league={league} update={update} isOwner={isOwner}/>
+            {isOwner&&<div className="card">
                 <label className="slbl">Danger zone</label>
                 <button className="btn btn-red" onClick={async()=>{if(confirm(`Delete "${league.name}" and all its weeks and scores? This can't be undone.`)){await store.remove(league);onDeleted();}}}>Delete league</button>
+            </div>}
+        </div>
+    );
+}
+
+function AdminsCard({league,update,isOwner}){
+    const [email,setEmail]=useState('');const [err,setErr]=useState('');const [copied,setCopied]=useState(false);
+    const list=league.adminEmails||[];
+    const add=()=>{
+        const e=lc(email);
+        if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){setErr('Enter a valid email address.');return;}
+        if(list.includes(e)){setErr('Already an admin.');return;}
+        update({adminEmails:[...list,e]});setEmail('');setErr('');
+    };
+    const url=`${location.origin}${location.pathname}?id=${league.id}`;
+    const invite=`You're an admin of "${league.name}" on PickleConnect. Open ${url} and log in (or create an account) with the email I added — then you can schedule weeks, change players and enter scores.`;
+    const copy=async()=>{try{await navigator.clipboard.writeText(invite);setCopied(true);setTimeout(()=>setCopied(false),2000);}catch(e){prompt('Copy this invite',invite);}};
+    return(
+        <div className="card">
+            <label className="slbl">Admins</label>
+            <div className="muted" style={{fontSize:13,marginBottom:10}}>
+                {isOwner?'Admins log in with their own account and can schedule weeks, change players, enter scores and edit settings. Only you can manage admins or delete the league.'
+                        :'You\'re an admin of this league. Only the league owner can add or remove admins.'}
             </div>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                <div className="check" style={{cursor:'default',justifyContent:'space-between'}}><span>{league.ownerName||'Owner'} <span className="muted" style={{fontSize:12}}>· owner</span></span></div>
+                {list.map(e=>(
+                    <div key={e} className="check" style={{cursor:'default',justifyContent:'space-between'}}>
+                        <span>{e}</span>
+                        {isOwner&&<button className="btn btn-red btn-sm" onClick={()=>{if(confirm(`Remove ${e} as admin?`))update({adminEmails:list.filter(x=>x!==e)});}}>Remove</button>}
+                    </div>
+                ))}
+            </div>
+            {isOwner&&<>
+                <div className="row" style={{marginTop:10}}>
+                    <input className="inp" type="email" placeholder="admin@example.com" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')add();}}/>
+                    <button className="btn btn-g" onClick={add} style={{flexShrink:0}}>Add</button>
+                </div>
+                {err&&<div className="err" style={{marginTop:8}}>{err}</div>}
+                {list.length>0&&<button className="btn btn-out btn-sm" style={{marginTop:10}} onClick={copy}>{copied?'✓ Invite copied':'📋 Copy invite message'}</button>}
+            </>}
         </div>
     );
 }
