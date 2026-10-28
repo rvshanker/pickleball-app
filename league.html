@@ -302,16 +302,30 @@ function Nav({children,onHome,user}){
 
 // ── Login ─────────────────────────────────────────────────────────────
 function LoginView(){
-    const [email,setEmail]=useState('');const [pw,setPw]=useState('');
-    const [signup,setSignup]=useState(false);const [err,setErr]=useState('');const [busy,setBusy]=useState(false);
+    const [email,setEmail]=useState('');const [pw,setPw]=useState('');const [pwc,setPwc]=useState('');
+    const [signup,setSignup]=useState(false);const [err,setErr]=useState('');const [msg,setMsg]=useState('');const [busy,setBusy]=useState(false);
+    const ERR={'auth/invalid-credential':'Incorrect email or password.','auth/wrong-password':'Incorrect password.','auth/user-not-found':'No account with this email.',
+        'auth/invalid-email':'Invalid email.','auth/email-already-in-use':'Email already registered — log in instead.','auth/weak-password':'Password must be 6+ characters.',
+        'auth/too-many-requests':'Too many attempts. Try again in a few minutes.'};
     const submit=async e=>{
-        e.preventDefault();setErr('');setBusy(true);
+        e.preventDefault();setErr('');setMsg('');
+        if(!fbOk){setErr('Login is unavailable right now.');return;}
+        if(signup&&pw.length<6){setErr('Password must be 6+ characters.');return;}
+        if(signup&&pw!==pwc){setErr('Passwords do not match.');return;}
+        setBusy(true);
         try{
-            if(signup)await auth.createUserWithEmailAndPassword(email,pw);
+            if(signup){const c=await auth.createUserWithEmailAndPassword(email,pw);try{await c.user.sendEmailVerification();}catch(e){}}
             else await auth.signInWithEmailAndPassword(email,pw);
-        }catch(e){setErr({'auth/invalid-credential':'Incorrect email or password.','auth/email-already-in-use':'Email already registered — log in instead.','auth/weak-password':'Password must be 6+ characters.'}[e.code]||e.message);}
+        }catch(e){setErr(ERR[e.code]||e.message);}
         setBusy(false);
     };
+    const reset=async()=>{
+        setErr('');setMsg('');
+        if(!email){setErr('Enter your email above first, then tap Forgot password.');return;}
+        try{await auth.sendPasswordResetEmail(email);setMsg(`Password reset email sent to ${email}. Check your inbox (and spam).`);}
+        catch(e){setErr(ERR[e.code]||e.message);}
+    };
+    const toggle=()=>{setSignup(!signup);setErr('');setMsg('');setPwc('');};
     return(
         <div style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
             <div className="hero-bg" style={{padding:'44px 20px 56px',textAlign:'center'}}>
@@ -322,16 +336,21 @@ function LoginView(){
             <div className="pg" style={{marginTop:-30}}>
                 <div className="card" style={{maxWidth:420,margin:'0 auto'}}>
                     <div className="fd" style={{fontSize:26,fontWeight:800,marginBottom:4}}>{signup?'CREATE ACCOUNT':'LOG IN'}</div>
-                    <div className="muted" style={{marginBottom:16}}>Organizers log in to create and run a league. Players can view a shared league link without an account.</div>
+                    <div className="muted" style={{marginBottom:16}}>{signup?'Create an account to run a league, or to join one as an admin (use the email the organizer added).':'Organizers and admins log in here. Players can view a shared league link without an account.'}</div>
                     <form onSubmit={submit} style={{display:'flex',flexDirection:'column',gap:12}}>
-                        <input className="inp" type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} required/>
-                        <input className="inp" type="password" placeholder="Password" value={pw} onChange={e=>setPw(e.target.value)} required minLength={6}/>
+                        <div><label className="slbl">Email</label><input className="inp" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} required/></div>
+                        <div><label className="slbl">Password</label><input className="inp" type="password" autoComplete={signup?'new-password':'current-password'} placeholder="••••••••" value={pw} onChange={e=>setPw(e.target.value)} required minLength={6}/></div>
+                        {signup&&<div><label className="slbl">Confirm password</label><input className="inp" type="password" autoComplete="new-password" placeholder="••••••••" value={pwc} onChange={e=>setPwc(e.target.value)} required minLength={6}/></div>}
                         {err&&<div className="err">{err}</div>}
+                        {msg&&<div className="ok">{msg}</div>}
                         <button className="btn btn-g" disabled={busy}>{busy?'Please wait…':signup?'Create account':'Log in'}</button>
                     </form>
-                    <button onClick={()=>setSignup(!signup)} style={{marginTop:12,background:'none',border:'none',color:'#059669',fontWeight:600,cursor:'pointer',fontFamily:'Outfit',fontSize:14,width:'100%'}}>
-                        {signup?'Have an account? Log in':'New here? Create an account'}
-                    </button>
+                    <div style={{marginTop:14,display:'flex',flexDirection:'column',gap:8,alignItems:'center'}}>
+                        <button onClick={toggle} style={{background:'none',border:'none',color:'#059669',fontWeight:600,cursor:'pointer',fontFamily:"'Outfit',sans-serif",fontSize:15}}>
+                            {signup?'Already have an account? Log in':"Don't have an account? Sign up"}
+                        </button>
+                        {!signup&&<button onClick={reset} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontFamily:"'Outfit',sans-serif",fontSize:14}}>Forgot password?</button>}
+                    </div>
                 </div>
             </div>
         </div>
