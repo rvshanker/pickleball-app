@@ -155,12 +155,11 @@ function fmtDate(iso){
     const [y,m,d]=iso.split('-').map(Number);
     return new Date(y,m-1,d).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
 }
-function rememberLeague(id,name){
-    try{const r=JSON.parse(localStorage.getItem('recentLeagues')||'[]').filter(x=>x.id!==id);r.unshift({id,name,at:Date.now()});localStorage.setItem('recentLeagues',JSON.stringify(r.slice(0,10)));}catch(e){}
-}
 const lc=e=>String(e||'').trim().toLowerCase();
 const isAdminOf=(league,user)=>!!user&&!!user.email&&(league.adminEmails||[]).includes(lc(user.email));
-function recentLeagues(){try{return JSON.parse(localStorage.getItem('recentLeagues')||'[]');}catch(e){return[];}}
+// Leagues page shows only leagues you own or co-admin. Clear the old per-browser "recently viewed" list,
+// which leaked other users' leagues on shared devices.
+try{localStorage.removeItem('recentLeagues');}catch(e){}
 
 // ── Storage (Firestore, with on-device fallback) ──────────────────────
 const LS = id => 'league:'+id;
@@ -362,7 +361,6 @@ function Dashboard({user,onOpen}){
     const [list,setList]=useState(null);
     const [creating,setCreating]=useState(false);
     useEffect(()=>{store.mine(user.uid,user.email).then(setList);},[user.uid]);
-    const recent=recentLeagues().filter(r=>!(list||[]).find(l=>l.id===r.id));
     return(
         <div>
             <Nav user={user}/>
@@ -375,7 +373,7 @@ function Dashboard({user,onOpen}){
                     <button className="btn btn-g" onClick={()=>setCreating(true)}>+ New league</button>
                 </div>
                 {list===null?<Center><div className="spinner"/></Center>:
-                 list.length===0&&!recent.length?
+                 list.length===0?
                     <div className="card" style={{textAlign:'center',padding:'34px 18px'}}>
                         <div style={{fontSize:40}}>🏅</div>
                         <div className="fd" style={{fontSize:22,fontWeight:800,margin:'6px 0'}}>NO LEAGUES YET</div>
@@ -384,8 +382,6 @@ function Dashboard({user,onOpen}){
                     </div>:
                     <div style={{display:'flex',flexDirection:'column',gap:10}}>
                         {list.map(l=><LeagueRow key={l.id} l={l} onOpen={onOpen}/>)}
-                        {recent.length>0&&<div className="slbl" style={{marginTop:10}}>Recently viewed</div>}
-                        {recent.map(r=><LeagueRow key={r.id} l={{id:r.id,name:r.name}} onOpen={onOpen}/>)}
                     </div>}
             </div>
             {creating&&<CreateLeague user={user} onClose={()=>setCreating(false)} onCreated={id=>{setCreating(false);onOpen(id);}}/>}
@@ -425,7 +421,6 @@ function CreateLeague({user,onClose,onCreated}){
             players:filled.map(n=>({id:uid6(),name:n,active:true})),
             defaultCourts:cs,defaultRounds:rounds,weeks:[],scores:{}};
         await store.create(doc);
-        rememberLeague(id,doc.name);
         onCreated(id);
     };
     return(
@@ -468,7 +463,6 @@ function LeagueView({id,user,onHome}){
     const [pv,setPv]=useState(null); // {pid, weekId} for the player-games popup
     useEffect(()=>store.listen(id,d=>{
         setLeague(d);
-        if(d&&d.name)rememberLeague(id,d.name);
     }),[id]);
 
     const weeks=(league&&league.weeks)||[];
