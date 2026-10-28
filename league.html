@@ -41,10 +41,11 @@
         .score-inp:focus{border-color:#059669;}
         .score-inp:disabled{background:#f8fafc;color:#0f172a;border-color:#f1f5f9;}
         .score-inp.win{color:#047857;border-color:#6ee7b7;background:#ecfdf5;}
+        .score-inp.live{width:68px;padding:12px 4px;font-size:22px;}
         .score-ro{width:56px;text-align:center;font-size:18px;font-weight:700;color:#0f172a;padding:8px 2px;border-radius:8px;}
         .score-ro.win{color:#047857;background:#ecfdf5;}
-        .pbtn{background:none;border:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:#cbd5e1;text-underline-offset:3px;}
-        .pbtn:hover{color:#047857;text-decoration-color:#059669;}
+        .pbtn{background:none;border:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left;}
+        .pbtn:hover{color:#047857;}
         .pg-row{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #f1f5f9;}
         .pg-row:last-child{border-bottom:none;}
         .res{font-weight:800;font-size:12px;border-radius:6px;padding:3px 7px;}
@@ -249,7 +250,8 @@ function calcBoard(league,weekId){
     });
     // include players with no scored games yet (current roster, active)
     league.players.filter(p=>p.active!==false).forEach(p=>touch(p.id));
-    const need=weekId?0:Math.ceil(gamesPlayed*(sc.minPct||0)/100);
+    // Season minimum only kicks in once there's more than one week (on night one it would just confuse people)
+    const need=weekId||(league.weeks||[]).length<2?0:Math.ceil(gamesPlayed*(sc.minPct||0)/100);
     return Object.values(st).map(x=>({...x,diff:x.pts-x.pa,avg:x.gp?x.pts/x.gp:0,qualified:x.gp>=need,need}));
 }
 const SORTS={
@@ -458,15 +460,9 @@ function CreateLeague({user,onClose,onCreated}){
 // ── League view ───────────────────────────────────────────────────────
 function LeagueView({id,user,onHome}){
     const [league,setLeague]=useState(undefined);
-    const [tab,setTab]=useState('week');
-    const [weekId,setWeekId]=useState(null);
+    const [tab,setTab]=useState('courts');
     const [pv,setPv]=useState(null); // {pid, weekId} for the player-games popup
-    useEffect(()=>store.listen(id,d=>{
-        setLeague(d);
-    }),[id]);
-
-    const weeks=(league&&league.weeks)||[];
-    useEffect(()=>{if(weeks.length&&!weeks.find(w=>w.id===weekId))setWeekId(weeks[weeks.length-1].id);},[weeks.length]);
+    useEffect(()=>store.listen(id,d=>setLeague(d)),[id]);
 
     if(league===undefined)return<Center><div className="spinner"/></Center>;
     if(!league||league._error)return(
@@ -487,29 +483,47 @@ function LeagueView({id,user,onHome}){
         try{await store.update(league,patch);}
         catch(e){alert('Could not save: '+(e.code||e.message));}
     };
+    const onPlayer=(pid,wid)=>setPv({pid,weekId:wid});
+    const weeks=league.weeks||[];
+    const current=weeks[weeks.length-1];
+    const tabs=[['courts','🏓 Courts'],['schedule','📋 Schedule'],['board','🏆 Standings'],...(canManage?[['manage','⚙️']]:[])];
 
     return(
         <div>
             <Nav onHome={user?onHome:null} user={user}/>
             <div className="pg">
-                <div className="row no-print" style={{justifyContent:'space-between',marginBottom:12,flexWrap:'wrap'}}>
+                <div className="row no-print" style={{justifyContent:'space-between',marginBottom:10}}>
                     <div style={{minWidth:0}}>
-                        <div className="fd" style={{fontSize:26,fontWeight:800,lineHeight:1.1}}>{league.name}</div>
-                        <div className="muted">{league.players.filter(p=>p.active!==false).length} players · {weeks.length} week{weeks.length===1?'':'s'}{league._src==='local'?' · saved on this device':''}</div>
+                        <div className="fd" style={{fontSize:24,fontWeight:800,lineHeight:1.1}}>{league.name}</div>
+                        {current&&<div className="muted" style={{fontSize:13}}>{fmtDate(current.date)}</div>}
                     </div>
                     <ShareButton league={league}/>
                 </div>
-                {league._src==='local'&&canManage&&<div className="warn no-print" style={{marginBottom:12}}>Saved on this device only — cloud sync needs the <b>leagues</b> Firestore rule deployed. Sharing won't work until then.</div>}
-                <div className="tabs">
-                    {[['week','📅 Weeks'],['board','🏆 Leaderboard'],['players','👥 Players'],...(canManage?[['settings','⚙️']]:[])].map(([k,l])=>
-                        <button key={k} className={'tab'+(tab===k?' on':'')} onClick={()=>setTab(k)} style={k==='settings'?{flex:'0 0 46px'}:null}>{l}</button>)}
+                {league._src==='local'&&canManage&&<div className="warn no-print" style={{marginBottom:12}}>Saved on this device only — publish the <b>leagues</b> Firestore rule to sync and share.</div>}
+                <div className="tabs no-print">
+                    {tabs.map(([k,l])=><button key={k} className={'tab'+(tab===k?' on':'')} onClick={()=>setTab(k)} style={k==='manage'?{flex:'0 0 46px'}:null}>{l}</button>)}
                 </div>
-                {tab==='week'&&<WeeksTab league={league} isOwner={canManage} canScore={canScore} weekId={weekId} setWeekId={setWeekId} update={update} onPlayer={(pid,wid)=>setPv({pid,weekId:wid})}/>}
-                {tab==='board'&&<Leaderboard league={league} onPlayer={(pid,wid)=>setPv({pid,weekId:wid})}/>}
+                {tab==='courts'&&(current
+                    ?<LiveView league={league} week={current} canScore={canScore} update={update} onPlayer={onPlayer} onAll={()=>setTab('schedule')}/>
+                    :<NoWeeks canManage={canManage} onManage={()=>setTab('manage')}/>)}
+                {tab==='schedule'&&(current
+                    ?<ScheduleTab league={league} canScore={canScore} update={update} onPlayer={onPlayer}/>
+                    :<NoWeeks canManage={canManage} onManage={()=>setTab('manage')}/>)}
+                {tab==='board'&&<Leaderboard league={league} onPlayer={onPlayer}/>}
+                {tab==='manage'&&canManage&&<ManageTab league={league} update={update} isOwner={isOwner} onDeleted={onHome} onScheduled={()=>setTab('courts')}/>}
                 {pv&&<PlayerGames league={league} pid={pv.pid} weekId={pv.weekId} onClose={()=>setPv(null)}/>}
-                {tab==='players'&&<PlayersTab league={league} isOwner={canManage} update={update}/>}
-                {tab==='settings'&&canManage&&<SettingsTab league={league} update={update} onDeleted={onHome} isOwner={isOwner}/>}
             </div>
+        </div>
+    );
+}
+
+function NoWeeks({canManage,onManage}){
+    return(
+        <div className="card" style={{textAlign:'center',padding:'30px 18px'}}>
+            <div style={{fontSize:36}}>📅</div>
+            <div className="fd" style={{fontSize:22,fontWeight:800,margin:'6px 0'}}>NO GAMES YET</div>
+            <div className="muted" style={{marginBottom:canManage?14:0}}>{canManage?'Schedule this week\'s games to get started.':'Games will show up here once the organizer schedules the week.'}</div>
+            {canManage&&<button className="btn btn-g" onClick={onManage}>Schedule a week</button>}
         </div>
     );
 }
@@ -518,34 +532,86 @@ function ShareButton({league}){
     const [msg,setMsg]=useState('');
     const url=`${location.origin}${location.pathname}?id=${league.id}`;
     const share=async()=>{
-        if(navigator.share){try{await navigator.share({title:league.name,text:`${league.name} — schedule & leaderboard`,url});return;}catch(e){}}
-        try{await navigator.clipboard.writeText(url);setMsg('Link copied');}catch(e){prompt('Copy this link',url);}
+        if(navigator.share){try{await navigator.share({title:league.name,text:`${league.name} — courts, scores & standings`,url});return;}catch(e){}}
+        try{await navigator.clipboard.writeText(url);setMsg('✓ Copied');}catch(e){prompt('Copy this link',url);}
         setTimeout(()=>setMsg(''),2000);
     };
-    return<button className="btn btn-out btn-sm" onClick={share}>{msg||'📤 Share'}</button>;
+    return<button className="btn btn-out btn-sm" style={{whiteSpace:'nowrap',flexShrink:0}} onClick={share} aria-label="Share league link">{msg||'📤 Share'}</button>;
 }
 
-// ── Weeks tab ─────────────────────────────────────────────────────────
-function WeeksTab({league,isOwner,canScore,weekId,setWeekId,update,onPlayer}){
-    const [showNew,setShowNew]=useState(false);
+// Week picker (only when there's more than one week)
+function WeekChips({weeks,value,onChange,extra}){
+    if(weeks.length<2&&!extra)return null;
+    return(
+        <div className="chips no-print" style={{marginBottom:12}}>
+            {extra}
+            {weeks.slice().reverse().map(w=>{const i=weeks.indexOf(w);return<button key={w.id} className={'chip'+(w.id===value?' on':'')} onClick={()=>onChange(w.id)}>Wk {i+1} · {fmtDate(w.date)}</button>;})}
+        </div>
+    );
+}
+
+// ── Schedule tab: every game for a week ──────────────────────────────
+function ScheduleTab({league,canScore,update,onPlayer}){
     const weeks=league.weeks||[];
-    const week=weeks.find(w=>w.id===weekId);
+    const [wid,setWid]=useState(weeks[weeks.length-1].id);
+    const week=weeks.find(w=>w.id===wid)||weeks[weeks.length-1];
     return(
         <div>
-            <div className="row no-print" style={{marginBottom:12}}>
-                <div className="chips" style={{flex:1}}>
-                    {weeks.map((w,i)=><button key={w.id} className={'chip'+(w.id===weekId?' on':'')} onClick={()=>setWeekId(w.id)}>Wk {i+1} · {fmtDate(w.date)}</button>)}
+            <WeekChips weeks={weeks} value={week.id} onChange={setWid}/>
+            <ScheduleList league={league} week={week} canScore={canScore} update={update} onPlayer={onPlayer}/>
+        </div>
+    );
+}
+
+// ── Manage tab (owner + admins) ───────────────────────────────────────
+function ManageTab({league,update,isOwner,onDeleted,onScheduled}){
+    const weeks=league.weeks||[];
+    const [wid,setWid]=useState(weeks.length?weeks[weeks.length-1].id:null);
+    const week=weeks.find(w=>w.id===wid)||weeks[weeks.length-1];
+    const [showNew,setShowNew]=useState(false);
+    const [change,setChange]=useState(false);
+    const [copied,setCopied]=useState(false);
+    const name=id=>(league.players.find(p=>p.id===id)||{name:'?'}).name;
+    const scores=league.scores||{};
+    const copyText=async()=>{
+        let t=`${league.name} — ${fmtDate(week.date)}\n`;
+        week.rounds.forEach((r,i)=>{
+            t+=`\nGame ${i+1}\n`;
+            r.matches.forEach(m=>{t+=`Ct ${m.court}: ${m.team1.map(name).join(' & ')} vs ${m.team2.map(name).join(' & ')}\n`;});
+            if(r.sitOut.length)t+=`Sit: ${r.sitOut.map(name).join(', ')}\n`;
+        });
+        t+=`\nLive courts & standings: ${location.origin}${location.pathname}?id=${league.id}`;
+        try{await navigator.clipboard.writeText(t);setCopied(true);setTimeout(()=>setCopied(false),2000);}catch(e){prompt('Copy the schedule',t);}
+    };
+    const del=()=>{if(confirm(`Delete week ${weeks.indexOf(week)+1} (${fmtDate(week.date)}) and its scores?`)){update({weeks:weeks.filter(w=>w.id!==week.id)});setWid(null);}};
+    const scored=week?week.rounds.reduce((n,r)=>n+r.matches.filter(m=>scoreOf(league,m.id)).length,0):0;
+    const total=week?week.rounds.reduce((n,r)=>n+r.matches.length,0):0;
+    const H=({children})=><div className="fd" style={{fontSize:20,fontWeight:800,margin:'18px 2px 8px'}}>{children}</div>;
+    return(
+        <div>
+            <button className="btn btn-g" style={{width:'100%'}} onClick={()=>setShowNew(true)}>+ Schedule a new week</button>
+            {week&&<>
+                <H>WEEKS</H>
+                <WeekChips weeks={weeks} value={week.id} onChange={setWid}/>
+                <div className="card" style={{padding:14}}>
+                    <div style={{fontWeight:700}}>Week {weeks.indexOf(week)+1} · {fmtDate(week.date)}</div>
+                    <div className="muted" style={{fontSize:13,marginBottom:10}}>Courts {week.courts.join(', ')} · {week.playerIds.length} players · {scored}/{total} games scored{week.repeatPartners?` · ${week.repeatPartners} repeat partnership${week.repeatPartners>1?'s':''}`:''}</div>
+                    <div className="row" style={{flexWrap:'wrap'}}>
+                        <button className="btn btn-ghost btn-sm" onClick={()=>setChange(true)}>👥 Change players</button>
+                        <button className="btn btn-ghost btn-sm" onClick={copyText}>{copied?'✓ Copied':'📋 Copy schedule'}</button>
+                        <button className="btn btn-ghost btn-sm" onClick={()=>window.print()}>🖨️ Print</button>
+                        <button className="btn btn-red btn-sm" onClick={del}>Delete week</button>
+                    </div>
                 </div>
-                {isOwner&&<button className="btn btn-g btn-sm" onClick={()=>setShowNew(true)} style={{flexShrink:0}}>+ Week</button>}
-            </div>
-            {!weeks.length&&<div className="card" style={{textAlign:'center',padding:'30px 18px'}}>
-                <div style={{fontSize:36}}>📅</div>
-                <div className="fd" style={{fontSize:22,fontWeight:800,margin:'6px 0'}}>NO WEEKS SCHEDULED</div>
-                <div className="muted" style={{marginBottom:14}}>{isOwner?'Generate this Thursday\'s games — pick who\'s playing and which courts you got.':'The organizer hasn\'t scheduled a week yet.'}</div>
-                {isOwner&&<button className="btn btn-g" onClick={()=>setShowNew(true)}>Schedule a week</button>}
-            </div>}
-            {week&&<WeekView league={league} week={week} index={weeks.indexOf(week)} isOwner={isOwner} canScore={canScore} update={update} onPlayer={onPlayer}/>}
-            {showNew&&<NewWeekModal league={league} update={update} onClose={()=>setShowNew(false)} onSave={async w=>{await update({weeks:[...weeks,w]});setWeekId(w.id);setShowNew(false);}}/>}
+            </>}
+            <H>PLAYERS</H>
+            <PlayersTab league={league} isOwner={true} update={update}/>
+            <H>SETTINGS</H>
+            <SettingsTab league={league} update={update} onDeleted={onDeleted} isOwner={isOwner}/>
+            {showNew&&<NewWeekModal league={league} update={update} onClose={()=>setShowNew(false)}
+                onSave={async w=>{await update({weeks:[...weeks,w]});setShowNew(false);onScheduled();}}/>}
+            {change&&week&&<NewWeekModal league={league} editWeek={week} update={update} onClose={()=>setChange(false)}
+                onSave={async w=>{await update({weeks:weeks.map(x=>x.id===w.id?w:x)});setChange(false);}}/>}
         </div>
     );
 }
@@ -651,51 +717,17 @@ function NewWeekModal({league,onClose,onSave,editWeek,update}){
     );
 }
 
-function WeekView({league,week,index,isOwner,canScore,update,onPlayer}){
-    const [reshuffle,setReshuffle]=useState(false);
-    const [copied,setCopied]=useState(false);
+function ScheduleList({league,week,canScore,update,onPlayer}){
     const name=id=>(league.players.find(p=>p.id===id)||{name:'?'}).name;
     const scores=league.scores||{};
     const sc=scoringOf(league);
-    const scored=week.rounds.reduce((n,r)=>n+r.matches.filter(m=>scores[m.id]&&isNum(scores[m.id].a)&&isNum(scores[m.id].b)).length,0);
-    const total=week.rounds.reduce((n,r)=>n+r.matches.length,0);
-
     const setScore=(mid,side,val)=>{
         const cur=scores[mid]||{a:null,b:null};
         const v=val===''?null:Math.max(0,Math.min(99,parseInt(val,10)||0));
         update({['scores.'+mid]:{...cur,[side]:v}});
     };
-    const copyText=async()=>{
-        let t=`${league.name} — ${fmtDate(week.date)}\n`;
-        week.rounds.forEach((r,i)=>{
-            t+=`\nGame ${i+1}\n`;
-            r.matches.forEach(m=>{t+=`Ct ${m.court}: ${m.team1.map(name).join(' & ')} vs ${m.team2.map(name).join(' & ')}\n`;});
-            if(r.sitOut.length)t+=`Sit: ${r.sitOut.map(name).join(', ')}\n`;
-        });
-        t+=`\nScores & leaderboard: ${location.origin}${location.pathname}?id=${league.id}`;
-        try{await navigator.clipboard.writeText(t);setCopied(true);setTimeout(()=>setCopied(false),2000);}catch(e){prompt('Copy the schedule',t);}
-    };
-    const del=()=>{if(confirm(`Delete week ${index+1} (${fmtDate(week.date)}) and its scores?`))update({weeks:league.weeks.filter(w=>w.id!==week.id)});};
-
     return(
         <div>
-            <div className="card no-print" style={{marginBottom:12,padding:14}}>
-                <div className="row" style={{justifyContent:'space-between',flexWrap:'wrap',gap:8}}>
-                    <div>
-                        <div style={{fontWeight:700}}>Week {index+1} · {fmtDate(week.date)}</div>
-                        <div className="muted" style={{fontSize:13}}>Courts {week.courts.join(', ')} · {week.playerIds.length} players · {scored}/{total} games scored</div>
-                    </div>
-                    <div className="row" style={{flexWrap:'wrap'}}>
-                        <button className="btn btn-ghost btn-sm" onClick={copyText}>{copied?'✓ Copied':'📋 Copy'}</button>
-                        <button className="btn btn-ghost btn-sm" onClick={()=>window.print()}>🖨️</button>
-                        {isOwner&&<button className="btn btn-ghost btn-sm" onClick={()=>setReshuffle(true)}>👥 Change players</button>}
-                        {isOwner&&<button className="btn btn-red btn-sm" onClick={del}>Delete</button>}
-                    </div>
-                </div>
-                <div style={{marginTop:10}} className={week.repeatPartners?'warn':'ok'}>
-                    {week.repeatPartners?`${week.repeatPartners} repeat partnership${week.repeatPartners>1?'s':''} tonight (more games than unique partners).`:'✓ No one plays with the same partner twice tonight.'}
-                </div>
-            </div>
             {week.rounds.map((r,ri)=>(
                 <div key={ri} className="round-card">
                     <div className="round-hd">
@@ -729,9 +761,90 @@ function WeekView({league,week,index,isOwner,canScore,update,onPlayer}){
                     {r.sitOut.length>0&&<div className="sit">🪑 Sitting out: {r.sitOut.map((id,i)=><React.Fragment key={id}>{i>0&&', '}<button className="pbtn" onClick={()=>onPlayer(id,week.id)}>{name(id)}</button></React.Fragment>)}</div>}
                 </div>
             ))}
-            {!canScore&&<div className="muted" style={{textAlign:'center',fontSize:13}}>Only the organizer can enter scores for this league.</div>}
-            {reshuffle&&<NewWeekModal league={league} editWeek={week} update={update} onClose={()=>setReshuffle(false)}
-                onSave={async w=>{await update({weeks:league.weeks.map(x=>x.id===w.id?w:x)});setReshuffle(false);}}/>}
+        </div>
+    );
+}
+
+// ── Live courts: each court shows its own next unscored game ─────────
+function LiveView({league,week,canScore,update,onPlayer,onAll}){
+    const name=id=>(league.players.find(p=>p.id===id)||{name:'?'}).name;
+    const order=c=>{const i=week.courts.indexOf(c);return i<0?99:i;};
+    const courts=[...new Set(week.rounds.flatMap(r=>r.matches.map(m=>m.court)))].sort((x,y)=>order(x)-order(y));
+    const live=courts.map(c=>{
+        const games=[];
+        week.rounds.forEach((r,ri)=>{const m=r.matches.find(x=>x.court===c);if(m)games.push({ri,m});});
+        const i=games.findIndex(g=>!scoreOf(league,g.m.id));
+        return i<0?{court:c,done:true,last:games[games.length-1]}:{court:c,...games[i],next:games.slice(i+1).find(g=>!scoreOf(league,g.m.id))};
+    });
+    const active=live.filter(x=>!x.done);
+    if(!active.length)return(
+        <div className="card" style={{textAlign:'center',padding:'28px 18px'}}>
+            <div style={{fontSize:36}}>🎉</div>
+            <div className="fd" style={{fontSize:22,fontWeight:800,margin:'6px 0'}}>ALL GAMES SCORED</div>
+            <div className="muted" style={{marginBottom:12}}>Check Standings for tonight's results.</div>
+            <button className="btn btn-out btn-sm" onClick={onAll}>See all scores</button>
+        </div>
+    );
+    // Players still on court in an earlier game (so a court that's ahead knows to wait)
+    const busy={};active.forEach(x=>[...x.m.team1,...x.m.team2].forEach(p=>{busy[p]=Math.min(busy[p]??99,x.ri);}));
+    const minRi=Math.min(...active.map(x=>x.ri));
+    const sitting=(week.rounds[minRi].sitOut||[]);
+    return(
+        <div>
+            {live.map(x=>x.done?(
+                <div key={x.court} className="round-card" style={{opacity:.6}}>
+                    <div className="round-hd"><span className="fd" style={{fontSize:20,fontWeight:800}}>COURT {x.court}</span><span style={{fontSize:12,color:'#6ee7b7'}}>✓ All games done</span></div>
+                </div>
+            ):(
+                <LiveCard key={x.m.id} league={league} x={x} total={week.rounds.length} canScore={canScore} update={update} onPlayer={onPlayer} weekId={week.id} name={name}
+                    waitingOn={[...x.m.team1,...x.m.team2].filter(p=>busy[p]<x.ri).map(name)}/>
+            ))}
+            {sitting.length>0&&<div className="sit" style={{borderRadius:12,border:'1px dashed #fcd34d'}}>🪑 Sitting out game {minRi+1}: {sitting.map(name).join(', ')}</div>}
+        </div>
+    );
+}
+function LiveCard({league,x,total,canScore,update,onPlayer,weekId,name,waitingOn}){
+    const part=(league.scores||{})[x.m.id]||{};
+    const [a,setA]=useState(isNum(part.a)?String(part.a):'');
+    const [b,setB]=useState(isNum(part.b)?String(part.b):'');
+    const [busy,setBusy]=useState(false);
+    const ok=a!==''&&b!==''&&a!==b;
+    const save=async()=>{
+        setBusy(true);
+        const n=v=>Math.max(0,Math.min(99,parseInt(v,10)||0));
+        await update({['scores.'+x.m.id]:{a:n(a),b:n(b)}});
+        setBusy(false);
+    };
+    const names=t=>t.map((id,i)=><React.Fragment key={id}>{i>0&&' & '}<button className="pbtn" onClick={()=>onPlayer(id,weekId)}>{name(id)}</button></React.Fragment>);
+    const aWin=ok&&+a>+b,bWin=ok&&+b>+a;
+    const Box=({v,set,win})=>canScore
+        ?<input className={'score-inp live'+(win?' win':'')} type="number" inputMode="numeric" min="0" max="99" placeholder="–" value={v}
+            onFocus={e=>e.target.select()} onChange={e=>set(e.target.value.slice(0,2))}/>
+        :<div className="score-ro">–</div>;
+    return(
+        <div className="round-card">
+            <div className="round-hd">
+                <span className="fd" style={{fontSize:20,fontWeight:800,letterSpacing:.5}}>COURT {x.court}</span>
+                <span style={{fontSize:13,color:'#6ee7b7',fontWeight:600}}>Game {x.ri+1} of {total}</span>
+            </div>
+            <div style={{padding:'14px 16px'}}>
+                <div className={'team'+(aWin?' win':'')} style={{marginBottom:8}}>
+                    <div className="tnames" style={{fontSize:17}}>{names(x.m.team1)}</div>
+                    {Box({v:a,set:setA,win:aWin})}
+                </div>
+                <div className="vs" style={{marginBottom:8}}>VS</div>
+                <div className={'team'+(bWin?' win':'')}>
+                    <div className="tnames" style={{fontSize:17}}>{names(x.m.team2)}</div>
+                    {Box({v:b,set:setB,win:bWin})}
+                </div>
+                {waitingOn.length>0&&<div className="warn" style={{marginTop:10}}>⏳ Waiting for {waitingOn.join(', ')} to finish their game</div>}
+                {canScore&&<button className="btn btn-g" style={{width:'100%',marginTop:12}} disabled={!ok||busy} onClick={save}>
+                    {busy?'Saving…':a!==''&&b!==''&&a===b?'Scores can\'t be tied':'✓ Save score'}
+                </button>}
+            </div>
+            {x.next&&<div style={{padding:'9px 16px',background:'#f8fafc',borderTop:'1px solid #f1f5f9',fontSize:13,color:'#64748b'}}>
+                Up next · Game {x.next.ri+1}: {x.next.m.team1.map(name).join(' & ')} vs {x.next.m.team2.map(name).join(' & ')}
+            </div>}
         </div>
     );
 }
@@ -812,60 +925,53 @@ function PlayerGames({league,pid,weekId,onClose}){
 // ── Leaderboard ───────────────────────────────────────────────────────
 function Leaderboard({league,onPlayer}){
     const [scope,setScope]=useState('season');
-    const [sort,setSort]=useState('avg');
     const weeks=league.weeks||[];
     const sc=scoringOf(league);
     const rows=useMemo(()=>{
-        const all=calcBoard(league,scope==='season'?null:scope).sort(SORTS[sort].fn);
+        const all=calcBoard(league,scope==='season'?null:scope).sort(SORTS.avg.fn);
         return all.filter(r=>r.qualified).concat(all.filter(r=>!r.qualified)); // non-qualifiers go to the bottom
-    },[league,scope,sort]);
+    },[league,scope]);
     const anyScores=rows.some(r=>r.gp>0);
     const latestWeek=weeks.length?weeks[weeks.length-1].id:null;
-    const Th=({k,children,cls})=><th className={(cls||'')+(sort===k?' on':'')} onClick={()=>setSort(k)}>{children}{sort===k?' ▾':''}</th>;
     return(
         <div>
-            <div className="chips" style={{marginBottom:10}}>
-                <button className={'chip'+(scope==='season'?' on':'')} onClick={()=>setScope('season')}>Season</button>
-                {weeks.map((w,i)=><button key={w.id} className={'chip'+(scope===w.id?' on':'')} onClick={()=>setScope(w.id)}>Wk {i+1} · {fmtDate(w.date)}</button>)}
-            </div>
-            <div className="card" style={{padding:'10px 8px',overflowX:'auto'}}>
+            {weeks.length>1&&<WeekChips weeks={weeks} value={scope} onChange={setScope}
+                extra={<button className={'chip'+(scope==='season'?' on':'')} onClick={()=>setScope('season')}>Season</button>}/>}
+            <div className="card" style={{padding:'6px 8px'}}>
                 <table className="lb">
                     <thead><tr>
-                        <th className="l" style={{width:34}}>#</th>
+                        <th className="l" style={{width:34,cursor:'default'}}>#</th>
                         <th className="l" style={{cursor:'default'}}>Player</th>
-                        <Th k="pts">Pts</Th>
-                        <th style={{cursor:'default'}}>GP</th>
-                        <Th k="w">W-L</Th>
-                        <Th k="avg">Avg</Th>
-                        <Th k="diff">+/-</Th>
+                        <th style={{cursor:'default'}}>Avg</th>
+                        <th style={{cursor:'default'}}>W-L</th>
+                        <th style={{cursor:'default'}}>+/-</th>
                     </tr></thead>
                     <tbody>
                         {rows.map((r,i)=>(
-                            <tr key={r.id} style={r.qualified?null:{opacity:.55}}>
+                            <tr key={r.id} onClick={()=>onPlayer(r.id,scope==='season'?latestWeek:scope)} style={{cursor:'pointer',...(r.qualified?{}:{opacity:.5})}}>
                                 <td className="l">{r.qualified?<span className={'rank'+(anyScores&&i<3?' g'+(i+1):'')}>{i+1}</span>:<span className="rank">–</span>}</td>
-                                <td className="l">
-                                    <button className="pbtn" style={{fontWeight:600}} onClick={()=>onPlayer(r.id,scope==='season'?latestWeek:scope)}>{r.name}</button>
-                                    {(r.sat>0||!r.qualified)&&<div style={{fontSize:11,color:'#94a3b8'}}>
-                                        {r.sat>0?`sat out ${r.sat}`:''}{r.sat>0&&!r.qualified?' · ':''}{!r.qualified?`needs ${r.need} games to qualify`:''}
-                                    </div>}
+                                <td className="l" style={{fontWeight:600}}>
+                                    {r.name}
+                                    {!r.qualified&&<div style={{fontSize:11,color:'#94a3b8',fontWeight:400}}>needs {r.need} games</div>}
                                 </td>
-                                <td className="pts">{r.pts}</td>
-                                <td>{r.gp}</td>
+                                <td className="pts">{r.gp?r.avg.toFixed(1):'–'}</td>
                                 <td>{r.w}-{r.l}</td>
-                                <td>{r.gp?r.avg.toFixed(1):'–'}</td>
                                 <td style={{color:r.diff>0?'#059669':r.diff<0?'#dc2626':'#64748b',fontWeight:600}}>{r.diff>0?'+':''}{r.diff}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
-                {!anyScores&&<div className="muted" style={{textAlign:'center',padding:'14px 0 6px'}}>Scores will show up here as games are entered.</div>}
+                {!anyScores&&<div className="muted" style={{textAlign:'center',padding:'14px 0 6px'}}>Standings appear once scores are entered.</div>}
             </div>
-            <div className="muted" style={{fontSize:12,marginTop:8,lineHeight:1.6}}>
-                <b>How it's ranked:</b> average points per game (Avg = Pts ÷ GP), so sitting out doesn't hurt you. Ties go to +/-, then wins.
-                {sc.mode==='capped'&&<> Games that go past {sc.gameTo} count as {sc.gameTo} to {sc.gameTo}-minus-the-margin (15–13 counts as {sc.gameTo}–{sc.gameTo-2}).</>}
-                {scope==='season'&&sc.minPct>0&&<> To qualify for the season, play at least {sc.minPct}% of games.</>}
-                {' '}Tap a name to see that player's games. Tap a column to re-sort.
-            </div>
+            <details className="muted" style={{fontSize:13,marginTop:10,lineHeight:1.6}}>
+                <summary style={{cursor:'pointer',fontWeight:600}}>How ranking works</summary>
+                <div style={{marginTop:6}}>
+                    Ranked by <b>Avg</b>: average points your team scored per game, so sitting out doesn't hurt you. Ties go to <b>+/-</b> (points for minus points against), then wins.
+                    {sc.mode==='capped'&&<> Overtime games count as {sc.gameTo} to {sc.gameTo}-minus-the-margin (15–13 counts as {sc.gameTo}–{sc.gameTo-2}).</>}
+                    {sc.minPct>0&&<> For the season, you need to play at least {sc.minPct}% of games to be ranked.</>}
+                    {' '}Tap a player to see their games.
+                </div>
+            </details>
         </div>
     );
 }
