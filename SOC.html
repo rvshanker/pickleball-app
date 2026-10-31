@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Streets of Caledonia – Halloween Candy Houses</title>
+<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  #map { height:460px; border-radius:12px; border:1px solid var(--line); margin-bottom:6px; }
+  #map { position:relative; overflow:hidden; background:#2a2017; }
+  #map iframe { position:absolute; inset:0; width:100%; height:100%; border:0; pointer-events:none; }
+  .pin { position:absolute; transform:translate(-50%,-50%); background:#ff8a1f; color:#1a1009; font-weight:800; font-size:.8rem; border:2px solid #fff; border-radius:999px; min-width:28px; height:28px; padding:0 6px; display:flex; align-items:center; justify-content:center; text-decoration:none; box-shadow:0 2px 6px rgba(0,0,0,.5); white-space:nowrap; }
+  .pin small { font-weight:600; margin-left:4px; }
+  .maplink { display:inline-block; color:var(--orange); text-decoration:none; font-size:.9rem; margin-bottom:4px; }
+  :root { --bg:#14100c; --card:#221a13; --line:#3a2c1f; --orange:#ff8a1f; --text:#f4ece3; --muted:#b9a896; --green:#8fd16a; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; line-height:1.45; }
+  .wrap { max-width:720px; margin:0 auto; padding:20px 16px 48px; }
+  h1 { font-family:Creepster,cursive; font-weight:400; color:var(--orange); font-size:2.4rem; line-height:1.1; margin:4px 0 6px; letter-spacing:1px; }
+  .sub { color:var(--muted); margin:0 0 16px; }
+  .tips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; }
+  .pill { background:var(--card); border:1px solid var(--line); border-radius:999px; padding:6px 12px; font-size:.88rem; }
+  h2 { font-size:1.05rem; text-transform:uppercase; letter-spacing:1.5px; color:var(--orange); margin:26px 0 10px; }
+  .hl { display:grid; gap:10px; }
+  .hl a { display:flex; gap:12px; align-items:flex-start; background:var(--card); border:1px solid var(--line); border-left:4px solid var(--orange); border-radius:10px; padding:12px 14px; color:var(--text); text-decoration:none; }
+  .hl .emo { font-size:1.6rem; line-height:1; }
+  .hl b { display:block; }
+  .hl span { color:var(--muted); font-size:.92rem; }
+  .street { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px; }
+  .street header { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:8px; }
+  .street h3 { margin:0; font-size:1.05rem; }
+  .street header a { color:var(--orange); font-size:.85rem; text-decoration:none; white-space:nowrap; }
+  .houses { display:flex; flex-wrap:wrap; gap:6px; }
+  .houses a { background:#2e2219; border:1px solid var(--line); color:var(--text); text-decoration:none; border-radius:8px; padding:6px 10px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .houses a.star { border-color:var(--orange); color:var(--orange); }
+  .note { color:var(--muted); font-size:.88rem; margin-top:8px; }
+  .count { color:var(--green); font-size:.85rem; white-space:nowrap; }
+  button { background:var(--orange); color:#1a1009; border:0; border-radius:10px; padding:12px 16px; font-weight:700; font-size:1rem; width:100%; cursor:pointer; margin-top:8px; }
+  .cnt { background:transparent; border:0; box-shadow:none; color:#1a1009; font-weight:700; }
+  .cnt::before { display:none; }
+  .small { color:var(--muted); font-size:.8rem; margin-top:22px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎃 Streets of Caledonia<br>Candy Houses</h1>
+  <p class="sub">Halloween 2026 · O'Fallon, MO · compiled from the neighborhood Facebook thread. Pins show how many candy houses are on each street. Tap a pin or any house number to open it in Google Maps.</p>
+  <div class="tips">
+    <div class="pill">🕔 Kids from 5 pm</div>
+    <div class="pill">💡 Porch light on = candy</div>
+    <div class="pill" id="total"></div>
+  </div>
+
+  <h2>🗺️ Map</h2>
+  <div id="map"><iframe src="https://maps.google.com/maps?ll=38.7516,-90.7631&z=15&t=m&output=embed" loading="eager" title="Neighborhood map"></iframe></div>
+  <a class="maplink" href="https://www.google.com/maps/@38.7516,-90.7631,16z" target="_blank" rel="noopener">Open interactive map in Google Maps ↗</a>
+
+  <h2>⭐ Don't miss</h2>
+  <div class="hl" id="hl"></div>
+
+  <h2>🗺️ By street (south → north walking order)</h2>
+  <div id="streets"></div>
+
+  <button id="copy">📋 Copy list to paste in Facebook</button>
+  <p class="small">Houses keep getting added in the comments, and plenty of others with porch lights on will have candy too. Stay safe, carry a flashlight, and watch for cars! 👻</p>
+</div>
+
+<script>
+const CITY = ", O'Fallon, MO 63368";
+const maps = q => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q + CITY);
+
+const highlights = [
+  ["😱", "824 Upland Loop", "SCARY garage walk-through — the neighborhood haunted house!"],
+  ["🧟", "833 Upland Loop", "Photo op with Frankenstein"],
+  ["💀", "215 Townshead Way", "12-ft talking skeleton, fire pit, MU game & full-size candy bars for the brave"],
+  ["🔥", "507 Longhaven Drive", "Bonfire, Mizzou game, candy for kids (and cocktails for adults)"],
+  ["🫧", "509 Longhaven Drive", "Pop-its + a special offer from Word Play Speech Therapy"],
+  ["🔥", "704 Alban Alley", "Driveway fire pit (go around back)"],
+  ["🏈", "120 Cardow Drive", "Driveway setup with the Mizzou game"],
+  ["🍬", "300 Newbridge Way", "Self-serve candy bowl on the porch (townhomes)"],
+];
+
+const COORDS = {"Burnley Drive":[38.7453786,-90.7592684],"Alban Alley":[38.7470545,-90.7602761],"Upland Loop":[38.7486268,-90.7625571],"Dalriada Blvd":[38.7489026,-90.7611629],"Memsie Park Court":[38.7488632,-90.7653114],"Longhaven Drive":[38.7500944,-90.7640738],"Memsie Drive":[38.7502271,-90.766863],"Clarkston Drive":[38.7538467,-90.7644514],"Cardow Drive":[38.7545643,-90.7657563],"Mora Blvd":[38.7547207,-90.7636359],"Townshead Way":[38.7562806,-90.7650529],"Newbridge Way":[38.7577999,-90.7652427]};
+
+const streets = [
+  ["Burnley Drive", [], "Plenty of candy promised; no house numbers given."],
+  ["Alban Alley", ["704","707","724"], ""],
+  ["Upland Loop", ["816","824","825","832","833","834","841","852"], ""],
+  ["Dalriada Blvd", ["317","318","320","321","323","324","326","328"], "Busiest street: just under 150 trick-or-treaters last year, with many more houses than listed."],
+  ["Memsie Park Court", ["912"], ""],
+  ["Longhaven Drive", ["507","509"], ""],
+  ["Memsie Drive", ["822","839","841","847","855"], ""],
+  ["Clarkston Drive", ["511"], ""],
+  ["Cardow Drive", ["120","128","165","183"], "165 is from the homeowner's comment; the original list said 166."],
+  ["Mora Blvd", ["158"], "158 will be out on the porch. Mora Blvd townhomes have candy from 5 pm. Look for porch lights."],
+  ["Townshead Way", ["215"], ""],
+  ["Newbridge Way", ["300","367"], ""],
+];
+
+const starSet = new Set(highlights.map(h => h[1].split(" ")[0] + " " + h[1].split(" ")[1]));
+
+document.getElementById("hl").innerHTML = highlights.map(([e,a,d]) =>
+  `<a href="${maps(a)}" target="_blank" rel="noopener"><div class="emo">${e}</div><div><b>${a}</b><span>${d}</span></div></a>`).join("");
+
+let total = 0;
+document.getElementById("streets").innerHTML = streets.map(([name, nums, note]) => {
+  total += nums.length;
+  const first = name.split(" ")[0];
+  const houses = nums.map(n => {
+    const star = starSet.has(n + " " + first) ? " star" : "";
+    return `<a class="${star.trim()}" href="${maps(n + " " + name)}" target="_blank" rel="noopener">${n}</a>`;
+  }).join("");
+  return `<div class="street"><header><h3>${name}</h3>
+    <span>${nums.length ? `<span class="count">${nums.length} house${nums.length>1?"s":""}</span> · ` : ""}<a href="${maps(name)}" target="_blank" rel="noopener">Street ↗</a></span></header>
+    ${nums.length ? `<div class="houses">${houses}</div>` : ""}
+    ${note ? `<div class="note">${note}</div>` : ""}</div>`;
+}).join("");
+document.getElementById("total").textContent = "🏠 " + total + " houses listed";
+
+const CENTER=[38.7516,-90.7631], Z=15;
+function px(lat,lon){const n=256*Math.pow(2,Z);const x=(lon+180)/360*n;const r=lat*Math.PI/180;const y=(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n;return [x,y];}
+function placePins(){
+  const box=document.getElementById("map"); box.querySelectorAll(".pin").forEach(e=>e.remove());
+  const W=box.clientWidth,H=box.clientHeight,c=px(CENTER[0],CENTER[1]);
+  streets.forEach(([name,nums])=>{const k=COORDS[name]; if(!k) return; const p=px(k[0],k[1]);
+    const a=document.createElement("a"); a.className="pin"; a.href=maps(name); a.target="_blank"; a.rel="noopener";
+    a.title=name+": "+(nums.length?nums.join(", "):"candy");
+    a.innerHTML=(nums.length?nums.length:"🍬")+'<small>'+(name=="Memsie Park Court"?"Memsie Ct":name.split(" ")[0])+'</small>';
+    a.style.left=(W/2+p[0]-c[0])+"px"; a.style.top=(H/2+p[1]-c[1])+"px"; box.appendChild(a);});
+}
+placePins(); window.addEventListener("resize",placePins);
+
+const text = "🎃 Streets of Caledonia – Halloween Candy Houses (kids from 5 pm, porch light on = candy)\n\n⭐ DON'T MISS\n" +
+  highlights.map(([e,a,d]) => `${e} ${a} – ${d}`).join("\n") +
+  "\n\n🏠 BY STREET\n" +
+  streets.map(([n, nums, note]) => `• ${n}: ${nums.length ? nums.join(", ") : "candy (no numbers given)"}`).join("\n");
+
+document.getElementById("copy").addEventListener("click", async (ev) => {
+  const b = ev.currentTarget;
+  try { await navigator.clipboard.writeText(text); b.textContent = "✅ Copied!"; }
+  catch (e) { b.textContent = "Copy blocked — long-press to select the list instead"; }
+  setTimeout(() => b.textContent = "📋 Copy list to paste in Facebook", 2500);
+});
+</script>
+</body>
+</html>
