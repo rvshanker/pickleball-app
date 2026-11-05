@@ -37,15 +37,17 @@
 
         .inp{width:100%;background:#f1f5f9;border:2px solid transparent;border-radius:10px;padding:11px 14px;font-size:16px;font-family:'Outfit',sans-serif;transition:all .15s;outline:none;color:#1e293b;}
         .inp:focus{border-color:#059669;background:white;box-shadow:0 0 0 3px rgba(5,150,105,.1);}
-        .score-inp{width:56px;text-align:center;border:2px solid #e2e8f0;border-radius:8px;padding:8px 2px;font-size:18px;font-weight:700;font-family:'Outfit',sans-serif;outline:none;background:white;color:#0f172a;}
+        .score-inp{width:48px;text-align:center;border:2px solid #e2e8f0;border-radius:8px;padding:4px 2px;font-size:17px;font-weight:700;font-family:'Outfit',sans-serif;outline:none;background:white;color:#0f172a;}
         .score-inp:focus{border-color:#059669;}
         .score-inp:disabled{background:#f8fafc;color:#0f172a;border-color:#f1f5f9;}
         .score-inp.win{color:#047857;border-color:#6ee7b7;background:#ecfdf5;}
-        .score-inp.live{width:68px;padding:12px 4px;font-size:22px;}
-        .score-ro{width:56px;text-align:center;font-size:18px;font-weight:700;color:#0f172a;padding:8px 2px;border-radius:8px;}
+        .score-inp.live{width:58px;padding:6px 4px;font-size:20px;}
+        .score-ro{width:48px;text-align:center;font-size:17px;font-weight:700;color:#0f172a;padding:4px 2px;border-radius:8px;}
         .score-ro.win{color:#047857;background:#ecfdf5;}
-        .pbtn{background:none;border:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left;}
-        .pbtn:hover{color:#047857;}
+        .pbtn{background:none;border:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left;text-decoration:underline dotted;text-decoration-color:#10b981;text-decoration-thickness:2px;text-underline-offset:4px;}
+        .pbtn:hover,.pbtn:active{color:#047857;text-decoration-style:solid;}
+        .tap-hint{font-size:12px;color:#64748b;margin:0 2px 8px;display:flex;align-items:center;gap:6px;}
+        .tap-hint u{text-decoration:underline dotted;text-decoration-color:#10b981;text-decoration-thickness:2px;text-underline-offset:3px;color:#0f172a;font-weight:600;}
         .pg-row{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #f1f5f9;}
         .pg-row:last-child{border-bottom:none;}
         .res{font-weight:800;font-size:12px;border-radius:6px;padding:3px 7px;}
@@ -74,19 +76,19 @@
         .chip.on{background:#059669;border-color:#059669;color:white;}
         .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;}
 
-        .round-card{background:white;border-radius:14px;border:1px solid #e2e8f0;margin-bottom:14px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);}
-        .round-hd{background:linear-gradient(90deg,#0f172a,#1e3a2f);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;color:white;}
-        .match{display:flex;align-items:stretch;gap:10px;padding:12px 14px;border-bottom:1px solid #f1f5f9;}
+        .round-card{background:white;border-radius:14px;border:1px solid #e2e8f0;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+        .round-hd{background:linear-gradient(90deg,#0f172a,#1e3a2f);padding:7px 14px;display:flex;align-items:center;justify-content:space-between;color:white;}
+        .match{display:flex;align-items:stretch;gap:10px;padding:8px 12px;border-bottom:1px solid #f1f5f9;}
         .match:last-child{border-bottom:none;}
-        .court{flex-shrink:0;width:52px;border-radius:10px;background:#f0fdf4;color:#047857;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid #bbf7d0;}
-        .court small{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;}
-        .court b{font-family:'Barlow Condensed',sans-serif;font-size:24px;line-height:1;}
-        .teams{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;}
+        .court{flex-shrink:0;width:44px;border-radius:10px;background:#f0fdf4;color:#047857;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid #bbf7d0;}
+        .court small{font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;}
+        .court b{font-family:'Barlow Condensed',sans-serif;font-size:22px;line-height:1;}
+        .teams{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
         .team{display:flex;align-items:center;justify-content:space-between;gap:8px;}
         .tnames{font-size:15px;font-weight:500;line-height:1.3;word-break:break-word;}
         .team.win .tnames{font-weight:700;color:#047857;}
-        .vs{font-size:10px;font-weight:800;color:#cbd5e1;letter-spacing:1.5px;}
-        .sit{background:#fffbeb;padding:9px 16px;font-size:13px;color:#92400e;border-top:1px dashed #fcd34d;}
+        .vs{font-size:9px;font-weight:800;color:#cbd5e1;letter-spacing:1.5px;line-height:1;}
+        .sit{background:#fffbeb;padding:7px 14px;font-size:13px;color:#92400e;border-top:1px dashed #fcd34d;}
 
         table.lb{width:100%;border-collapse:collapse;font-size:14px;}
         table.lb th{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:#64748b;text-align:right;padding:8px 6px;border-bottom:2px solid #e2e8f0;font-weight:700;cursor:pointer;white-space:nowrap;}
@@ -120,6 +122,7 @@
             .nav,.tabs,.no-print{display:none!important;}
             body{background:white;}
             .round-card{break-inside:avoid;box-shadow:none;}
+            .pbtn{text-decoration:none;}.tap-hint{display:none;}
         }
     </style>
 </head>
@@ -728,10 +731,11 @@ function ScheduleList({league,week,canScore,update,onPlayer}){
     };
     return(
         <div>
+            <div className="tap-hint">👆 Tap a <u>player's name</u> to see all their games</div>
             {week.rounds.map((r,ri)=>(
                 <div key={ri} className="round-card">
                     <div className="round-hd">
-                        <span className="fd" style={{fontSize:18,fontWeight:800,letterSpacing:.5}}>GAME {ri+1}</span>
+                        <span className="fd" style={{fontSize:17,fontWeight:800,letterSpacing:.5}}>GAME {ri+1}</span>
                         <span style={{fontSize:12,color:'#6ee7b7'}}>{r.matches.filter(m=>scores[m.id]&&isNum(scores[m.id].a)&&isNum(scores[m.id].b)).length}/{r.matches.length} scored</span>
                     </div>
                     {r.matches.map(m=>{
@@ -791,6 +795,7 @@ function LiveView({league,week,canScore,update,onPlayer,onAll}){
     const sitting=(week.rounds[minRi].sitOut||[]);
     return(
         <div>
+            <div className="tap-hint">👆 Tap a <u>player's name</u> to see all their games</div>
             {live.map(x=>x.done?(
                 <div key={x.court} className="round-card" style={{opacity:.6}}>
                     <div className="round-hd"><span className="fd" style={{fontSize:20,fontWeight:800}}>COURT {x.court}</span><span style={{fontSize:12,color:'#6ee7b7'}}>✓ All games done</span></div>
@@ -824,25 +829,25 @@ function LiveCard({league,x,total,canScore,update,onPlayer,weekId,name,waitingOn
     return(
         <div className="round-card">
             <div className="round-hd">
-                <span className="fd" style={{fontSize:20,fontWeight:800,letterSpacing:.5}}>COURT {x.court}</span>
+                <span className="fd" style={{fontSize:19,fontWeight:800,letterSpacing:.5}}>COURT {x.court}</span>
                 <span style={{fontSize:13,color:'#6ee7b7',fontWeight:600}}>Game {x.ri+1} of {total}</span>
             </div>
-            <div style={{padding:'14px 16px'}}>
-                <div className={'team'+(aWin?' win':'')} style={{marginBottom:8}}>
+            <div style={{padding:'10px 14px'}}>
+                <div className={'team'+(aWin?' win':'')}>
                     <div className="tnames" style={{fontSize:17}}>{names(x.m.team1)}</div>
                     {Box({v:a,set:setA,win:aWin})}
                 </div>
-                <div className="vs" style={{marginBottom:8}}>VS</div>
+                <div className="vs" style={{margin:'3px 0'}}>VS</div>
                 <div className={'team'+(bWin?' win':'')}>
                     <div className="tnames" style={{fontSize:17}}>{names(x.m.team2)}</div>
                     {Box({v:b,set:setB,win:bWin})}
                 </div>
-                {waitingOn.length>0&&<div className="warn" style={{marginTop:10}}>⏳ Waiting for {waitingOn.join(', ')} to finish their game</div>}
-                {canScore&&<button className="btn btn-g" style={{width:'100%',marginTop:12}} disabled={!ok||busy} onClick={save}>
+                {waitingOn.length>0&&<div className="warn" style={{marginTop:8}}>⏳ Waiting for {waitingOn.join(', ')} to finish their game</div>}
+                {canScore&&<button className="btn btn-g" style={{width:'100%',marginTop:10,padding:'9px 18px'}} disabled={!ok||busy} onClick={save}>
                     {busy?'Saving…':a!==''&&b!==''&&a===b?'Scores can\'t be tied':'✓ Save score'}
                 </button>}
             </div>
-            {x.next&&<div style={{padding:'9px 16px',background:'#f8fafc',borderTop:'1px solid #f1f5f9',fontSize:13,color:'#64748b'}}>
+            {x.next&&<div style={{padding:'7px 14px',background:'#f8fafc',borderTop:'1px solid #f1f5f9',fontSize:13,color:'#64748b'}}>
                 Up next · Game {x.next.ri+1}: {x.next.m.team1.map(name).join(' & ')} vs {x.next.m.team2.map(name).join(' & ')}
             </div>}
         </div>
@@ -951,7 +956,7 @@ function Leaderboard({league,onPlayer}){
                             <tr key={r.id} onClick={()=>onPlayer(r.id,scope==='season'?latestWeek:scope)} style={{cursor:'pointer',...(r.qualified?{}:{opacity:.5})}}>
                                 <td className="l">{r.qualified?<span className={'rank'+(anyScores&&i<3?' g'+(i+1):'')}>{i+1}</span>:<span className="rank">–</span>}</td>
                                 <td className="l" style={{fontWeight:600}}>
-                                    {r.name}
+                                    <span className="pbtn">{r.name}</span>
                                     {!r.qualified&&<div style={{fontSize:11,color:'#94a3b8',fontWeight:400}}>needs {r.need} games</div>}
                                 </td>
                                 <td className="pts">{r.gp?r.avg.toFixed(1):'–'}</td>
