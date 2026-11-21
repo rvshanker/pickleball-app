@@ -48,6 +48,20 @@
         .pbtn:hover,.pbtn:active{color:#047857;text-decoration-style:solid;}
         .tap-hint{font-size:12px;color:#64748b;margin:0 2px 8px;display:flex;align-items:center;gap:6px;}
         .tap-hint u{text-decoration:underline dotted;text-decoration-color:#10b981;text-decoration-thickness:2px;text-underline-offset:3px;color:#0f172a;font-weight:600;}
+        .pg-sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#14324f;border-radius:14px;padding:12px 4px;margin-bottom:12px;}
+        .pg-sum>div{text-align:center;}
+        .pg-sum>div+div{border-left:1px solid rgba(255,255,255,.12);}
+        .pg-sum b{display:block;font-size:22px;font-weight:800;color:#fff;line-height:1.1;}
+        .pg-sum span{font-size:11px;font-weight:700;color:#a9c4dc;text-transform:uppercase;letter-spacing:.4px;}
+        .pg-list{border:1px solid #e5ebe8;border-radius:14px;overflow:hidden;}
+        .pg-list .pg-row{padding:10px 12px 10px 10px;border-left:4px solid #e2e8f0;}
+        .pg-list .pg-row.w{border-left-color:#22c55e;}.pg-list .pg-row.l{border-left-color:#ef4444;}
+        .pg-g{width:60px;flex-shrink:0;white-space:nowrap;}
+        .pg-g b{display:block;font-size:13px;font-weight:800;color:#0f172a;}
+        .pg-g span{font-size:11px;font-weight:600;color:#64748b;}
+        .pg-sc{text-align:right;flex-shrink:0;display:flex;align-items:center;gap:8px;}
+        .pg-sc b{font-size:17px;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums;}
+        .pg-chips .chip{padding:6px 12px;font-size:12.5px;}
         .pg-row{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #f1f5f9;}
         .pg-row:last-child{border-bottom:none;}
         .res{font-weight:800;font-size:12px;border-radius:6px;padding:3px 7px;}
@@ -78,7 +92,7 @@
         .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;}
 
         .round-card{background:white;border-radius:14px;border:1px solid #e2e8f0;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);}
-        .round-hd{background:linear-gradient(90deg,#0f172a,#1e3a2f);padding:7px 14px;display:flex;align-items:center;justify-content:space-between;color:white;}
+        .round-hd{background:#14324f;padding:7px 14px;display:flex;align-items:center;justify-content:space-between;color:white;}
         .match{display:flex;align-items:stretch;gap:10px;padding:8px 12px;border-bottom:1px solid #f1f5f9;}
         .match:last-child{border-bottom:none;}
         .court{flex-shrink:0;width:44px;border-radius:10px;background:#f0fdf4;color:#047857;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid #bbf7d0;}
@@ -833,7 +847,7 @@ function LiveCard({league,x,total,canScore,update,onPlayer,weekId,name,waitingOn
         <div className="round-card">
             <div className="round-hd">
                 <span className="fd" style={{fontSize:19,fontWeight:800,letterSpacing:.5}}>COURT {x.court}</span>
-                <span style={{fontSize:13,color:'#6ee7b7',fontWeight:600}}>Game {x.ri+1} of {total}</span>
+                <span style={{fontSize:13,color:'#a9c4dc',fontWeight:600}}>Game {x.ri+1} of {total}</span>
             </div>
             <div style={{padding:'10px 14px'}}>
                 <div className={'team'+(aWin?' win':'')}>
@@ -893,38 +907,32 @@ function PlayerGames({league,pid,weekId,onClose,onMap}){
     const w=played.filter(r=>r.my>r.their).length,l=played.filter(r=>r.my<r.their).length;
     return(
         <Modal onClose={onClose} title={name(pid)}>
-            {weeks.length>1&&<div className="chips" style={{marginBottom:12}}>
-                {weeks.map((x,i)=><button key={x.id} className={'chip'+(x.id===wid?' on':'')} onClick={()=>setWid(x.id)}>Wk {i+1} · {fmtDate(x.date)}</button>)}
+            {weeks.length>1&&<div className="chips pg-chips" style={{marginBottom:12}}>
+                {weeks.map((x,i)=><button key={x.id} className={'chip'+(x.id===wid?' on':'')} onClick={()=>setWid(x.id)}>Wk {i+1} · {fmtDate(x.date).replace(/^\w+,\s*/,'')}</button>)}
             </div>}
             {!week?<div className="muted">No weeks scheduled yet.</div>:<>
-                <div className="grid2" style={{gridTemplateColumns:'repeat(4,minmax(0,1fr))',marginBottom:10}}>
+                <div className="pg-sum">
                     {[['Pts',pts],['W-L',`${w}-${l}`],['Avg',played.length?(pts/played.length).toFixed(1):'–'],['+/-',(pts-pa>0?'+':'')+(pts-pa)]].map(([k,v])=>(
-                        <div key={k} style={{background:'#f8fafc',borderRadius:10,padding:'8px 4px',textAlign:'center'}}>
-                            <div className="fd" style={{fontSize:22,fontWeight:800}}>{v}</div>
-                            <div style={{fontSize:11,color:'#64748b',fontWeight:700,textTransform:'uppercase'}}>{k}</div>
-                        </div>))}
+                        <div key={k}><b>{v}</b><span>{k}</span></div>))}
                 </div>
                 {rows.length===0&&<div className="muted">Not playing this week.</div>}
-                {rows.map(r=>(
-                    <div key={r.ri} className="pg-row">
-                        <div style={{width:54,flexShrink:0}}>
-                            <div style={{fontWeight:800,fontSize:13}}>Game {r.ri+1}</div>
-                            {!r.sat&&<div style={{fontSize:11,color:'#047857',fontWeight:700}}>Court {r.court}</div>}
-                        </div>
+                {rows.length>0&&<div className="pg-list">{rows.map(r=>(
+                    <div key={r.ri} className={'pg-row '+(r.sat||r.my===null?'':r.my>r.their?'w':r.my<r.their?'l':'')}>
+                        <div className="pg-g"><b>Game {r.ri+1}</b>{!r.sat&&<span>Court {r.court}</span>}</div>
                         {r.sat?<div className="muted" style={{flex:1}}>🪑 Sat out</div>:<>
                             <div style={{flex:1,minWidth:0,fontSize:14,lineHeight:1.35}}>
                                 <div>with <b>{name(r.partner)}</b></div>
                                 <div className="muted" style={{fontSize:13}}>vs {r.opp.map(name).join(' & ')}</div>
                             </div>
-                            <div style={{textAlign:'right',flexShrink:0}}>
+                            <div className="pg-sc">
                                 {r.my===null?<span className="res p">not scored</span>:<>
-                                    <div style={{fontWeight:800,fontSize:16}}><span style={{color:r.my>r.their?'#047857':'#0f172a'}}>{r.my}</span>–{r.their} <span className={'res '+(r.my>r.their?'w':r.my<r.their?'l':'p')}>{r.my>r.their?'W':r.my<r.their?'L':'T'}</span></div>
-                                    {(r.cm!==r.my||r.ct!==r.their)&&<div style={{fontSize:11,color:'#64748b'}}>counts {r.cm}–{r.ct}</div>}
+                                    <div><b>{r.my}–{r.their}</b>{(r.cm!==r.my||r.ct!==r.their)&&<div style={{fontSize:11,color:'#64748b'}}>counts {r.cm}–{r.ct}</div>}</div>
+                                    <span className={'res '+(r.my>r.their?'w':r.my<r.their?'l':'p')}>{r.my>r.their?'W':r.my<r.their?'L':'T'}</span>
                                 </>}
                             </div>
                         </>}
                     </div>
-                ))}
+                ))}</div>}
             </>}
             {onMap&&<button className="btn btn-out btn-sm" style={{marginTop:14,width:'100%'}} onClick={onMap}>🕸️ Partner &amp; opponent map</button>}
         </Modal>
