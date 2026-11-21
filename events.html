@@ -25,6 +25,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="event-scheduler.js"></script>
+    <script src="apptabs.js"></script>
 <script>
 /* Inside the PickleConnect iPhone app (or ?app=1 for testing): hide website-only chrome */
 (function(){try{var w=window,c=w.Capacitor||(w.parent!==w&&w.parent.Capacitor)||null;var q=/[?&]app=1/.test(location.search);if(q)sessionStorage.setItem('pcApp','1');
@@ -229,7 +230,10 @@ const FB = {
     appId:"1:645604154338:web:b92f87c2cd11d950b737bb"
 };
 let db=null,auth=null,fbOk=false;
-try{firebase.initializeApp(FB);db=firebase.firestore();auth=firebase.auth();fbOk=true;}catch(e){console.warn('Firebase init failed',e);}
+try{firebase.initializeApp(FB);db=firebase.firestore();
+    // In the iPhone app's web view the default streaming connection can stall; let Firestore fall back to long polling
+    if(window.PC_APP)try{db.settings({experimentalAutoDetectLongPolling:true,merge:true});}catch(e){}
+    auth=firebase.auth();fbOk=true;}catch(e){console.warn('Firebase init failed',e);}
 
 // ── Helpers ───────────────────────────────────────────────────────────
 const MAX_GAMES = 40;
@@ -305,9 +309,11 @@ const store = {
         await db.collection('leagues').doc(league.id).update(patch);
     },
     async mine(uid,email){
+        // Give up on the cloud after 12s so the list never spins forever
+        const withTimeout=p=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej({code:'timeout'}),12000))]);
         const out=[];
-        if(fbOk&&uid)try{(await db.collection('leagues').where('createdBy','==',uid).get()).docs.forEach(d=>out.push(d.data()));}catch(e){console.warn('list failed',e.code);}
-        if(fbOk&&email)try{(await db.collection('leagues').where('adminEmails','array-contains',lc(email)).get()).docs.forEach(d=>{if(!out.find(x=>x.id===d.id))out.push({...d.data(),_coAdmin:true});});}catch(e){console.warn('admin list failed',e.code);}
+        if(fbOk&&uid)try{(await withTimeout(db.collection('leagues').where('createdBy','==',uid).get())).docs.forEach(d=>out.push(d.data()));}catch(e){console.warn('list failed',e.code);}
+        if(fbOk&&email)try{(await withTimeout(db.collection('leagues').where('adminEmails','array-contains',lc(email)).get())).docs.forEach(d=>{if(!out.find(x=>x.id===d.id))out.push({...d.data(),_coAdmin:true});});}catch(e){console.warn('admin list failed',e.code);}
         for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('league:')){const d=lsGet(k.slice(7));if(d&&d.createdBy===uid&&!out.find(x=>x.id===d.id))out.push({...d,_src:'local'});}}
         return out.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
     },
@@ -483,7 +489,9 @@ function App(){
 
     useEffect(()=>{
         if(!fbOk){setReady(true);return;}
+        const t=setTimeout(()=>setReady(true),6000); // never spin forever: show the login screen
         return auth.onAuthStateChanged(u=>{
+            clearTimeout(t);
             setUser(u&&!u.isAnonymous?{uid:u.uid,email:u.email,name:u.displayName||(u.email||'').split('@')[0]}:null);
             setReady(true);
         });
@@ -492,7 +500,7 @@ function App(){
         const f=()=>{const q=new URLSearchParams(location.search);setLeagueId(q.get('id'));setDemo(q.has('demo'));};
         window.addEventListener('popstate',f);return()=>window.removeEventListener('popstate',f);
     },[]);
-    const open=id=>{history.pushState({},'',id?`?id=${id}`:location.pathname);setLeagueId(id);window.scrollTo(0,0);};
+    const open=id=>{history.pushState({},'',id?`?id=${id}`:location.pathname);setLeagueId(id);window.scrollTo(0,0);const r=document.getElementById('root');if(r&&window.PC_APP)r.scrollTo(0,0);};
 
     if(!ready)return<Center><div className="spinner"/></Center>;
     if(leagueId&&leagueId.startsWith('DEMO-'))ensureDemo(leagueId); // demo links work on any device
@@ -740,6 +748,8 @@ function LeagueView({id,user,onHome}){
     const [pv,setPv]=useState(null); // {pid, weekId} for the player-games popup
     const [mapPid,setMapPid]=useState(null); // player to center the map on (from the player popup)
     useEffect(()=>store.listen(id,d=>setLeague(d)),[id]);
+    // If the cloud never answers, stop spinning and show the error card instead
+    useEffect(()=>{const t=setTimeout(()=>setLeague(l=>l===undefined?{_error:'timeout'}:l),15000);return()=>clearTimeout(t);},[id]);
 
     if(league===undefined)return<Center><div className="spinner"/></Center>;
     if(!league||league._error)return(
@@ -747,7 +757,7 @@ function LeagueView({id,user,onHome}){
             <div className="pg"><div className="card" style={{textAlign:'center',padding:30}}>
                 <div style={{fontSize:36}}>🔒</div>
                 <div className="fd" style={{fontSize:22,fontWeight:800,margin:'6px 0'}}>LEAGUE NOT AVAILABLE</div>
-                <div className="muted">{league&&league._error==='permission-denied'?'This league is private. Ask the organizer to make it public, or log in as the organizer.':'We couldn\'t find this league. Check the link.'}</div>
+                <div className="muted">{league&&league._error==='permission-denied'?'This league is private. Ask the organizer to make it public, or log in as the organizer.':league&&league._error==='timeout'?'Couldn\'t reach the server. Check your connection and try again.':'We couldn\'t find this league. Check the link.'}</div>
                 {!user&&<a href="league.html" className="btn btn-g" style={{display:'inline-block',marginTop:14,textDecoration:'none'}}>Log in</a>}
             </div></div>
         </div>
