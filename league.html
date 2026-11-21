@@ -71,6 +71,7 @@
         .tabs{display:flex;gap:6px;background:white;border-radius:12px;padding:5px;box-shadow:0 2px 10px rgba(0,0,0,.05);margin-bottom:14px;}
         .tab{flex:1;border:none;background:none;padding:10px 6px;border-radius:9px;font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;color:#64748b;cursor:pointer;white-space:nowrap;}
         .tab.on{background:#0f172a;color:white;}
+        @media(max-width:430px){.tab{font-size:12.5px;padding:10px 3px;}.tabs{gap:3px;}}
 
         .chip{border:1px solid #e2e8f0;background:white;border-radius:99px;padding:7px 13px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;white-space:nowrap;font-family:'Outfit',sans-serif;}
         .chip.on{background:#059669;border-color:#059669;color:white;}
@@ -465,6 +466,7 @@ function LeagueView({id,user,onHome}){
     const [league,setLeague]=useState(undefined);
     const [tab,setTab]=useState('courts');
     const [pv,setPv]=useState(null); // {pid, weekId} for the player-games popup
+    const [mapPid,setMapPid]=useState(null); // player to center the map on (from the player popup)
     useEffect(()=>store.listen(id,d=>setLeague(d)),[id]);
 
     if(league===undefined)return<Center><div className="spinner"/></Center>;
@@ -489,7 +491,7 @@ function LeagueView({id,user,onHome}){
     const onPlayer=(pid,wid)=>setPv({pid,weekId:wid});
     const weeks=league.weeks||[];
     const current=weeks[weeks.length-1];
-    const tabs=[['courts','🏓 Courts'],['schedule','📋 Schedule'],['board','🏆 Standings'],...(canManage?[['manage','⚙️']]:[])];
+    const tabs=[['courts','🏓 Courts'],['schedule','📋 Schedule'],['board','🏆 Standings'],['map','🕸️ Map'],...(canManage?[['manage','⚙️']]:[])];
 
     return(
         <div>
@@ -513,8 +515,9 @@ function LeagueView({id,user,onHome}){
                     ?<ScheduleTab league={league} canScore={canScore} update={update} onPlayer={onPlayer}/>
                     :<NoWeeks canManage={canManage} onManage={()=>setTab('manage')}/>)}
                 {tab==='board'&&<Leaderboard league={league} onPlayer={onPlayer}/>}
+                {tab==='map'&&<MapTab league={league} focus={mapPid}/>}
                 {tab==='manage'&&canManage&&<ManageTab league={league} update={update} isOwner={isOwner} onDeleted={onHome} onScheduled={()=>setTab('courts')}/>}
-                {pv&&<PlayerGames league={league} pid={pv.pid} weekId={pv.weekId} onClose={()=>setPv(null)}/>}
+                {pv&&<PlayerGames league={league} pid={pv.pid} weekId={pv.weekId} onClose={()=>setPv(null)} onMap={()=>{setMapPid({pid:pv.pid,t:Date.now()});setPv(null);setTab('map');window.scrollTo(0,0);}}/>}
             </div>
         </div>
     );
@@ -868,7 +871,7 @@ function ScoreInput({value,disabled,onCommit,win}){
 }
 
 // ── One player's games ────────────────────────────────────────────────
-function PlayerGames({league,pid,weekId,onClose}){
+function PlayerGames({league,pid,weekId,onClose,onMap}){
     const weeks=league.weeks||[];
     const [wid,setWid]=useState(weekId||(weeks.length?weeks[weeks.length-1].id:null));
     const sc=scoringOf(league);
@@ -923,6 +926,7 @@ function PlayerGames({league,pid,weekId,onClose}){
                     </div>
                 ))}
             </>}
+            {onMap&&<button className="btn btn-out btn-sm" style={{marginTop:14,width:'100%'}} onClick={onMap}>🕸️ Partner &amp; opponent map</button>}
         </Modal>
     );
 }
@@ -977,6 +981,237 @@ function Leaderboard({league,onPlayer}){
                     {' '}Tap a player to see their games.
                 </div>
             </details>
+        </div>
+    );
+}
+
+// ── Partner / opponent map ────────────────────────────────────────────
+// Everything one player has done with (partners) or against (opponents) everyone else, from scored games.
+function playerWeb(league,pid,weekId){
+    const sc=scoringOf(league);
+    const partners={},opps={},games=[];
+    const get=(o,id)=>o[id]=o[id]||{id,g:0,w:0,l:0,pf:0,pa:0,games:[]};
+    (league.weeks||[]).forEach((w,wi)=>{
+        if(weekId&&w.id!==weekId)return;
+        (w.rounds||[]).forEach((r,ri)=>(r.matches||[]).forEach(m=>{
+            const t1=m.team1.includes(pid);if(!t1&&!m.team2.includes(pid))return;
+            const s=scoreOf(league,m.id);if(!s)return;
+            const mine=t1?m.team1:m.team2,opp=t1?m.team2:m.team1;
+            const my=t1?+s.a:+s.b,their=t1?+s.b:+s.a;
+            const [ca,cb]=counted(s.a,s.b,sc);
+            const g={wi,date:w.date,ri,court:m.court,partner:mine.find(x=>x!==pid),opp,my,their,cm:t1?ca:cb,ct:t1?cb:ca,res:my>their?'W':my<their?'L':'T'};
+            games.push(g);
+            const add=x=>{x.g++;x.pf+=g.cm;x.pa+=g.ct;if(g.res==='W')x.w++;else if(g.res==='L')x.l++;x.games.push(g);};
+            if(g.partner)add(get(partners,g.partner));
+            opp.forEach(o=>add(get(opps,o)));
+        }));
+    });
+    return{partners,opps,games};
+}
+const pctOf=x=>x&&x.g?x.w/x.g:0;
+const webColor=x=>!x||!x.g?'#cbd5e1':pctOf(x)>=.6?'#10b981':pctOf(x)<=.4?'#ef4444':'#f59e0b';
+// Who beat (or lost to) you in a set of games: [{id,n}] most frequent first
+function tally(games,res,pick){
+    const c={};games.filter(g=>g.res===res).forEach(g=>pick(g).forEach(id=>c[id]=(c[id]||0)+1));
+    return Object.entries(c).map(([id,n])=>({id,n})).sort((a,b)=>b.n-a.n);
+}
+
+function MapTab({league,focus}){
+    const weeks=league.weeks||[];
+    const players=league.players;
+    const KEY='leagueMe:'+league.id;
+    const [me,setMe]=useState(()=>{
+        if(focus&&players.some(p=>p.id===focus.pid))return focus.pid;
+        let saved=null;try{saved=localStorage.getItem(KEY);}catch(e){}
+        if(saved&&players.some(p=>p.id===saved))return saved;
+        const top=calcBoard(league,null).sort(SORTS.avg.fn)[0];
+        return top?top.id:(players[0]||{}).id;
+    });
+    const [mode,setMode]=useState('partners');
+    const [scope,setScope]=useState('season');
+    const [sel,setSel]=useState(null);
+    useEffect(()=>{if(focus){setMe(focus.pid);setSel(null);}},[focus]);
+    const detailRef=useRef(null);
+    // On phones the details sit below the map — bring them into view when a node is tapped
+    useEffect(()=>{if(sel&&detailRef.current)detailRef.current.scrollIntoView({behavior:'smooth',block:'nearest'});},[sel]);
+    const pick=id=>{setMe(id);setSel(null);try{localStorage.setItem(KEY,id);}catch(e){}};
+
+    const nameOf=useMemo(()=>{
+        const m={};players.forEach(p=>m[p.id]=p.name);return id=>m[id]||'(removed)';
+    },[players]);
+    // Short label for the map: first name, or full name if two people share a first name
+    const short=useMemo(()=>{
+        const first=n=>String(n).trim().split(/\s+/)[0];
+        const count={};players.forEach(p=>{const f=first(p.name).toLowerCase();count[f]=(count[f]||0)+1;});
+        return id=>{const n=nameOf(id);let s=count[first(n).toLowerCase()]>1?n:first(n);return s.length>11?s.slice(0,10)+'…':s;};
+    },[players,nameOf]);
+
+    const web=useMemo(()=>me?playerWeb(league,me,scope==='season'?null:scope):null,[league,me,scope]);
+    if(!players.length||!me)return<div className="card muted">Add players to see the map.</div>;
+
+    const data=mode==='partners'?web.partners:web.opps;
+    // Ring: everyone else who's active or has history with this player, in roster order (stays put when switching modes)
+    const ring=players.filter(p=>p.id!==me&&(p.active!==false||web.partners[p.id]||web.opps[p.id])).map(p=>p.id);
+    const all=web.games;
+    const tot={w:all.filter(g=>g.res==='W').length,l:all.filter(g=>g.res==='L').length};
+
+    // Highlights
+    const list=Object.values(data);
+    const min2=list.some(x=>x.g>=2)?2:1;
+    const elig=list.filter(x=>x.g>=min2);
+    const best=elig.slice().sort((a,b)=>pctOf(b)-pctOf(a)||(b.pf-b.pa)-(a.pf-a.pa)||b.g-a.g)[0];
+    const worst=elig.slice().sort((a,b)=>pctOf(a)-pctOf(b)||(a.pf-a.pa)-(b.pf-b.pa)||b.g-a.g)[0];
+    const most=list.slice().sort((a,b)=>b.g-a.g)[0];
+    const notYet=mode==='partners'?ring.filter(id=>!web.partners[id]&&(players.find(p=>p.id===id)||{}).active!==false):[];
+    const hl=mode==='partners'
+        ?[['🔥 Best partner',best&&pctOf(best)>0?best:null,x=>`${x.w}-${x.l} together`],
+          ['🥶 Toughest pairing',worst&&worst!==best&&worst.l>0?worst:null,x=>`${x.w}-${x.l} together`],
+          ['🤝 Most games with',most,x=>`${x.g} game${x.g>1?'s':''}`]]
+        :[['😈 Nemesis',worst&&worst.l>0?worst:null,x=>`you're ${x.w}-${x.l} vs them`],
+          ['😎 Favorite matchup',best&&best.w>0?best:null,x=>`you're ${x.w}-${x.l} vs them`],
+          ['⚔️ Faced most',most,x=>`${x.g} game${x.g>1?'s':''}`]];
+
+    // Geometry
+    const W=440,H=420,cx=W/2,cy=H/2,R=Math.min(150,ring.length>14?160:140);
+    const nodes=ring.map((id,i)=>{
+        const a=-Math.PI/2+i*2*Math.PI/Math.max(ring.length,1);
+        const st=data[id];const r=st&&st.g?Math.min(28,15+st.g*2.5):12;
+        return{id,st,r,x:cx+R*Math.cos(a),y:cy+R*Math.sin(a),cos:Math.cos(a),sin:Math.sin(a)};
+    });
+    const selSt=sel?data[sel]:null;
+
+    return(
+        <div>
+            <div className="card" style={{padding:14,marginBottom:12}}>
+                <div className="row" style={{marginBottom:10}}>
+                    <label className="slbl" style={{margin:0,flexShrink:0}}>Player</label>
+                    <select className="inp" style={{padding:'8px 10px'}} value={me} onChange={e=>pick(e.target.value)}>
+                        {players.map(p=><option key={p.id} value={p.id}>{p.name}{p.active===false?' (inactive)':''}</option>)}
+                    </select>
+                </div>
+                <div className="chips">
+                    <button className={'chip'+(mode==='partners'?' on':'')} onClick={()=>{setMode('partners');setSel(null);}}>🤝 Partners</button>
+                    <button className={'chip'+(mode==='opps'?' on':'')} onClick={()=>{setMode('opps');setSel(null);}}>⚔️ Opponents</button>
+                </div>
+            </div>
+            {weeks.length>1&&<WeekChips weeks={weeks} value={scope} onChange={s=>{setScope(s);setSel(null);}}
+                extra={<button className={'chip'+(scope==='season'?' on':'')} onClick={()=>{setScope('season');setSel(null);}}>Season</button>}/>}
+
+            <div className="card" style={{padding:'8px 4px 4px'}}>
+                <div className="tap-hint" style={{justifyContent:'center',margin:'2px 0 0'}}>👆 Tap {mode==='partners'?'a partner to see your games together':'an opponent to see your games against them'}</div>
+                <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',maxWidth:520,display:'block',margin:'0 auto',touchAction:'manipulation'}} role="img" aria-label={`${nameOf(me)}'s ${mode==='partners'?'partner':'opponent'} map`}>
+                    {nodes.map(n=>{
+                        const g=n.st?n.st.g:0,dim=sel&&sel!==n.id;
+                        return<line key={'e'+n.id} x1={cx} y1={cy} x2={n.x} y2={n.y} stroke={webColor(n.st)} strokeWidth={g?Math.min(10,1.5+g*1.6):1.2}
+                            strokeDasharray={g?null:'4 5'} strokeLinecap="round" opacity={dim?.15:g?.55:.6}/>;
+                    })}
+                    <g onClick={()=>setSel(null)} style={{cursor:'pointer'}}>
+                        <circle cx={cx} cy={cy} r={42} fill="#0f172a" stroke="#34d399" strokeWidth="3"/>
+                        <text x={cx} y={cy-4} textAnchor="middle" fill="white" fontSize="14" fontWeight="700" fontFamily="Outfit,sans-serif">{short(me)}</text>
+                        <text x={cx} y={cy+14} textAnchor="middle" fill="#6ee7b7" fontSize="12" fontWeight="700" fontFamily="Outfit,sans-serif">{all.length?`${tot.w}-${tot.l}`:'no games'}</text>
+                    </g>
+                    {nodes.map(n=>{
+                        const g=n.st?n.st.g:0,on=sel===n.id,dim=sel&&!on;
+                        const lx=n.x+(n.r+8)*n.cos,ly=n.y+(n.r+8)*n.sin;
+                        const anchor=Math.abs(n.cos)<.3?'middle':n.cos>0?'start':'end';
+                        const dy=Math.abs(n.cos)<.3?(n.sin>0?12:-3):4;
+                        return(
+                            <g key={n.id} onClick={()=>setSel(on?null:n.id)} style={{cursor:'pointer',outline:'none'}} opacity={dim?.35:1}
+                               role="button" tabIndex="0" onKeyDown={e=>{if(e.key==='Enter')setSel(on?null:n.id);}}>
+                                <circle cx={n.x} cy={n.y} r={n.r+10} fill="transparent"/>
+                                {on&&<circle cx={n.x} cy={n.y} r={n.r+5} fill="none" stroke="#0f172a" strokeWidth="2.5"/>}
+                                <circle cx={n.x} cy={n.y} r={n.r} fill={g?webColor(n.st):'white'} stroke={g?'white':'#cbd5e1'} strokeWidth="2" strokeDasharray={g?null:'3 3'}/>
+                                {g>0&&<text x={n.x} y={n.y+4} textAnchor="middle" fill="white" fontSize={n.r>18?12:10} fontWeight="800" fontFamily="Outfit,sans-serif">{n.st.w}-{n.st.l}</text>}
+                                <text x={lx} y={ly+dy} textAnchor={anchor} fontSize="13" fontWeight={on?800:600} fill={g?'#0f172a':'#94a3b8'} fontFamily="Outfit,sans-serif">{short(n.id)}</text>
+                            </g>
+                        );
+                    })}
+                </svg>
+                <div className="row" style={{justifyContent:'center',gap:12,fontSize:11,color:'#64748b',padding:'0 6px 8px',flexWrap:'wrap'}}>
+                    <span><span style={{color:'#10b981'}}>●</span> {mode==='partners'?'win together':'you win'} 60%+</span>
+                    <span><span style={{color:'#f59e0b'}}>●</span> even</span>
+                    <span><span style={{color:'#ef4444'}}>●</span> {mode==='partners'?'lose together':'they win'} 60%+</span>
+                    <span>◌ {mode==='partners'?'not partnered yet':'not faced yet'}</span>
+                </div>
+            </div>
+
+            {sel?<div ref={detailRef} style={{scrollMarginTop:70}}><WebDetail league={league} me={me} other={sel} mode={mode} st={selSt} nameOf={nameOf}
+                    onFocus={id=>{setMode('opps');setSel(id);}} onPartner={id=>{setMode('partners');setSel(id);}} onCenter={()=>pick(sel)} onClose={()=>setSel(null)}/></div>
+            :<>
+                {all.length>0&&<div className="grid2" style={{gridTemplateColumns:'repeat(3,minmax(0,1fr))',marginTop:12}}>
+                    {hl.map(([k,x,sub])=>(
+                        <button key={k} className="card" disabled={!x} onClick={()=>x&&setSel(x.id)} style={{padding:'10px 8px',textAlign:'center',border:'none',cursor:x?'pointer':'default',fontFamily:'Outfit,sans-serif',color:'#1e293b'}}>
+                            <div style={{fontSize:11,fontWeight:700,color:'#64748b'}}>{k}</div>
+                            <div style={{fontWeight:800,fontSize:15,margin:'3px 0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{x?nameOf(x.id):'—'}</div>
+                            <div style={{fontSize:11,color:'#64748b'}}>{x?sub(x):'not enough games'}</div>
+                        </button>
+                    ))}
+                </div>}
+                {notYet.length>0&&all.length>0&&<div className="muted" style={{fontSize:13,marginTop:10}}>Haven't partnered yet: {notYet.map(nameOf).join(', ')}</div>}
+                {!all.length&&<div className="muted" style={{textAlign:'center',marginTop:12}}>The map fills in once {nameOf(me)}'s games are scored.</div>}
+            </>}
+        </div>
+    );
+}
+
+function WebDetail({league,me,other,mode,st,nameOf,onFocus,onPartner,onCenter,onClose}){
+    const weeks=league.weeks||[];
+    const games=st?st.games:[];
+    const isP=mode==='partners';
+    const diff=st?st.pf-st.pa:0;
+    // Partner view: who beat you two / who you beat. Opponent view: who you were paired with in losses / wins.
+    const lostTo=isP?tally(games,'L',g=>g.opp):tally(games,'L',g=>g.partner?[g.partner]:[]);
+    const beat=isP?tally(games,'W',g=>g.opp):tally(games,'W',g=>g.partner?[g.partner]:[]);
+    const Chips=({items,color,bg,onTap})=>(
+        <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+            {items.map(x=><button key={x.id} className="chip" onClick={()=>onTap(x.id)} style={{background:bg,borderColor:bg,color}}>{nameOf(x.id)}{x.n>1&&<b> ×{x.n}</b>}</button>)}
+        </div>
+    );
+    return(
+        <div className="card" style={{marginTop:12}}>
+            <div className="row" style={{justifyContent:'space-between',marginBottom:10}}>
+                <div style={{minWidth:0}}>
+                    <div className="slbl" style={{marginBottom:2}}>{isP?'Partners':'Head to head'}</div>
+                    <div className="fd" style={{fontSize:22,fontWeight:800,lineHeight:1.1}}>{nameOf(me)} {isP?'+':'vs'} {nameOf(other)}</div>
+                </div>
+                <button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="Close">✕</button>
+            </div>
+            {!st?<div className="muted">{isP?'Haven\'t played together yet.':'Haven\'t faced each other yet.'}</div>:<>
+                <div className="grid2" style={{gridTemplateColumns:'repeat(4,minmax(0,1fr))',marginBottom:12}}>
+                    {[['W-L',`${st.w}-${st.l}`],['Win %',Math.round(pctOf(st)*100)+'%'],['Avg',(st.pf/st.g).toFixed(1)],['+/-',(diff>0?'+':'')+diff]].map(([k,v])=>(
+                        <div key={k} style={{background:'#f8fafc',borderRadius:10,padding:'8px 4px',textAlign:'center'}}>
+                            <div className="fd" style={{fontSize:22,fontWeight:800,color:k==='+/-'?(diff>0?'#059669':diff<0?'#dc2626':'#0f172a'):'#0f172a'}}>{v}</div>
+                            <div style={{fontSize:11,color:'#64748b',fontWeight:700,textTransform:'uppercase'}}>{k}</div>
+                        </div>))}
+                </div>
+                {lostTo.length>0&&<div style={{marginBottom:10}}>
+                    <div className="slbl" style={{color:'#b91c1c'}}>{isP?'😖 Lost to':`😖 Your partner when you lost`}</div>
+                    <Chips items={lostTo} color="#b91c1c" bg="#fef2f2" onTap={isP?onFocus:onPartner}/>
+                </div>}
+                {beat.length>0&&<div style={{marginBottom:10}}>
+                    <div className="slbl" style={{color:'#047857'}}>{isP?'💪 Beat':`💪 Your partner when you won`}</div>
+                    <Chips items={beat} color="#047857" bg="#ecfdf5" onTap={isP?onFocus:onPartner}/>
+                </div>}
+                <div className="slbl" style={{marginTop:6}}>Games</div>
+                {games.map((g,i)=>(
+                    <div key={i} className="pg-row">
+                        <div style={{width:62,flexShrink:0}}>
+                            <div style={{fontWeight:800,fontSize:13}}>{weeks.length>1?`Wk ${g.wi+1} · `:''}G{g.ri+1}</div>
+                            <div style={{fontSize:11,color:'#64748b'}}>{fmtDate(g.date)}</div>
+                        </div>
+                        <div style={{flex:1,minWidth:0,fontSize:14,lineHeight:1.35}}>
+                            {isP?<div>vs <b>{g.opp.map(nameOf).join(' & ')}</b></div>
+                                :<><div>with <b>{g.partner?nameOf(g.partner):'—'}</b></div>
+                                   <div className="muted" style={{fontSize:13}}>vs {g.opp.map(nameOf).join(' & ')}</div></>}
+                        </div>
+                        <div style={{fontWeight:800,fontSize:16,flexShrink:0}}>
+                            <span style={{color:g.res==='W'?'#047857':'#0f172a'}}>{g.my}</span>–{g.their} <span className={'res '+(g.res==='W'?'w':g.res==='L'?'l':'p')}>{g.res}</span>
+                        </div>
+                    </div>
+                ))}
+                <div className="muted" style={{fontSize:12,marginTop:8}}>Tap a name above to jump to {isP?'that opponent':'that partner'}.</div>
+            </>}
+            <button className="btn btn-out btn-sm" style={{marginTop:12,width:'100%'}} onClick={onCenter}>🕸️ Show {nameOf(other)}'s map</button>
         </div>
     );
 }
