@@ -37,6 +37,12 @@
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.7/babel.min.js"></script>
 <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script>
+/* Inside the PickleConnect iPhone app (or ?app=1 for testing): hide website-only chrome */
+(function(){try{var w=window,c=w.Capacitor||(w.parent!==w&&w.parent.Capacitor)||null;var q=/[?&]app=1/.test(location.search);if(q)sessionStorage.setItem('pcApp','1');
+w.PC_CAP=c;w.PC_APP=!!((c&&c.isNativePlatform&&c.isNativePlatform())||q||sessionStorage.getItem('pcApp'));
+if(w.PC_APP)document.documentElement.classList.add('app');}catch(e){}})();
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -194,6 +200,15 @@ button{font-family:inherit;color:inherit;}
   .note{padding:10px 14px;}
 }
 @media (prefers-reduced-motion: reduce){#wx3d{display:none !important;}.mascot{animation:none;}}
+
+/* app mode: no website header, links or footer; feels like a native screen */
+.app body{-webkit-user-select:none;-webkit-touch-callout:none;}
+.app input{-webkit-user-select:text;}
+.app *{-webkit-tap-highlight-color:transparent;}
+.app .nav-logo,.app .cta,.app .footer{display:none;}
+.app .nav{padding:10px 14px;}
+.app .nav-search{margin-left:0;flex:1 1 100%;min-width:0;}
+.app .content{padding-bottom:24px;}
 </style>
 </head>
 <body>
@@ -760,6 +775,21 @@ function App() {
   };
 
   const useGps = () => {
+    // In the iPhone app use the native location service (works inside the app's tab view)
+    const capGeo = window.PC_CAP && window.PC_CAP.Plugins && window.PC_CAP.Plugins.Geolocation;
+    if (capGeo) {
+      setLoading(true); setError(null);
+      capGeo.getCurrentPosition({ timeout: 10000 }).then(async pos => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        let name = 'Your location';
+        try {
+          const r = await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`)).json();
+          name = [r.address?.city || r.address?.town || r.address?.village, r.address?.state].filter(Boolean).join(', ') || name;
+        } catch (e) {}
+        load({ name, lat, lng, gps: true });
+      }).catch(() => { setLoading(false); setError(place ? null : 'Location access is off. Search a city or zip code above.'); });
+      return;
+    }
     if (!navigator.geolocation) { setError('Location isn\'t available on this device. Search a city or zip instead.'); return; }
     setLoading(true); setError(null);
     navigator.geolocation.getCurrentPosition(async pos => {

@@ -25,6 +25,12 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="event-scheduler.js"></script>
+<script>
+/* Inside the PickleConnect iPhone app (or ?app=1 for testing): hide website-only chrome */
+(function(){try{var w=window,c=w.Capacitor||(w.parent!==w&&w.parent.Capacitor)||null;var q=/[?&]app=1/.test(location.search);if(q)sessionStorage.setItem('pcApp','1');
+w.PC_CAP=c;w.PC_APP=!!((c&&c.isNativePlatform&&c.isNativePlatform())||q||sessionStorage.getItem('pcApp'));
+if(w.PC_APP)document.documentElement.classList.add('app');}catch(e){}})();
+</script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;}
         body{font-family:'Outfit',sans-serif;background:#f1f5f9;font-size:16px;color:#1e293b;-webkit-text-size-adjust:100%;}
@@ -196,6 +202,14 @@
         .ok{background:#ecfdf3;border-color:#bbf7d0;color:#166534;}
         .opt.on{border-color:var(--green);background:#ecfdf3;}
         @media(max-width:430px){.brand b{font-size:15px;}.brand em{font-size:12px;}}
+        /* app mode (inside the iPhone app) */
+        .app body{-webkit-user-select:none;-webkit-touch-callout:none;}
+        .app input,.app textarea{-webkit-user-select:text;}
+        .app *{-webkit-tap-highlight-color:transparent;}
+        .appbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;height:44px;padding:0 8px;background:rgba(246,248,247,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:.5px solid rgba(15,23,42,.15);}
+        .ab-title{flex:1;text-align:center;font-weight:700;font-size:17px;color:var(--ink);}
+        .ab-btn{width:84px;background:none;border:none;color:var(--green-d);font-size:16px;font-weight:500;text-align:left;padding:8px;font-family:inherit;cursor:pointer;}
+        .ab-btn.r{text-align:right;}
     </style>
 </head>
 <body>
@@ -206,7 +220,8 @@ const S = window.EventScheduler;
 
 // ── Firebase ──────────────────────────────────────────────────────────
 const FB = {
-    apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
+    // The iPhone app must use its own key: the website key only accepts requests from the website
+    apiKey:(window.PC_APP&&window.PC_CAP)?"AIzaSyDjgdzr2gQlWMYnOYeLV56HBk5mdOXEDj8":"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
     authDomain:"pickleball-app-1bba7.firebaseapp.com",
     projectId:"pickleball-app-1bba7",
     storageBucket:"pickleball-app-1bba7.firebasestorage.app",
@@ -490,6 +505,14 @@ function App(){
 const Center=({children})=><div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:12}}>{children}</div>;
 
 function Nav({children,onHome,user}){
+    if(window.PC_APP)return( // iOS-style bar inside the app
+        <div className="appbar no-print">
+            {onHome?<button className="ab-btn" onClick={onHome}>‹ Back</button>:<span className="ab-btn"/>}
+            <div className="ab-title">Leagues</div>
+            {user?<button className="ab-btn r" onClick={()=>auth.signOut()}>Log out</button>:<span className="ab-btn"/>}
+            {children}
+        </div>
+    );
     return(
         <div className="nav no-print">
             {onHome?<button className="link" onClick={onHome}>← Back</button>:<a href="index.html">← Home</a>}
