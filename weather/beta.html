@@ -87,7 +87,7 @@ button{font-family:inherit;color:inherit;}
 .mascot{width:74px;height:74px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 10px 16px rgba(0,0,0,.45));animation:bobble 3.4s ease-in-out infinite;}
 @keyframes bobble{0%,100%{transform:translateY(-3px)}50%{transform:translateY(3px)}}
 .hero-when{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
-.hero-verdict{font-family:'Syne',sans-serif;font-weight:800;font-size:1.7rem;line-height:1.1;margin:3px 0 4px;}
+.hero-verdict{font-family:'DM Sans',sans-serif;font-weight:700;font-size:1.75rem;letter-spacing:-.01em;line-height:1.1;margin:3px 0 4px;}
 .meter{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:12px;}
 .meter-s{display:flex;flex-direction:column;align-items:center;gap:4px;opacity:.45;}
 .meter-s i{display:block;width:100%;height:6px;border-radius:4px;background:var(--c);}
@@ -96,15 +96,15 @@ button{font-family:inherit;color:inherit;}
 .meter-s.on i{height:9px;box-shadow:0 0 12px var(--c);}
 .meter-s.on span{color:var(--c);font-size:.7rem;}
 .hero-why{font-size:.8rem;color:var(--text);opacity:.85;line-height:1.35;}
-.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:14px;}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:14px;}
 .stat{background:rgba(13,27,42,.55);border:1px solid var(--border);border-radius:12px;padding:8px 4px;text-align:center;}
 .stat-l{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
-.stat-v{font-family:'Syne',sans-serif;font-weight:800;font-size:1.25rem;line-height:1.3;}
+.stat-v{font-family:'DM Sans',sans-serif;font-weight:700;font-size:1.35rem;line-height:1.3;}
 .stat-v small{font-size:.65rem;font-family:'DM Sans',sans-serif;color:var(--muted);font-weight:700;}
 .stat-s{font-size:.65rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .best{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:12px;padding:10px 12px;border-radius:12px;background:rgba(13,27,42,.55);font-size:.85rem;font-weight:600;}
 .best-btn{background:none;border:none;font-weight:800;font-size:.9rem;cursor:pointer;padding:0;}
-.share{width:100%;margin-top:10px;background:linear-gradient(135deg,#2ECC71,#27AE60);color:#fff;border:none;border-radius:12px;padding:11px;font-weight:700;font-size:.9rem;cursor:pointer;box-shadow:0 4px 14px rgba(46,204,113,.3);}
+.share{width:100%;margin-top:10px;background:none;color:var(--green);border:1.5px solid rgba(46,204,113,.45);border-radius:12px;padding:9px;font-weight:700;font-size:.88rem;cursor:pointer;}
 .toast{text-align:center;font-size:.78rem;color:var(--green);margin-top:8px;}
 
 .days{display:flex;gap:6px;margin:0 -14px 12px;padding:0 14px 2px;overflow-x:auto;scrollbar-width:none;}
@@ -122,12 +122,7 @@ button{font-family:inherit;color:inherit;}
 .wx-card-header span{text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted2);}
 .wx-grid{display:flex;flex-direction:column;}
 .wx-col{display:contents;}
-@media (min-width:960px){
-  .content{max-width:1020px;}
-  .wx-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:14px;align-items:start;}
-  .wx-col{display:flex;flex-direction:column;min-width:0;}
-  .hero{max-width:none;}
-}
+
 
 .hours{display:flex;gap:4px;overflow-x:auto;padding:0 10px 10px;scrollbar-width:thin;scrollbar-color:rgba(140,160,196,.3) transparent;}
 .hr{flex:0 0 50px;background:rgba(13,27,42,.35);border:1px solid transparent;border-radius:12px;padding:7px 2px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;}
@@ -676,8 +671,6 @@ function HourStrip({ hours, selected, onSelect, sunset }) {
             <div className="hr-i">{codeIcon(h.code, h.isDay)}</div>
             <div className="hr-bar" title={lv.l}><div style={{ height: Math.max(12, h.score) + '%', background: lv.c }} /></div>
             <div className="hr-x">{h.temp}°</div>
-            <div className="hr-x" style={{ color: h.wind >= 12 ? 'var(--accent)' : null }}>{h.wind}<small>mph</small></div>
-            {h.rain >= 20 && <div className="hr-x" style={{ color: '#60a5fa' }}>{h.rain}%</div>}
           </button>
         );
       })}
@@ -846,12 +839,10 @@ function App() {
                   <div className="hero-why">{focus.why.length ? focus.why.slice(0, 3).join(' · ') : focus.wind <= 6 ? 'Calm air, dry courts. Perfect.' : 'Light wind, dry courts. Get out there!'}</div>
                 </div>
               </div>
-              <Meter level={lv} />
               <div className="stats">
-                <Stat label="Temp" value={`${focus.temp}°`} sub={focus.feels !== focus.temp ? `feels ${focus.feels}°` : codeIcon(focus.code, focus.isDay)} />
-                <Stat label="Wind" value={<>{focus.wind}<small> mph</small></>} sub={focus.deg != null ? `${windArrow(focus.deg)} from ${windDir(focus.deg)}` : ''} warn={focus.wind >= 15 ? 'var(--red)' : focus.wind >= 10 ? 'var(--accent)' : null} />
-                <Stat label="Gusts" value={<>{focus.gust}<small> mph</small></>} sub={focus.gust >= 20 ? 'lobs drift' : focus.gust >= 15 ? 'felt on dinks' : 'not a factor'} warn={focus.gust >= 20 ? 'var(--red)' : focus.gust >= 15 ? 'var(--accent)' : null} />
-                <Stat label="Rain" value={`${focus.rain}%`} sub={focus.precip >= 0.01 ? 'raining' : focus.wet ? 'wet courts' : 'chance'} warn={focus.rain >= 50 || focus.precip >= .01 ? '#60a5fa' : null} />
+                <Stat label="Temp" value={`${focus.temp}°`} sub={focus.feels !== focus.temp ? `feels ${focus.feels}°` : '\u00A0'} />
+                <Stat label="Wind" value={<>{focus.wind}<small> mph</small></>} sub={`gusts ${focus.gust}`} warn={focus.wind >= 15 || focus.gust >= 25 ? 'var(--red)' : focus.wind >= 10 || focus.gust >= 15 ? 'var(--accent)' : null} />
+                <Stat label="Rain" value={`${focus.rain}%`} sub={focus.precip >= 0.01 ? 'raining now' : focus.wet ? 'wet courts' : 'chance'} warn={focus.rain >= 50 || focus.precip >= .01 ? '#60a5fa' : null} />
               </div>
               <div className="best">
                 {day.best && day.best.score < 40 ? <span>😕 No good window {isToday ? 'left today' : 'on ' + dayName(day.key, data.todayKey)}. The least bad is {fmtWin(day.best)}.</span>
@@ -860,9 +851,9 @@ function App() {
                   <button className="best-btn" onClick={() => setHourKey(day.hours[day.best.i].t)} style={{ color: levelOf(day.best.score).c }}>
                     {fmtWin(day.best)} · {levelOf(day.best.score).l}{day.hours[day.best.i].isDay ? '' : ' 🌙'}
                   </button>
-                </> : <span>🌙 No more daytime hours today. Check tomorrow below.</span>}
+                </> : <span>🌙 No more daytime hours today. Tap tomorrow below.</span>}
               </div>
-              <button className="share" onClick={share}>📤 Share with my group</button>
+              <button className="share" onClick={share}>📤 Share</button>
               {toast && <div className="toast">{toast}</div>}
             </div>
 
@@ -883,41 +874,22 @@ function App() {
             <div className="wx-grid">
               <div className="wx-col">
                 <div className="wx-card">
-                  <div className="wx-card-header">Hour by hour · {dayName(day.key, data.todayKey, true)}<span>tap an hour</span></div>
+                  <div className="wx-card-header">Hour by hour<span>tap an hour for details</span></div>
                   <HourStrip hours={day.hours} selected={focus.t} onSelect={setHourKey} sunset={day.sunset} />
                   <div className="legend">
                     {LEVELS.map(x => <span key={x.l}><i style={{ background: x.c }} />{x.l}</span>)}
-                    <span><i style={{ background: '#0b1622', border: '1px solid var(--border2)' }} />After dark</span>
                   </div>
                 </div>
 
                 <div className="wx-card">
                   <div className="wx-card-header">Court notes</div>
-                  {courtNotes(day, focus, data.todayKey).map(([ic, t, s], i) => (
+                  {courtNotes(day, focus, data.todayKey).slice(0, 2).map(([ic, t, s], i) => (
                     <div key={i} className="note"><span className="note-i">{ic}</span><div><b>{t}</b><div className="muted">{s}</div></div></div>
                   ))}
                 </div>
               </div>
 
               <div className="wx-col">
-                <div className="wx-card">
-                  <div className="wx-card-header">Week ahead · best 2 hours each day</div>
-                  {data.days.map(d => {
-                    const b = d.best, l = b ? levelOf(b.score) : null;
-                    return (
-                      <button key={d.key} className={'week-row' + (d.key === day.key ? ' on' : '')} onClick={() => pickDay(d.key)}>
-                        <div className="wk-d">{dayName(d.key, data.todayKey)}</div>
-                        <div className="wk-i">{d.icon}</div>
-                        <div className="wk-b">
-                          {b ? <><b style={{ color: l.c }}>{l.l}</b> <span>{fmtWin(b)}</span></> : <span className="muted">No daytime hours left</span>}
-                          <div className="muted" style={{ fontSize: '.68rem' }}>wind up to {d.maxWind} mph{d.maxRain >= 20 ? ` · rain ${d.maxRain}%` : ''}</div>
-                        </div>
-                        <div className="wk-t">{d.hi}°<span>{d.lo}°</span></div>
-                      </button>
-                    );
-                  })}
-                </div>
-
                 <details className="wx-card guide">
                   <summary className="wx-card-header" style={{ cursor: 'pointer' }}>How we rate the weather</summary>
                   <div style={{ padding: '0 16px 14px', fontSize: '.8rem', lineHeight: 1.55, color: 'var(--muted)' }}>
