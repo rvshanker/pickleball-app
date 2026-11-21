@@ -207,6 +207,9 @@ if(w.PC_APP)document.documentElement.classList.add('app');}catch(e){}})();
         .app body{-webkit-user-select:none;-webkit-touch-callout:none;}
         .app input,.app textarea{-webkit-user-select:text;}
         .app *{-webkit-tap-highlight-color:transparent;}
+        /* in the app, pop-up sheets cover the tab bar (like iOS sheets) so their buttons are never hidden */
+        .app .modal-bg{z-index:9500;}
+        .app .modal{max-height:88vh;padding-bottom:28px;}
         .appbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;height:44px;padding:0 8px;background:rgba(246,248,247,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:.5px solid rgba(15,23,42,.15);}
         .ab-title{flex:1;text-align:center;font-weight:700;font-size:17px;color:var(--ink);}
         .ab-btn{width:84px;background:none;border:none;color:var(--green-d);font-size:16px;font-weight:500;text-align:left;padding:8px;font-family:inherit;cursor:pointer;}
