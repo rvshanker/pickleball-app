@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PickleConnect – Pickleball Weather</title>
+<meta name="description" content="Real-time pickleball weather and playability forecast. Check wind, gusts, rain, and court conditions before you play.">
+<meta name="keywords" content="pickleball weather, pickleball wind, pickleball conditions, pickleball forecast, court weather, outdoor pickleball">
+<meta name="author" content="PickleConnect">
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PickleConnect – Pickleball Weather">
+<meta property="og:description" content="Real-time pickleball weather and playability forecast. Check wind, gusts, rain, and court conditions before you play.">
+<meta property="og:image" content="https://pickleconnect.live/weather/weather-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:url" content="https://pickleconnect.live/weather/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://pickleconnect.live/weather/weather-og.png">
+<link rel="canonical" href="https://pickleconnect.live/weather/">
+<meta name="theme-color" content="#0D1B2A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-8VE2FTD711"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-8VE2FTD711');
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%232ECC71'/><circle cx='50' cy='50' r='28' fill='white' opacity='0.15'/><circle cx='50' cy='50' r='6' fill='white'/></svg>" type="image/svg+xml">
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.7/babel.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --green:#2ECC71;--green-dim:rgba(46,204,113,0.12);
+  --navy:#0D1B2A;--card:#1A2B3C;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#F0F4F8;--muted:#8FAEC6;--muted2:rgba(122,155,181,0.5);
+  --accent:#F7C948;--red:#F75B5B;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);font-size:15px;-webkit-text-size-adjust:100%;min-height:100vh;}
+button{font-family:inherit;color:inherit;}
+#wx3d{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity 1.2s ease;}
+#wx3d.on{opacity:1;}
+#root{position:relative;z-index:1;}
+.muted{color:var(--muted);font-size:.8rem;}
+
+.nav{position:sticky;top:0;z-index:100;background:rgba(13,27,42,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.nav-logo{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;color:var(--green);text-decoration:none;white-space:nowrap;}
+.nav-logo span{color:var(--text);}
+.nav-logo em{font-style:normal;color:var(--muted);font-weight:700;font-size:.85rem;margin-left:6px;}
+.nav-search{display:flex;gap:8px;margin-left:auto;flex:0 1 380px;min-width:230px;align-items:center;}
+@media (max-width:680px){.nav-search{flex:1 1 100%;order:3;margin-left:0;}}
+.search-input{width:100%;padding:9px 12px 9px 34px;background:rgba(26,43,60,0.85);border:1.5px solid var(--border2);border-radius:11px;color:var(--text);font-family:inherit;font-size:16px;outline:none;}
+.search-input:focus{border-color:rgba(46,204,113,0.5);}
+.search-input::placeholder{color:var(--muted2);}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:.85rem;}
+.loc-btn{width:40px;height:40px;flex-shrink:0;border-radius:11px;background:rgba(26,43,60,0.85);border:1.5px solid var(--border2);font-size:1rem;cursor:pointer;}
+.loc-btn.active{border-color:var(--green);background:var(--green-dim);}
+
+.content{max-width:560px;margin:0 auto;padding:14px 14px 0;scroll-margin-top:70px;}
+@media (max-width:680px){.content{scroll-margin-top:118px;}}
+.place-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.place{font-weight:700;font-size:1rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.star{background:none;border:1px solid var(--border2);border-radius:99px;padding:6px 12px;font-size:.78rem;font-weight:700;cursor:pointer;color:var(--muted);white-space:nowrap;}
+.star.on{color:var(--accent);border-color:rgba(247,201,72,.4);}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{background:rgba(26,43,60,.8);border:1px solid var(--border2);border-radius:99px;padding:7px 13px;font-size:.8rem;font-weight:600;cursor:pointer;white-space:nowrap;}
+.chip.on{background:var(--green);border-color:var(--green);color:#06210f;}
+
+.center{text-align:center;padding:60px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;}
+.spin{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;}
+.err{background:rgba(247,91,91,.1);border:1px solid rgba(247,91,91,.25);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:.85rem;color:#FF8A80;}
+.dim{opacity:.55;transition:opacity .2s;}
+
+.hero{position:relative;background:linear-gradient(160deg,color-mix(in srgb,var(--lv) 16%,transparent),rgba(26,43,60,.82) 55%);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid color-mix(in srgb,var(--lv) 35%,transparent);border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:0 12px 36px rgba(0,0,0,.35);}
+.hero-top{display:flex;align-items:center;gap:12px;}
+.mascot{width:74px;height:74px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 10px 16px rgba(0,0,0,.45));animation:bobble 3.4s ease-in-out infinite;}
+@keyframes bobble{0%,100%{transform:translateY(-3px)}50%{transform:translateY(3px)}}
+.hero-when{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+.hero-verdict{font-family:'Syne',sans-serif;font-weight:800;font-size:1.45rem;line-height:1.1;margin:3px 0 4px;}
+.hero-why{font-size:.8rem;color:var(--text);opacity:.85;line-height:1.35;}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:14px;}
+.stat{background:rgba(13,27,42,.55);border:1px solid var(--border);border-radius:12px;padding:8px 4px;text-align:center;}
+.stat-l{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.stat-v{font-family:'Syne',sans-serif;font-weight:800;font-size:1.25rem;line-height:1.3;}
+.stat-v small{font-size:.65rem;font-family:'DM Sans',sans-serif;color:var(--muted);font-weight:700;}
+.stat-s{font-size:.65rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.best{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:12px;padding:10px 12px;border-radius:12px;background:rgba(13,27,42,.55);font-size:.85rem;font-weight:600;}
+.best-btn{background:none;border:none;font-weight:800;font-size:.9rem;cursor:pointer;padding:0;}
+.share{width:100%;margin-top:10px;background:linear-gradient(135deg,#2ECC71,#27AE60);color:#fff;border:none;border-radius:12px;padding:11px;font-weight:700;font-size:.9rem;cursor:pointer;box-shadow:0 4px 14px rgba(46,204,113,.3);}
+.toast{text-align:center;font-size:.78rem;color:var(--green);margin-top:8px;}
+
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-bottom:12px;}
+.day{background:rgba(26,43,60,.78);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:12px;padding:7px 2px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.day.on{border-color:var(--green);background:rgba(46,204,113,.14);}
+.day-n{font-size:.66rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+.day-i{font-size:1.05rem;}
+.day-dot{min-width:26px;border-radius:99px;font-size:.66rem;font-weight:800;color:#0b1622;padding:1px 5px;}
+
+.wx-card{background:rgba(26,43,60,0.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:12px;}
+.wx-card-header{padding:13px 16px 10px;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between;gap:8px;}
+.wx-card-header span{text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted2);}
+.wx-grid{display:flex;flex-direction:column;}
+.wx-col{display:contents;}
+@media (min-width:960px){
+  .content{max-width:1020px;}
+  .wx-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:14px;align-items:start;}
+  .wx-col{display:flex;flex-direction:column;min-width:0;}
+  .hero{max-width:none;}
+}
+
+.hours{display:flex;gap:4px;overflow-x:auto;padding:0 10px 10px;scrollbar-width:thin;scrollbar-color:rgba(140,160,196,.3) transparent;}
+.hr{flex:0 0 50px;background:rgba(13,27,42,.35);border:1px solid transparent;border-radius:12px;padding:7px 2px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.hr.night{background:#0b1622;}
+.hr.on{border-color:var(--text);background:rgba(255,255,255,.08);}
+.hr-t{font-size:.68rem;font-weight:700;color:var(--muted);}
+.hr.on .hr-t{color:var(--text);}
+.hr-i{font-size:1rem;}
+.hr-bar{width:12px;height:46px;border-radius:6px;background:rgba(255,255,255,.06);display:flex;align-items:flex-end;overflow:hidden;}
+.hr-bar div{width:100%;border-radius:6px;}
+.hr-s{font-size:.72rem;font-weight:800;}
+.hr-x{font-size:.7rem;font-weight:600;}
+.hr-x small{font-size:.55rem;color:var(--muted);}
+.legend{display:flex;flex-wrap:wrap;gap:10px;padding:0 16px 12px;font-size:.66rem;color:var(--muted);}
+.legend span{display:flex;align-items:center;gap:4px;}
+.legend i{width:9px;height:9px;border-radius:3px;display:inline-block;}
+
+.note{display:flex;gap:10px;padding:10px 16px;border-top:1px solid var(--border);font-size:.85rem;line-height:1.4;}
+.note-i{font-size:1.15rem;flex-shrink:0;width:24px;text-align:center;}
+
+.week-row{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;border-top:1px solid var(--border);padding:10px 16px;cursor:pointer;text-align:left;}
+.week-row.on{background:rgba(46,204,113,.08);}
+.wk-d{width:74px;flex-shrink:0;font-weight:700;font-size:.85rem;}
+.wk-i{font-size:1.1rem;width:24px;text-align:center;}
+.wk-b{flex:1;min-width:0;font-size:.82rem;}
+.wk-b span{color:var(--text);opacity:.85;}
+.wk-t{font-weight:700;font-size:.85rem;text-align:right;white-space:nowrap;}
+.wk-t span{color:var(--muted);font-weight:500;margin-left:5px;}
+.guide summary{list-style:none;}
+.guide summary::-webkit-details-marker{display:none;}
+.guide summary::after{content:'＋';color:var(--muted);}
+.guide[open] summary::after{content:'－';}
+.guide-lv{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:10px;}
+.cta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.cta a{display:block;text-align:center;padding:12px;border-radius:12px;background:var(--green-dim);border:1px solid rgba(46,204,113,.25);color:var(--text);text-decoration:none;font-weight:700;font-size:.85rem;}
+
+.footer{text-align:center;padding:18px 16px 32px;font-size:.72rem;color:var(--muted);}
+.footer a{color:var(--green);text-decoration:none;font-weight:600;}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.fade-up{animation:fadeUp .35s ease;}
+@media (prefers-reduced-motion: reduce){#wx3d{display:none !important;}.mascot{animation:none;}}
+</style>
+</head>
+<body>
+<div id="wx3d"></div>
+<div id="root"></div>
+
+<script>
+/* ============================================================
+   WX3D — wind-reactive 3D background (Three.js)
+   Particles flow in the real wind direction at real wind speed,
+   tinted by playability. A slow-spinning pickleball floats in
+   the depth; its spin rate scales with wind speed. Rain pulls
+   particles downward with a blue tint.
+   ============================================================ */
+window.WX3D = (function () {
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var container = document.getElementById('wx3d');
+  var inited = false, enabled = false, raf = null;
+  var renderer, scene, camera, points, geo, ball, ballWrap;
+  var rain, rainGeo, rainMat, drops = [];
+  var positions, seeds, count, baseSize;
+  var isMobile = window.innerWidth < 700;
+  var B = { x: 46, y: 30, z: 34 };            // particle bounds
+  var pointer = { x: 0, y: 0 };
+  var clock = null;
+  var halfH = 24.2, halfW = 24.2;             // visible world size at z=0
+
+  // live weather state (lerped each frame toward targets)
+  var cur = { speed: 5, dirX: 0.4, dirY: 0.1, rain: 0, snow: 0, heat: 0, spin: 0.2 };
+  var tgt = { speed: 5, dirX: 0.4, dirY: 0.1, rain: 0, snow: 0, heat: 0 };
+  var curColor = new THREE.Color('#2ECC71');
+  var tgtColor = new THREE.Color('#2ECC71');
+  var rainBlue = new THREE.Color('#7FB4FF');
+  var snowWhite = new THREE.Color('#EAF6FF');
+  var heatOrange = new THREE.Color('#F7943E');
+
+  // pickleball flight state: perches in a visible spot, periodically flies across
+  var flight = { mode: 'perch', t: 0, wait: 5 + Math.random() * 5, dur: 3, arc: 3, from: null, to: null };
+
+  function computeView() {
+    isMobile = window.innerWidth < 700;
+    halfH = Math.tan(Math.PI / 6) * 42;                       // fov 60, camera z 42
+    halfW = halfH * (window.innerWidth / Math.max(window.innerHeight, 1));
+    if (ball) ball.scale.setScalar(isMobile ? 0.55 : 0.85);
+  }
+
+  function perchPos() {
+    return isMobile
+      ? new THREE.Vector3(halfW * 0.5, halfH * 0.58, -4)      // top strip: visible around search area
+      : new THREE.Vector3(halfW * 0.72, halfH * 0.25, -8);    // empty right gutter on desktop
+  }
+
+  function startFly() {
+    var dir = Math.abs(cur.dirX) < 0.15 ? (Math.random() < 0.5 ? -1 : 1) : (cur.dirX >= 0 ? 1 : -1);
+    var y = isMobile ? halfH * (0.45 + Math.random() * 0.3)
+                     : halfH * (-0.25 + Math.random() * 0.7);
+    var z = isMobile ? 0 : -4;
+    flight.from = new THREE.Vector3(-dir * (halfW + 9), y, z);
+    flight.to = new THREE.Vector3(dir * (halfW + 9), y, z);
+    flight.arc = 1.5 + Math.random() * 3;
+    flight.dur = Math.max(2.0, 5.0 - cur.speed * 0.3);        // windier = faster fly-by
+    flight.t = 0;
+    flight.mode = 'fly';
+  }
+
+  function makeBallTexture() {
+    var c = document.createElement('canvas');
+    c.width = c.height = 512;
+    var g = c.getContext('2d');
+    var grad = g.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0, '#3ee085');
+    grad.addColorStop(1, '#24a45c');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 512, 512);
+    g.fillStyle = 'rgba(9,38,24,0.9)';
+    for (var y = 40; y < 512; y += 88) {
+      var off = (Math.floor(y / 88) % 2) ? 44 : 0;
+      for (var x = 40 + off; x < 512; x += 88) {
+        g.beginPath();
+        g.arc(x, y, 15, 0, Math.PI * 2);
+        g.fill();
+      }
+    }
+    var t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    return t;
+  }
+
+  function makeDotSprite() {
+    var c = document.createElement('canvas');
+    c.width = c.height = 64;
+    var g = c.getContext('2d');
+    var grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.35, 'rgba(255,255,255,0.6)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 64, 64);
+    return new THREE.CanvasTexture(c);
+  }
+
+  function init() {
+    if (inited || reduced || !window.THREE) return;
+    inited = true;
+    clock = new THREE.Clock();
+    computeView();
+
+    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false, powerPreference: 'low-power' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    container.appendChild(renderer.domElement);
+
+    scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x0d1b2a, 40, 90);
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+    camera.position.set(0, 0, 42);
+
+    // Particles
+    count = isMobile ? 340 : 650;
+    positions = new Float32Array(count * 3);
+    seeds = new Float32Array(count);
+    for (var i = 0; i < count; i++) {
+      positions[i * 3] = (Math.random() * 2 - 1) * B.x;
+      positions[i * 3 + 1] = (Math.random() * 2 - 1) * B.y;
+      positions[i * 3 + 2] = (Math.random() * 2 - 1) * B.z;
+      seeds[i] = Math.random() * Math.PI * 2;
+    }
+    geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    baseSize = isMobile ? 0.7 : 0.5;
+    var mat = new THREE.PointsMaterial({
+      size: baseSize,
+      map: makeDotSprite(),
+      color: curColor,
+      transparent: true,
+      opacity: isMobile ? 0.7 : 0.55,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    points = new THREE.Points(geo, mat);
+    scene.add(points);
+
+    // Rain: line segments, hidden until rain probability is high
+    var RAIN_N = isMobile ? 80 : 140;
+    drops = [];
+    var rp = new Float32Array(RAIN_N * 6);
+    for (var r = 0; r < RAIN_N; r++) {
+      drops.push({
+        x: (Math.random() * 2 - 1) * B.x,
+        y: (Math.random() * 2 - 1) * B.y,
+        z: (Math.random() * 2 - 1) * 20,
+        len: 1.2 + Math.random() * 0.9,
+        sp: 16 + Math.random() * 9
+      });
+    }
+    rainGeo = new THREE.BufferGeometry();
+    rainGeo.setAttribute('position', new THREE.BufferAttribute(rp, 3));
+    rainMat = new THREE.LineBasicMaterial({ color: 0x7fb4ff, transparent: true, opacity: 0 });
+    rain = new THREE.LineSegments(rainGeo, rainMat);
+    scene.add(rain);
+
+    // Pickleball
+    var ballGeo = new THREE.SphereGeometry(5.2, 40, 40);
+    var ballMat = new THREE.MeshStandardMaterial({
+      map: makeBallTexture(),
+      roughness: 0.55,
+      metalness: 0.05
+    });
+    ball = new THREE.Mesh(ballGeo, ballMat);
+    ball.scale.setScalar(isMobile ? 0.55 : 0.85);
+    ballWrap = new THREE.Group();
+    ballWrap.add(ball);
+    ballWrap.position.copy(perchPos());
+    ballWrap.visible = false; /* ball now lives in the stat carousel center */
+    scene.add(ballWrap);
+
+    scene.add(new THREE.AmbientLight(0x9fd8ff, 0.4));
+    var key = new THREE.DirectionalLight(0xffffff, 0.95);
+    key.position.set(-8, 14, 20);
+    scene.add(key);
+    var rim = new THREE.PointLight(0x2ecc71, 0.6, 60);
+    rim.position.set(14, -6, 4);
+    scene.add(rim);
+
+    window.addEventListener('resize', onResize);
+    window.addEventListener('pointermove', function (e) {
+      pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+      pointer.y = (e.clientY / window.innerHeight) * 2 - 1;
+    }, { passive: true });
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) stopLoop(); else if (enabled) startLoop();
+    });
+  }
+
+  function onResize() {
+    if (!inited) return;
+    computeView();
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  function frame() {
+    raf = requestAnimationFrame(frame);
+    var dt = Math.min(clock.getDelta(), 0.05);
+    var t = clock.elapsedTime;
+
+    // Ease toward target weather state
+    var k = 1 - Math.pow(0.02, dt);
+    cur.speed += (tgt.speed - cur.speed) * k;
+    cur.dirX += (tgt.dirX - cur.dirX) * k;
+    cur.dirY += (tgt.dirY - cur.dirY) * k;
+    cur.rain += (tgt.rain - cur.rain) * k;
+    cur.snow += (tgt.snow - cur.snow) * k;
+    cur.heat += (tgt.heat - cur.heat) * k;
+    curColor.lerp(tgtColor, k);
+
+    // Particle tint: playability color, shifted by weather mode
+    var pc = curColor.clone();
+    if (cur.rain > 0.01) pc.lerp(rainBlue, Math.min(cur.rain * 0.7, 0.7));
+    if (cur.snow > 0.01) pc.lerp(snowWhite, cur.snow * 0.85);
+    if (cur.heat > 0.01) pc.lerp(heatOrange, cur.heat * 0.5);
+    points.material.color.copy(pc);
+    points.material.size = baseSize * (1 + cur.snow * 0.5);
+
+    // Particle motion: wind flow + rain pull-down + snow drift-down + heat rise
+    var flow = 0.6 + cur.speed * 0.5;
+    var slow = 1 - cur.snow * 0.55;
+    var vx = cur.dirX * flow * slow;
+    var vy = cur.dirY * flow * slow - cur.rain * 5 - cur.snow * 2.4 + cur.heat * 1.8;
+    var amp = 0.35 + cur.snow * 1.1 + cur.heat * 0.7;         // flutter for snow, shimmer for heat
+    var pos = geo.attributes.position.array;
+    for (var i = 0; i < count; i++) {
+      var j = i * 3;
+      var wob = Math.sin(t * (1.4 + cur.heat * 1.2) + seeds[i]) * amp;
+      pos[j] += (vx + wob * (cur.dirY + cur.snow + cur.heat * 0.6)) * dt;
+      pos[j + 1] += (vy - wob * cur.dirX) * dt;
+      if (pos[j] > B.x) pos[j] = -B.x; else if (pos[j] < -B.x) pos[j] = B.x;
+      if (pos[j + 1] > B.y) pos[j + 1] = -B.y; else if (pos[j + 1] < -B.y) pos[j + 1] = B.y;
+    }
+    geo.attributes.position.needsUpdate = true;
+
+    // Rain streaks
+    var rTarget = cur.rain > 0.03 ? 0.45 : 0;
+    rainMat.opacity += (rTarget - rainMat.opacity) * k;
+    if (rainMat.opacity > 0.01) {
+      var rp = rainGeo.attributes.position.array;
+      for (var r = 0; r < drops.length; r++) {
+        var d = drops[r];
+        d.y -= d.sp * (0.5 + cur.rain) * dt;
+        d.x += cur.dirX * cur.speed * 1.5 * dt;
+        if (d.y < -B.y) { d.y = B.y; d.x = (Math.random() * 2 - 1) * B.x; }
+        if (d.x > B.x) d.x = -B.x; else if (d.x < -B.x) d.x = B.x;
+        var q = r * 6;
+        rp[q] = d.x; rp[q + 1] = d.y; rp[q + 2] = d.z;
+        rp[q + 3] = d.x - cur.dirX * 0.4; rp[q + 4] = d.y + d.len; rp[q + 5] = d.z;
+      }
+      rainGeo.attributes.position.needsUpdate = true;
+    }
+
+    // Pickleball: perch → periodic wind-driven fly-by → perch
+    cur.spin = 0.15 + cur.speed * 0.05;
+    var spinMul = flight.mode === 'fly' ? 4.5 : 1;
+    ball.rotation.y += cur.spin * spinMul * dt;
+    ball.rotation.x += cur.spin * 0.35 * spinMul * dt;
+    if (flight.mode === 'perch') {
+      var pp = perchPos();
+      ballWrap.position.x += (pp.x - ballWrap.position.x) * 0.05;
+      ballWrap.position.z += (pp.z - ballWrap.position.z) * 0.05;
+      var ty = pp.y + Math.sin(t * 0.6) * 1.2;
+      ballWrap.position.y += (ty - ballWrap.position.y) * 0.05;
+      flight.wait -= dt;
+      if (flight.wait <= 0) startFly();
+    } else {
+      flight.t += dt;
+      var f = Math.min(flight.t / flight.dur, 1);
+      ballWrap.position.lerpVectors(flight.from, flight.to, f);
+      ballWrap.position.y += Math.sin(f * Math.PI) * flight.arc;
+      if (f >= 1) {
+        flight.mode = 'perch';
+        flight.wait = 12 + Math.random() * 14;
+        var back = perchPos();
+        ballWrap.position.set(back.x, halfH + 10, back.z);  // re-enter from above, ease down to perch
+      }
+    }
+
+    // Camera parallax
+    camera.position.x += (pointer.x * 3 - camera.position.x) * 0.03;
+    camera.position.y += (-pointer.y * 2 - camera.position.y) * 0.03;
+    camera.lookAt(0, 0, 0);
+
+    renderer.render(scene, camera);
+  }
+
+  function startLoop() { if (!raf && inited) { clock.getDelta(); raf = requestAnimationFrame(frame); } }
+  function stopLoop() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+
+  return {
+    supported: !reduced && !!window.THREE,
+    setEnabled: function (on) {
+      enabled = !!on && !reduced && !!window.THREE;
+      if (enabled) {
+        init();
+        container.classList.add('on');
+        if (!document.hidden) startLoop();
+      } else {
+        container.classList.remove('on');
+        stopLoop();
+      }
+    },
+    flyNow: function () {
+      if (inited && enabled && flight.mode === 'perch') startFly();
+    },
+    update: function (o) {
+      // o: { wind (mph), deg (meteorological FROM), rain (0-100), temp (°F), color (hex) }
+      if (!o) return;
+      tgt.speed = Math.max(0.5, Math.min((o.wind || 0) / 4, 8));
+      var toward = (((o.deg == null ? 200 : o.deg) + 180) % 360) * Math.PI / 180;
+      tgt.dirX = Math.sin(toward);   // east = +x
+      tgt.dirY = Math.cos(toward);   // north = +y
+      tgt.rain = (o.rain || 0) >= 40 ? Math.min((o.rain - 20) / 80, 1) : 0;
+      tgt.snow = (o.temp != null && o.temp <= 34) ? 1 : 0;
+      tgt.heat = (o.temp != null && o.temp >= 88) ? Math.min((o.temp - 85) / 15, 1) : 0;
+      if (o.color) tgtColor.set(o.color);
+    }
+  };
+})();
+</script>
+
+<script type="text/babel">
+const {useState, useEffect, useMemo, useRef} = React;
+
+// ── Playability model ────────────────────────────────────────────────
+// Score 0–100 per hour. Wind and gusts matter most for pickleball, then rain (and wet courts after rain),
+// then temperature. Thunderstorms are always "Skip it".
+const LEVELS = [
+  { min: 80, l: 'Great',    c: '#2ECC71', e: '🟢', m: 'mascot-great.png' },
+  { min: 60, l: 'Okay',     c: '#F7C948', e: '🟡', m: 'mascot-okay.png' },
+  { min: 40, l: 'Marginal', c: '#F7943E', e: '🟠', m: 'mascot-marginal.png' },
+  { min: -1, l: 'Skip it',  c: '#F75B5B', e: '🔴', m: 'mascot-marginal.png' },
+];
+const levelOf = s => LEVELS.find(x => s >= x.min);
+
+function rate(h) {
+  let s = 100; const why = [];
+  s -= Math.max(0, h.wind - 6) * 4;
+  if (h.wind >= 15) why.push(`windy (${h.wind} mph)`); else if (h.wind >= 10) why.push(`breezy (${h.wind} mph)`);
+  s -= Math.max(0, h.gust - 14) * 2.5;
+  if (h.gust >= 20) why.push(`gusts to ${h.gust}`);
+  if (h.storm) { s -= 100; why.push('thunderstorms'); }
+  if (h.precip >= 0.01) { s -= 50; why.push('raining'); }
+  else {
+    s -= Math.max(0, h.rain - 15) * 0.7;
+    if (h.rain >= 40) why.push(`${h.rain}% chance of rain`);
+    if (h.wet) { s -= 25; why.push('courts may be wet'); }
+  }
+  if (h.feels >= 105) { s -= 50; why.push('dangerous heat'); }
+  else if (h.feels >= 95) { s -= 20; why.push(`very hot (feels ${h.feels}°)`); }
+  else if (h.feels >= 88) s -= 5;
+  if (h.feels < 32) { s -= 45; why.push(`freezing (feels ${h.feels}°)`); }
+  else if (h.feels < 42) { s -= 20; why.push(`cold (feels ${h.feels}°)`); }
+  else if (h.feels < 50) s -= 6;
+  return { score: Math.max(0, Math.min(100, Math.round(s))), why };
+}
+
+const DIRS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+const windDir = deg => deg == null ? '' : DIRS[Math.round(deg / 22.5) % 16];
+const windArrow = deg => deg == null ? '' : ['↓','↙','←','↖','↑','↗','→','↘'][Math.round(deg / 45) % 8]; // points where the wind blows TO
+const fmtHr = hr => { const h = ((hr + 11) % 12) + 1; return h + (hr % 24 < 12 ? ' AM' : ' PM'); };
+const fmtHrShort = hr => { const h = ((hr + 11) % 12) + 1; return h + (hr % 24 < 12 ? 'a' : 'p'); };
+const fmtWin = w => `${fmtHr(w.start).replace(/ (AM|PM)$/, (w.start < 12) === (w.end % 24 < 12) ? '' : ' $1')}–${fmtHr(w.end % 24)}`;
+const fmtClock = iso => { if (!iso) return ''; const hr = +iso.slice(11, 13), mi = iso.slice(14, 16); return `${((hr + 11) % 12) + 1}:${mi} ${hr < 12 ? 'AM' : 'PM'}`; };
+const dayName = (key, todayKey, long) => {
+  if (key === todayKey) return 'Today';
+  const [y, m, d] = key.split('-').map(Number), dt = new Date(y, m - 1, d);
+  const [ty, tm, td] = todayKey.split('-').map(Number);
+  if (Math.round((dt - new Date(ty, tm - 1, td)) / 864e5) === 1) return long ? 'Tomorrow' : 'Tmrw';
+  return dt.toLocaleDateString('en-US', long ? { weekday: 'long', month: 'short', day: 'numeric' } : { weekday: 'short' });
+};
+function codeIcon(code, isDay) {
+  if (code >= 95) return '⛈️';
+  if (code >= 71 && code <= 86 && code !== 80 && code !== 81 && code !== 82) return '🌨️';
+  if (code >= 51) return '🌧️';
+  if (code >= 45) return '🌫️';
+  if (code >= 3) return '☁️';
+  if (code >= 1) return isDay ? '⛅' : '☁️';
+  return isDay ? '☀️' : '🌙';
+}
+
+// Best playing window: highest average score over `len` straight hours between 6 AM and 10 PM.
+function bestWindow(hours, len = 2) {
+  let best = null;
+  for (let i = 0; i + len <= hours.length; i++) {
+    const run = hours.slice(i, i + len);
+    if (run[0].hr < 6 || run[len - 1].hr > 21) continue;
+    if (run.some((h, k) => k && h.hr !== run[k - 1].hr + 1)) continue;
+    const avg = Math.round(run.reduce((n, h) => n + h.score, 0) / len);
+    if (!best || avg > best.score) best = { start: run[0].hr, end: run[len - 1].hr + 1, score: avg, i };
+  }
+  return best;
+}
+
+// ── Data ──────────────────────────────────────────────────────────────
+async function loadForecast(lat, lng) {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
+    `&hourly=temperature_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,wind_direction_10m,precipitation_probability,precipitation,uv_index,is_day,weather_code` +
+    `&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min` +
+    `&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&forecast_days=7&past_days=1`;
+  const d = await (await fetch(url)).json();
+  if (!d.hourly) throw new Error('no data');
+  const H = d.hourly;
+  // Hours come in the location's own time zone, so "now" is worked out there too.
+  const nowKey = new Date(Date.now() + (d.utc_offset_seconds || 0) * 1000).toISOString().slice(0, 13);
+  const all = H.time.map((t, i) => ({
+    t, day: t.slice(0, 10), hr: +t.slice(11, 13),
+    temp: Math.round(H.temperature_2m[i]), feels: Math.round(H.apparent_temperature[i] ?? H.temperature_2m[i]),
+    wind: Math.round(H.wind_speed_10m[i]), gust: Math.round(H.wind_gusts_10m[i] || 0), deg: H.wind_direction_10m[i],
+    rain: H.precipitation_probability[i] || 0, precip: H.precipitation[i] || 0, uv: H.uv_index[i] || 0,
+    isDay: !!H.is_day[i], code: H.weather_code[i] || 0,
+  }));
+  all.forEach((h, i) => {
+    h.storm = h.code >= 95;
+    h.wet = all.slice(Math.max(0, i - 3), i).reduce((n, x) => n + x.precip, 0) >= 0.02;
+    Object.assign(h, rate(h));
+  });
+  let nowIdx = all.findIndex(h => h.t.slice(0, 13) === nowKey);
+  if (nowIdx < 0) nowIdx = Math.max(0, all.findIndex(h => h.t.slice(0, 13) > nowKey));
+  const todayKey = nowKey.slice(0, 10);
+  const future = all.slice(nowIdx);
+  const days = d.daily.time.filter(k => k >= todayKey).map(k => {
+    const di = d.daily.time.indexOf(k);
+    const hours = future.filter(h => h.day === k);
+    return {
+      key: k, hours,
+      sunrise: d.daily.sunrise[di], sunset: d.daily.sunset[di],
+      hi: Math.round(d.daily.temperature_2m_max[di]), lo: Math.round(d.daily.temperature_2m_min[di]),
+      best: bestWindow(hours),
+      maxWind: Math.max(0, ...hours.filter(h => h.hr >= 6 && h.hr <= 21).map(h => h.wind)),
+      maxRain: Math.max(0, ...hours.filter(h => h.hr >= 6 && h.hr <= 21).map(h => h.rain)),
+      icon: (() => { const mid = hours.find(h => h.hr === 14) || hours[Math.floor(hours.length / 2)]; return mid ? codeIcon(mid.code, true) : '—'; })(),
+    };
+  }).filter(x => x.hours.length);
+  return { now: all[nowIdx], todayKey, days, nextHours: future.slice(0, 24) };
+}
+
+const store = {
+  get(k, def) { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? def; } catch (e) { return def; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+
+// ── Pieces ────────────────────────────────────────────────────────────
+function ScoreRing({ score, color, size = 92 }) {
+  const r = size / 2 - 7, C = 2 * Math.PI * r;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="7" />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth="7" strokeLinecap="round"
+        strokeDasharray={`${C * score / 100} ${C}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} style={{ transition: 'stroke-dasharray .6s ease' }} />
+      <text x="50%" y="50%" dy="2" textAnchor="middle" dominantBaseline="middle" fill="var(--text)" fontFamily="Syne, sans-serif" fontWeight="800" fontSize={size * .3}>{score}</text>
+      <text x="50%" y="50%" dy={size * .22} textAnchor="middle" fill="var(--muted)" fontFamily="DM Sans, sans-serif" fontWeight="700" fontSize="9" letterSpacing="1">/ 100</text>
+    </svg>
+  );
+}
+
+function Stat({ label, value, sub, warn }) {
+  return (
+    <div className="stat">
+      <div className="stat-l">{label}</div>
+      <div className="stat-v" style={warn ? { color: warn } : null}>{value}</div>
+      <div className="stat-s">{sub || ' '}</div>
+    </div>
+  );
+}
+
+function HourStrip({ hours, selected, onSelect, sunset }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current && ref.current.querySelector('.hr.on');
+    if (el) el.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+  }, [selected]);
+  return (
+    <div className="hours" ref={ref}>
+      {hours.map((h, i) => {
+        const lv = levelOf(h.score);
+        return (
+          <button key={h.t} className={'hr' + (h.t === selected ? ' on' : '') + (h.isDay ? '' : ' night')} onClick={() => onSelect(h.t)}>
+            <div className="hr-t">{i === 0 && h.t === hours[0].t && h.isNow ? 'Now' : fmtHrShort(h.hr)}</div>
+            <div className="hr-i">{codeIcon(h.code, h.isDay)}</div>
+            <div className="hr-bar"><div style={{ height: Math.max(8, h.score) + '%', background: lv.c }} /></div>
+            <div className="hr-s" style={{ color: lv.c }}>{h.score}</div>
+            <div className="hr-x">{h.temp}°</div>
+            <div className="hr-x" style={{ color: h.wind >= 12 ? 'var(--accent)' : null }}>{h.wind}<small>mph</small></div>
+            {h.rain >= 20 && <div className="hr-x" style={{ color: '#60a5fa' }}>{h.rain}%</div>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function courtNotes(day, focus, todayKey) {
+  const out = [];
+  const hrs = day.hours;
+  const ss = day.sunset;
+  if (ss) out.push(['🌇', `Sunset ${fmtClock(ss)}`, 'You\'ll need court lights after that.']);
+  const peakUv = Math.max(0, ...hrs.map(h => h.uv));
+  if (peakUv >= 6) out.push(['🧴', `UV peaks at ${Math.round(peakUv)}`, 'Sunscreen and a hat, especially midday.']);
+  if (focus.wet && focus.precip < 0.01) out.push(['💧', 'Courts may still be wet', 'It rained in the last few hours. Check for puddles and bring a squeegee or towel.']);
+  const soon = hrs.slice(hrs.indexOf(focus), hrs.indexOf(focus) + 4).find(h => h !== focus && (h.rain >= 50 || h.precip >= 0.01));
+  if (soon && focus.precip < 0.01) out.push(['☔', `Rain likely around ${fmtHr(soon.hr)}`, 'Get your games in early.']);
+  if (hrs.some(h => h.storm)) out.push(['⚡', 'Thunderstorms in the forecast', 'Get off the court at the first thunder.']);
+  if (focus.feels >= 92) out.push(['🥵', `Feels like ${focus.feels}°`, 'Drink water between every game and take shade breaks.']);
+  if (focus.feels < 45) out.push(['🥶', `Feels like ${focus.feels}°`, 'Outdoor balls crack more in the cold. Bring a spare and warm up longer.']);
+  if (focus.wind >= 10) out.push(['💨', `Wind from the ${windDir(focus.deg)}`, 'Switch sides every game to keep it fair. Keep lobs low and dink with more margin.']);
+  if (!out.length) out.push(['👌', 'Nothing to worry about', 'Just bring water.']);
+  return out;
+}
+
+// ── App ───────────────────────────────────────────────────────────────
+function App() {
+  const [place, setPlace] = useState(() => store.get('wx:last', null)); // {name, lat, lng, gps}
+  const [favs, setFavs] = useState(() => store.get('wx:favs', []));
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [q, setQ] = useState('');
+  const [dayKey, setDayKey] = useState(null);
+  const [hourKey, setHourKey] = useState(null);
+  const [toast, setToast] = useState('');
+  const topRef = useRef(null);
+
+  const load = async p => {
+    setLoading(true); setError(null);
+    try {
+      const d = await loadForecast(p.lat, p.lng);
+      d.now.isNow = true;
+      setData(d); setDayKey(d.todayKey); setHourKey(d.now.t);
+      setPlace(p); store.set('wx:last', p);
+    } catch (e) { setError('Couldn\'t load the forecast. Check your connection and try again.'); }
+    setLoading(false);
+  };
+
+  const useGps = () => {
+    if (!navigator.geolocation) { setError('Location isn\'t available on this device. Search a city or zip instead.'); return; }
+    setLoading(true); setError(null);
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const { latitude: lat, longitude: lng } = pos.coords;
+      let name = 'Your location';
+      try {
+        const r = await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`)).json();
+        name = [r.address?.city || r.address?.town || r.address?.village, r.address?.state].filter(Boolean).join(', ') || name;
+      } catch (e) {}
+      load({ name, lat, lng, gps: true });
+    }, () => { setLoading(false); setError(place ? null : 'Location access is off. Search a city or zip code above.'); }, { timeout: 10000 });
+  };
+
+  const search = async e => {
+    e && e.preventDefault();
+    const term = q.trim(); if (!term) return;
+    setLoading(true); setError(null);
+    try {
+      const r = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(term)}&count=1&language=en&format=json`)).json();
+      if (r.results?.length) {
+        const x = r.results[0];
+        setQ(''); document.activeElement?.blur();
+        return load({ name: `${x.name}${x.admin1 ? ', ' + x.admin1 : ''}`, lat: x.latitude, lng: x.longitude });
+      }
+      const r2 = await (await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(term)}&limit=1&countrycodes=us`)).json();
+      if (r2.length) { setQ(''); return load({ name: r2[0].display_name.split(',').slice(0, 2).join(','), lat: +r2[0].lat, lng: +r2[0].lon }); }
+      setError('Couldn\'t find that place. Try a city name or a US zip code.');
+    } catch (e) { setError('Search failed. Please try again.'); }
+    setLoading(false);
+  };
+
+  useEffect(() => { if (place) load(place); else useGps(); }, []);
+  useEffect(() => { window.WX3D?.setEnabled(true); }, []);
+
+  const isFav = place && favs.some(f => Math.abs(f.lat - place.lat) < .01 && Math.abs(f.lng - place.lng) < .01);
+  const toggleFav = () => {
+    const next = isFav ? favs.filter(f => !(Math.abs(f.lat - place.lat) < .01 && Math.abs(f.lng - place.lng) < .01))
+      : [...favs, { name: place.name, lat: place.lat, lng: place.lng }].slice(-6);
+    setFavs(next); store.set('wx:favs', next);
+  };
+
+  const day = data && (data.days.find(x => x.key === dayKey) || data.days[0]);
+  const focus = day && (day.hours.find(h => h.t === hourKey) || (day.best ? day.hours[day.best.i] : day.hours[0]));
+  const lv = focus && levelOf(focus.score);
+  const isToday = day && day.key === data.todayKey;
+  const viewingNow = focus && focus.isNow;
+
+  useEffect(() => {
+    if (focus && window.WX3D) window.WX3D.update({ wind: focus.wind, deg: focus.deg, rain: focus.precip >= 0.01 ? 90 : focus.rain, temp: focus.temp, color: lv.c });
+  }, [focus && focus.t, data]);
+
+  const pickDay = k => {
+    const d = data.days.find(x => x.key === k);
+    setDayKey(k);
+    setHourKey(k === data.todayKey ? data.now.t : (d.best ? d.hours[d.best.i].t : d.hours[0].t));
+    topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const share = async () => {
+    const w = day.best;
+    const when = w ? `${dayName(day.key, data.todayKey)} best time: ${fmtWin(w)} ${levelOf(w.score).e} ${levelOf(w.score).l} (${w.score}/100)` : '';
+    const bw = w ? day.hours[w.i] : focus;
+    const text = `🏓 Pickleball weather · ${place.name}\n${when}\n💨 Wind ${bw.wind} mph, gusts ${bw.gust} · ☔ ${bw.rain}% · 🌡️ ${bw.temp}°F\n`;
+    const url = 'https://pickleconnect.live/weather/';
+    if (navigator.share) { try { await navigator.share({ title: 'Pickleball weather', text, url }); return; } catch (e) { return; } }
+    try { await navigator.clipboard.writeText(text + url); setToast('Copied. Paste it in your group chat.'); }
+    catch (e) { prompt('Copy this', text + url); }
+    setTimeout(() => setToast(''), 2500);
+  };
+
+  return (
+    <div>
+      <div className="nav">
+        <a href="https://pickleconnect.live" className="nav-logo"><span>Pickle</span>Connect<em>Weather</em></a>
+        <form className="nav-search" onSubmit={search}>
+          <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+            <span className="search-icon">🔍</span>
+            <input className="search-input" value={q} onChange={e => setQ(e.target.value)} placeholder="City or zip code" enterKeyHint="search" />
+          </div>
+          <button type="button" onClick={useGps} className={'loc-btn' + (place?.gps ? ' active' : '')} title="Use my location" aria-label="Use my location">📍</button>
+        </form>
+      </div>
+
+      <div className="content" ref={topRef}>
+        {place && (
+          <div className="place-row">
+            <div className="place">{place.gps ? '📍 ' : ''}{place.name}</div>
+            {data && <button className={'star' + (isFav ? ' on' : '')} onClick={toggleFav} aria-label={isFav ? 'Remove from my spots' : 'Save to my spots'}>{isFav ? '★ Saved' : '☆ Save spot'}</button>}
+          </div>
+        )}
+        {favs.length > 0 && (
+          <div className="chips" style={{ marginBottom: 12 }}>
+            {favs.map(f => {
+              const on = place && Math.abs(f.lat - place.lat) < .01 && Math.abs(f.lng - place.lng) < .01;
+              return <button key={f.name + f.lat} className={'chip' + (on ? ' on' : '')} onClick={() => !on && load(f)}>{f.name.split(',')[0]}</button>;
+            })}
+          </div>
+        )}
+
+        {loading && !data && <div className="center"><div className="spin" /><div className="muted">Checking the courts…</div></div>}
+        {error && <div className="err">⚠️ {error}</div>}
+        {!data && !loading && !error && (
+          <div className="center"><div style={{ fontSize: '3rem' }}>🌤️</div><div style={{ fontWeight: 700 }}>Pickleball Weather</div>
+            <div className="muted">Search a city or zip code, or tap 📍, to see when it's good to play.</div></div>
+        )}
+
+        {data && day && focus && (
+          <div className={'fade-up' + (loading ? ' dim' : '')}>
+            {/* Hero */}
+            <div className="hero" style={{ '--lv': lv.c }}>
+              <div className="hero-top">
+                <img className="mascot" src={focus.precip >= 0.01 || focus.storm ? 'mascot-rain.png' : lv.m} alt="" />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="hero-when">{viewingNow ? 'Right now' : `${dayName(day.key, data.todayKey, true)} · ${fmtHr(focus.hr)}`}</div>
+                  <div className="hero-verdict" style={{ color: lv.c }}>{lv.l}{lv.l === 'Skip it' ? '' : ' for pickleball'}</div>
+                  <div className="hero-why">{focus.why.length ? focus.why.slice(0, 3).join(' · ') : focus.wind <= 6 ? 'Calm air, dry courts. Perfect.' : 'Light wind, dry courts. Get out there!'}</div>
+                </div>
+                <ScoreRing score={focus.score} color={lv.c} />
+              </div>
+              <div className="stats">
+                <Stat label="Temp" value={`${focus.temp}°`} sub={focus.feels !== focus.temp ? `feels ${focus.feels}°` : codeIcon(focus.code, focus.isDay)} />
+                <Stat label="Wind" value={<>{focus.wind}<small> mph</small></>} sub={focus.deg != null ? `${windArrow(focus.deg)} from ${windDir(focus.deg)}` : ''} warn={focus.wind >= 15 ? 'var(--red)' : focus.wind >= 10 ? 'var(--accent)' : null} />
+                <Stat label="Gusts" value={<>{focus.gust}<small> mph</small></>} sub={focus.gust >= 20 ? 'lobs drift' : focus.gust >= 15 ? 'felt on dinks' : 'not a factor'} warn={focus.gust >= 20 ? 'var(--red)' : focus.gust >= 15 ? 'var(--accent)' : null} />
+                <Stat label="Rain" value={`${focus.rain}%`} sub={focus.precip >= 0.01 ? 'raining' : focus.wet ? 'wet courts' : 'chance'} warn={focus.rain >= 50 || focus.precip >= .01 ? '#60a5fa' : null} />
+              </div>
+              <div className="best">
+                {day.best && day.best.score < 40 ? <span>😕 No good window {isToday ? 'left today' : 'on ' + dayName(day.key, data.todayKey)}. Best is {fmtWin(day.best)} ({day.best.score}).</span>
+                : day.best ? <>
+                  <span>⏰ Best time {isToday ? 'today' : dayName(day.key, data.todayKey).replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)$/, 'on $1')}</span>
+                  <button className="best-btn" onClick={() => setHourKey(day.hours[day.best.i].t)} style={{ color: levelOf(day.best.score).c }}>
+                    {fmtWin(day.best)} · {levelOf(day.best.score).l}{day.hours[day.best.i].isDay ? '' : ' 🌙'}
+                  </button>
+                </> : <span>🌙 No more daytime hours today. Check tomorrow below.</span>}
+              </div>
+              <button className="share" onClick={share}>📤 Share with my group</button>
+              {toast && <div className="toast">{toast}</div>}
+            </div>
+
+            {/* Day picker */}
+            <div className="days">
+              {data.days.map(d => {
+                const b = d.best, l = b ? levelOf(b.score) : null;
+                return (
+                  <button key={d.key} className={'day' + (d.key === day.key ? ' on' : '')} onClick={() => pickDay(d.key)}>
+                    <div className="day-n">{dayName(d.key, data.todayKey)}</div>
+                    <div className="day-i">{d.icon}</div>
+                    <div className="day-dot" style={{ background: l ? l.c : 'var(--muted2)' }}>{b ? b.score : '–'}</div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="wx-grid">
+              <div className="wx-col">
+                <div className="wx-card">
+                  <div className="wx-card-header">Hour by hour · {dayName(day.key, data.todayKey, true)}<span>tap an hour</span></div>
+                  <HourStrip hours={day.hours} selected={focus.t} onSelect={setHourKey} sunset={day.sunset} />
+                  <div className="legend">
+                    {LEVELS.map(x => <span key={x.l}><i style={{ background: x.c }} />{x.l}</span>)}
+                    <span><i style={{ background: '#0b1622', border: '1px solid var(--border2)' }} />After dark</span>
+                  </div>
+                </div>
+
+                <div className="wx-card">
+                  <div className="wx-card-header">Court notes</div>
+                  {courtNotes(day, focus, data.todayKey).map(([ic, t, s], i) => (
+                    <div key={i} className="note"><span className="note-i">{ic}</span><div><b>{t}</b><div className="muted">{s}</div></div></div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="wx-col">
+                <div className="wx-card">
+                  <div className="wx-card-header">Week ahead · best 2 hours each day</div>
+                  {data.days.map(d => {
+                    const b = d.best, l = b ? levelOf(b.score) : null;
+                    return (
+                      <button key={d.key} className={'week-row' + (d.key === day.key ? ' on' : '')} onClick={() => pickDay(d.key)}>
+                        <div className="wk-d">{dayName(d.key, data.todayKey)}</div>
+                        <div className="wk-i">{d.icon}</div>
+                        <div className="wk-b">
+                          {b ? <><b style={{ color: l.c }}>{l.l}</b> <span>{fmtWin(b)}</span></> : <span className="muted">No daytime hours left</span>}
+                          <div className="muted" style={{ fontSize: '.68rem' }}>wind up to {d.maxWind} mph{d.maxRain >= 20 ? ` · rain ${d.maxRain}%` : ''}</div>
+                        </div>
+                        <div className="wk-t">{d.hi}°<span>{d.lo}°</span></div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <details className="wx-card guide">
+                  <summary className="wx-card-header" style={{ cursor: 'pointer' }}>How the score works</summary>
+                  <div style={{ padding: '0 16px 14px', fontSize: '.8rem', lineHeight: 1.55, color: 'var(--muted)' }}>
+                    Every hour starts at 100. Wind above 6 mph and gusts above 14 mph take the most off, because they wreck lobs and dinks.
+                    Rain chance, actual rain, wet courts after rain, heat and cold take off the rest. Thunderstorms are always "Skip it".
+                    <div className="guide-lv">{LEVELS.map((x, i) => <div key={x.l}><b style={{ color: x.c }}>{x.e} {x.l}</b> {i === 0 ? '80–100' : i === 1 ? '60–79' : i === 2 ? '40–59' : 'under 40'}</div>)}</div>
+                  </div>
+                </details>
+
+                <div className="cta">
+                  <a href="https://pickleconnect.live/league.html">🏆 My league</a>
+                  <a href="https://pickleconnect.live">🏓 Find a game</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="footer">
+        <a href="https://pickleconnect.live">pickleconnect.live</a> · Pickleball Weather<br />
+        Forecast from <a href="https://open-meteo.com" target="_blank" rel="noopener noreferrer">Open-Meteo</a>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
