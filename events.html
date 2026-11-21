@@ -17,7 +17,7 @@
 
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23059669'/><ellipse cx='50' cy='50' rx='20' ry='20' fill='none' stroke='white' stroke-width='3'/><line x1='30' y1='50' x2='70' y2='50' stroke='white' stroke-width='3'/><line x1='50' y1='30' x2='50' y2='70' stroke='white' stroke-width='3'/><circle cx='50' cy='50' r='6' fill='white'/></svg>" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone@7.29.7/babel.min.js"></script>
@@ -129,6 +129,58 @@
             .round-card{break-inside:avoid;box-shadow:none;}
             .pbtn{text-decoration:none;}.tap-hint{display:none;}
         }
+
+        /* ── PickleConnect theme (matches the weather page) ─────────────── */
+        :root{--navy:#0D1B2A;--navy2:#162a3d;--green:#22c55e;--green-d:#15803d;--court:#17663f;--ball:#F7C948;--ta:#3b82f6;--tb:#f97316;--bg:#eef3f0;--ink:#0f172a;--muted:#64748b;}
+        body,.inp,.score-inp,.btn,.tab,.chip,.nav a,.nav button.link,.opt{font-family:'DM Sans',sans-serif;}
+        body{background:var(--bg);color:var(--ink);}
+        .fd{font-family:'DM Sans',sans-serif;letter-spacing:-.01em;}
+        .card{border-radius:18px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 6px 20px rgba(15,23,42,.06);}
+        .nav{background:var(--navy);padding:12px 16px;}
+        .brand{flex:1;text-align:center;white-space:nowrap;line-height:1;}
+        .brand b{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#fff;letter-spacing:-.02em;}
+        .brand b span{color:var(--green);}
+        .brand em{font-style:normal;color:#8FAEC6;font-weight:700;font-size:13px;margin-left:6px;}
+        .hero-bg{background:linear-gradient(135deg,var(--navy) 0%,#123524 60%,var(--court) 100%);}
+
+        .tabs{background:#fff;border-radius:16px;padding:5px;gap:4px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 6px 20px rgba(15,23,42,.06);}
+        .tab{border-radius:12px;color:var(--muted);font-weight:700;}
+        .tab.on{background:var(--green);color:#052e16;box-shadow:0 4px 12px rgba(34,197,94,.35);}
+
+        .chip{border-color:#dbe4df;font-weight:700;}
+        .chip.on{background:var(--navy);border-color:var(--navy);color:#fff;}
+
+        .btn-g{background:var(--green);color:#052e16;box-shadow:0 4px 14px rgba(34,197,94,.3);}
+        .btn-g:hover{background:#16a34a;color:#fff;}
+        .btn-g:disabled{background:#e5ebe8;color:#94a3b8;box-shadow:none;}
+        .btn-out{color:var(--green-d);border-color:var(--green);}
+        .inp:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.15);}
+
+        /* court cards: a strip of court green with a white baseline, team colour bars */
+        .round-card{border:none;border-radius:18px;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 24px rgba(15,23,42,.07);}
+        .round-hd{background:var(--court);box-shadow:inset 0 -3px 0 rgba(255,255,255,.85);padding:10px 16px;}
+        .round-hd span:last-child{background:rgba(0,0,0,.22);color:var(--ball)!important;border-radius:99px;padding:3px 10px;font-weight:700;}
+        .teams .team{position:relative;padding:6px 0 6px 12px;}
+        .teams .team::before{content:'';position:absolute;left:0;top:7px;bottom:7px;width:4px;border-radius:4px;background:var(--tc);}
+        .teams>.team:first-child{--tc:var(--ta);}
+        .teams>.vs+.team{--tc:var(--tb);}
+        .vs{align-self:flex-start;margin-left:12px!important;font-size:10px;color:#94a3b8;background:#f1f5f9;border-radius:99px;padding:2px 8px;letter-spacing:1px;}
+        .team.win .tnames{color:var(--green-d);}
+        .court{background:var(--court);border:none;color:#fff;border-radius:12px;box-shadow:inset 0 -3px 0 rgba(255,255,255,.8);}
+        .court small{color:#bbf7d0;}
+        .match .court{align-self:center;height:60px;}
+        .score-inp{border:2px solid #e2e8f0;background:#f8fafc;border-radius:12px;}
+        .score-inp:focus{border-color:var(--green);background:#fff;}
+        .score-inp.win,.score-ro.win{background:var(--green);border-color:var(--green);color:#052e16;}
+        .score-inp.live{width:64px;height:52px;font-size:22px;}
+        .next{padding:9px 16px;background:#f6f9f7;border-top:1px solid #edf2ef;font-size:13px;color:var(--muted);}
+        .next b{color:var(--ink);font-weight:600;}
+        .sit{background:#fffbeb;}
+        .pbtn{text-decoration-color:rgba(34,197,94,.7);}
+        table.lb th.on{color:var(--green-d);}
+        .ok{background:#ecfdf3;border-color:#bbf7d0;color:#166534;}
+        .opt.on{border-color:var(--green);background:#ecfdf3;}
+        @media(max-width:430px){.brand b{font-size:15px;}.brand em{font-size:12px;}}
     </style>
 </head>
 <body>
@@ -425,10 +477,8 @@ const Center=({children})=><div style={{minHeight:'100vh',display:'flex',alignIt
 function Nav({children,onHome,user}){
     return(
         <div className="nav no-print">
-            {onHome?<button className="link" onClick={onHome}>← Leagues</button>:<a href="index.html">← Home</a>}
-            <div className="fd" style={{color:'white',fontWeight:800,fontSize:16,flex:1,textAlign:'center',letterSpacing:.2,whiteSpace:'nowrap'}}>
-                LEAGUES<span style={{color:'#34d399'}}> & TOURNEYS</span>
-            </div>
+            {onHome?<button className="link" onClick={onHome}>← Back</button>:<a href="index.html">← Home</a>}
+            <div className="brand"><b>Pickle<span>Connect</span></b><em>Leagues</em></div>
             {user?<button className="link" onClick={()=>auth.signOut()}>Log out</button>:<span style={{width:60}}/>}
             {children}
         </div>
@@ -1064,7 +1114,7 @@ function LiveCard({league,x,total,canScore,update,onPlayer,weekId,name,waitingOn
                 <span className="fd" style={{fontSize:19,fontWeight:800,letterSpacing:.5}}>COURT {x.court}</span>
                 <span style={{fontSize:13,color:'#6ee7b7',fontWeight:600}}>Game {x.ri+1} of {total}</span>
             </div>
-            <div style={{padding:'10px 14px'}}>
+            <div className="teams" style={{padding:'12px 16px'}}>
                 <div className={'team'+(aWin?' win':'')}>
                     <div className="tnames" style={{fontSize:17}}>{names(x.m.team1)}</div>
                     {Box({v:a,set:setA,win:aWin})}
@@ -1079,8 +1129,8 @@ function LiveCard({league,x,total,canScore,update,onPlayer,weekId,name,waitingOn
                     {busy?'Saving…':a!==''&&b!==''&&a===b?'Scores can\'t be tied':'✓ Save score'}
                 </button>}
             </div>
-            {x.next&&<div style={{padding:'7px 14px',background:'#f8fafc',borderTop:'1px solid #f1f5f9',fontSize:13,color:'#64748b'}}>
-                Up next · Game {x.next.ri+1}: {x.next.m.team1.map(name).join(' & ')} vs {x.next.m.team2.map(name).join(' & ')}
+            {x.next&&<div className="next">
+                Up next · Game {x.next.ri+1}: <b>{x.next.m.team1.map(name).join(' & ')}</b> vs <b>{x.next.m.team2.map(name).join(' & ')}</b>
             </div>}
         </div>
     );
