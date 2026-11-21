@@ -156,27 +156,42 @@
         .btn-out{color:var(--green-d);border-color:var(--green);}
         .inp:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.15);}
 
-        /* court cards: a strip of court green with a white baseline, team colour bars */
-        .round-card{border:none;border-radius:18px;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 24px rgba(15,23,42,.07);}
-        .round-hd{background:var(--court);box-shadow:inset 0 -3px 0 rgba(255,255,255,.85);padding:10px 16px;}
-        .round-hd span:last-child{background:rgba(0,0,0,.22);color:var(--ball)!important;border-radius:99px;padding:3px 10px;font-weight:700;}
-        .teams .team{position:relative;padding:6px 0 6px 12px;}
-        .teams .team::before{content:'';position:absolute;left:0;top:7px;bottom:7px;width:4px;border-radius:4px;background:var(--tc);}
-        .teams>.team:first-child{--tc:var(--ta);}
-        .teams>.vs+.team{--tc:var(--tb);}
-        .vs{align-self:flex-start;margin-left:12px!important;font-size:10px;color:#94a3b8;background:#f1f5f9;border-radius:99px;padding:2px 8px;letter-spacing:1px;}
-        .team.win .tnames{color:var(--green-d);}
-        .court{background:var(--court);border:none;color:#fff;border-radius:12px;box-shadow:inset 0 -3px 0 rgba(255,255,255,.8);}
-        .court small{color:#bbf7d0;}
-        .match .court{align-self:center;height:60px;}
-        .score-inp{border:2px solid #e2e8f0;background:#f8fafc;border-radius:12px;}
-        .score-inp:focus{border-color:var(--green);background:#fff;}
+        /* calm, compact cards: navy + greys, green only for winners and Save */
+        .tab.on{background:var(--navy);color:#fff;box-shadow:none;}
+        .round-card{border:1px solid #e5ebe8;border-radius:14px;box-shadow:none;margin-bottom:10px;}
+        .round-hd{background:#f6f8f7;color:var(--ink);border-bottom:1px solid #e5ebe8;padding:8px 14px;}
+        .round-hd span:last-child{color:var(--muted);}
+        .match{padding:8px 12px;gap:10px;}
+        .court{background:#f1f4f2;border:none;color:var(--ink);border-radius:10px;min-width:48px;}
+        .match .court{align-self:center;height:auto;padding:6px 4px;}
+        .court small{color:var(--muted);}
+        .teams{gap:6px;}
+        .team.win .tnames{color:var(--ink);font-weight:700;}
+        .score-inp{border:1.5px solid #e2e8f0;background:#fff;border-radius:10px;width:48px;height:38px;font-size:17px;}
+        .score-inp:focus{border-color:var(--navy);}
         .score-inp.win,.score-ro.win{background:var(--green);border-color:var(--green);color:#052e16;}
-        .score-inp.live{width:64px;height:52px;font-size:22px;}
-        .next{padding:9px 16px;background:#f6f9f7;border-top:1px solid #edf2ef;font-size:13px;color:var(--muted);}
-        .next b{color:var(--ink);font-weight:600;}
-        .sit{background:#fffbeb;}
-        .pbtn{text-decoration-color:rgba(34,197,94,.7);}
+        .sit{background:#f8faf9;color:var(--muted);font-size:13px;padding:7px 14px;border-top:1px solid #eef2f0;}
+
+        .lc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px;margin-bottom:10px;}
+        .lc{background:#fff;border:1px solid #e5ebe8;border-radius:14px;padding:10px 12px;}
+        .lc-hd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;}
+        .lc-hd b{font-size:15px;font-weight:800;color:var(--ink);}
+        .lc-hd span{font-size:12px;color:var(--muted);font-weight:600;}
+        .lc-row{display:flex;align-items:center;gap:10px;padding:5px 0;}
+        .lc-row+.lc-row{border-top:1px solid #f0f3f1;}
+        .lc-row .tnames{flex:1;min-width:0;font-size:16px;}
+        .lc-row.win .tnames{font-weight:700;}
+        .lc-row .score-inp.live{width:52px;height:40px;font-size:19px;}
+        .lc-save{margin-top:6px;}
+        .lc-save .btn{width:100%;}
+        .lc-note{font-size:12px;color:#92400e;margin-top:4px;}
+        .lc-next{font-size:12px;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px dashed #e5ebe8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .sit-line{font-size:13px;color:var(--muted);padding:8px 12px;background:#fff;border:1px dashed #d6dfda;border-radius:12px;}
+        .tap-hint{margin-bottom:6px;}
+        .pbtn{text-decoration-color:#cbd5e1;}
+        .tap-hint u{text-decoration-color:#cbd5e1;}
+        .btn-out{color:var(--ink);border:1.5px solid #d6dfda;background:#fff;}
+        .btn-out:hover{background:#f6f8f7;}
         table.lb th.on{color:var(--green-d);}
         .ok{background:#ecfdf3;border-color:#bbf7d0;color:#166534;}
         .opt.on{border-color:var(--green);background:#ecfdf3;}
@@ -739,7 +754,7 @@ function LeagueView({id,user,onHome}){
                     </div>
                     <ShareButton league={league}/>
                 </div>
-                {league._demo&&<div className="ok no-print" style={{marginBottom:12}}>🧪 Demo data, only on this device. Change anything you like. <a href="events.html?demo" style={{color:'#047857',fontWeight:700}}>All demos</a></div>}
+                {league._demo&&<div className="ok no-print" style={{marginBottom:12}}>🧪 Demo data on this device · <a href="events.html?demo" style={{color:'#047857',fontWeight:700}}>All demos</a></div>}
                 {league._src==='local'&&!league._demo&&canManage&&<div className="warn no-print" style={{marginBottom:12}}>Saved on this device only — publish the <b>leagues</b> Firestore rule to sync and share.</div>}
                 <div className="tabs no-print">
                     {tabs.map(([k,l])=><button key={k} className={'tab'+(tab===k?' on':'')} onClick={()=>setTab(k)} style={k==='manage'?{flex:'0 0 46px'}:null}>{l}</button>)}
@@ -1013,12 +1028,12 @@ function ScheduleList({league,week,canScore,update,onPlayer}){
     };
     return(
         <div>
-            <div className="tap-hint">👆 Tap a <u>player's name</u> to see all their games</div>
+            <div className="tap-hint">👆 Tap a <u>name</u> to see their games</div>
             {week.rounds.map((r,ri)=>(
                 <div key={ri} className="round-card">
                     <div className="round-hd">
-                        <span className="fd" style={{fontSize:17,fontWeight:800,letterSpacing:.5}}>GAME {ri+1}</span>
-                        <span style={{fontSize:12,color:'#6ee7b7'}}>{r.matches.filter(m=>scores[m.id]&&isNum(scores[m.id].a)&&isNum(scores[m.id].b)).length}/{r.matches.length} scored</span>
+                        <span style={{fontSize:15,fontWeight:800}}>Game {ri+1}</span>
+                        <span style={{fontSize:12}}>{r.matches.filter(m=>scores[m.id]&&isNum(scores[m.id].a)&&isNum(scores[m.id].b)).length}/{r.matches.length} scored</span>
                     </div>
                     {r.matches.map(m=>{
                         const s=scores[m.id]||{};const done=isNum(s.a)&&isNum(s.b);
@@ -1034,7 +1049,6 @@ function ScheduleList({league,week,canScore,update,onPlayer}){
                                         <div className="tnames">{names(m.team1)}</div>
                                         <ScoreInput value={s.a} win={aWin} disabled={!canScore} onCommit={v=>setScore(m.id,'a',v)}/>
                                     </div>
-                                    <div className="vs">VS</div>
                                     <div className={'team'+(bWin?' win':'')}>
                                         <div className="tnames">{names(m.team2)}</div>
                                         <ScoreInput value={s.b} win={bWin} disabled={!canScore} onCommit={v=>setScore(m.id,'b',v)}/>
@@ -1077,16 +1091,18 @@ function LiveView({league,week,canScore,update,onPlayer,onAll}){
     const sitting=(week.rounds[minRi].sitOut||[]);
     return(
         <div>
-            <div className="tap-hint">👆 Tap a <u>player's name</u> to see all their games</div>
+            <div className="tap-hint">👆 Tap a <u>name</u> to see their games</div>
+            <div className="lc-grid">
             {live.map(x=>x.done?(
-                <div key={x.court} className="round-card" style={{opacity:.6}}>
-                    <div className="round-hd"><span className="fd" style={{fontSize:20,fontWeight:800}}>COURT {x.court}</span><span style={{fontSize:12,color:'#6ee7b7'}}>✓ All games done</span></div>
+                <div key={x.court} className="lc" style={{opacity:.6}}>
+                    <div className="lc-hd"><b>Court {x.court}</b><span>✓ All done</span></div>
                 </div>
             ):(
                 <LiveCard key={x.m.id} league={league} x={x} total={week.rounds.length} canScore={canScore} update={update} onPlayer={onPlayer} weekId={week.id} name={name}
                     waitingOn={[...x.m.team1,...x.m.team2].filter(p=>busy[p]<x.ri).map(name)}/>
             ))}
-            {sitting.length>0&&<div className="sit" style={{borderRadius:12,border:'1px dashed #fcd34d'}}>🪑 Sitting out game {minRi+1}: {sitting.map(name).join(', ')}</div>}
+            </div>
+            {sitting.length>0&&<div className="sit-line">🪑 Sitting out game {minRi+1}: {sitting.map(name).join(', ')}</div>}
         </div>
     );
 }
@@ -1108,30 +1124,17 @@ function LiveCard({league,x,total,canScore,update,onPlayer,weekId,name,waitingOn
         ?<input className={'score-inp live'+(win?' win':'')} type="number" inputMode="numeric" min="0" max="99" placeholder="–" value={v}
             onFocus={e=>e.target.select()} onChange={e=>set(e.target.value.slice(0,2))}/>
         :<div className="score-ro">–</div>;
+    const tie=a!==''&&b!==''&&a===b;
     return(
-        <div className="round-card">
-            <div className="round-hd">
-                <span className="fd" style={{fontSize:19,fontWeight:800,letterSpacing:.5}}>COURT {x.court}</span>
-                <span style={{fontSize:13,color:'#6ee7b7',fontWeight:600}}>Game {x.ri+1} of {total}</span>
-            </div>
-            <div className="teams" style={{padding:'12px 16px'}}>
-                <div className={'team'+(aWin?' win':'')}>
-                    <div className="tnames" style={{fontSize:17}}>{names(x.m.team1)}</div>
-                    {Box({v:a,set:setA,win:aWin})}
-                </div>
-                <div className="vs" style={{margin:'3px 0'}}>VS</div>
-                <div className={'team'+(bWin?' win':'')}>
-                    <div className="tnames" style={{fontSize:17}}>{names(x.m.team2)}</div>
-                    {Box({v:b,set:setB,win:bWin})}
-                </div>
-                {waitingOn.length>0&&<div className="warn" style={{marginTop:8}}>⏳ Waiting for {waitingOn.join(', ')} to finish their game</div>}
-                {canScore&&<button className="btn btn-g" style={{width:'100%',marginTop:10,padding:'9px 18px'}} disabled={!ok||busy} onClick={save}>
-                    {busy?'Saving…':a!==''&&b!==''&&a===b?'Scores can\'t be tied':'✓ Save score'}
-                </button>}
-            </div>
-            {x.next&&<div className="next">
-                Up next · Game {x.next.ri+1}: <b>{x.next.m.team1.map(name).join(' & ')}</b> vs <b>{x.next.m.team2.map(name).join(' & ')}</b>
+        <div className="lc">
+            <div className="lc-hd"><b>Court {x.court}</b><span>Game {x.ri+1} of {total}</span></div>
+            <div className={'lc-row'+(aWin?' win':'')}><div className="tnames">{names(x.m.team1)}</div>{Box({v:a,set:setA,win:aWin})}</div>
+            <div className={'lc-row'+(bWin?' win':'')}><div className="tnames">{names(x.m.team2)}</div>{Box({v:b,set:setB,win:bWin})}</div>
+            {waitingOn.length>0&&<div className="lc-note">⏳ Waiting for {waitingOn.join(', ')}</div>}
+            {canScore&&(a!==''||b!=='')&&<div className="lc-save">
+                <button className="btn btn-g btn-sm" disabled={!ok||busy} onClick={save}>{busy?'Saving…':tie?'No ties':a===''||b===''?'Enter both scores':'✓ Save score'}</button>
             </div>}
+            {x.next&&<div className="lc-next">Next: {x.next.m.team1.map(name).join(' & ')} vs {x.next.m.team2.map(name).join(' & ')}</div>}
         </div>
     );
 }
