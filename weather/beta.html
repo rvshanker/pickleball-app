@@ -87,7 +87,14 @@ button{font-family:inherit;color:inherit;}
 .mascot{width:74px;height:74px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 10px 16px rgba(0,0,0,.45));animation:bobble 3.4s ease-in-out infinite;}
 @keyframes bobble{0%,100%{transform:translateY(-3px)}50%{transform:translateY(3px)}}
 .hero-when{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
-.hero-verdict{font-family:'Syne',sans-serif;font-weight:800;font-size:1.45rem;line-height:1.1;margin:3px 0 4px;}
+.hero-verdict{font-family:'Syne',sans-serif;font-weight:800;font-size:1.7rem;line-height:1.1;margin:3px 0 4px;}
+.meter{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:12px;}
+.meter-s{display:flex;flex-direction:column;align-items:center;gap:4px;opacity:.45;}
+.meter-s i{display:block;width:100%;height:6px;border-radius:4px;background:var(--c);}
+.meter-s span{font-size:.62rem;font-weight:700;color:var(--muted);white-space:nowrap;}
+.meter-s.on{opacity:1;}
+.meter-s.on i{height:9px;box-shadow:0 0 12px var(--c);}
+.meter-s.on span{color:var(--c);font-size:.7rem;}
 .hero-why{font-size:.8rem;color:var(--text);opacity:.85;line-height:1.35;}
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:14px;}
 .stat{background:rgba(13,27,42,.55);border:1px solid var(--border);border-radius:12px;padding:8px 4px;text-align:center;}
@@ -100,12 +107,15 @@ button{font-family:inherit;color:inherit;}
 .share{width:100%;margin-top:10px;background:linear-gradient(135deg,#2ECC71,#27AE60);color:#fff;border:none;border-radius:12px;padding:11px;font-weight:700;font-size:.9rem;cursor:pointer;box-shadow:0 4px 14px rgba(46,204,113,.3);}
 .toast{text-align:center;font-size:.78rem;color:var(--green);margin-top:8px;}
 
-.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-bottom:12px;}
+.days{display:flex;gap:6px;margin:0 -14px 12px;padding:0 14px 2px;overflow-x:auto;scrollbar-width:none;}
+.days::-webkit-scrollbar{display:none;}
+.days .day{flex:0 0 74px;}
+@media (min-width:600px){.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));margin:0 0 12px;padding:0;overflow:visible;}.days .day{flex:none;}}
 .day{background:rgba(26,43,60,.78);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:12px;padding:7px 2px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;}
 .day.on{border-color:var(--green);background:rgba(46,204,113,.14);}
 .day-n{font-size:.66rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
 .day-i{font-size:1.05rem;}
-.day-dot{min-width:26px;border-radius:99px;font-size:.66rem;font-weight:800;color:#0b1622;padding:1px 5px;}
+.day-dot{border-radius:99px;font-size:.62rem;font-weight:800;color:#0b1622;padding:2px 7px;white-space:nowrap;}
 
 .wx-card{background:rgba(26,43,60,0.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:12px;}
 .wx-card-header{padding:13px 16px 10px;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between;gap:8px;}
@@ -126,7 +136,7 @@ button{font-family:inherit;color:inherit;}
 .hr-t{font-size:.68rem;font-weight:700;color:var(--muted);}
 .hr.on .hr-t{color:var(--text);}
 .hr-i{font-size:1rem;}
-.hr-bar{width:12px;height:46px;border-radius:6px;background:rgba(255,255,255,.06);display:flex;align-items:flex-end;overflow:hidden;}
+.hr-bar{width:14px;height:52px;border-radius:6px;background:rgba(255,255,255,.06);display:flex;align-items:flex-end;overflow:hidden;}
 .hr-bar div{width:100%;border-radius:6px;}
 .hr-s{font-size:.72rem;font-weight:800;}
 .hr-x{font-size:.7rem;font-weight:600;}
@@ -150,7 +160,7 @@ button{font-family:inherit;color:inherit;}
 .guide summary::-webkit-details-marker{display:none;}
 .guide summary::after{content:'＋';color:var(--muted);}
 .guide[open] summary::after{content:'－';}
-.guide-lv{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:10px;}
+.guide-lv{display:flex;flex-direction:column;gap:5px;margin-top:10px;}
 .cta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
 .cta a{display:block;text-align:center;padding:12px;border-radius:12px;background:var(--green-dim);border:1px solid rgba(46,204,113,.25);color:var(--text);text-decoration:none;font-weight:700;font-size:.85rem;}
 
@@ -159,6 +169,21 @@ button{font-family:inherit;color:inherit;}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .fade-up{animation:fadeUp .35s ease;}
+@media (max-width:420px){
+  .content{padding:12px 12px 0;}
+  .days{margin:0 -12px 12px;padding:0 12px 2px;}
+  .hero{padding:14px;border-radius:18px;}
+  .mascot{width:62px;height:62px;}
+  .hero-verdict{font-size:1.5rem;}
+  .stats{gap:5px;}
+  .stat-v{font-size:1.1rem;}
+  .best{font-size:.8rem;padding:9px 10px;}
+  .best-btn{font-size:.85rem;}
+  .wk-d{width:62px;font-size:.8rem;}
+  .week-row{padding:10px 12px;gap:8px;}
+  .wx-card-header{padding:12px 14px 8px;}
+  .note{padding:10px 14px;}
+}
 @media (prefers-reduced-motion: reduce){#wx3d{display:none !important;}.mascot{animation:none;}}
 </style>
 </head>
@@ -611,16 +636,17 @@ const store = {
 };
 
 // ── Pieces ────────────────────────────────────────────────────────────
-function ScoreRing({ score, color, size = 92 }) {
-  const r = size / 2 - 7, C = 2 * Math.PI * r;
+// Four-step verdict meter: Skip it → Marginal → Okay → Great (words and colour, no numbers)
+function Meter({ level }) {
+  const steps = LEVELS.slice().reverse();
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="7" />
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth="7" strokeLinecap="round"
-        strokeDasharray={`${C * score / 100} ${C}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} style={{ transition: 'stroke-dasharray .6s ease' }} />
-      <text x="50%" y="50%" dy="2" textAnchor="middle" dominantBaseline="middle" fill="var(--text)" fontFamily="Syne, sans-serif" fontWeight="800" fontSize={size * .3}>{score}</text>
-      <text x="50%" y="50%" dy={size * .22} textAnchor="middle" fill="var(--muted)" fontFamily="DM Sans, sans-serif" fontWeight="700" fontSize="9" letterSpacing="1">/ 100</text>
-    </svg>
+    <div className="meter" role="img" aria-label={'Playability: ' + level.l}>
+      {steps.map(x => (
+        <div key={x.l} className={'meter-s' + (x.l === level.l ? ' on' : '')} style={{ '--c': x.c }}>
+          <i /><span>{x.l}</span>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -648,8 +674,7 @@ function HourStrip({ hours, selected, onSelect, sunset }) {
           <button key={h.t} className={'hr' + (h.t === selected ? ' on' : '') + (h.isDay ? '' : ' night')} onClick={() => onSelect(h.t)}>
             <div className="hr-t">{i === 0 && h.t === hours[0].t && h.isNow ? 'Now' : fmtHrShort(h.hr)}</div>
             <div className="hr-i">{codeIcon(h.code, h.isDay)}</div>
-            <div className="hr-bar"><div style={{ height: Math.max(8, h.score) + '%', background: lv.c }} /></div>
-            <div className="hr-s" style={{ color: lv.c }}>{h.score}</div>
+            <div className="hr-bar" title={lv.l}><div style={{ height: Math.max(12, h.score) + '%', background: lv.c }} /></div>
             <div className="hr-x">{h.temp}°</div>
             <div className="hr-x" style={{ color: h.wind >= 12 ? 'var(--accent)' : null }}>{h.wind}<small>mph</small></div>
             {h.rain >= 20 && <div className="hr-x" style={{ color: '#60a5fa' }}>{h.rain}%</div>}
@@ -763,7 +788,7 @@ function App() {
 
   const share = async () => {
     const w = day.best;
-    const when = w ? `${dayName(day.key, data.todayKey)} best time: ${fmtWin(w)} ${levelOf(w.score).e} ${levelOf(w.score).l} (${w.score}/100)` : '';
+    const when = w ? `${dayName(day.key, data.todayKey)} best time: ${fmtWin(w)} ${levelOf(w.score).e} ${levelOf(w.score).l}` : '';
     const bw = w ? day.hours[w.i] : focus;
     const text = `🏓 Pickleball weather · ${place.name}\n${when}\n💨 Wind ${bw.wind} mph, gusts ${bw.gust} · ☔ ${bw.rain}% · 🌡️ ${bw.temp}°F\n`;
     const url = 'https://pickleconnect.live/weather/';
@@ -817,11 +842,11 @@ function App() {
                 <img className="mascot" src={focus.precip >= 0.01 || focus.storm ? 'mascot-rain.png' : lv.m} alt="" />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="hero-when">{viewingNow ? 'Right now' : `${dayName(day.key, data.todayKey, true)} · ${fmtHr(focus.hr)}`}</div>
-                  <div className="hero-verdict" style={{ color: lv.c }}>{lv.l}{lv.l === 'Skip it' ? '' : ' for pickleball'}</div>
+                  <div className="hero-verdict" style={{ color: lv.c }}>{lv.e} {lv.l}</div>
                   <div className="hero-why">{focus.why.length ? focus.why.slice(0, 3).join(' · ') : focus.wind <= 6 ? 'Calm air, dry courts. Perfect.' : 'Light wind, dry courts. Get out there!'}</div>
                 </div>
-                <ScoreRing score={focus.score} color={lv.c} />
               </div>
+              <Meter level={lv} />
               <div className="stats">
                 <Stat label="Temp" value={`${focus.temp}°`} sub={focus.feels !== focus.temp ? `feels ${focus.feels}°` : codeIcon(focus.code, focus.isDay)} />
                 <Stat label="Wind" value={<>{focus.wind}<small> mph</small></>} sub={focus.deg != null ? `${windArrow(focus.deg)} from ${windDir(focus.deg)}` : ''} warn={focus.wind >= 15 ? 'var(--red)' : focus.wind >= 10 ? 'var(--accent)' : null} />
@@ -829,7 +854,7 @@ function App() {
                 <Stat label="Rain" value={`${focus.rain}%`} sub={focus.precip >= 0.01 ? 'raining' : focus.wet ? 'wet courts' : 'chance'} warn={focus.rain >= 50 || focus.precip >= .01 ? '#60a5fa' : null} />
               </div>
               <div className="best">
-                {day.best && day.best.score < 40 ? <span>😕 No good window {isToday ? 'left today' : 'on ' + dayName(day.key, data.todayKey)}. Best is {fmtWin(day.best)} ({day.best.score}).</span>
+                {day.best && day.best.score < 40 ? <span>😕 No good window {isToday ? 'left today' : 'on ' + dayName(day.key, data.todayKey)}. The least bad is {fmtWin(day.best)}.</span>
                 : day.best ? <>
                   <span>⏰ Best time {isToday ? 'today' : dayName(day.key, data.todayKey).replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)$/, 'on $1')}</span>
                   <button className="best-btn" onClick={() => setHourKey(day.hours[day.best.i].t)} style={{ color: levelOf(day.best.score).c }}>
@@ -849,7 +874,7 @@ function App() {
                   <button key={d.key} className={'day' + (d.key === day.key ? ' on' : '')} onClick={() => pickDay(d.key)}>
                     <div className="day-n">{dayName(d.key, data.todayKey)}</div>
                     <div className="day-i">{d.icon}</div>
-                    <div className="day-dot" style={{ background: l ? l.c : 'var(--muted2)' }}>{b ? b.score : '–'}</div>
+                    <div className="day-dot" style={{ background: l ? l.c : 'var(--muted2)' }}>{b ? l.l : '–'}</div>
                   </button>
                 );
               })}
@@ -894,11 +919,15 @@ function App() {
                 </div>
 
                 <details className="wx-card guide">
-                  <summary className="wx-card-header" style={{ cursor: 'pointer' }}>How the score works</summary>
+                  <summary className="wx-card-header" style={{ cursor: 'pointer' }}>How we rate the weather</summary>
                   <div style={{ padding: '0 16px 14px', fontSize: '.8rem', lineHeight: 1.55, color: 'var(--muted)' }}>
-                    Every hour starts at 100. Wind above 6 mph and gusts above 14 mph take the most off, because they wreck lobs and dinks.
-                    Rain chance, actual rain, wet courts after rain, heat and cold take off the rest. Thunderstorms are always "Skip it".
-                    <div className="guide-lv">{LEVELS.map((x, i) => <div key={x.l}><b style={{ color: x.c }}>{x.e} {x.l}</b> {i === 0 ? '80–100' : i === 1 ? '60–79' : i === 2 ? '40–59' : 'under 40'}</div>)}</div>
+                    Wind matters most: anything over about 10 mph, or gusts over 15, pushes lobs and dinks around. Then rain (and wet courts after rain), heat and cold. Thunderstorms are always "Skip it".
+                    <div className="guide-lv">
+                      <div><b style={{ color: LEVELS[0].c }}>🟢 Great</b> calm and dry, play anything</div>
+                      <div><b style={{ color: LEVELS[1].c }}>🟡 Okay</b> some breeze, play it safer</div>
+                      <div><b style={{ color: LEVELS[2].c }}>🟠 Marginal</b> windy, wet or cold, expect a scrappy game</div>
+                      <div><b style={{ color: LEVELS[3].c }}>🔴 Skip it</b> not worth it, or not safe</div>
+                    </div>
                   </div>
                 </details>
 
