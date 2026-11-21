@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PickleConnect – Leagues & Tournaments</title>
+    <meta name="description" content="Run a pickleball league or tournament: singles, fixed-partner doubles or rotating-partner doubles, any number of courts and games, live scores and standings.">
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8VE2FTD711"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-8VE2FTD711');
+    </script>
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23059669'/><ellipse cx='50' cy='50' rx='20' ry='20' fill='none' stroke='white' stroke-width='3'/><line x1='30' y1='50' x2='70' y2='50' stroke='white' stroke-width='3'/><line x1='50' y1='30' x2='50' y2='70' stroke='white' stroke-width='3'/><circle cx='50' cy='50' r='6' fill='white'/></svg>" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.7/babel.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="event-scheduler.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Outfit',sans-serif;background:#f1f5f9;font-size:16px;color:#1e293b;-webkit-text-size-adjust:100%;}
+        .fd{font-family:'Barlow Condensed',sans-serif;}
+        .hero-bg{background:linear-gradient(135deg,#0f172a 0%,#1e3a2f 50%,#052e16 100%);}
+        .pg{padding:16px;max-width:760px;width:100%;margin:0 auto;}
+        .card{background:white;border-radius:14px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.06);}
+        .slbl{font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:8px;}
+        .muted{color:#64748b;font-size:14px;}
+
+        .inp{width:100%;background:#f1f5f9;border:2px solid transparent;border-radius:10px;padding:11px 14px;font-size:16px;font-family:'Outfit',sans-serif;transition:all .15s;outline:none;color:#1e293b;}
+        .inp:focus{border-color:#059669;background:white;box-shadow:0 0 0 3px rgba(5,150,105,.1);}
+        .score-inp{width:48px;text-align:center;border:2px solid #e2e8f0;border-radius:8px;padding:4px 2px;font-size:17px;font-weight:700;font-family:'Outfit',sans-serif;outline:none;background:white;color:#0f172a;}
+        .score-inp:focus{border-color:#059669;}
+        .score-inp:disabled{background:#f8fafc;color:#0f172a;border-color:#f1f5f9;}
+        .score-inp.win{color:#047857;border-color:#6ee7b7;background:#ecfdf5;}
+        .score-inp.live{width:58px;padding:6px 4px;font-size:20px;}
+        .score-ro{width:48px;text-align:center;font-size:17px;font-weight:700;color:#0f172a;padding:4px 2px;border-radius:8px;}
+        .score-ro.win{color:#047857;background:#ecfdf5;}
+        .pbtn{background:none;border:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left;text-decoration:underline dotted;text-decoration-color:#10b981;text-decoration-thickness:2px;text-underline-offset:4px;}
+        .pbtn:hover,.pbtn:active{color:#047857;text-decoration-style:solid;}
+        .tap-hint{font-size:12px;color:#64748b;margin:0 2px 8px;display:flex;align-items:center;gap:6px;}
+        .tap-hint u{text-decoration:underline dotted;text-decoration-color:#10b981;text-decoration-thickness:2px;text-underline-offset:3px;color:#0f172a;font-weight:600;}
+        .pg-row{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #f1f5f9;}
+        .pg-row:last-child{border-bottom:none;}
+        .res{font-weight:800;font-size:12px;border-radius:6px;padding:3px 7px;}
+        .res.w{background:#ecfdf5;color:#047857;}.res.l{background:#fef2f2;color:#b91c1c;}.res.p{background:#f1f5f9;color:#64748b;}
+        input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+        input[type=number]{-moz-appearance:textfield;}
+
+        .btn{border:none;border-radius:10px;padding:11px 18px;font-weight:700;font-size:15px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .15s;}
+        .btn-g{background:linear-gradient(135deg,#059669,#10b981);color:white;box-shadow:0 4px 12px rgba(5,150,105,.25);}
+        .btn-g:hover{background:linear-gradient(135deg,#047857,#059669);}
+        .btn-g:disabled{background:#a7f3d0;box-shadow:none;cursor:not-allowed;}
+        .btn-out{background:white;color:#059669;border:2px solid #059669;padding:9px 16px;}
+        .btn-ghost{background:#f1f5f9;color:#334155;}
+        .btn-ghost:hover{background:#e2e8f0;}
+        .btn-red{background:#fef2f2;color:#dc2626;}
+        .btn-sm{padding:7px 12px;font-size:13px;}
+
+        .nav{background:#0f172a;padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20;}
+        .nav a,.nav button.link{white-space:nowrap;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:600;background:none;border:none;cursor:pointer;font-family:'Outfit',sans-serif;}
+
+        .tabs{display:flex;gap:6px;background:white;border-radius:12px;padding:5px;box-shadow:0 2px 10px rgba(0,0,0,.05);margin-bottom:14px;}
+        .tab{flex:1;border:none;background:none;padding:10px 6px;border-radius:9px;font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;color:#64748b;cursor:pointer;white-space:nowrap;}
+        .tab.on{background:#0f172a;color:white;}
+        @media(max-width:430px){.tab{font-size:12.5px;padding:10px 3px;}.tabs{gap:3px;}}
+
+        .chip{border:1px solid #e2e8f0;background:white;border-radius:99px;padding:7px 13px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;white-space:nowrap;font-family:'Outfit',sans-serif;}
+        .chip.on{background:#059669;border-color:#059669;color:white;}
+        .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;}
+
+        .round-card{background:white;border-radius:14px;border:1px solid #e2e8f0;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+        .round-hd{background:linear-gradient(90deg,#0f172a,#1e3a2f);padding:7px 14px;display:flex;align-items:center;justify-content:space-between;color:white;}
+        .match{display:flex;align-items:stretch;gap:10px;padding:8px 12px;border-bottom:1px solid #f1f5f9;}
+        .match:last-child{border-bottom:none;}
+        .court{flex-shrink:0;width:44px;border-radius:10px;background:#f0fdf4;color:#047857;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid #bbf7d0;}
+        .court small{font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;}
+        .court b{font-family:'Barlow Condensed',sans-serif;font-size:22px;line-height:1;}
+        .teams{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+        .team{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+        .tnames{font-size:15px;font-weight:500;line-height:1.3;word-break:break-word;}
+        .team.win .tnames{font-weight:700;color:#047857;}
+        .vs{font-size:9px;font-weight:800;color:#cbd5e1;letter-spacing:1.5px;line-height:1;}
+        .sit{background:#fffbeb;padding:7px 14px;font-size:13px;color:#92400e;border-top:1px dashed #fcd34d;}
+
+        table.lb{width:100%;border-collapse:collapse;font-size:14px;}
+        table.lb th{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:#64748b;text-align:right;padding:8px 6px;border-bottom:2px solid #e2e8f0;font-weight:700;cursor:pointer;white-space:nowrap;}
+        table.lb th.l,table.lb td.l{text-align:left;}
+        table.lb th.on{color:#059669;}
+        table.lb td{padding:10px 6px;border-bottom:1px solid #f1f5f9;text-align:right;font-variant-numeric:tabular-nums;}
+        table.lb td.pts{font-weight:800;font-size:16px;color:#0f172a;}
+        .rank{display:inline-flex;width:24px;height:24px;border-radius:50%;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:#f1f5f9;color:#475569;}
+        .rank.g1{background:#fbbf24;color:#78350f;}.rank.g2{background:#cbd5e1;color:#1e293b;}.rank.g3{background:#d97706;color:white;}
+
+        .modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:50;display:flex;align-items:flex-end;justify-content:center;}
+        .modal{background:white;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:20px;}
+        @media(min-width:600px){.modal-bg{align-items:center;}.modal{border-radius:18px;}}
+
+        .stepper{display:flex;align-items:center;border:2px solid #e2e8f0;border-radius:10px;overflow:hidden;width:max-content;}
+        .stepper button{width:40px;height:42px;border:none;background:#f1f5f9;font-size:20px;font-weight:700;cursor:pointer;color:#0f172a;}
+        .stepper span{min-width:46px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;}
+
+        .ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#047857;border-radius:10px;padding:9px 12px;font-size:13px;}
+        .warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:10px;padding:9px 12px;font-size:13px;}
+        .err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:10px;padding:9px 12px;font-size:13px;}
+        .row{display:flex;gap:8px;align-items:center;}
+        .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+        .check{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;background:#f8fafc;border:1px solid #e2e8f0;font-size:14px;cursor:pointer;min-width:0;}
+        .check span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .check.off{opacity:.5;}
+        .opt{display:flex;align-items:center;gap:10px;text-align:left;width:100%;background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;padding:10px 12px;cursor:pointer;font-family:'Outfit',sans-serif;color:#0f172a;}
+        .opt b{display:block;font-size:15px;font-weight:700;}
+        .opt small{display:block;font-size:12px;color:#64748b;line-height:1.3;}
+        .opt.on{border-color:#059669;background:#ecfdf5;}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .spinner{width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#059669;border-radius:50%;animation:spin .8s linear infinite;}
+
+        @media print{
+            .nav,.tabs,.no-print{display:none!important;}
+            body{background:white;}
+            .round-card{break-inside:avoid;box-shadow:none;}
+            .pbtn{text-decoration:none;}.tap-hint{display:none;}
+        }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useMemo,useRef,useCallback} = React;
+const S = window.EventScheduler;
+
+// ── Firebase ──────────────────────────────────────────────────────────
+const FB = {
+    apiKey:"AIzaSyDaFUszTD0-Ro292GOBSlS5vkZSdJM0NF4",
+    authDomain:"pickleball-app-1bba7.firebaseapp.com",
+    projectId:"pickleball-app-1bba7",
+    storageBucket:"pickleball-app-1bba7.firebasestorage.app",
+    messagingSenderId:"645604154338",
+    appId:"1:645604154338:web:b92f87c2cd11d950b737bb"
+};
+let db=null,auth=null,fbOk=false;
+try{firebase.initializeApp(FB);db=firebase.firestore();auth=firebase.auth();fbOk=true;}catch(e){console.warn('Firebase init failed',e);}
+
+// ── Helpers ───────────────────────────────────────────────────────────
+const MAX_GAMES = 40;
+const uid6 = () => Math.random().toString(36).slice(2,8);
+const newId = () => (Date.now().toString(36)+Math.random().toString(36).slice(2,6)).toUpperCase();
+const parseCourts = s => String(s||'').split(/[,\s]+/).map(x=>x.trim()).filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i);
+const isNum = v => v!==null && v!==undefined && v!=='' && !isNaN(v);
+function nextThursday(){
+    const d=new Date(); const add=(4-d.getDay()+7)%7; d.setDate(d.getDate()+add);
+    const p=n=>String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; // local date, not UTC
+}
+function fmtDate(iso){
+    if(!iso)return'';
+    const [y,m,d]=iso.split('-').map(Number);
+    return new Date(y,m-1,d).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+}
+const lc=e=>String(e||'').trim().toLowerCase();
+const fmtOf=l=>(l&&l.format)||'rotating';
+const kindOf=l=>(l&&l.kind)||'league';
+const termsOf=l=>kindOf(l)==='tournament'?{unit:'Day',short:'Day',lower:'day',night:'day'}:{unit:'Week',short:'Wk',lower:'week',night:'night'};
+let T=termsOf(null); // set by LeagueView for the event being shown
+const FORMATS={
+    rotating:{label:'Doubles · rotating partners',short:'Rotating doubles',icon:'🔀',desc:'New partner every game, no repeats'},
+    fixed:{label:'Doubles · fixed partners',short:'Team doubles',icon:'🤝',desc:'Set teams of two play a round robin'},
+    singles:{label:'Singles',short:'Singles',icon:'👤',desc:'One vs one round robin'},
+};
+const perGame=l=>fmtOf(l)==='rotating'?4:2; // units on a court
+const teamName=(league,t)=>t?(t.name||t.players.map(id=>(league.players.find(p=>p.id===id)||{name:'?'}).name).join(' & ')):'(removed)';
+const teamOfPlayer=(league,pid)=>(league.teams||[]).find(t=>t.players.includes(pid));
+function todayIso(){const d=new Date(),p=n=>String(n).padStart(2,'0');return`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;}
+const isAdminOf=(league,user)=>!!user&&!!user.email&&(league.adminEmails||[]).includes(lc(user.email));
+// Leagues page shows only leagues you own or co-admin. Clear the old per-browser "recently viewed" list,
+// which leaked other users' leagues on shared devices.
+try{localStorage.removeItem('recentLeagues');}catch(e){}
+
+// ── Storage (Firestore, with on-device fallback) ──────────────────────
+const LS = id => 'league:'+id;
+const lsGet = id => {try{return JSON.parse(localStorage.getItem(LS(id)));}catch(e){return null;}};
+const lsSet = d => {try{localStorage.setItem(LS(d.id),JSON.stringify(d));}catch(e){}};
+const localSubs = {};
+function applyPatch(d,patch){
+    const n={...d};
+    Object.entries(patch).forEach(([k,v])=>{
+        if(k.startsWith('scores.'))n.scores={...(n.scores||{}),[k.slice(7)]:v};
+        else n[k]=v;
+    });
+    return n;
+}
+const store = {
+    async create(d){
+        if(fbOk)try{await db.collection('leagues').doc(d.id).set(d);return'cloud';}catch(e){console.warn('Cloud save failed, using this device:',e.code||e.message);}
+        lsSet({...d,_local:true});return'local';
+    },
+    listen(id,cb){
+        const local=lsGet(id);
+        if(local&&local._local||!fbOk){
+            const fn=d=>cb(d?{...d,_src:'local'}:null);
+            (localSubs[id]=localSubs[id]||[]).push(fn);fn(local);
+            return()=>{localSubs[id]=(localSubs[id]||[]).filter(f=>f!==fn);};
+        }
+        return db.collection('leagues').doc(id).onSnapshot(
+            doc=>cb(doc.exists?{...doc.data(),_src:'cloud'}:null),
+            err=>{console.warn('listen failed',err.code);cb({_error:err.code||'error'});}
+        );
+    },
+    async update(league,patch){
+        patch={...patch,updatedAt:Date.now()};
+        if(league._src==='local'){
+            const n=applyPatch(lsGet(league.id)||league,patch);lsSet(n);
+            (localSubs[league.id]||[]).forEach(f=>f(n));return;
+        }
+        await db.collection('leagues').doc(league.id).update(patch);
+    },
+    async mine(uid,email){
+        const out=[];
+        if(fbOk&&uid)try{(await db.collection('leagues').where('createdBy','==',uid).get()).docs.forEach(d=>out.push(d.data()));}catch(e){console.warn('list failed',e.code);}
+        if(fbOk&&email)try{(await db.collection('leagues').where('adminEmails','array-contains',lc(email)).get()).docs.forEach(d=>{if(!out.find(x=>x.id===d.id))out.push({...d.data(),_coAdmin:true});});}catch(e){console.warn('admin list failed',e.code);}
+        for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('league:')){const d=lsGet(k.slice(7));if(d&&d.createdBy===uid&&!out.find(x=>x.id===d.id))out.push({...d,_src:'local'});}}
+        return out.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    },
+    async remove(league){
+        if(league._src==='local'){localStorage.removeItem(LS(league.id));return;}
+        await db.collection('leagues').doc(league.id).delete();
+    }
+};
+
+// ── Scoring ───────────────────────────────────────────────────────────
+// mode 'capped': a game that runs past gameTo (e.g. 15-13) counts as gameTo to gameTo-minus-margin (11-9),
+// so long win-by-2 games don't hand out bonus points. 'raw' counts the real score.
+const DEFAULT_SCORING={mode:'capped',gameTo:11,minPct:50};
+const scoringOf=l=>({...DEFAULT_SCORING,...((l&&l.scoring)||{})});
+function counted(a,b,sc){
+    a=+a;b=+b;
+    if(sc.mode!=='capped'||a===b)return[a,b];
+    const hi=Math.max(a,b),lo=Math.min(a,b);
+    if(hi<=sc.gameTo)return[a,b];
+    const cl=Math.max(0,sc.gameTo-(hi-lo));
+    return a>b?[sc.gameTo,cl]:[cl,sc.gameTo];
+}
+const scoreOf=(league,mid)=>{const s=(league.scores||{})[mid];return s&&isNum(s.a)&&isNum(s.b)?s:null;};
+
+// ── Leaderboard ───────────────────────────────────────────────────────
+function calcBoard(league,weekId){
+    const sc=scoringOf(league);
+    const nameOf={};league.players.forEach(p=>nameOf[p.id]=p.name);
+    const st={};
+    const touch=id=>st[id]=st[id]||{id,name:nameOf[id]||'(removed)',pts:0,pa:0,gp:0,w:0,l:0,sat:0};
+    let gamesPlayed=0; // game slots (rounds) that have at least one score
+    (league.weeks||[]).forEach(w=>{
+        if(weekId&&w.id!==weekId)return;
+        (w.rounds||[]).forEach(r=>{
+            let any=false;
+            (r.matches||[]).forEach(m=>{
+                const s=scoreOf(league,m.id);if(!s)return;any=true;
+                const [a,b]=counted(s.a,s.b,sc);
+                const side=(team,f,ag)=>team.forEach(p=>{const x=touch(p);x.pts+=f;x.pa+=ag;x.gp++;if(f>ag)x.w++;else if(f<ag)x.l++;});
+                side(m.team1,a,b);side(m.team2,b,a);
+            });
+            if(any){gamesPlayed++;(r.sitOut||[]).forEach(p=>touch(p).sat++);}
+        });
+    });
+    // include players with no scored games yet (current roster, active)
+    league.players.filter(p=>p.active!==false).forEach(p=>touch(p.id));
+    // Season minimum only kicks in once there's more than one week (on night one it would just confuse people)
+    const need=weekId||kindOf(league)!=='league'||(league.weeks||[]).length<2?0:Math.ceil(gamesPlayed*(sc.minPct||0)/100);
+    return Object.values(st).map(x=>({...x,diff:x.pts-x.pa,avg:x.gp?x.pts/x.gp:0,qualified:x.gp>=need,need}));
+}
+// Fixed-partner doubles: standings by team
+function calcTeamBoard(league,weekId){
+    const sc=scoringOf(league);
+    const teams=league.teams||[];
+    const st={};
+    const touch=id=>{if(!st[id]){const t=teams.find(x=>x.id===id);st[id]={id,name:teamName(league,t),players:t?t.players:[],pts:0,pa:0,gp:0,w:0,l:0,sat:0};}return st[id];};
+    let gamesPlayed=0;
+    (league.weeks||[]).forEach(w=>{
+        if(weekId&&w.id!==weekId)return;
+        (w.rounds||[]).forEach(r=>{
+            let any=false;
+            (r.matches||[]).forEach(m=>{
+                const s=scoreOf(league,m.id);if(!s||!m.u1)return;any=true;
+                const [a,b]=counted(s.a,s.b,sc);
+                const side=(u,f,ag)=>{const x=touch(u);x.pts+=f;x.pa+=ag;x.gp++;if(f>ag)x.w++;else if(f<ag)x.l++;};
+                side(m.u1,a,b);side(m.u2,b,a);
+            });
+            if(any){gamesPlayed++;(r.sitOutUnits||[]).forEach(u=>touch(u).sat++);}
+        });
+    });
+    teams.filter(t=>t.active!==false).forEach(t=>touch(t.id));
+    const need=weekId||kindOf(league)!=='league'||(league.weeks||[]).length<2?0:Math.ceil(gamesPlayed*(sc.minPct||0)/100);
+    return Object.values(st).map(x=>({...x,diff:x.pts-x.pa,avg:x.gp?x.pts/x.gp:0,qualified:x.gp>=need,need}));
+}
+const SORTS={
+    avg:{label:'Avg / game',fn:(a,b)=>b.avg-a.avg||b.diff-a.diff||b.w-a.w},
+    win:{label:'Win %',fn:(a,b)=>(b.gp?b.w/b.gp:0)-(a.gp?a.w/a.gp:0)||b.diff-a.diff||b.avg-a.avg},
+    pts:{label:'Points',fn:(a,b)=>b.pts-a.pts||b.diff-a.diff||b.w-a.w},
+    w:{label:'Wins',fn:(a,b)=>b.w-a.w||b.avg-a.avg},
+    diff:{label:'+/-',fn:(a,b)=>b.diff-a.diff||b.avg-a.avg},
+};
+
+// ── App ───────────────────────────────────────────────────────────────
+function App(){
+    const [user,setUser]=useState(null);
+    const [ready,setReady]=useState(false);
+    const [leagueId,setLeagueId]=useState(()=>new URLSearchParams(location.search).get('id'));
+
+    useEffect(()=>{
+        if(!fbOk){setReady(true);return;}
+        return auth.onAuthStateChanged(u=>{
+            setUser(u&&!u.isAnonymous?{uid:u.uid,email:u.email,name:u.displayName||(u.email||'').split('@')[0]}:null);
+            setReady(true);
+        });
+    },[]);
+    useEffect(()=>{
+        const f=()=>setLeagueId(new URLSearchParams(location.search).get('id'));
+        window.addEventListener('popstate',f);return()=>window.removeEventListener('popstate',f);
+    },[]);
+    const open=id=>{history.pushState({},'',id?`?id=${id}`:location.pathname);setLeagueId(id);window.scrollTo(0,0);};
+
+    if(!ready)return<Center><div className="spinner"/></Center>;
+    if(leagueId)return<LeagueView id={leagueId} user={user} onHome={()=>open(null)}/>;
+    if(!user)return<LoginView/>;
+    return<Dashboard user={user} onOpen={open}/>;
+}
+
+const Center=({children})=><div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:12}}>{children}</div>;
+
+function Nav({children,onHome,user}){
+    return(
+        <div className="nav no-print">
+            {onHome?<button className="link" onClick={onHome}>← Leagues</button>:<a href="index.html">← Home</a>}
+            <div className="fd" style={{color:'white',fontWeight:800,fontSize:16,flex:1,textAlign:'center',letterSpacing:.2,whiteSpace:'nowrap'}}>
+                LEAGUES<span style={{color:'#34d399'}}> & TOURNEYS</span>
+            </div>
+            {user?<button className="link" onClick={()=>auth.signOut()}>Log out</button>:<span style={{width:60}}/>}
+            {children}
+        </div>
+    );
+}
+
+// ── Login ─────────────────────────────────────────────────────────────
+function LoginView(){
+    const [email,setEmail]=useState('');const [pw,setPw]=useState('');const [pwc,setPwc]=useState('');
+    const [signup,setSignup]=useState(false);const [err,setErr]=useState('');const [msg,setMsg]=useState('');const [busy,setBusy]=useState(false);
+    const ERR={'auth/invalid-credential':'Incorrect email or password.','auth/wrong-password':'Incorrect password.','auth/user-not-found':'No account with this email.',
+        'auth/invalid-email':'Invalid email.','auth/email-already-in-use':'Email already registered — log in instead.','auth/weak-password':'Password must be 6+ characters.',
+        'auth/too-many-requests':'Too many attempts. Try again in a few minutes.'};
+    const submit=async e=>{
+        e.preventDefault();setErr('');setMsg('');
+        if(!fbOk){setErr('Login is unavailable right now.');return;}
+        if(signup&&pw.length<6){setErr('Password must be 6+ characters.');return;}
+        if(signup&&pw!==pwc){setErr('Passwords do not match.');return;}
+        setBusy(true);
+        try{
+            if(signup){const c=await auth.createUserWithEmailAndPassword(email,pw);try{await c.user.sendEmailVerification();}catch(e){}}
+            else await auth.signInWithEmailAndPassword(email,pw);
+        }catch(e){setErr(ERR[e.code]||e.message);}
+        setBusy(false);
+    };
+    const reset=async()=>{
+        setErr('');setMsg('');
+        if(!email){setErr('Enter your email above first, then tap Forgot password.');return;}
+        try{await auth.sendPasswordResetEmail(email);setMsg(`Password reset email sent to ${email}. Check your inbox (and spam).`);}
+        catch(e){setErr(ERR[e.code]||e.message);}
+    };
+    const toggle=()=>{setSignup(!signup);setErr('');setMsg('');setPwc('');};
+    return(
+        <div style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
+            <div className="hero-bg" style={{padding:'44px 20px 56px',textAlign:'center'}}>
+                <div style={{color:'#6ee7b7',fontSize:12,fontWeight:700,letterSpacing:1.4,marginBottom:12}}>PICKLECONNECT</div>
+                <h1 className="fd" style={{fontSize:'clamp(40px,10vw,68px)',color:'white',lineHeight:1,fontWeight:800}}>LEAGUES<span style={{color:'#34d399'}}> & TOURNEYS</span></h1>
+                <p style={{color:'#94a3b8',maxWidth:460,margin:'14px auto 0',lineHeight:1.6}}>Weekly leagues or one-day tournaments. Singles, fixed-partner doubles or rotating partners, on as many courts and for as many games as you like, with live scores and standings.</p>
+            </div>
+            <div className="pg" style={{marginTop:-30}}>
+                <div className="card" style={{maxWidth:420,margin:'0 auto'}}>
+                    <div className="fd" style={{fontSize:26,fontWeight:800,marginBottom:4}}>{signup?'CREATE ACCOUNT':'LOG IN'}</div>
+                    <div className="muted" style={{marginBottom:16}}>{signup?'Create an account to run a league or tournament, or to join one as an admin (use the email the organizer added).':'Organizers and admins log in here. Players can view a shared link without an account.'}</div>
+                    <form onSubmit={submit} style={{display:'flex',flexDirection:'column',gap:12}}>
+                        <div><label className="slbl">Email</label><input className="inp" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} required/></div>
+                        <div><label className="slbl">Password</label><input className="inp" type="password" autoComplete={signup?'new-password':'current-password'} placeholder="••••••••" value={pw} onChange={e=>setPw(e.target.value)} required minLength={6}/></div>
+                        {signup&&<div><label className="slbl">Confirm password</label><input className="inp" type="password" autoComplete="new-password" placeholder="••••••••" value={pwc} onChange={e=>setPwc(e.target.value)} required minLength={6}/></div>}
+                        {err&&<div className="err">{err}</div>}
+                        {msg&&<div className="ok">{msg}</div>}
+                        <button className="btn btn-g" disabled={busy}>{busy?'Please wait…':signup?'Create account':'Log in'}</button>
+                    </form>
+                    <div style={{marginTop:14,display:'flex',flexDirection:'column',gap:8,alignItems:'center'}}>
+                        <button onClick={toggle} style={{background:'none',border:'none',color:'#059669',fontWeight:600,cursor:'pointer',fontFamily:"'Outfit',sans-serif",fontSize:15}}>
+                            {signup?'Already have an account? Log in':"Don't have an account? Sign up"}
+                        </button>
+                        {!signup&&<button onClick={reset} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontFamily:"'Outfit',sans-serif",fontSize:14}}>Forgot password?</button>}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────
+function Dashboard({user,onOpen}){
+    const [list,setList]=useState(null);
+    const [creating,setCreating]=useState(false);
+    useEffect(()=>{store.mine(user.uid,user.email).then(setList);},[user.uid]);
+    return(
+        <div>
+            <Nav user={user}/>
+            <div className="pg">
+                <div className="hero-bg" style={{borderRadius:16,padding:'20px 22px',marginBottom:14,color:'white',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
+                    <div>
+                        <div className="fd" style={{fontSize:28,fontWeight:800}}>LEAGUES & TOURNAMENTS</div>
+                        <div style={{color:'#6ee7b7',fontSize:14}}>Singles or doubles · any courts, any games</div>
+                    </div>
+                    <button className="btn btn-g" onClick={()=>setCreating(true)}>+ New</button>
+                </div>
+                {list===null?<Center><div className="spinner"/></Center>:
+                 list.length===0?
+                    <div className="card" style={{textAlign:'center',padding:'34px 18px'}}>
+                        <div style={{fontSize:40}}>🏅</div>
+                        <div className="fd" style={{fontSize:22,fontWeight:800,margin:'6px 0'}}>NOTHING HERE YET</div>
+                        <div className="muted" style={{marginBottom:16}}>Set up a weekly league once and generate each week in one tap, or run a one-day tournament.</div>
+                        <button className="btn btn-g" onClick={()=>setCreating(true)}>Create a league or tournament</button>
+                    </div>:
+                    <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                        {list.map(l=><LeagueRow key={l.id} l={l} onOpen={onOpen}/>)}
+                    </div>}
+            </div>
+            {creating&&<CreateLeague user={user} onClose={()=>setCreating(false)} onCreated={id=>{setCreating(false);onOpen(id);}}/>}
+        </div>
+    );
+}
+function LeagueRow({l,onOpen}){
+    return(
+        <div className="card" onClick={()=>onOpen(l.id)} style={{cursor:'pointer',display:'flex',alignItems:'center',gap:12}}>
+            <div style={{fontSize:28}}>{kindOf(l)==='tournament'?'🏆':'🏅'}</div>
+            <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:700,fontSize:17}}>{l.name}</div>
+                <div style={{fontSize:12,fontWeight:700,color:'#047857',margin:'1px 0 2px'}}>{kindOf(l)==='tournament'?'Tournament':'League'} · {FORMATS[fmtOf(l)].short}</div>
+                {l.players&&<div className="muted">{fmtOf(l)==='fixed'?`${(l.teams||[]).filter(t=>t.active!==false).length} teams`:`${l.players.filter(p=>p.active!==false).length} players`} · {(l.weeks||[]).length} {termsOf(l).lower}{(l.weeks||[]).length===1?'':'s'} · courts {(l.defaultCourts||[]).join(', ')}{l._src==='local'?' · this device only':''}{l._coAdmin?' · you\'re an admin':''}</div>}
+            </div>
+            <div style={{color:'#059669',fontWeight:700}}>Open →</div>
+        </div>
+    );
+}
+
+function CreateLeague({user,onClose,onCreated}){
+    const [kind,setKind]=useState('league');
+    const [format,setFormat]=useState('rotating');
+    const [name,setName]=useState('');
+    const [names,setNames]=useState(()=>Array.from({length:12},()=>''));
+    const [teams,setTeams]=useState(()=>Array.from({length:6},()=>['','']));
+    const [courts,setCourts]=useState('1, 2, 3');
+    const [rounds,setRounds]=useState(8);
+    const [touchedRounds,setTouchedRounds]=useState(false);
+    const [busy,setBusy]=useState(false);const [err,setErr]=useState('');
+    const fixed=format==='fixed';
+    const playerNames=fixed?teams.flat().map(n=>n.trim()).filter(Boolean):names.map(n=>n.trim()).filter(Boolean);
+    const fullTeams=teams.map(t=>t.map(n=>n.trim())).filter(t=>t[0]||t[1]);
+    const dup=playerNames.find((n,i)=>playerNames.findIndex(x=>x.toLowerCase()===n.toLowerCase())!==i);
+    const cs=parseCourts(courts);
+    const units=fixed?fullTeams.length:playerNames.length;
+    const per=format==='rotating'?4:2;
+    const rr=S.maxNoRepeatRounds(Math.max(units,2));
+    // Tournaments default to a full round robin for singles / teams
+    useEffect(()=>{if(!touchedRounds&&kind==='tournament'&&format!=='rotating'&&units>=2)setRounds(Math.min(MAX_GAMES,rr));},[kind,format,units]);
+    const create=async()=>{
+        if(fixed){
+            if(fullTeams.some(t=>!t[0]||!t[1])){setErr('Every team needs two players.');return;}
+            if(fullTeams.length<2){setErr('Add at least 2 teams.');return;}
+        }else if(playerNames.length<per){setErr(`Add at least ${per} players.`);return;}
+        if(dup){setErr(`"${dup}" is listed twice.`);return;}
+        if(!cs.length){setErr('Enter at least one court number.');return;}
+        setBusy(true);
+        const id=newId();
+        const players=playerNames.map(n=>({id:uid6(),name:n,active:true}));
+        const pid=n=>players.find(p=>p.name===n).id;
+        const doc={id,name:name.trim()||(kind==='tournament'?'Tournament':'League'),kind,format,
+            createdBy:user.uid,ownerName:user.name,createdAt:Date.now(),updatedAt:Date.now(),
+            isPublic:true,publicMode:kind==='tournament'?'edit':'read',adminEmails:[],
+            players,teams:fixed?fullTeams.map(t=>({id:'T'+uid6(),players:[pid(t[0]),pid(t[1])],active:true})):[],
+            defaultCourts:cs,defaultRounds:rounds,weeks:[],scores:{},
+            scoring:{...DEFAULT_SCORING,minPct:kind==='tournament'?0:DEFAULT_SCORING.minPct}};
+        await store.create(doc);
+        onCreated(id);
+    };
+    const Opt=({on,onClick,icon,title,sub})=>(
+        <button type="button" className={'opt'+(on?' on':'')} onClick={onClick}>
+            <span style={{fontSize:20}}>{icon}</span>
+            <span style={{minWidth:0}}><b>{title}</b><small>{sub}</small></span>
+        </button>
+    );
+    return(
+        <Modal onClose={onClose} title="New league or tournament">
+            <label className="slbl">Type</label>
+            <div className="grid2">
+                <Opt on={kind==='league'} onClick={()=>setKind('league')} icon="🏅" title="League" sub="Every week, season standings"/>
+                <Opt on={kind==='tournament'} onClick={()=>setKind('tournament')} icon="🏆" title="Tournament" sub="One day, final standings"/>
+            </div>
+            <label className="slbl" style={{marginTop:14}}>Format</label>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                {Object.entries(FORMATS).map(([k,f])=><Opt key={k} on={format===k} onClick={()=>setFormat(k)} icon={f.icon} title={f.label} sub={f.desc}/>)}
+            </div>
+            <label className="slbl" style={{marginTop:14}}>{kind==='tournament'?'Tournament':'League'} name</label>
+            <input className="inp" value={name} onChange={e=>setName(e.target.value)} placeholder={kind==='tournament'?'Saturday Shootout':'Thursday Night League'}/>
+            {fixed?<>
+                <div className="row" style={{justifyContent:'space-between',margin:'16px 0 8px'}}>
+                    <label className="slbl" style={{margin:0}}>Teams ({fullTeams.length})</label>
+                    <button className="btn btn-ghost btn-sm" onClick={()=>setTeams([...teams,['','']])}>+ Add team</button>
+                </div>
+                <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                    {teams.map((t,i)=>(
+                        <div key={i} className="row">
+                            <span className="fd" style={{width:22,fontWeight:800,color:'#64748b',flexShrink:0}}>{i+1}</span>
+                            <input className="inp" style={{padding:'10px 12px'}} placeholder="Player" value={t[0]} onChange={e=>{const c=teams.map(x=>x.slice());c[i][0]=e.target.value;setTeams(c);}}/>
+                            <span style={{color:'#94a3b8',fontWeight:700}}>&</span>
+                            <input className="inp" style={{padding:'10px 12px'}} placeholder="Partner" value={t[1]} onChange={e=>{const c=teams.map(x=>x.slice());c[i][1]=e.target.value;setTeams(c);}}/>
+                        </div>
+                    ))}
+                </div>
+            </>:<>
+                <div className="row" style={{justifyContent:'space-between',margin:'16px 0 8px'}}>
+                    <label className="slbl" style={{margin:0}}>Players ({playerNames.length})</label>
+                    <button className="btn btn-ghost btn-sm" onClick={()=>setNames([...names,''])}>+ Add</button>
+                </div>
+                <div className="grid2">
+                    {names.map((n,i)=>(
+                        <input key={i} className="inp" style={{padding:'10px 12px'}} placeholder={`Player ${i+1}`} value={n}
+                            onChange={e=>{const c=[...names];c[i]=e.target.value;setNames(c);}}/>
+                    ))}
+                </div>
+            </>}
+            <div className="muted" style={{fontSize:12,marginTop:6}}>Leave extra boxes empty. You can rename people or add {fixed?'teams':'subs'} later.</div>
+            <div className="grid2" style={{marginTop:16}}>
+                <div>
+                    <label className="slbl">Courts</label>
+                    <input className="inp" value={courts} onChange={e=>setCourts(e.target.value)} placeholder="1, 2, 3"/>
+                    <div className="muted" style={{fontSize:12,marginTop:4}}>{cs.length} court{cs.length===1?'':'s'} · change any time</div>
+                </div>
+                <div>
+                    <label className="slbl">Games {kind==='tournament'?'':'per night'}</label>
+                    <Stepper value={rounds} min={1} max={MAX_GAMES} onChange={v=>{setTouchedRounds(true);setRounds(v);}}/>
+                    {format!=='rotating'&&units>=2&&<div className="muted" style={{fontSize:12,marginTop:4}}>Everyone plays everyone: {rr}</div>}
+                </div>
+            </div>
+            {err&&<div className="err" style={{marginTop:12}}>{err}</div>}
+            <button className="btn btn-g" style={{width:'100%',marginTop:16}} disabled={busy} onClick={create}>{busy?'Creating…':`Create ${kind==='tournament'?'tournament':'league'}`}</button>
+        </Modal>
+    );
+}
+
+// ── League view ───────────────────────────────────────────────────────
+function LeagueView({id,user,onHome}){
+    const [league,setLeague]=useState(undefined);
+    const [tab,setTab]=useState('courts');
+    const [pv,setPv]=useState(null); // {pid, weekId} for the player-games popup
+    const [mapPid,setMapPid]=useState(null); // player to center the map on (from the player popup)
+    useEffect(()=>store.listen(id,d=>setLeague(d)),[id]);
+
+    if(league===undefined)return<Center><div className="spinner"/></Center>;
+    if(!league||league._error)return(
+        <div><Nav onHome={user?onHome:null} user={user}/>
+            <div className="pg"><div className="card" style={{textAlign:'center',padding:30}}>
+                <div style={{fontSize:36}}>🔒</div>
+                <div className="fd" style={{fontSize:22,fontWeight:800,margin:'6px 0'}}>LEAGUE NOT AVAILABLE</div>
+                <div className="muted">{league&&league._error==='permission-denied'?'This league is private. Ask the organizer to make it public, or log in as the organizer.':'We couldn\'t find this league. Check the link.'}</div>
+                {!user&&<a href="league.html" className="btn btn-g" style={{display:'inline-block',marginTop:14,textDecoration:'none'}}>Log in</a>}
+            </div></div>
+        </div>
+    );
+
+    T=termsOf(league);
+    const isOwner=!!user&&user.uid===league.createdBy;          // created the league: everything
+    const canManage=isOwner||isAdminOf(league,user);             // owner or co-admin: weeks, players, scores, settings
+    const canScore=canManage||(league.isPublic&&league.publicMode==='edit');
+    const update=async patch=>{
+        try{await store.update(league,patch);}
+        catch(e){alert('Could not save: '+(e.code||e.message));}
+    };
+    const onPlayer=(pid,wid)=>setPv({pid,weekId:wid});
+    const weeks=league.weeks||[];
+    const current=weeks[weeks.length-1];
+    const tabs=[['courts','🏓 Courts'],['schedule','📋 Schedule'],['board','🏆 Standings'],['map','🕸️ Map'],...(canManage?[['manage','⚙️']]:[])];
+
+    return(
+        <div>
+            <Nav onHome={user?onHome:null} user={user}/>
+            <div className="pg">
+                <div className="row no-print" style={{justifyContent:'space-between',marginBottom:10}}>
+                    <div style={{minWidth:0}}>
+                        <div className="fd" style={{fontSize:24,fontWeight:800,lineHeight:1.1}}>{league.name}</div>
+                        <div className="muted" style={{fontSize:13}}>{kindOf(league)==='tournament'?'Tournament':'League'} · {FORMATS[fmtOf(league)].short}{current?` · ${fmtDate(current.date)}`:''}</div>
+                    </div>
+                    <ShareButton league={league}/>
+                </div>
+                {league._src==='local'&&canManage&&<div className="warn no-print" style={{marginBottom:12}}>Saved on this device only — publish the <b>leagues</b> Firestore rule to sync and share.</div>}
+                <div className="tabs no-print">
+                    {tabs.map(([k,l])=><button key={k} className={'tab'+(tab===k?' on':'')} onClick={()=>setTab(k)} style={k==='manage'?{flex:'0 0 46px'}:null}>{l}</button>)}
+                </div>
+                {tab==='courts'&&(current
+                    ?<LiveView league={league} week={current} canScore={canScore} update={update} onPlayer={onPlayer} onAll={()=>setTab('schedule')}/>
+                    :<NoWeeks canManage={canManage} onManage={()=>setTab('manage')}/>)}
+                {tab==='schedule'&&(current
+                    ?<ScheduleTab league={league} canScore={canScore} update={update} onPlayer={onPlayer}/>
+                    :<NoWeeks canManage={canManage} onManage={()=>setTab('manage')}/>)}
+                {tab==='board'&&<Leaderboard league={league} onPlayer={onPlayer}/>}
+                {tab==='map'&&<MapTab league={league} focus={mapPid}/>}
+                {tab==='manage'&&canManage&&<ManageTab league={league} update={update} isOwner={isOwner} onDeleted={onHome} onScheduled={()=>setTab('courts')}/>}
+                {pv&&<PlayerGames league={league} pid={pv.pid} weekId={pv.weekId} onClose={()=>setPv(null)} onMap={()=>{setMapPid({pid:pv.pid,t:Date.now()});setPv(null);setTab('map');window.scrollTo(0,0);}}/>}
+            </div>
+        </div>
+    );
+}
+
+function NoWeeks({canManage,onManage}){
+    return(
+        <div className="card" style={{textAlign:'center',padding:'30px 18px'}}>
+            <div style={{fontSize:36}}>📅</div>
+            <div className="fd" style={{fontSize:22,fontWeight:800,margin:'6px 0'}}>NO GAMES YET</div>
+            <div className="muted" style={{marginBottom:canManage?14:0}}>{canManage?`Pick who's playing and the courts, and the games are drawn for you.`:`Games will show up here once the organizer makes the schedule.`}</div>
+            {canManage&&<button className="btn btn-g" onClick={onManage}>Make the schedule</button>}
+        </div>
+    );
+}
+
+function ShareButton({league}){
+    const [msg,setMsg]=useState('');
+    const url=`${location.origin}${location.pathname}?id=${league.id}`;
+    const share=async()=>{
+        if(navigator.share){try{await navigator.share({title:league.name,text:`${league.name} — courts, scores & standings`,url});return;}catch(e){}}
+        try{await navigator.clipboard.writeText(url);setMsg('✓ Copied');}catch(e){prompt('Copy this link',url);}
+        setTimeout(()=>setMsg(''),2000);
+    };
+    return<button className="btn btn-out btn-sm" style={{whiteSpace:'nowrap',flexShrink:0}} onClick={share} aria-label="Share league link">{msg||'📤 Share'}</button>;
+}
+
+// Week picker (only when there's more than one week)
+function WeekChips({weeks,value,onChange,extra}){
+    if(weeks.length<2&&!extra)return null;
+    return(
+        <div className="chips no-print" style={{marginBottom:12}}>
+            {extra}
+            {weeks.slice().reverse().map(w=>{const i=weeks.indexOf(w);return<button key={w.id} className={'chip'+(w.id===value?' on':'')} onClick={()=>onChange(w.id)}>{T.short} {i+1} · {fmtDate(w.date)}</button>;})}
+        </div>
+    );
+}
+
+// ── Schedule tab: every game for a week ──────────────────────────────
+function ScheduleTab({league,canScore,update,onPlayer}){
+    const weeks=league.weeks||[];
+    const [wid,setWid]=useState(weeks[weeks.length-1].id);
+    const week=weeks.find(w=>w.id===wid)||weeks[weeks.length-1];
+    return(
+        <div>
+            <WeekChips weeks={weeks} value={week.id} onChange={setWid}/>
+            <ScheduleList league={league} week={week} canScore={canScore} update={update} onPlayer={onPlayer}/>
+        </div>
+    );
+}
+
+// ── Manage tab (owner + admins) ───────────────────────────────────────
+function ManageTab({league,update,isOwner,onDeleted,onScheduled}){
+    const weeks=league.weeks||[];
+    const [wid,setWid]=useState(weeks.length?weeks[weeks.length-1].id:null);
+    const week=weeks.find(w=>w.id===wid)||weeks[weeks.length-1];
+    const [showNew,setShowNew]=useState(false);
+    const [change,setChange]=useState(false);
+    const [copied,setCopied]=useState(false);
+    const name=id=>(league.players.find(p=>p.id===id)||{name:'?'}).name;
+    const scores=league.scores||{};
+    const copyText=async()=>{
+        let t=`${league.name} — ${fmtDate(week.date)}\n`;
+        week.rounds.forEach((r,i)=>{
+            t+=`\nGame ${i+1}\n`;
+            r.matches.forEach(m=>{t+=`Ct ${m.court}: ${m.team1.map(name).join(' & ')} vs ${m.team2.map(name).join(' & ')}\n`;});
+            if(r.sitOut.length)t+=`Sit: ${r.sitOut.map(name).join(', ')}\n`;
+        });
+        t+=`\nLive courts & standings: ${location.origin}${location.pathname}?id=${league.id}`;
+        try{await navigator.clipboard.writeText(t);setCopied(true);setTimeout(()=>setCopied(false),2000);}catch(e){prompt('Copy the schedule',t);}
+    };
+    const del=()=>{if(confirm(`Delete ${T.lower} ${weeks.indexOf(week)+1} (${fmtDate(week.date)}) and its scores?`)){update({weeks:weeks.filter(w=>w.id!==week.id)});setWid(null);}};
+    const scored=week?week.rounds.reduce((n,r)=>n+r.matches.filter(m=>scoreOf(league,m.id)).length,0):0;
+    const total=week?week.rounds.reduce((n,r)=>n+r.matches.length,0):0;
+    const H=({children})=><div className="fd" style={{fontSize:20,fontWeight:800,margin:'18px 2px 8px'}}>{children}</div>;
+    return(
+        <div>
+            <button className="btn btn-g" style={{width:'100%'}} onClick={()=>setShowNew(true)}>+ Schedule a {weeks.length&&kindOf(league)==='tournament'?'another day':T.lower}</button>
+            {week&&<>
+                <H>{T.unit.toUpperCase()}S</H>
+                <WeekChips weeks={weeks} value={week.id} onChange={setWid}/>
+                <div className="card" style={{padding:14}}>
+                    <div style={{fontWeight:700}}>{T.unit} {weeks.indexOf(week)+1} · {fmtDate(week.date)}</div>
+                    <div className="muted" style={{fontSize:13,marginBottom:10}}>Courts {week.courts.join(', ')} · {fmtOf(league)==='fixed'?`${(week.unitIds||[]).length} teams`:`${week.playerIds.length} players`} · {scored}/{total} games scored{week.repeatPartners?` · ${week.repeatPartners} repeat partnership${week.repeatPartners>1?'s':''}`:''}{week.repeatOpponents?` · ${week.repeatOpponents} rematch${week.repeatOpponents>1?'es':''}`:''}</div>
+                    <div className="row" style={{flexWrap:'wrap'}}>
+                        <button className="btn btn-ghost btn-sm" onClick={()=>setChange(true)}>👥 Change {fmtOf(league)==='fixed'?'teams':'players'}</button>
+                        <button className="btn btn-ghost btn-sm" onClick={copyText}>{copied?'✓ Copied':'📋 Copy schedule'}</button>
+                        <button className="btn btn-ghost btn-sm" onClick={()=>window.print()}>🖨️ Print</button>
+                        <button className="btn btn-red btn-sm" onClick={del}>Delete {T.lower}</button>
+                    </div>
+                </div>
+            </>}
+            <H>PLAYERS</H>
+            <PlayersTab league={league} isOwner={true} update={update}/>
+            <H>SETTINGS</H>
+            <SettingsTab league={league} update={update} onDeleted={onDeleted} isOwner={isOwner}/>
+            {showNew&&<NewWeekModal league={league} update={update} onClose={()=>setShowNew(false)}
+                onSave={async w=>{await update({weeks:[...weeks,w]});setShowNew(false);onScheduled();}}/>}
+            {change&&week&&<NewWeekModal league={league} editWeek={week} update={update} onClose={()=>setChange(false)}
+                onSave={async w=>{await update({weeks:weeks.map(x=>x.id===w.id?w:x)});setChange(false);}}/>}
+        </div>
+    );
+}
+
+// Number of leading games to keep when changing players: everything up to the last game with a score
+function keptRounds(league,week){
+    if(!week)return 0;
+    let k=0;
+    week.rounds.forEach((r,i)=>{if(r.matches.some(m=>(league.scores||{})[m.id]&&(isNum(league.scores[m.id].a)||isNum(league.scores[m.id].b))))k=i+1;});
+    return k;
+}
+
+function generateWeek(league,{date,courts,rounds,unitIds},existing,keep){
+    const fmt=fmtOf(league);
+    const id=existing?existing.id:('W'+uid6());
+    const prior=existing&&keep?existing.rounds.slice(0,keep):[];
+    const base={id,date,courts,numRounds:rounds,createdAt:existing?existing.createdAt:Date.now(),...(existing?{updatedAt:Date.now()}:{})};
+    const mid=(ri,mi)=>`${id}_r${prior.length+ri+1}_${mi+1}_${uid6()}`;
+    if(fmt==='rotating'){
+        const res=S.generateRotating(unitIds,courts,rounds-prior.length,S.buildHistory(league.weeks,id),{priorRounds:prior});
+        const fresh=res.rounds.map((r,ri)=>({matches:r.matches.map((m,mi)=>({id:mid(ri,mi),court:m.court,team1:m.team1,team2:m.team2})),sitOut:r.sitOut}));
+        return{...base,playerIds:unitIds,unitIds,rounds:prior.concat(fresh),repeatPartners:res.stats.repeatPartners};
+    }
+    // singles: a unit is a player · fixed doubles: a unit is a team
+    const members=u=>fmt==='fixed'?(((league.teams||[]).find(t=>t.id===u)||{players:[]}).players.slice()):[u];
+    const res=S.generateMatchups(unitIds,courts,rounds-prior.length,S.buildUnitHistory(league.weeks,id),{priorRounds:prior});
+    const fresh=res.rounds.map((r,ri)=>({
+        matches:r.matches.map((m,mi)=>({id:mid(ri,mi),court:m.court,u1:m.u1,u2:m.u2,team1:members(m.u1),team2:members(m.u2)})),
+        sitOut:r.sitOutUnits.flatMap(members),sitOutUnits:r.sitOutUnits,
+    }));
+    return{...base,playerIds:unitIds.flatMap(members),unitIds,rounds:prior.concat(fresh),repeatOpponents:res.stats.repeatOpponents};
+}
+
+// Add a team of two (re-using roster names where they exist)
+async function addTeam(league,update,n1,n2){
+    n1=n1.trim();n2=n2.trim();
+    if(!n1||!n2)return{error:'Enter both players.'};
+    if(n1.toLowerCase()===n2.toLowerCase())return{error:'Pick two different players.'};
+    const players=league.players.slice();const ids=[];
+    for(const n of [n1,n2]){
+        let i=players.findIndex(x=>x.name.trim().toLowerCase()===n.toLowerCase());
+        if(i>=0&&(league.teams||[]).some(t=>t.active!==false&&t.players.includes(players[i].id)))return{error:`${players[i].name} is already on a team.`};
+        if(i<0){players.push({id:uid6(),name:n,active:true});i=players.length-1;}
+        else if(players[i].active===false)players[i]={...players[i],active:true};
+        ids.push(players[i].id);
+    }
+    const t={id:'T'+uid6(),players:ids,active:true};
+    await update({players,teams:[...(league.teams||[]),t]});
+    return{team:t};
+}
+
+function NewWeekModal({league,onClose,onSave,editWeek,update}){
+    const fmt=fmtOf(league),fixed=fmt==='fixed',per=perGame(league);
+    const what=fixed?'teams':'players';
+    const units=fixed?(league.teams||[]).map(t=>({id:t.id,name:teamName(league,t),active:t.active!==false}))
+                     :league.players.map(p=>({id:p.id,name:p.name,active:p.active!==false}));
+    const active=units.filter(u=>u.active);
+    const keep=keptRounds(league,editWeek);
+    const [date,setDate]=useState(editWeek?editWeek.date:(kindOf(league)==='tournament'?todayIso():nextThursday()));
+    const [courts,setCourts]=useState((editWeek?editWeek.courts:league.defaultCourts||[]).join(', '));
+    const [rounds,setRounds]=useState(editWeek?editWeek.numRounds:(league.defaultRounds||8));
+    const [ids,setIds]=useState(editWeek?(editWeek.unitIds||editWeek.playerIds):active.map(u=>u.id));
+    const [newName,setNewName]=useState('');const [newName2,setNewName2]=useState('');const [err,setErr]=useState('');
+    const [busy,setBusy]=useState(false);
+    const cs=parseCourts(courts);
+    const used=Math.min(cs.length,Math.floor(ids.length/per));
+    const sit=ids.length-used*per;
+    const maxNR=S.maxNoRepeatRounds(ids.length);
+    // show the active roster plus anyone already in this session (even if since deactivated)
+    const shown=units.filter(u=>u.active||ids.includes(u.id));
+    const minRounds=Math.max(1,keep+1);
+    useEffect(()=>{if(rounds<minRounds)setRounds(minRounds);},[minRounds]);
+
+    const addPlayer=async()=>{
+        const n=newName.trim();if(!n)return;
+        setErr('');
+        const existing=league.players.find(p=>p.name.trim().toLowerCase()===n.toLowerCase());
+        if(existing){
+            if(existing.active===false)await update({players:league.players.map(p=>p.id===existing.id?{...p,active:true}:p)});
+            if(!ids.includes(existing.id))setIds([...ids,existing.id]);
+            setNewName('');return;
+        }
+        const p={id:uid6(),name:n,active:true};
+        await update({players:[...league.players,p]});
+        setIds(prev=>[...prev,p.id]);setNewName('');
+    };
+    const addTeamHere=async()=>{
+        const r=await addTeam(league,update,newName,newName2);
+        if(r.error){setErr(r.error);return;}
+        setErr('');setIds(prev=>[...prev,r.team.id]);setNewName('');setNewName2('');
+    };
+    const go=()=>{
+        setBusy(true);
+        setTimeout(async()=>{ // let the spinner paint
+            const w=generateWeek(league,{date,courts:cs,rounds,unitIds:ids},editWeek,keep);
+            await onSave(w);
+        },30);
+    };
+    const need=fmt==='rotating'?'Need at least 4 players and 1 court.':fixed?'Need at least 2 teams and 1 court.':'Need at least 2 players and 1 court.';
+    return(
+        <Modal onClose={onClose} title={editWeek?`Change ${what}`:`Schedule a ${T.lower}`}>
+            {editWeek&&<div className={keep?'ok':'warn'} style={{marginBottom:14}}>
+                {keep?`Games 1–${keep} are kept as played (with their scores). Games ${keep+1}–${rounds} will be redrawn with the ${what} ticked below.`
+                     :`No scores yet, so all games will be redrawn with the ${what} ticked below.`}
+            </div>}
+            <div className="grid2">
+                <div><label className="slbl">Date</label><input className="inp" type="date" value={date} onChange={e=>setDate(e.target.value)}/></div>
+                <div><label className="slbl">Total games</label><Stepper value={rounds} min={minRounds} max={MAX_GAMES} onChange={setRounds}/></div>
+            </div>
+            <label className="slbl" style={{marginTop:14}}>Court numbers you got</label>
+            <input className="inp" value={courts} onChange={e=>setCourts(e.target.value)} placeholder="e.g. 4, 5, 7"/>
+            <div className="row" style={{justifyContent:'space-between',margin:'14px 0 8px'}}>
+                <label className="slbl" style={{margin:0}}>{fixed?'Teams playing':'Who\'s playing'} ({ids.length})</label>
+                <button className="btn btn-ghost btn-sm" onClick={()=>setIds(ids.length===shown.length?[]:shown.map(u=>u.id))}>{ids.length===shown.length?'None':'All'}</button>
+            </div>
+            <div className={fixed?'':'grid2'} style={fixed?{display:'flex',flexDirection:'column',gap:6}:null}>
+                {shown.map(u=>{const on=ids.includes(u.id);return(
+                    <label key={u.id} className={'check'+(on?'':' off')}>
+                        <input type="checkbox" checked={on} onChange={()=>setIds(on?ids.filter(x=>x!==u.id):[...ids,u.id])}/>
+                        <span>{u.name}</span>
+                    </label>);})}
+            </div>
+            {fixed?<div className="row" style={{marginTop:8}}>
+                <input className="inp" style={{padding:'9px 12px'}} placeholder="Player" value={newName} onChange={e=>setNewName(e.target.value)}/>
+                <span style={{color:'#94a3b8',fontWeight:700}}>&</span>
+                <input className="inp" style={{padding:'9px 12px'}} placeholder="Partner" value={newName2} onChange={e=>setNewName2(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')addTeamHere();}}/>
+                <button className="btn btn-out btn-sm" onClick={addTeamHere} style={{flexShrink:0}}>+ Team</button>
+            </div>:<div className="row" style={{marginTop:8}}>
+                <input className="inp" style={{padding:'9px 12px'}} placeholder="New player or sub" value={newName}
+                    onChange={e=>setNewName(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')addPlayer();}}/>
+                <button className="btn btn-out btn-sm" onClick={addPlayer} style={{flexShrink:0}}>+ Add</button>
+            </div>}
+            <div className="muted" style={{fontSize:12,marginTop:4}}>Untick anyone who isn't playing. New {what} are added to the roster too.</div>
+            <div style={{marginTop:14,display:'flex',flexDirection:'column',gap:8}}>
+                {err&&<div className="err">{err}</div>}
+                {used<1?<div className="err">{need}</div>:
+                 <div className="ok">{used} court{used>1?'s':''} in use ({cs.slice(0,used).join(', ')}) · {used*per} {what} on court each game{sit>0?(fixed?` · ${sit} team${sit>1?'s':''} on a bye each game (rotated fairly)`:` · ${sit} sit out each game (rotated fairly)`):''}</div>}
+                {used<cs.length&&used>=1&&<div className="warn">Only {used} of {cs.length} courts needed for {ids.length} {what}.</div>}
+                {fmt==='rotating'&&rounds>maxNR&&<div className="warn">With {ids.length} players, at most {maxNR} games can have all-new partners. Games after that will repeat a partner.</div>}
+                {fmt!=='rotating'&&used>=1&&(rounds>maxNR
+                    ?<div className="warn">Everyone has played everyone after {maxNR} games. Games after that are rematches.</div>
+                    :rounds<maxNR&&sit<=1&&<div className="muted" style={{fontSize:13}}>A full round robin (everyone plays everyone) is {maxNR} games. <button className="btn btn-ghost btn-sm" onClick={()=>setRounds(Math.min(MAX_GAMES,Math.max(minRounds,maxNR)))}>Use {maxNR}</button></div>)}
+            </div>
+            <button className="btn btn-g" style={{width:'100%',marginTop:14}} disabled={busy||used<1} onClick={go}>{busy?'Generating…':editWeek?(keep?`🔀 Redraw games ${keep+1}–${rounds}`:'🔀 Redraw all games'):'🎲 Generate matchups'}</button>
+        </Modal>
+    );
+}
+
+function ScheduleList({league,week,canScore,update,onPlayer}){
+    const name=id=>(league.players.find(p=>p.id===id)||{name:'?'}).name;
+    const scores=league.scores||{};
+    const sc=scoringOf(league);
+    const setScore=(mid,side,val)=>{
+        const cur=scores[mid]||{a:null,b:null};
+        const v=val===''?null:Math.max(0,Math.min(99,parseInt(val,10)||0));
+        update({['scores.'+mid]:{...cur,[side]:v}});
+    };
+    return(
+        <div>
+            <div className="tap-hint">👆 Tap a <u>player's name</u> to see all their games</div>
+            {week.rounds.map((r,ri)=>(
+                <div key={ri} className="round-card">
+                    <div className="round-hd">
+                        <span className="fd" style={{fontSize:17,fontWeight:800,letterSpacing:.5}}>GAME {ri+1}</span>
+                        <span style={{fontSize:12,color:'#6ee7b7'}}>{r.matches.filter(m=>scores[m.id]&&isNum(scores[m.id].a)&&isNum(scores[m.id].b)).length}/{r.matches.length} scored</span>
+                    </div>
+                    {r.matches.map(m=>{
+                        const s=scores[m.id]||{};const done=isNum(s.a)&&isNum(s.b);
+                        const aWin=done&&+s.a>+s.b,bWin=done&&+s.b>+s.a;
+                        const [ca,cb]=done?counted(s.a,s.b,sc):[0,0];
+                        const adjusted=done&&(ca!==+s.a||cb!==+s.b);
+                        const names=t=>t.map((id,i)=><React.Fragment key={id}>{i>0&&' & '}<button className="pbtn" onClick={()=>onPlayer(id,week.id)}>{name(id)}</button></React.Fragment>);
+                        return(
+                            <div key={m.id} className="match">
+                                <div className="court"><small>Court</small><b>{m.court}</b></div>
+                                <div className="teams">
+                                    <div className={'team'+(aWin?' win':'')}>
+                                        <div className="tnames">{names(m.team1)}</div>
+                                        <ScoreInput value={s.a} win={aWin} disabled={!canScore} onCommit={v=>setScore(m.id,'a',v)}/>
+                                    </div>
+                                    <div className="vs">VS</div>
+                                    <div className={'team'+(bWin?' win':'')}>
+                                        <div className="tnames">{names(m.team2)}</div>
+                                        <ScoreInput value={s.b} win={bWin} disabled={!canScore} onCommit={v=>setScore(m.id,'b',v)}/>
+                                    </div>
+                                    {adjusted&&<div style={{fontSize:11,color:'#64748b',textAlign:'right'}}>Overtime — counts as {ca}–{cb} on the leaderboard</div>}
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {r.sitOut.length>0&&<div className="sit">🪑 {fmtOf(league)==='fixed'?'Bye':'Sitting out'}: {r.sitOut.map((id,i)=><React.Fragment key={id}>{i>0&&', '}<button className="pbtn" onClick={()=>onPlayer(id,week.id)}>{name(id)}</button></React.Fragment>)}</div>}
+                </div>
+            ))}
+        </div>
+    );
+}
+
+// ── Live courts: each court shows its own next unscored game ─────────
+function LiveView({league,week,canScore,update,onPlayer,onAll}){
+    const name=id=>(league.players.find(p=>p.id===id)||{name:'?'}).name;
+    const order=c=>{const i=week.courts.indexOf(c);return i<0?99:i;};
+    const courts=[...new Set(week.rounds.flatMap(r=>r.matches.map(m=>m.court)))].sort((x,y)=>order(x)-order(y));
+    const live=courts.map(c=>{
+        const games=[];
+        week.rounds.forEach((r,ri)=>{const m=r.matches.find(x=>x.court===c);if(m)games.push({ri,m});});
+        const i=games.findIndex(g=>!scoreOf(league,g.m.id));
+        return i<0?{court:c,done:true,last:games[games.length-1]}:{court:c,...games[i],next:games.slice(i+1).find(g=>!scoreOf(league,g.m.id))};
+    });
+    const active=live.filter(x=>!x.done);
+    if(!active.length)return(
+        <div className="card" style={{textAlign:'center',padding:'28px 18px'}}>
+            <div style={{fontSize:36}}>🎉</div>
+            <div className="fd" style={{fontSize:22,fontWeight:800,margin:'6px 0'}}>ALL GAMES SCORED</div>
+            <div className="muted" style={{marginBottom:12}}>Check Standings for the results.</div>
+            <button className="btn btn-out btn-sm" onClick={onAll}>See all scores</button>
+        </div>
+    );
+    // Players still on court in an earlier game (so a court that's ahead knows to wait)
+    const busy={};active.forEach(x=>[...x.m.team1,...x.m.team2].forEach(p=>{busy[p]=Math.min(busy[p]??99,x.ri);}));
+    const minRi=Math.min(...active.map(x=>x.ri));
+    const sitting=(week.rounds[minRi].sitOut||[]);
+    return(
+        <div>
+            <div className="tap-hint">👆 Tap a <u>player's name</u> to see all their games</div>
+            {live.map(x=>x.done?(
+                <div key={x.court} className="round-card" style={{opacity:.6}}>
+                    <div className="round-hd"><span className="fd" style={{fontSize:20,fontWeight:800}}>COURT {x.court}</span><span style={{fontSize:12,color:'#6ee7b7'}}>✓ All games done</span></div>
+                </div>
+            ):(
+                <LiveCard key={x.m.id} league={league} x={x} total={week.rounds.length} canScore={canScore} update={update} onPlayer={onPlayer} weekId={week.id} name={name}
+                    waitingOn={[...x.m.team1,...x.m.team2].filter(p=>busy[p]<x.ri).map(name)}/>
+            ))}
+            {sitting.length>0&&<div className="sit" style={{borderRadius:12,border:'1px dashed #fcd34d'}}>🪑 Sitting out game {minRi+1}: {sitting.map(name).join(', ')}</div>}
+        </div>
+    );
+}
+function LiveCard({league,x,total,canScore,update,onPlayer,weekId,name,waitingOn}){
+    const part=(league.scores||{})[x.m.id]||{};
+    const [a,setA]=useState(isNum(part.a)?String(part.a):'');
+    const [b,setB]=useState(isNum(part.b)?String(part.b):'');
+    const [busy,setBusy]=useState(false);
+    const ok=a!==''&&b!==''&&a!==b;
+    const save=async()=>{
+        setBusy(true);
+        const n=v=>Math.max(0,Math.min(99,parseInt(v,10)||0));
+        await update({['scores.'+x.m.id]:{a:n(a),b:n(b)}});
+        setBusy(false);
+    };
+    const names=t=>t.map((id,i)=><React.Fragment key={id}>{i>0&&' & '}<button className="pbtn" onClick={()=>onPlayer(id,weekId)}>{name(id)}</button></React.Fragment>);
+    const aWin=ok&&+a>+b,bWin=ok&&+b>+a;
+    const Box=({v,set,win})=>canScore
+        ?<input className={'score-inp live'+(win?' win':'')} type="number" inputMode="numeric" min="0" max="99" placeholder="–" value={v}
+            onFocus={e=>e.target.select()} onChange={e=>set(e.target.value.slice(0,2))}/>
+        :<div className="score-ro">–</div>;
+    return(
+        <div className="round-card">
+            <div className="round-hd">
+                <span className="fd" style={{fontSize:19,fontWeight:800,letterSpacing:.5}}>COURT {x.court}</span>
+                <span style={{fontSize:13,color:'#6ee7b7',fontWeight:600}}>Game {x.ri+1} of {total}</span>
+            </div>
+            <div style={{padding:'10px 14px'}}>
+                <div className={'team'+(aWin?' win':'')}>
+                    <div className="tnames" style={{fontSize:17}}>{names(x.m.team1)}</div>
+                    {Box({v:a,set:setA,win:aWin})}
+                </div>
+                <div className="vs" style={{margin:'3px 0'}}>VS</div>
+                <div className={'team'+(bWin?' win':'')}>
+                    <div className="tnames" style={{fontSize:17}}>{names(x.m.team2)}</div>
+                    {Box({v:b,set:setB,win:bWin})}
+                </div>
+                {waitingOn.length>0&&<div className="warn" style={{marginTop:8}}>⏳ Waiting for {waitingOn.join(', ')} to finish their game</div>}
+                {canScore&&<button className="btn btn-g" style={{width:'100%',marginTop:10,padding:'9px 18px'}} disabled={!ok||busy} onClick={save}>
+                    {busy?'Saving…':a!==''&&b!==''&&a===b?'Scores can\'t be tied':'✓ Save score'}
+                </button>}
+            </div>
+            {x.next&&<div style={{padding:'7px 14px',background:'#f8fafc',borderTop:'1px solid #f1f5f9',fontSize:13,color:'#64748b'}}>
+                Up next · Game {x.next.ri+1}: {x.next.m.team1.map(name).join(' & ')} vs {x.next.m.team2.map(name).join(' & ')}
+            </div>}
+        </div>
+    );
+}
+
+function ScoreInput({value,disabled,onCommit,win}){
+    const [v,setV]=useState(isNum(value)?String(value):'');
+    const focused=useRef(false);
+    useEffect(()=>{if(!focused.current)setV(isNum(value)?String(value):'');},[value]);
+    const commit=()=>{const cur=isNum(value)?String(value):'';if(v!==cur)onCommit(v);};
+    if(disabled)return<div className={'score-ro'+(win?' win':'')}>{isNum(value)?value:'–'}</div>;
+    return<input className={'score-inp'+(win?' win':'')} type="number" inputMode="numeric" min="0" max="99" value={v} placeholder="–"
+        onFocus={e=>{focused.current=true;e.target.select();}}
+        onChange={e=>setV(e.target.value.slice(0,2))}
+        onBlur={()=>{focused.current=false;commit();}}
+        onKeyDown={e=>{if(e.key==='Enter')e.target.blur();}}/>;
+}
+
+// ── One player's games ────────────────────────────────────────────────
+function PlayerGames({league,pid,weekId,onClose,onMap}){
+    const weeks=league.weeks||[];
+    const [wid,setWid]=useState(weekId||(weeks.length?weeks[weeks.length-1].id:null));
+    const sc=scoringOf(league);
+    const name=id=>(league.players.find(p=>p.id===id)||{name:'?'}).name;
+    const week=weeks.find(w=>w.id===wid);
+    const rows=[];
+    if(week)week.rounds.forEach((r,ri)=>{
+        if(r.sitOut.includes(pid)){rows.push({ri,sat:true});return;}
+        const m=r.matches.find(m=>m.team1.includes(pid)||m.team2.includes(pid));
+        if(!m)return; // not playing that game (joined later / left early)
+        const mine=m.team1.includes(pid)?m.team1:m.team2, opp=m.team1.includes(pid)?m.team2:m.team1;
+        const s=scoreOf(league,m.id);
+        let my=null,their=null,cm=null,ct=null;
+        if(s){const t1=m.team1.includes(pid);my=t1?+s.a:+s.b;their=t1?+s.b:+s.a;const [ca,cb]=counted(s.a,s.b,sc);cm=t1?ca:cb;ct=t1?cb:ca;}
+        rows.push({ri,court:m.court,partner:mine.find(x=>x!==pid),opp,my,their,cm,ct});
+    });
+    const played=rows.filter(r=>!r.sat&&r.my!==null);
+    const pts=played.reduce((n,r)=>n+r.cm,0),pa=played.reduce((n,r)=>n+r.ct,0);
+    const w=played.filter(r=>r.my>r.their).length,l=played.filter(r=>r.my<r.their).length;
+    return(
+        <Modal onClose={onClose} title={fmtOf(league)==='fixed'&&teamOfPlayer(league,pid)?teamName(league,teamOfPlayer(league,pid)):name(pid)}>
+            {weeks.length>1&&<div className="chips" style={{marginBottom:12}}>
+                {weeks.map((x,i)=><button key={x.id} className={'chip'+(x.id===wid?' on':'')} onClick={()=>setWid(x.id)}>{T.short} {i+1} · {fmtDate(x.date)}</button>)}
+            </div>}
+            {!week?<div className="muted">No weeks scheduled yet.</div>:<>
+                <div className="grid2" style={{gridTemplateColumns:'repeat(4,minmax(0,1fr))',marginBottom:10}}>
+                    {[['Pts',pts],['W-L',`${w}-${l}`],['Avg',played.length?(pts/played.length).toFixed(1):'–'],['+/-',(pts-pa>0?'+':'')+(pts-pa)]].map(([k,v])=>(
+                        <div key={k} style={{background:'#f8fafc',borderRadius:10,padding:'8px 4px',textAlign:'center'}}>
+                            <div className="fd" style={{fontSize:22,fontWeight:800}}>{v}</div>
+                            <div style={{fontSize:11,color:'#64748b',fontWeight:700,textTransform:'uppercase'}}>{k}</div>
+                        </div>))}
+                </div>
+                {rows.length===0&&<div className="muted">Not playing this {T.lower}.</div>}
+                {rows.map(r=>(
+                    <div key={r.ri} className="pg-row">
+                        <div style={{width:54,flexShrink:0}}>
+                            <div style={{fontWeight:800,fontSize:13}}>Game {r.ri+1}</div>
+                            {!r.sat&&<div style={{fontSize:11,color:'#047857',fontWeight:700}}>Court {r.court}</div>}
+                        </div>
+                        {r.sat?<div className="muted" style={{flex:1}}>🪑 Sat out</div>:<>
+                            <div style={{flex:1,minWidth:0,fontSize:14,lineHeight:1.35}}>
+                                {r.partner&&fmtOf(league)==='rotating'?<><div>with <b>{name(r.partner)}</b></div>
+                                <div className="muted" style={{fontSize:13}}>vs {r.opp.map(name).join(' & ')}</div></>
+                                :<div>vs <b>{r.opp.map(name).join(' & ')}</b></div>}
+                            </div>
+                            <div style={{textAlign:'right',flexShrink:0}}>
+                                {r.my===null?<span className="res p">not scored</span>:<>
+                                    <div style={{fontWeight:800,fontSize:16}}><span style={{color:r.my>r.their?'#047857':'#0f172a'}}>{r.my}</span>–{r.their} <span className={'res '+(r.my>r.their?'w':r.my<r.their?'l':'p')}>{r.my>r.their?'W':r.my<r.their?'L':'T'}</span></div>
+                                    {(r.cm!==r.my||r.ct!==r.their)&&<div style={{fontSize:11,color:'#64748b'}}>counts {r.cm}–{r.ct}</div>}
+                                </>}
+                            </div>
+                        </>}
+                    </div>
+                ))}
+            </>}
+            {onMap&&<button className="btn btn-out btn-sm" style={{marginTop:14,width:'100%'}} onClick={onMap}>🕸️ Partner &amp; opponent map</button>}
+        </Modal>
+    );
+}
+
+// ── Leaderboard ───────────────────────────────────────────────────────
+function Leaderboard({league,onPlayer}){
+    const [scope,setScope]=useState('season');
+    const weeks=league.weeks||[];
+    const sc=scoringOf(league);
+    const rows=useMemo(()=>{
+        const all=(fmtOf(league)==='fixed'?calcTeamBoard:calcBoard)(league,scope==='season'?null:scope).sort((kindOf(league)==='tournament'?SORTS.win:SORTS.avg).fn);
+        return all.filter(r=>r.qualified).concat(all.filter(r=>!r.qualified)); // non-qualifiers go to the bottom
+    },[league,scope]);
+    const anyScores=rows.some(r=>r.gp>0);
+    const latestWeek=weeks.length?weeks[weeks.length-1].id:null;
+    return(
+        <div>
+            {weeks.length>1&&<WeekChips weeks={weeks} value={scope} onChange={setScope}
+                extra={<button className={'chip'+(scope==='season'?' on':'')} onClick={()=>setScope('season')}>{kindOf(league)==='tournament'?'Overall':'Season'}</button>}/>}
+            <div className="card" style={{padding:'6px 8px'}}>
+                <table className="lb">
+                    <thead><tr>
+                        <th className="l" style={{width:34,cursor:'default'}}>#</th>
+                        <th className="l" style={{cursor:'default'}}>{fmtOf(league)==='fixed'?'Team':'Player'}</th>
+                        <th style={{cursor:'default'}}>Avg</th>
+                        <th style={{cursor:'default'}}>W-L</th>
+                        <th style={{cursor:'default'}}>+/-</th>
+                    </tr></thead>
+                    <tbody>
+                        {rows.map((r,i)=>(
+                            <tr key={r.id} onClick={()=>onPlayer(r.players?r.players[0]:r.id,scope==='season'?latestWeek:scope)} style={{cursor:'pointer',...(r.qualified?{}:{opacity:.5})}}>
+                                <td className="l">{r.qualified?<span className={'rank'+(anyScores&&i<3?' g'+(i+1):'')}>{i+1}</span>:<span className="rank">–</span>}</td>
+                                <td className="l" style={{fontWeight:600}}>
+                                    <span className="pbtn">{r.name}</span>
+                                    {!r.qualified&&<div style={{fontSize:11,color:'#94a3b8',fontWeight:400}}>needs {r.need} games</div>}
+                                </td>
+                                <td className="pts">{r.gp?r.avg.toFixed(1):'–'}</td>
+                                <td>{r.w}-{r.l}</td>
+                                <td style={{color:r.diff>0?'#059669':r.diff<0?'#dc2626':'#64748b',fontWeight:600}}>{r.diff>0?'+':''}{r.diff}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                {!anyScores&&<div className="muted" style={{textAlign:'center',padding:'14px 0 6px'}}>Standings appear once scores are entered.</div>}
+            </div>
+            <details className="muted" style={{fontSize:13,marginTop:10,lineHeight:1.6}}>
+                <summary style={{cursor:'pointer',fontWeight:600}}>How ranking works</summary>
+                <div style={{marginTop:6}}>
+                    {kindOf(league)==='tournament'
+                        ?<>Ranked by <b>wins</b> (win % if some played fewer games). Ties go to <b>+/-</b>: points for minus points against.</>
+                        :<>Ranked by <b>Avg</b>: average points {fmtOf(league)==='singles'?'you':'your team'} scored per game, so sitting out doesn't hurt you. Ties go to <b>+/-</b> (points for minus points against), then wins.</>}
+                    {sc.mode==='capped'&&<> Overtime games count as {sc.gameTo} to {sc.gameTo}-minus-the-margin (15–13 counts as {sc.gameTo}–{sc.gameTo-2}).</>}
+                    {sc.minPct>0&&kindOf(league)==='league'&&<> For the season, you need to play at least {sc.minPct}% of games to be ranked.</>}
+                    {' '}Tap a {fmtOf(league)==='fixed'?'team':'player'} to see their games.
+                </div>
+            </details>
+        </div>
+    );
+}
+
+// ── Partner / opponent map ────────────────────────────────────────────
+// Everything one player has done with (partners) or against (opponents) everyone else, from scored games.
+function playerWeb(league,pid,weekId){
+    const sc=scoringOf(league);
+    const partners={},opps={},games=[];
+    const get=(o,id)=>o[id]=o[id]||{id,g:0,w:0,l:0,pf:0,pa:0,games:[]};
+    (league.weeks||[]).forEach((w,wi)=>{
+        if(weekId&&w.id!==weekId)return;
+        (w.rounds||[]).forEach((r,ri)=>(r.matches||[]).forEach(m=>{
+            const t1=m.team1.includes(pid);if(!t1&&!m.team2.includes(pid))return;
+            const s=scoreOf(league,m.id);if(!s)return;
+            const mine=t1?m.team1:m.team2,opp=t1?m.team2:m.team1;
+            const my=t1?+s.a:+s.b,their=t1?+s.b:+s.a;
+            const [ca,cb]=counted(s.a,s.b,sc);
+            const g={wi,date:w.date,ri,court:m.court,partner:mine.find(x=>x!==pid),opp,my,their,cm:t1?ca:cb,ct:t1?cb:ca,res:my>their?'W':my<their?'L':'T'};
+            games.push(g);
+            const add=x=>{x.g++;x.pf+=g.cm;x.pa+=g.ct;if(g.res==='W')x.w++;else if(g.res==='L')x.l++;x.games.push(g);};
+            if(g.partner)add(get(partners,g.partner));
+            opp.forEach(o=>add(get(opps,o)));
+        }));
+    });
+    return{partners,opps,games};
+}
+const pctOf=x=>x&&x.g?x.w/x.g:0;
+const webColor=x=>!x||!x.g?'#cbd5e1':pctOf(x)>=.6?'#10b981':pctOf(x)<=.4?'#ef4444':'#f59e0b';
+// Who beat (or lost to) you in a set of games: [{id,n}] most frequent first
+function tally(games,res,pick){
+    const c={};games.filter(g=>g.res===res).forEach(g=>pick(g).forEach(id=>c[id]=(c[id]||0)+1));
+    return Object.entries(c).map(([id,n])=>({id,n})).sort((a,b)=>b.n-a.n);
+}
+
+function MapTab({league,focus}){
+    const weeks=league.weeks||[];
+    const players=league.players;
+    const KEY='leagueMe:'+league.id;
+    const [me,setMe]=useState(()=>{
+        if(focus&&players.some(p=>p.id===focus.pid))return focus.pid;
+        let saved=null;try{saved=localStorage.getItem(KEY);}catch(e){}
+        if(saved&&players.some(p=>p.id===saved))return saved;
+        const top=calcBoard(league,null).sort(SORTS.avg.fn)[0];
+        return top?top.id:(players[0]||{}).id;
+    });
+    const rotating=fmtOf(league)==='rotating';
+    const [mode,setMode]=useState(rotating?'partners':'opps');
+    const [scope,setScope]=useState('season');
+    const [sel,setSel]=useState(null);
+    useEffect(()=>{if(focus){setMe(focus.pid);setSel(null);}},[focus]);
+    const detailRef=useRef(null);
+    // On phones the details sit below the map — bring them into view when a node is tapped
+    useEffect(()=>{if(sel&&detailRef.current)detailRef.current.scrollIntoView({behavior:'smooth',block:'nearest'});},[sel]);
+    const pick=id=>{setMe(id);setSel(null);try{localStorage.setItem(KEY,id);}catch(e){}};
+
+    const nameOf=useMemo(()=>{
+        const m={};players.forEach(p=>m[p.id]=p.name);return id=>m[id]||'(removed)';
+    },[players]);
+    // Short label for the map: first name, or full name if two people share a first name
+    const short=useMemo(()=>{
+        const first=n=>String(n).trim().split(/\s+/)[0];
+        const count={};players.forEach(p=>{const f=first(p.name).toLowerCase();count[f]=(count[f]||0)+1;});
+        return id=>{const n=nameOf(id);let s=count[first(n).toLowerCase()]>1?n:first(n);return s.length>11?s.slice(0,10)+'…':s;};
+    },[players,nameOf]);
+
+    const web=useMemo(()=>me?playerWeb(league,me,scope==='season'?null:scope):null,[league,me,scope]);
+    if(!players.length||!me)return<div className="card muted">Add players to see the map.</div>;
+
+    const data=mode==='partners'?web.partners:web.opps;
+    // Ring: everyone else who's active or has history with this player, in roster order (stays put when switching modes)
+    const ring=players.filter(p=>p.id!==me&&(p.active!==false||web.partners[p.id]||web.opps[p.id])).map(p=>p.id);
+    const all=web.games;
+    const tot={w:all.filter(g=>g.res==='W').length,l:all.filter(g=>g.res==='L').length};
+
+    // Highlights
+    const list=Object.values(data);
+    const min2=list.some(x=>x.g>=2)?2:1;
+    const elig=list.filter(x=>x.g>=min2);
+    const best=elig.slice().sort((a,b)=>pctOf(b)-pctOf(a)||(b.pf-b.pa)-(a.pf-a.pa)||b.g-a.g)[0];
+    const worst=elig.slice().sort((a,b)=>pctOf(a)-pctOf(b)||(a.pf-a.pa)-(b.pf-b.pa)||b.g-a.g)[0];
+    const most=list.slice().sort((a,b)=>b.g-a.g)[0];
+    const notYet=mode==='partners'?ring.filter(id=>!web.partners[id]&&(players.find(p=>p.id===id)||{}).active!==false):[];
+    const hl=mode==='partners'
+        ?[['🔥 Best partner',best&&pctOf(best)>0?best:null,x=>`${x.w}-${x.l} together`],
+          ['🥶 Toughest pairing',worst&&worst!==best&&worst.l>0?worst:null,x=>`${x.w}-${x.l} together`],
+          ['🤝 Most games with',most,x=>`${x.g} game${x.g>1?'s':''}`]]
+        :[['😈 Nemesis',worst&&worst.l>0?worst:null,x=>`you're ${x.w}-${x.l} vs them`],
+          ['😎 Favorite matchup',best&&best.w>0?best:null,x=>`you're ${x.w}-${x.l} vs them`],
+          ['⚔️ Faced most',most,x=>`${x.g} game${x.g>1?'s':''}`]];
+
+    // Geometry
+    const W=440,H=420,cx=W/2,cy=H/2,R=Math.min(150,ring.length>14?160:140);
+    const nodes=ring.map((id,i)=>{
+        const a=-Math.PI/2+i*2*Math.PI/Math.max(ring.length,1);
+        const st=data[id];const r=st&&st.g?Math.min(28,15+st.g*2.5):12;
+        return{id,st,r,x:cx+R*Math.cos(a),y:cy+R*Math.sin(a),cos:Math.cos(a),sin:Math.sin(a)};
+    });
+    const selSt=sel?data[sel]:null;
+
+    return(
+        <div>
+            <div className="card" style={{padding:14,marginBottom:12}}>
+                <div className="row" style={{marginBottom:10}}>
+                    <label className="slbl" style={{margin:0,flexShrink:0}}>Player</label>
+                    <select className="inp" style={{padding:'8px 10px'}} value={me} onChange={e=>pick(e.target.value)}>
+                        {players.map(p=><option key={p.id} value={p.id}>{p.name}{p.active===false?' (inactive)':''}</option>)}
+                    </select>
+                </div>
+                {rotating?<div className="chips">
+                    <button className={'chip'+(mode==='partners'?' on':'')} onClick={()=>{setMode('partners');setSel(null);}}>🤝 Partners</button>
+                    <button className={'chip'+(mode==='opps'?' on':'')} onClick={()=>{setMode('opps');setSel(null);}}>⚔️ Opponents</button>
+                </div>:<div className="muted" style={{fontSize:13}}>⚔️ Head-to-head against everyone</div>}
+            </div>
+            {weeks.length>1&&<WeekChips weeks={weeks} value={scope} onChange={s=>{setScope(s);setSel(null);}}
+                extra={<button className={'chip'+(scope==='season'?' on':'')} onClick={()=>{setScope('season');setSel(null);}}>Season</button>}/>}
+
+            <div className="card" style={{padding:'8px 4px 4px'}}>
+                <div className="tap-hint" style={{justifyContent:'center',margin:'2px 0 0'}}>👆 Tap {mode==='partners'?'a partner to see your games together':'an opponent to see your games against them'}</div>
+                <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',maxWidth:520,display:'block',margin:'0 auto',touchAction:'manipulation'}} role="img" aria-label={`${nameOf(me)}'s ${mode==='partners'?'partner':'opponent'} map`}>
+                    {nodes.map(n=>{
+                        const g=n.st?n.st.g:0,dim=sel&&sel!==n.id;
+                        return<line key={'e'+n.id} x1={cx} y1={cy} x2={n.x} y2={n.y} stroke={webColor(n.st)} strokeWidth={g?Math.min(10,1.5+g*1.6):1.2}
+                            strokeDasharray={g?null:'4 5'} strokeLinecap="round" opacity={dim?.15:g?.55:.6}/>;
+                    })}
+                    <g onClick={()=>setSel(null)} style={{cursor:'pointer'}}>
+                        <circle cx={cx} cy={cy} r={42} fill="#0f172a" stroke="#34d399" strokeWidth="3"/>
+                        <text x={cx} y={cy-4} textAnchor="middle" fill="white" fontSize="14" fontWeight="700" fontFamily="Outfit,sans-serif">{short(me)}</text>
+                        <text x={cx} y={cy+14} textAnchor="middle" fill="#6ee7b7" fontSize="12" fontWeight="700" fontFamily="Outfit,sans-serif">{all.length?`${tot.w}-${tot.l}`:'no games'}</text>
+                    </g>
+                    {nodes.map(n=>{
+                        const g=n.st?n.st.g:0,on=sel===n.id,dim=sel&&!on;
+                        const lx=n.x+(n.r+8)*n.cos,ly=n.y+(n.r+8)*n.sin;
+                        const anchor=Math.abs(n.cos)<.3?'middle':n.cos>0?'start':'end';
+                        const dy=Math.abs(n.cos)<.3?(n.sin>0?12:-3):4;
+                        return(
+                            <g key={n.id} onClick={()=>setSel(on?null:n.id)} style={{cursor:'pointer',outline:'none'}} opacity={dim?.35:1}
+                               role="button" tabIndex="0" onKeyDown={e=>{if(e.key==='Enter')setSel(on?null:n.id);}}>
+                                <circle cx={n.x} cy={n.y} r={n.r+10} fill="transparent"/>
+                                {on&&<circle cx={n.x} cy={n.y} r={n.r+5} fill="none" stroke="#0f172a" strokeWidth="2.5"/>}
+                                <circle cx={n.x} cy={n.y} r={n.r} fill={g?webColor(n.st):'white'} stroke={g?'white':'#cbd5e1'} strokeWidth="2" strokeDasharray={g?null:'3 3'}/>
+                                {g>0&&<text x={n.x} y={n.y+4} textAnchor="middle" fill="white" fontSize={n.r>18?12:10} fontWeight="800" fontFamily="Outfit,sans-serif">{n.st.w}-{n.st.l}</text>}
+                                <text x={lx} y={ly+dy} textAnchor={anchor} fontSize="13" fontWeight={on?800:600} fill={g?'#0f172a':'#94a3b8'} fontFamily="Outfit,sans-serif">{short(n.id)}</text>
+                            </g>
+                        );
+                    })}
+                </svg>
+                <div className="row" style={{justifyContent:'center',gap:12,fontSize:11,color:'#64748b',padding:'0 6px 8px',flexWrap:'wrap'}}>
+                    <span><span style={{color:'#10b981'}}>●</span> {mode==='partners'?'win together':'you win'} 60%+</span>
+                    <span><span style={{color:'#f59e0b'}}>●</span> even</span>
+                    <span><span style={{color:'#ef4444'}}>●</span> {mode==='partners'?'lose together':'they win'} 60%+</span>
+                    <span>◌ {mode==='partners'?'not partnered yet':'not faced yet'}</span>
+                </div>
+            </div>
+
+            {sel?<div ref={detailRef} style={{scrollMarginTop:70}}><WebDetail league={league} me={me} other={sel} mode={mode} st={selSt} nameOf={nameOf}
+                    onFocus={id=>{setMode('opps');setSel(id);}} onPartner={id=>{setMode('partners');setSel(id);}} onCenter={()=>pick(sel)} onClose={()=>setSel(null)}/></div>
+            :<>
+                {all.length>0&&<div className="grid2" style={{gridTemplateColumns:'repeat(3,minmax(0,1fr))',marginTop:12}}>
+                    {hl.map(([k,x,sub])=>(
+                        <button key={k} className="card" disabled={!x} onClick={()=>x&&setSel(x.id)} style={{padding:'10px 8px',textAlign:'center',border:'none',cursor:x?'pointer':'default',fontFamily:'Outfit,sans-serif',color:'#1e293b'}}>
+                            <div style={{fontSize:11,fontWeight:700,color:'#64748b'}}>{k}</div>
+                            <div style={{fontWeight:800,fontSize:15,margin:'3px 0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{x?nameOf(x.id):'—'}</div>
+                            <div style={{fontSize:11,color:'#64748b'}}>{x?sub(x):'not enough games'}</div>
+                        </button>
+                    ))}
+                </div>}
+                {notYet.length>0&&all.length>0&&<div className="muted" style={{fontSize:13,marginTop:10}}>Haven't partnered yet: {notYet.map(nameOf).join(', ')}</div>}
+                {!all.length&&<div className="muted" style={{textAlign:'center',marginTop:12}}>The map fills in once {nameOf(me)}'s games are scored.</div>}
+            </>}
+        </div>
+    );
+}
+
+function WebDetail({league,me,other,mode,st,nameOf,onFocus,onPartner,onCenter,onClose}){
+    const weeks=league.weeks||[];
+    const games=st?st.games:[];
+    const isP=mode==='partners';
+    const diff=st?st.pf-st.pa:0;
+    // Partner view: who beat you two / who you beat. Opponent view: who you were paired with in losses / wins.
+    const rot=fmtOf(league)==='rotating';
+    const lostTo=isP?tally(games,'L',g=>g.opp):rot?tally(games,'L',g=>g.partner?[g.partner]:[]):[];
+    const beat=isP?tally(games,'W',g=>g.opp):rot?tally(games,'W',g=>g.partner?[g.partner]:[]):[];
+    const Chips=({items,color,bg,onTap})=>(
+        <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+            {items.map(x=><button key={x.id} className="chip" onClick={()=>onTap(x.id)} style={{background:bg,borderColor:bg,color}}>{nameOf(x.id)}{x.n>1&&<b> ×{x.n}</b>}</button>)}
+        </div>
+    );
+    return(
+        <div className="card" style={{marginTop:12}}>
+            <div className="row" style={{justifyContent:'space-between',marginBottom:10}}>
+                <div style={{minWidth:0}}>
+                    <div className="slbl" style={{marginBottom:2}}>{isP?'Partners':'Head to head'}</div>
+                    <div className="fd" style={{fontSize:22,fontWeight:800,lineHeight:1.1}}>{nameOf(me)} {isP?'+':'vs'} {nameOf(other)}</div>
+                </div>
+                <button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="Close">✕</button>
+            </div>
+            {!st?<div className="muted">{isP?'Haven\'t played together yet.':'Haven\'t faced each other yet.'}</div>:<>
+                <div className="grid2" style={{gridTemplateColumns:'repeat(4,minmax(0,1fr))',marginBottom:12}}>
+                    {[['W-L',`${st.w}-${st.l}`],['Win %',Math.round(pctOf(st)*100)+'%'],['Avg',(st.pf/st.g).toFixed(1)],['+/-',(diff>0?'+':'')+diff]].map(([k,v])=>(
+                        <div key={k} style={{background:'#f8fafc',borderRadius:10,padding:'8px 4px',textAlign:'center'}}>
+                            <div className="fd" style={{fontSize:22,fontWeight:800,color:k==='+/-'?(diff>0?'#059669':diff<0?'#dc2626':'#0f172a'):'#0f172a'}}>{v}</div>
+                            <div style={{fontSize:11,color:'#64748b',fontWeight:700,textTransform:'uppercase'}}>{k}</div>
+                        </div>))}
+                </div>
+                {lostTo.length>0&&<div style={{marginBottom:10}}>
+                    <div className="slbl" style={{color:'#b91c1c'}}>{isP?'😖 Lost to':`😖 Your partner when you lost`}</div>
+                    <Chips items={lostTo} color="#b91c1c" bg="#fef2f2" onTap={isP?onFocus:onPartner}/>
+                </div>}
+                {beat.length>0&&<div style={{marginBottom:10}}>
+                    <div className="slbl" style={{color:'#047857'}}>{isP?'💪 Beat':`💪 Your partner when you won`}</div>
+                    <Chips items={beat} color="#047857" bg="#ecfdf5" onTap={isP?onFocus:onPartner}/>
+                </div>}
+                <div className="slbl" style={{marginTop:6}}>Games</div>
+                {games.map((g,i)=>(
+                    <div key={i} className="pg-row">
+                        <div style={{width:62,flexShrink:0}}>
+                            <div style={{fontWeight:800,fontSize:13}}>{weeks.length>1?`${T.short} ${g.wi+1} · `:''}G{g.ri+1}</div>
+                            <div style={{fontSize:11,color:'#64748b'}}>{fmtDate(g.date)}</div>
+                        </div>
+                        <div style={{flex:1,minWidth:0,fontSize:14,lineHeight:1.35}}>
+                            {isP?<div>vs <b>{g.opp.map(nameOf).join(' & ')}</b></div>
+                                :rot?<><div>with <b>{g.partner?nameOf(g.partner):'—'}</b></div>
+                                   <div className="muted" style={{fontSize:13}}>vs {g.opp.map(nameOf).join(' & ')}</div></>
+                                :<div>vs <b>{g.opp.map(nameOf).join(' & ')}</b></div>}
+                        </div>
+                        <div style={{fontWeight:800,fontSize:16,flexShrink:0}}>
+                            <span style={{color:g.res==='W'?'#047857':'#0f172a'}}>{g.my}</span>–{g.their} <span className={'res '+(g.res==='W'?'w':g.res==='L'?'l':'p')}>{g.res}</span>
+                        </div>
+                    </div>
+                ))}
+                {(lostTo.length>0||beat.length>0)&&<div className="muted" style={{fontSize:12,marginTop:8}}>Tap a name above to jump to {isP?'that opponent':'that partner'}.</div>}
+            </>}
+            <button className="btn btn-out btn-sm" style={{marginTop:12,width:'100%'}} onClick={onCenter}>🕸️ Show {nameOf(other)}'s map</button>
+        </div>
+    );
+}
+
+// ── Players tab ───────────────────────────────────────────────────────
+function PlayersTab({league,isOwner,update}){
+    const [editing,setEditing]=useState(null);const [val,setVal]=useState('');
+    const [newName,setNewName]=useState('');const [err,setErr]=useState('');
+    const players=league.players;
+    const partnerCounts=useMemo(()=>S.buildHistory(league.weeks).partner,[league.weeks]);
+    const taken=(n,except)=>players.some(p=>p.id!==except&&p.name.trim().toLowerCase()===n.trim().toLowerCase());
+    const save=id=>{
+        const n=val.trim();
+        if(!n){setErr('Name can\'t be empty.');return;}
+        if(taken(n,id)){setErr(`"${n}" is already on the roster.`);return;}
+        update({players:players.map(p=>p.id===id?{...p,name:n}:p)});setEditing(null);setErr('');
+    };
+    const add=()=>{
+        const n=newName.trim();if(!n)return;
+        if(taken(n)){setErr(`"${n}" is already on the roster.`);return;}
+        update({players:[...players,{id:uid6(),name:n,active:true}]});setNewName('');setErr('');
+    };
+    const toggle=p=>update({players:players.map(x=>x.id===p.id?{...x,active:x.active===false}:x)});
+    const partnersOf=id=>{
+        if(fmtOf(league)!=='rotating')return null;
+        const others=players.filter(p=>p.id!==id&&p.active!==false);
+        const played=others.filter(o=>partnerCounts[S._key(id,o.id)]).length;
+        return{played,of:others.length};
+    };
+    return(
+        <div>
+            {fmtOf(league)==='fixed'&&<TeamsCard league={league} update={update} isOwner={isOwner}/>}
+            <div className="card" style={{padding:0,overflow:'hidden'}}>
+                {players.map((p,i)=>{const pc=partnersOf(p.id);return(
+                    <div key={p.id} style={{display:'flex',alignItems:'center',gap:10,padding:'11px 14px',borderBottom:i<players.length-1?'1px solid #f1f5f9':'none',opacity:p.active===false?.5:1}}>
+                        <div style={{width:30,height:30,borderRadius:'50%',background:'#ecfdf5',color:'#047857',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:13,flexShrink:0}}>{p.name.slice(0,1).toUpperCase()}</div>
+                        {editing===p.id?(
+                            <>
+                                <input className="inp" style={{padding:'8px 10px'}} autoFocus value={val} onChange={e=>setVal(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')save(p.id);if(e.key==='Escape')setEditing(null);}}/>
+                                <button className="btn btn-g btn-sm" onClick={()=>save(p.id)}>Save</button>
+                                <button className="btn btn-ghost btn-sm" onClick={()=>{setEditing(null);setErr('');}}>✕</button>
+                            </>
+                        ):(
+                            <>
+                                <div style={{flex:1,minWidth:0}}>
+                                    <div style={{fontWeight:600}}>{p.name}{p.active===false&&<span className="muted" style={{fontSize:12}}> · inactive</span>}</div>
+                                    {pc&&(league.weeks||[]).length>0&&p.active!==false&&<div className="muted" style={{fontSize:12}}>{pc.played}/{pc.of} partners so far</div>}
+                                    {fmtOf(league)==='fixed'&&<div className="muted" style={{fontSize:12}}>{teamOfPlayer(league,p.id)?'Team: '+teamName(league,teamOfPlayer(league,p.id)):'No team'}</div>}
+                                </div>
+                                {isOwner&&<button className="btn btn-ghost btn-sm" onClick={()=>{setEditing(p.id);setVal(p.name);setErr('');}}>✏️ Rename</button>}
+                                {/* rename keeps the player's id, so all past games follow the new name */}
+                                {isOwner&&<button className="btn btn-ghost btn-sm" onClick={()=>toggle(p)} title={p.active===false?'Bring back':'Remove from roster (keeps history)'}>{p.active===false?'↩︎':'🚫'}</button>}
+                            </>
+                        )}
+                    </div>
+                );})}
+            </div>
+            {err&&<div className="err" style={{marginTop:10}}>{err}</div>}
+            {isOwner&&fmtOf(league)!=='fixed'&&<div className="row" style={{marginTop:12}}>
+                <input className="inp" placeholder="Add a player or sub" value={newName} onChange={e=>setNewName(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')add();}}/>
+                <button className="btn btn-g" onClick={add} style={{flexShrink:0}}>Add</button>
+            </div>}
+            <div className="muted" style={{fontSize:12,marginTop:8,lineHeight:1.5}}>
+                Renaming updates every past schedule and the leaderboard. 🚫 takes someone off the roster without erasing their scores. Who plays each {T.lower} is picked when you make the schedule.
+            </div>
+        </div>
+    );
+}
+
+// ── Teams (fixed-partner doubles) ─────────────────────────────────────
+function TeamsCard({league,update,isOwner}){
+    const teams=league.teams||[];
+    const [a,setA]=useState('');const [b,setB]=useState('');const [err,setErr]=useState('');
+    const add=async()=>{const r=await addTeam(league,update,a,b);if(r.error){setErr(r.error);return;}setA('');setB('');setErr('');};
+    const toggle=t=>update({teams:teams.map(x=>x.id===t.id?{...x,active:x.active===false}:x)});
+    return(
+        <div className="card" style={{marginBottom:12,padding:0,overflow:'hidden'}}>
+            <div className="slbl" style={{padding:'14px 14px 2px'}}>Teams ({teams.filter(t=>t.active!==false).length})</div>
+            {teams.map((t,i)=>(
+                <div key={t.id} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',borderBottom:'1px solid #f1f5f9',opacity:t.active===false?.5:1}}>
+                    <div className="fd" style={{width:30,height:30,borderRadius:'50%',background:'#ecfdf5',color:'#047857',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:15,flexShrink:0}}>{i+1}</div>
+                    <div style={{flex:1,minWidth:0,fontWeight:600}}>{teamName(league,t)}{t.active===false&&<span className="muted" style={{fontSize:12}}> · inactive</span>}</div>
+                    {isOwner&&<button className="btn btn-ghost btn-sm" onClick={()=>toggle(t)} title={t.active===false?'Bring back':'Remove (keeps history)'}>{t.active===false?'↩︎':'🚫'}</button>}
+                </div>
+            ))}
+            {isOwner&&<div style={{padding:12}}>
+                <div className="row">
+                    <input className="inp" style={{padding:'9px 12px'}} placeholder="Player" value={a} onChange={e=>setA(e.target.value)}/>
+                    <span style={{color:'#94a3b8',fontWeight:700}}>&</span>
+                    <input className="inp" style={{padding:'9px 12px'}} placeholder="Partner" value={b} onChange={e=>setB(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')add();}}/>
+                    <button className="btn btn-g btn-sm" onClick={add} style={{flexShrink:0}}>Add</button>
+                </div>
+                {err&&<div className="err" style={{marginTop:8}}>{err}</div>}
+            </div>}
+            <div className="muted" style={{fontSize:12,padding:'0 14px 12px'}}>Rename a player below and their team name updates everywhere.</div>
+        </div>
+    );
+}
+
+// ── Settings tab ──────────────────────────────────────────────────────
+function SettingsTab({league,update,onDeleted,isOwner}){
+    const [name,setName]=useState(league.name);
+    const [courts,setCourts]=useState((league.defaultCourts||[]).join(', '));
+    const [rounds,setRounds]=useState(league.defaultRounds||8);
+    const [saved,setSaved]=useState(false);
+    const save=async()=>{await update({name:name.trim()||league.name,defaultCourts:parseCourts(courts),defaultRounds:rounds});setSaved(true);setTimeout(()=>setSaved(false),1800);};
+    const mode=!league.isPublic?'private':league.publicMode==='edit'?'edit':'read';
+    const setMode=m=>update(m==='private'?{isPublic:false}:{isPublic:true,publicMode:m});
+    return(
+        <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div className="card">
+                <label className="slbl">{kindOf(league)==='tournament'?'Tournament':'League'} name</label>
+                <input className="inp" value={name} onChange={e=>setName(e.target.value)}/>
+                <div className="grid2" style={{marginTop:12}}>
+                    <div><label className="slbl">Usual courts</label><input className="inp" value={courts} onChange={e=>setCourts(e.target.value)}/></div>
+                    <div><label className="slbl">Games per {T.night}</label><Stepper value={rounds} min={1} max={MAX_GAMES} onChange={setRounds}/></div>
+                </div>
+                <button className="btn btn-g" style={{marginTop:14}} onClick={save}>{saved?'✓ Saved':'Save'}</button>
+            </div>
+            <ScoringCard league={league} update={update}/>
+            <div className="card">
+                <label className="slbl">Who can see the shared link</label>
+                <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                    {[['private','🔒 Only me and admins'],['read','👀 Anyone with the link can view'],['edit','✏️ Anyone with the link can view and enter scores']].map(([k,l])=>(
+                        <label key={k} className="check" style={{background:mode===k?'#ecfdf5':'#f8fafc',borderColor:mode===k?'#6ee7b7':'#e2e8f0'}}>
+                            <input type="radio" checked={mode===k} onChange={()=>setMode(k)}/><span style={{whiteSpace:'normal'}}>{l}</span>
+                        </label>
+                    ))}
+                </div>
+                <div className="muted" style={{fontSize:12,marginTop:8}}>"Enter scores" lets players fill in their own games from their phones on the night. They can't change the schedule or roster.</div>
+            </div>
+            <AdminsCard league={league} update={update} isOwner={isOwner}/>
+            {isOwner&&<div className="card">
+                <label className="slbl">Danger zone</label>
+                <button className="btn btn-red" onClick={async()=>{if(confirm(`Delete "${league.name}" and all its ${T.lower}s and scores? This can't be undone.`)){await store.remove(league);onDeleted();}}}>Delete {kindOf(league)==='tournament'?'tournament':'league'}</button>
+            </div>}
+        </div>
+    );
+}
+
+function AdminsCard({league,update,isOwner}){
+    const [email,setEmail]=useState('');const [err,setErr]=useState('');const [copied,setCopied]=useState(false);
+    const list=league.adminEmails||[];
+    const add=()=>{
+        const e=lc(email);
+        if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){setErr('Enter a valid email address.');return;}
+        if(list.includes(e)){setErr('Already an admin.');return;}
+        update({adminEmails:[...list,e]});setEmail('');setErr('');
+    };
+    const url=`${location.origin}${location.pathname}?id=${league.id}`;
+    const invite=`You're an admin of "${league.name}" on PickleConnect. Open ${url} and log in (or create an account) with the email I added — then you can schedule weeks, change players and enter scores.`;
+    const copy=async()=>{try{await navigator.clipboard.writeText(invite);setCopied(true);setTimeout(()=>setCopied(false),2000);}catch(e){prompt('Copy this invite',invite);}};
+    return(
+        <div className="card">
+            <label className="slbl">Admins</label>
+            <div className="muted" style={{fontSize:13,marginBottom:10}}>
+                {isOwner?'Admins log in with their own account and can schedule weeks, change players, enter scores and edit settings. Only you can manage admins or delete the league.'
+                        :'You\'re an admin of this league. Only the league owner can add or remove admins.'}
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                <div className="check" style={{cursor:'default',justifyContent:'space-between'}}><span>{league.ownerName||'Owner'} <span className="muted" style={{fontSize:12}}>· owner</span></span></div>
+                {list.map(e=>(
+                    <div key={e} className="check" style={{cursor:'default',justifyContent:'space-between'}}>
+                        <span>{e}</span>
+                        {isOwner&&<button className="btn btn-red btn-sm" onClick={()=>{if(confirm(`Remove ${e} as admin?`))update({adminEmails:list.filter(x=>x!==e)});}}>Remove</button>}
+                    </div>
+                ))}
+            </div>
+            {isOwner&&<>
+                <div className="row" style={{marginTop:10}}>
+                    <input className="inp" type="email" placeholder="admin@example.com" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')add();}}/>
+                    <button className="btn btn-g" onClick={add} style={{flexShrink:0}}>Add</button>
+                </div>
+                {err&&<div className="err" style={{marginTop:8}}>{err}</div>}
+                {list.length>0&&<button className="btn btn-out btn-sm" style={{marginTop:10}} onClick={copy}>{copied?'✓ Invite copied':'📋 Copy invite message'}</button>}
+            </>}
+        </div>
+    );
+}
+
+function ScoringCard({league,update}){
+    const sc=scoringOf(league);
+    const set=patch=>update({scoring:{...sc,...patch}});
+    return(
+        <div className="card">
+            <label className="slbl">Scoring</label>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                {[['capped',`Overtime counts as ${sc.gameTo} minus the margin (recommended)`,`15–13 counts as ${sc.gameTo}–${sc.gameTo-2}, so long games don't give bonus points`],
+                  ['raw','Count the actual score','15–13 counts as 15–13']].map(([k,l,d])=>(
+                    <label key={k} className="check" style={{alignItems:'flex-start',background:sc.mode===k?'#ecfdf5':'#f8fafc',borderColor:sc.mode===k?'#6ee7b7':'#e2e8f0'}}>
+                        <input type="radio" checked={sc.mode===k} onChange={()=>set({mode:k})} style={{marginTop:3}}/>
+                        <span style={{whiteSpace:'normal'}}><b style={{fontWeight:600}}>{l}</b><br/><span className="muted" style={{fontSize:12}}>{d}</span></span>
+                    </label>
+                ))}
+            </div>
+            <div className="grid2" style={{marginTop:12}}>
+                <div>
+                    <label className="slbl">Games to</label>
+                    <div className="row">{[11,15,21].map(n=><button key={n} className={'chip'+(sc.gameTo===n?' on':'')} onClick={()=>set({gameTo:n})}>{n}</button>)}</div>
+                </div>
+                {kindOf(league)==='league'&&<div>
+                    <label className="slbl">Season: min % of games</label>
+                    <Stepper value={sc.minPct} min={0} max={100} step={10} onChange={v=>set({minPct:v})}/>
+                </div>}
+            </div>
+            {kindOf(league)==='league'&&<div className="muted" style={{fontSize:12,marginTop:8}}>Players under the minimum still show on the season board, but at the bottom and unranked. Set to 0 to turn this off.</div>}
+        </div>
+    );
+}
+
+// ── Small components ──────────────────────────────────────────────────
+function Modal({title,onClose,children}){
+    useEffect(()=>{const f=e=>{if(e.key==='Escape')onClose();};window.addEventListener('keydown',f);return()=>window.removeEventListener('keydown',f);},[]);
+    return(
+        <div className="modal-bg" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+            <div className="modal">
+                <div className="row" style={{justifyContent:'space-between',marginBottom:14}}>
+                    <div className="fd" style={{fontSize:24,fontWeight:800}}>{title.toUpperCase()}</div>
+                    <button onClick={onClose} style={{background:'#f1f5f9',border:'none',borderRadius:8,width:34,height:34,fontSize:18,cursor:'pointer'}}>✕</button>
+                </div>
+                {children}
+            </div>
+        </div>
+    );
+}
+function Stepper({value,min,max,onChange,step=1}){
+    return(
+        <div className="stepper">
+            <button type="button" onClick={()=>onChange(Math.max(min,value-step))}>−</button>
+            <span>{value}</span>
+            <button type="button" onClick={()=>onChange(Math.min(max,value+step))}>+</button>
+        </div>
+    );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
