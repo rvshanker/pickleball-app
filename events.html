@@ -308,11 +308,96 @@ const SORTS={
     diff:{label:'+/-',fn:(a,b)=>b.diff-a.diff||b.avg-a.avg},
 };
 
+// ── Demo data (only on this device, never saved to the cloud) ──────────
+// events.html?demo lists one sample event for every type × format combination.
+const DEMO_NAMES=['Alex','Priya','Sam','Maya','Jordan','Arjun','Lee','Nina','Chris','Divya','Omar','Grace','Ben','Leah','Raj','Tara'];
+const DEMOS=[
+    {kind:'league',format:'rotating',name:'Thursday Mixer League',note:'12 players · 3 courts · 8 games a night · 4 weeks',n:12,courts:['4','5','7'],rounds:8,weeks:4},
+    {kind:'league',format:'fixed',name:'Doubles Team League',note:'6 teams · 3 courts · full round robin each week · 3 weeks',n:6,courts:['1','2','3'],rounds:5,weeks:3},
+    {kind:'league',format:'singles',name:'Singles Ladder League',note:'9 players · 4 courts (one bye each game) · 3 weeks',n:9,courts:['1','2','3','4'],rounds:9,weeks:3},
+    {kind:'tournament',format:'rotating',name:'Saturday Round Robin',note:'13 players · 3 courts (one sits each game) · 10 games · in progress',n:13,courts:['A','B','C'],rounds:10,weeks:1},
+    {kind:'tournament',format:'fixed',name:'Turkey Shootout (teams)',note:'8 teams · 4 courts · full round robin · in progress',n:8,courts:['1','2','3','4'],rounds:7,weeks:1},
+    {kind:'tournament',format:'singles',name:'Singles Showdown',note:'6 players · 2 courts (two sit each game) · 10 games · finished',n:6,courts:['1','2'],rounds:10,weeks:1,done:true},
+];
+const demoId=d=>`DEMO-${d.kind}-${d.format}`;
+function buildDemo(d){
+    const isoAgo=days=>{const t=new Date();t.setDate(t.getDate()-days);const p=n=>String(n).padStart(2,'0');return`${t.getFullYear()}-${p(t.getMonth()+1)}-${p(t.getDate())}`;};
+    const fixed=d.format==='fixed';
+    const names=DEMO_NAMES.slice(0,fixed?d.n*2:d.n);
+    const players=names.map((n,i)=>({id:'p'+i,name:n,active:true}));
+    const teams=fixed?Array.from({length:d.n},(_,i)=>({id:'T'+i,players:['p'+(2*i),'p'+(2*i+1)],active:true})):[];
+    const skill={};players.forEach((p,i)=>skill[p.id]=0.35+((i*37)%11)/16); // some players are just better
+    const league={id:demoId(d),name:d.name,kind:d.kind,format:d.format,_local:true,_demo:true,createdBy:'demo',ownerName:'Demo',
+        createdAt:Date.now(),updatedAt:Date.now(),isPublic:true,publicMode:'edit',adminEmails:[],players,teams,
+        defaultCourts:d.courts,defaultRounds:d.rounds,weeks:[],scores:{},scoring:{...DEFAULT_SCORING,minPct:d.kind==='league'?50:0}};
+    for(let w=0;w<d.weeks;w++){
+        const lastThu=(new Date().getDay()+3)%7; // days since the most recent Thursday
+        const date=d.kind==='league'?isoAgo(lastThu+7*(d.weeks-1-w)):isoAgo(0);
+        const units=fixed?teams.map(t=>t.id):players.map(p=>p.id);
+        const wk=generateWeek(league,{date,courts:d.courts,rounds:d.rounds,unitIds:units},null,0);
+        league.weeks.push(wk);
+        const last=w===d.weeks-1&&!d.done;
+        const cut=last?Math.ceil(wk.rounds.length*0.6):wk.rounds.length; // last session is still being played
+        wk.rounds.slice(0,cut).forEach(r=>r.matches.forEach(m=>{
+            const s1=m.team1.reduce((n,p)=>n+skill[p],0)/m.team1.length,s2=m.team2.reduce((n,p)=>n+skill[p],0)/m.team2.length;
+            const t1wins=Math.random()<0.5+(s1-s2)*0.9;
+            const ot=Math.random()<0.12;
+            const lose=ot?12+Math.floor(Math.random()*3):2+Math.floor(Math.random()*8);
+            const win=ot?lose+2:11;
+            league.scores[m.id]=t1wins?{a:win,b:lose}:{a:lose,b:win};
+        }));
+    }
+    return league;
+}
+function ensureDemo(id,force){
+    const d=DEMOS.find(x=>demoId(x)===id);if(!d)return;
+    if(!force&&lsGet(id))return;
+    lsSet(buildDemo(d));
+}
+
+function DemoIndex({onOpen}){
+    const [v,setV]=useState(0);
+    const reset=()=>{DEMOS.forEach(d=>ensureDemo(demoId(d),true));setV(v+1);};
+    const groups=[['league','🏅 Leagues','Played every week, with season standings'],['tournament','🏆 Tournaments','One day, ranked by wins']];
+    return(
+        <div>
+            <Nav/>
+            <div className="pg">
+                <div className="hero-bg" style={{borderRadius:16,padding:'20px 22px',marginBottom:14,color:'white'}}>
+                    <div className="fd" style={{fontSize:28,fontWeight:800}}>DEMO EVENTS</div>
+                    <div style={{color:'#6ee7b7',fontSize:14,lineHeight:1.5}}>Sample data for every combination. It lives only on this device, so tap around, enter scores and try the ⚙️ admin tab.</div>
+                </div>
+                {groups.map(([k,title,sub])=>(
+                    <div key={k} style={{marginBottom:16}}>
+                        <div className="fd" style={{fontSize:20,fontWeight:800,margin:'4px 2px 0'}}>{title}</div>
+                        <div className="muted" style={{margin:'0 2px 8px',fontSize:13}}>{sub}</div>
+                        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                            {DEMOS.filter(d=>d.kind===k).map(d=>(
+                                <div key={d.format} className="card" onClick={()=>{ensureDemo(demoId(d));onOpen(demoId(d));}} style={{cursor:'pointer',display:'flex',alignItems:'center',gap:12}}>
+                                    <div style={{fontSize:26}}>{FORMATS[d.format].icon}</div>
+                                    <div style={{flex:1,minWidth:0}}>
+                                        <div style={{fontWeight:700,fontSize:16}}>{d.name}</div>
+                                        <div style={{fontSize:12,fontWeight:700,color:'#047857'}}>{FORMATS[d.format].label}</div>
+                                        <div className="muted" style={{fontSize:13}}>{d.note}</div>
+                                    </div>
+                                    <div style={{color:'#059669',fontWeight:700}}>Open →</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+                <button className="btn btn-ghost" style={{width:'100%'}} onClick={reset}>🔄 Reset demo data (new random draws and scores)</button>
+            </div>
+        </div>
+    );
+}
+
 // ── App ───────────────────────────────────────────────────────────────
 function App(){
     const [user,setUser]=useState(null);
     const [ready,setReady]=useState(false);
     const [leagueId,setLeagueId]=useState(()=>new URLSearchParams(location.search).get('id'));
+    const [demo,setDemo]=useState(()=>new URLSearchParams(location.search).has('demo'));
 
     useEffect(()=>{
         if(!fbOk){setReady(true);return;}
@@ -322,13 +407,15 @@ function App(){
         });
     },[]);
     useEffect(()=>{
-        const f=()=>setLeagueId(new URLSearchParams(location.search).get('id'));
+        const f=()=>{const q=new URLSearchParams(location.search);setLeagueId(q.get('id'));setDemo(q.has('demo'));};
         window.addEventListener('popstate',f);return()=>window.removeEventListener('popstate',f);
     },[]);
     const open=id=>{history.pushState({},'',id?`?id=${id}`:location.pathname);setLeagueId(id);window.scrollTo(0,0);};
 
     if(!ready)return<Center><div className="spinner"/></Center>;
+    if(leagueId&&leagueId.startsWith('DEMO-'))ensureDemo(leagueId); // demo links work on any device
     if(leagueId)return<LeagueView id={leagueId} user={user} onHome={()=>open(null)}/>;
+    if(demo)return<DemoIndex onOpen={open}/>;
     if(!user)return<LoginView/>;
     return<Dashboard user={user} onOpen={open}/>;
 }
@@ -397,6 +484,7 @@ function LoginView(){
                         <button onClick={toggle} style={{background:'none',border:'none',color:'#059669',fontWeight:600,cursor:'pointer',fontFamily:"'Outfit',sans-serif",fontSize:15}}>
                             {signup?'Already have an account? Log in':"Don't have an account? Sign up"}
                         </button>
+                        <a href="events.html?demo" style={{color:'#059669',fontWeight:600,fontSize:15,textDecoration:'none'}}>👀 Look around with demo events</a>
                         {!signup&&<button onClick={reset} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontFamily:"'Outfit',sans-serif",fontSize:14}}>Forgot password?</button>}
                     </div>
                 </div>
@@ -428,6 +516,7 @@ function Dashboard({user,onOpen}){
                         <div className="fd" style={{fontSize:22,fontWeight:800,margin:'6px 0'}}>NOTHING HERE YET</div>
                         <div className="muted" style={{marginBottom:16}}>Set up a weekly league once and generate each week in one tap, or run a one-day tournament.</div>
                         <button className="btn btn-g" onClick={()=>setCreating(true)}>Create a league or tournament</button>
+                        <div style={{marginTop:12}}><a href="events.html?demo" style={{color:'#059669',fontWeight:600,textDecoration:'none'}}>👀 Or look at demo events first</a></div>
                     </div>:
                     <div style={{display:'flex',flexDirection:'column',gap:10}}>
                         {list.map(l=><LeagueRow key={l.id} l={l} onOpen={onOpen}/>)}
@@ -577,7 +666,7 @@ function LeagueView({id,user,onHome}){
     );
 
     T=termsOf(league);
-    const isOwner=!!user&&user.uid===league.createdBy;          // created the league: everything
+    const isOwner=!!league._demo||(!!user&&user.uid===league.createdBy); // created the league (or a demo): everything
     const canManage=isOwner||isAdminOf(league,user);             // owner or co-admin: weeks, players, scores, settings
     const canScore=canManage||(league.isPublic&&league.publicMode==='edit');
     const update=async patch=>{
@@ -591,7 +680,7 @@ function LeagueView({id,user,onHome}){
 
     return(
         <div>
-            <Nav onHome={user?onHome:null} user={user}/>
+            <Nav onHome={league._demo?()=>{location.href='events.html?demo';}:user?onHome:null} user={user}/>
             <div className="pg">
                 <div className="row no-print" style={{justifyContent:'space-between',marginBottom:10}}>
                     <div style={{minWidth:0}}>
@@ -600,7 +689,8 @@ function LeagueView({id,user,onHome}){
                     </div>
                     <ShareButton league={league}/>
                 </div>
-                {league._src==='local'&&canManage&&<div className="warn no-print" style={{marginBottom:12}}>Saved on this device only — publish the <b>leagues</b> Firestore rule to sync and share.</div>}
+                {league._demo&&<div className="ok no-print" style={{marginBottom:12}}>🧪 Demo data, only on this device. Change anything you like. <a href="events.html?demo" style={{color:'#047857',fontWeight:700}}>All demos</a></div>}
+                {league._src==='local'&&!league._demo&&canManage&&<div className="warn no-print" style={{marginBottom:12}}>Saved on this device only — publish the <b>leagues</b> Firestore rule to sync and share.</div>}
                 <div className="tabs no-print">
                     {tabs.map(([k,l])=><button key={k} className={'tab'+(tab===k?' on':'')} onClick={()=>setTab(k)} style={k==='manage'?{flex:'0 0 46px'}:null}>{l}</button>)}
                 </div>
