@@ -25,71 +25,45 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{min-height:100vh;background:#0D1B2A;color:#F0F4F8;font-family:'DM Sans',-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center;padding:calc(20px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))}
-.wrap{width:100%;max-width:460px}
-header{width:100%;max-width:460px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.5px;color:#F0F4F8;text-decoration:none}
+html,body{height:100%}
+body{min-height:100vh;background:#0D1B2A;color:#F0F4F8;font-family:'DM Sans',-apple-system,sans-serif;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom)}
+main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 0 24px}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(24px,6.8vw,52px);white-space:nowrap;letter-spacing:-.5px}
 .logo span{color:#2ECC71}
-.loc{display:inline-flex;align-items:center;gap:6px;max-width:60%;color:#7A9BB5;font-size:13px;text-decoration:none;background:#1A2B3C;border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:6px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.loc:hover{color:#F0F4F8;border-color:rgba(46,204,113,.5)}
-.hero{margin-top:36px}
-h1{font-family:'DM Sans',-apple-system,sans-serif;font-weight:700;font-size:clamp(30px,8vw,40px);line-height:1.12;letter-spacing:-1px}
-h1 span{color:#2ECC71}
-.lead{color:#7A9BB5;margin-top:10px;font-size:16px;line-height:1.45}
-.cards{margin-top:28px;display:grid;gap:14px}
-a.card{display:block;text-decoration:none;color:inherit;background:#1A2B3C;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:20px;transition:transform .12s,border-color .12s}
+.tag{color:#7A9BB5;margin-top:6px;font-size:15px;text-align:center}
+.cards{width:100%;max-width:760px;margin-top:32px;display:grid;gap:14px}
+@media (min-width:720px){.cards{grid-template-columns:1fr 1fr}}
+a.card{display:flex;flex-direction:column;text-decoration:none;color:inherit;background:#1A2B3C;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:20px;transition:transform .12s,border-color .12s}
 a.card:hover{border-color:#2ECC71;transform:translateY(-1px)}
 a.card:active{transform:scale(.98)}
 a.card:focus-visible{outline:2px solid #2ECC71;outline-offset:2px}
 .row{display:flex;align-items:center;gap:16px}
-.ic{width:56px;height:56px;border-radius:14px;background:rgba(46,204,113,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.ic svg{width:30px;height:30px;stroke:#2ECC71}
-.card h2{font-size:20px;font-weight:700}
-.card p{color:#7A9BB5;font-size:14.5px;margin-top:3px;line-height:1.35}
+.ic{width:52px;height:52px;border-radius:14px;background:rgba(46,204,113,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ic svg{width:28px;height:28px;stroke:#2ECC71}
+.card h2{font-size:19px;font-weight:700}
+.card p{color:#7A9BB5;font-size:14px;margin-top:2px;line-height:1.35}
 .go{margin-left:auto;color:#7A9BB5;font-size:24px}
-.live{display:flex;align-items:center;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);font-size:14.5px;min-height:44px}
+.live{display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);font-size:14px;min-height:58px}
+.row+.live{margin-top:16px}
 .dot{width:12px;height:12px;border-radius:50%;background:#3A4F63;flex-shrink:0}
 .live b{font-weight:700}
 .live small{display:block;color:#7A9BB5;font-size:13px;margin-top:1px}
-.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
-.tags span{font-size:12px;color:#7A9BB5;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:3px 10px}
-.how{margin-top:32px}
-.how h2{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#7A9BB5;margin-bottom:12px}
-.steps{list-style:none;display:grid;gap:12px;counter-reset:s}
-.steps li{counter-increment:s;display:flex;gap:12px;font-size:15px;line-height:1.4}
-.steps li::before{content:counter(s);flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#2ECC71;color:#0D1B2A;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center}
-.steps b{display:block}
-.steps span{color:#7A9BB5;font-size:14px}
-.app{margin-top:32px;display:flex;align-items:center;justify-content:space-between;gap:14px;background:#1A2B3C;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px 18px}
-.app p{font-size:15px;font-weight:500}
-.app p span{display:block;color:#7A9BB5;font-size:13px;font-weight:400}
-.badge{flex-shrink:0;display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:#000;color:#fff;border:1px solid #555;border-radius:10px;padding:7px 12px;font-size:11px;line-height:1.15}
-.badge svg{width:18px;height:18px;fill:#fff}
-.badge b{display:block;font-size:15px}
-footer{margin-top:auto;padding-top:44px;width:100%;max-width:460px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:13px;color:#7A9BB5}
-footer nav{display:flex;gap:14px;flex-wrap:wrap}
-footer a{color:#7A9BB5}
-footer a:hover{color:#F0F4F8}
+footer{padding:18px 0 22px;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px;font-size:13px;color:#7A9BB5}
+footer a{color:#7A9BB5;text-decoration:none}
+footer a:hover{color:#F0F4F8;text-decoration:underline}
 @media (prefers-reduced-motion:reduce){a.card{transition:none}a.card:hover,a.card:active{transform:none}}
 </style>
 </head>
 <body>
-<header>
-  <a class="logo" href="/" aria-label="PickleConnect home">Pickle<span>Connect</span></a>
-  <a class="loc" id="loc" href="/weather/" aria-label="Change location"><span aria-hidden="true">📍</span> <span id="locName">Set location</span></a>
-</header>
+<main>
+  <h1 class="logo">Pickle<span>Connect</span></h1>
+  <p class="tag">Pickleball weather and leagues</p>
 
-<main class="wrap">
-  <section class="hero">
-    <h1>Know when to play.<br><span>Run your league.</span></h1>
-    <p class="lead">Pickleball weather with the best hours to play, plus leagues and tournaments with live scores and standings. Free, no ads.</p>
-  </section>
-
-  <section class="cards" aria-label="Features">
+  <div class="cards">
     <a class="card" href="/weather/">
       <div class="row">
         <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M19.1 4.9l-1.4 1.4"/><path d="M8 12a4 4 0 0 1 7.5-2"/><path d="M17 20H8a4 4 0 1 1 1-7.9A5 5 0 0 1 18.5 14 3 3 0 0 1 17 20z"/></svg></div>
-        <div><h2>Weather</h2><p>Is it a good time to play? Wind, rain and the best hours today.</p></div>
+        <div><h2>Weather</h2><p>Is it a good time to play?</p></div>
         <div class="go" aria-hidden="true">›</div>
       </div>
       <div class="live" aria-live="polite">
@@ -101,40 +75,23 @@ footer a:hover{color:#F0F4F8}
     <a class="card" href="/events.html">
       <div class="row">
         <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></div>
-        <div><h2>Leagues &amp; Tournaments</h2><p>Create a league in minutes. Fair rotating schedules, live scores and standings.</p></div>
+        <div><h2>Leagues &amp; Tournaments</h2><p>Schedules, live scores and standings.</p></div>
         <div class="go" aria-hidden="true">›</div>
       </div>
-      <div class="tags" aria-label="Formats supported">
-        <span>Singles</span><span>Fixed-partner doubles</span><span>Rotating partners</span><span>Any number of courts</span>
+      <div class="live">
+        <span class="dot" style="background:#2ECC71" aria-hidden="true"></span>
+        <div><b>Singles or doubles, any courts</b><small>Fixed or rotating partners</small></div>
       </div>
     </a>
-  </section>
-
-  <section class="how" aria-labelledby="howTitle">
-    <h2 id="howTitle">How leagues work</h2>
-    <ol class="steps">
-      <li><div><b>Create</b><span>Pick the format, players, courts and number of games.</span></div></li>
-      <li><div><b>Share</b><span>Send the link to your group. Everyone sees who plays on which court.</span></div></li>
-      <li><div><b>Play &amp; score</b><span>Enter scores from your phone. Standings update live.</span></div></li>
-    </ol>
-  </section>
-
-  <section class="app" aria-label="Get the iPhone app">
-    <p>Get PickleConnect on iPhone<span>Weather and leagues in your pocket.</span></p>
-    <a class="badge" href="https://apps.apple.com/app/id6760803557" rel="noopener">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-2.99-.79-1.54.02-2.96.9-3.75 2.27-1.6 2.78-.41 6.89 1.15 9.14.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.77-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.39-.92-2.41-3.66zM14.1 5.86c.63-.77 1.06-1.83.94-2.89-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.28z"/></svg>
-      <span>Download on the<b>App Store</b></span>
-    </a>
-  </section>
+  </div>
 </main>
 
 <footer>
+  <a href="/support.html">Support</a>
+  <a href="/privacy.html">Privacy</a>
+  <a href="mailto:contact@pickleconnect.live">Contact</a>
+  <a href="https://apps.apple.com/app/id6760803557" rel="noopener">iPhone app</a>
   <span>© <span id="yr">2026</span> PickleConnect</span>
-  <nav aria-label="Footer">
-    <a href="/support.html">Support</a>
-    <a href="/privacy.html">Privacy</a>
-    <a href="mailto:contact@pickleconnect.live">Contact</a>
-  </nav>
 </footer>
 
 <script>
@@ -146,8 +103,7 @@ footer a:hover{color:#F0F4F8}
   var place=null;
   try{place=JSON.parse(localStorage.getItem('wx:last'))}catch(e){}
   if(!place||place.lat==null)return;
-  $('locName').textContent=place.name||'Your location';
-
+  
   // Same playability model and levels as /weather/ (keep in sync)
   var LEVELS=[{min:80,l:'Great',c:'#2ECC71'},{min:60,l:'Okay',c:'#F7C948'},{min:40,l:'Marginal',c:'#F7943E'},{min:-1,l:'Skip it',c:'#F75B5B'}];
   function levelOf(s){for(var i=0;i<LEVELS.length;i++)if(s>=LEVELS[i].min)return LEVELS[i]}
@@ -196,9 +152,9 @@ footer a:hover{color:#F0F4F8}
     var lv=levelOf(now.score);
     $('wxDot').style.background=lv.c;
     $('wxLine').textContent='Now: '+lv.l+' · '+now.temp+'°F, wind '+now.wind+' mph';
-    $('wxSub').textContent=best&&best.score>=40
+    $('wxSub').textContent=(place.name?place.name+' \u00b7 ':'')+(best&&best.score>=40
       ? 'Best today: '+fmtHr(best.start)+'–'+fmtHr(best.end%24)+' ('+levelOf(best.score).l+')'
-      : (rest.length>2?'No good window left today':'Check tomorrow’s forecast');
+      : (rest.length>2?'No good window left today':'Check tomorrow’s forecast'));
   }).catch(function(){
     $('wxLine').textContent='Check the weather';
     $('wxSub').textContent='Tap for the full forecast';

@@ -603,7 +603,27 @@ function LoginView(){
                         {!signup&&<button onClick={reset} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontFamily:"'Outfit',sans-serif",fontSize:14}}>Forgot password?</button>}
                     </div>
                 </div>
+                <HowItWorks style={{marginBottom:28}}/>
             </div>
+        </div>
+    );
+}
+
+// ── How leagues work (shown on the log-in screen and the dashboard) ─────
+function HowItWorks({style}){
+    const steps=[['Create','Pick the format, players, courts and number of games.'],
+                 ['Share','Send the link to your group. Everyone sees who plays on which court.'],
+                 ['Play & score','Enter scores from your phone. Standings update live.']];
+    return(
+        <div className="card" style={{maxWidth:420,margin:'14px auto 0',...style}}>
+            <div className="slbl" style={{marginBottom:10}}>How leagues work</div>
+            <ol style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:10}}>
+                {steps.map(([t,d],i)=>(
+                    <li key={t} style={{display:'flex',gap:12,alignItems:'flex-start'}}>
+                        <span aria-hidden="true" style={{flex:'none',width:26,height:26,borderRadius:'50%',background:'#059669',color:'white',fontWeight:700,fontSize:14,display:'flex',alignItems:'center',justifyContent:'center'}}>{i+1}</span>
+                        <div><div style={{fontWeight:700}}>{t}</div><div className="muted" style={{fontSize:14}}>{d}</div></div>
+                    </li>))}
+            </ol>
         </div>
     );
 }
@@ -636,6 +656,7 @@ function Dashboard({user,onOpen}){
                     <div style={{display:'flex',flexDirection:'column',gap:10}}>
                         {list.map(l=><LeagueRow key={l.id} l={l} onOpen={onOpen}/>)}
                     </div>}
+                {list!==null&&<HowItWorks style={{maxWidth:'none',marginTop:18}}/>}
             </div>
             {creating&&<CreateLeague user={user} onClose={()=>setCreating(false)} onCreated={id=>{setCreating(false);onOpen(id);}}/>}
         </div>
