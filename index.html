@@ -18,6 +18,13 @@
 <meta name="twitter:description" content="Pickleball weather with the best hours to play, plus leagues and tournaments with live scores and standings.">
 <meta name="twitter:image" content="https://pickleconnect.live/weather/weather-og.png">
 <meta name="apple-itunes-app" content="app-id=6760803557">
+<script>
+/* Inside the PickleConnect iPhone app the home page isn't needed: open the last-used tab (Weather by default) */
+(function(){try{var w=window,c=w.Capacitor||(w.parent!==w&&w.parent.Capacitor)||null;
+var inApp=(c&&c.isNativePlatform&&c.isNativePlatform())||/[?&]app=1/.test(location.search)||sessionStorage.getItem('pcApp');
+if(!inApp)return;sessionStorage.setItem('pcApp','1');
+location.replace(localStorage.getItem('pcTab')==='leagues'?'/events.html':'/weather/index.html');}catch(e){}})();
+</script>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
