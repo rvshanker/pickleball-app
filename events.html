@@ -635,6 +635,7 @@ function HowItWorks({style}){
 function Dashboard({user,onOpen}){
     const [list,setList]=useState(null);
     const [creating,setCreating]=useState(false);
+    const [deleting,setDeleting]=useState(false);
     useEffect(()=>{store.mine(user.uid,user.email).then(setList);},[user.uid]);
     return(
         <div>
@@ -660,7 +661,12 @@ function Dashboard({user,onOpen}){
                         {list.map(l=><LeagueRow key={l.id} l={l} onOpen={onOpen}/>)}
                     </div>}
                 {list!==null&&<HowItWorks style={{maxWidth:'none',marginTop:18}}/>}
+                <div style={{textAlign:'center',margin:'22px 0 8px',fontSize:13}}>
+                    <span className="muted">Signed in as {user.email}</span>
+                    {' · '}<button onClick={()=>setDeleting(true)} style={{background:'none',border:'none',color:'#dc2626',fontWeight:600,cursor:'pointer',fontFamily:'inherit',fontSize:13,padding:0}}>Delete my account</button>
+                </div>
             </div>
+            {deleting&&<DeleteAccount user={user} onClose={()=>setDeleting(false)}/>}
             {creating&&<CreateLeague user={user} onClose={()=>setCreating(false)} onCreated={id=>{setCreating(false);onOpen(id);}}/>}
         </div>
     );
@@ -676,6 +682,34 @@ function LeagueRow({l,onOpen}){
             </div>
             <div style={{color:'#059669',fontWeight:700}}>Open →</div>
         </div>
+    );
+}
+
+// ── Delete account (App Store requires in-app account deletion) ──────
+function DeleteAccount({user,onClose}){
+    const [txt,setTxt]=useState('');const [busy,setBusy]=useState(false);const [err,setErr]=useState('');
+    const go=async()=>{
+        setBusy(true);setErr('');
+        try{
+            const mine=await store.mine(user.uid,null);
+            for(const l of mine){if(l.createdBy===user.uid)await store.remove(l);}
+            if(auth&&auth.currentUser)await auth.currentUser.delete();
+            location.href='events.html';
+        }catch(e){
+            setErr(e&&e.code==='auth/requires-recent-login'
+                ?'For your security, please log out, log back in, and then delete your account.'
+                :'Could not delete your account: '+((e&&(e.message||e.code))||'unknown error')+'. Please try again or contact us.');
+            setBusy(false);
+        }
+    };
+    return(
+        <Modal onClose={onClose} title="Delete account">
+            <p style={{lineHeight:1.5}}>This permanently deletes your PickleConnect account (<b>{user.email}</b>) and every league and tournament you created, with all their schedules and scores. Leagues where you are only a co-admin are not deleted.</p>
+            <p className="muted" style={{fontSize:13,margin:'10px 0 14px'}}>This can't be undone. Type <b>DELETE</b> to confirm.</p>
+            <input className="inp" value={txt} onChange={e=>setTxt(e.target.value)} placeholder="DELETE" autoCapitalize="characters"/>
+            {err&&<div className="err" style={{marginTop:12}}>{err}</div>}
+            <button className="btn btn-red" style={{width:'100%',marginTop:14}} disabled={busy||txt.trim().toUpperCase()!=='DELETE'} onClick={go}>{busy?'Deleting…':'Permanently delete my account'}</button>
+        </Modal>
     );
 }
 
