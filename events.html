@@ -347,6 +347,9 @@ const store = {
 // so long win-by-2 games don't hand out bonus points. 'raw' counts the real score.
 const DEFAULT_SCORING={mode:'capped',gameTo:11,minPct:50};
 const scoringOf=l=>({...DEFAULT_SCORING,...((l&&l.scoring)||{})});
+// How the standings are ranked: 'wins' (win %) or 'points' (average points per game).
+// Tournaments default to wins, leagues to points; organizers can change it.
+const rankOf=l=>{const r=l&&l.scoring&&l.scoring.rankBy;return r==='wins'||r==='points'?r:(kindOf(l)==='tournament'?'wins':'points');};
 function counted(a,b,sc){
     a=+a;b=+b;
     if(sc.mode!=='capped'||a===b)return[a,b];
@@ -465,7 +468,7 @@ function ensureDemo(id,force){
 function DemoIndex({onOpen}){
     const [v,setV]=useState(0);
     const reset=()=>{DEMOS.forEach(d=>ensureDemo(demoId(d),true));setV(v+1);};
-    const groups=[['league','🏅 Leagues','Played every week, with season standings'],['tournament','🏆 Tournaments','One day, ranked by wins']];
+    const groups=[['league','🏅 Leagues','Played every week, with season standings'],['tournament','🏆 Tournaments','One day, final standings']];
     return(
         <div>
             <Nav/>
@@ -679,6 +682,7 @@ function LeagueRow({l,onOpen}){
 function CreateLeague({user,onClose,onCreated}){
     const [kind,setKind]=useState('league');
     const [format,setFormat]=useState('rotating');
+    const [rankBy,setRankBy]=useState('wins');
     const [name,setName]=useState('');
     const [names,setNames]=useState(()=>Array.from({length:12},()=>''));
     const [teams,setTeams]=useState(()=>Array.from({length:6},()=>['','']));
@@ -712,7 +716,7 @@ function CreateLeague({user,onClose,onCreated}){
             isPublic:true,publicMode:kind==='tournament'?'edit':'read',adminEmails:[],
             players,teams:fixed?fullTeams.map(t=>({id:'T'+uid6(),players:[pid(t[0]),pid(t[1])],active:true})):[],
             defaultCourts:cs,defaultRounds:rounds,weeks:[],scores:{},
-            scoring:{...DEFAULT_SCORING,minPct:kind==='tournament'?0:DEFAULT_SCORING.minPct}};
+            scoring:{...DEFAULT_SCORING,minPct:kind==='tournament'?0:DEFAULT_SCORING.minPct,rankBy:kind==='tournament'?rankBy:'points'}};
         await store.create(doc);
         onCreated(id);
     };
@@ -733,6 +737,13 @@ function CreateLeague({user,onClose,onCreated}){
             <div style={{display:'flex',flexDirection:'column',gap:8}}>
                 {Object.entries(FORMATS).map(([k,f])=><Opt key={k} on={format===k} onClick={()=>setFormat(k)} icon={f.icon} title={f.label} sub={f.desc}/>)}
             </div>
+            {kind==='tournament'&&<>
+                <label className="slbl" style={{marginTop:14}}>Winner decided by</label>
+                <div className="grid2">
+                    <Opt on={rankBy==='wins'} onClick={()=>setRankBy('wins')} icon="🥇" title="Games won" sub="Most wins. Ties go to points difference"/>
+                    <Opt on={rankBy==='points'} onClick={()=>setRankBy('points')} icon="🔢" title="Points" sub="Most points per game. Sitting out doesn't hurt"/>
+                </div>
+            </>}
             <label className="slbl" style={{marginTop:14}}>{kind==='tournament'?'Tournament':'League'} name</label>
             <input className="inp" value={name} onChange={e=>setName(e.target.value)} placeholder={kind==='tournament'?'Saturday Shootout':'Thursday Night League'}/>
             {fixed?<>
@@ -1287,7 +1298,7 @@ function Leaderboard({league,onPlayer}){
     const weeks=league.weeks||[];
     const sc=scoringOf(league);
     const rows=useMemo(()=>{
-        const all=(fmtOf(league)==='fixed'?calcTeamBoard:calcBoard)(league,scope==='season'?null:scope).sort((kindOf(league)==='tournament'?SORTS.win:SORTS.avg).fn);
+        const all=(fmtOf(league)==='fixed'?calcTeamBoard:calcBoard)(league,scope==='season'?null:scope).sort((rankOf(league)==='wins'?SORTS.win:SORTS.avg).fn);
         return all.filter(r=>r.qualified).concat(all.filter(r=>!r.qualified)); // non-qualifiers go to the bottom
     },[league,scope]);
     const anyScores=rows.some(r=>r.gp>0);
@@ -1325,8 +1336,8 @@ function Leaderboard({league,onPlayer}){
             <details className="muted" style={{fontSize:13,marginTop:10,lineHeight:1.6}}>
                 <summary style={{cursor:'pointer',fontWeight:600}}>How ranking works</summary>
                 <div style={{marginTop:6}}>
-                    {kindOf(league)==='tournament'
-                        ?<>Ranked by <b>wins</b> (win % if some played fewer games). Ties go to <b>+/-</b>: points for minus points against.</>
+                    {rankOf(league)==='wins'
+                        ?<>Ranked by <b>games won</b> (win % if some played fewer games). Ties go to <b>+/-</b>: points for minus points against.</>
                         :<>Ranked by <b>Avg</b>: average points {fmtOf(league)==='singles'?'you':'your team'} scored per game, so sitting out doesn't hurt you. Ties go to <b>+/-</b> (points for minus points against), then wins.</>}
                     {sc.mode==='capped'&&<> Overtime games count as {sc.gameTo} to {sc.gameTo}-minus-the-margin (15–13 counts as {sc.gameTo}–{sc.gameTo-2}).</>}
                     {sc.minPct>0&&kindOf(league)==='league'&&<> For the season, you need to play at least {sc.minPct}% of games to be ranked.</>}
@@ -1752,6 +1763,15 @@ function ScoringCard({league,update}){
     const set=patch=>update({scoring:{...sc,...patch}});
     return(
         <div className="card">
+            <label className="slbl">{kindOf(league)==='tournament'?'Winner decided by':'Rank players by'}</label>
+            <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:14}}>
+                {[['wins','🥇 Games won','Most wins (win %). Ties go to points difference'],['points','🔢 Points','Most points per game, so sitting out doesn\'t hurt']].map(([k,l,d])=>(
+                    <label key={k} className="check" style={{alignItems:'flex-start',background:rankOf(league)===k?'#ecfdf5':'#f8fafc',borderColor:rankOf(league)===k?'#6ee7b7':'#e2e8f0'}}>
+                        <input type="radio" checked={rankOf(league)===k} onChange={()=>set({rankBy:k})} style={{marginTop:3}}/>
+                        <span style={{whiteSpace:'normal'}}><b style={{fontWeight:600}}>{l}</b><br/><span className="muted" style={{fontSize:12}}>{d}</span></span>
+                    </label>
+                ))}
+            </div>
             <label className="slbl">Scoring</label>
             <div style={{display:'flex',flexDirection:'column',gap:8}}>
                 {[['capped',`Overtime counts as ${sc.gameTo} minus the margin (recommended)`,`15–13 counts as ${sc.gameTo}–${sc.gameTo-2}, so long games don't give bonus points`],

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Contact & Feedback – PickleConnect</title>
+<meta name="description" content="Send feedback, report a bug, or ask a question about PickleConnect.">
+<meta name="theme-color" content="#0D1B2A">
+<link rel="canonical" href="https://pickleconnect.live/contact.html">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;background:#0D1B2A;color:#F0F4F8;font-family:'DM Sans',-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center;padding:calc(20px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))}
+header{width:100%;max-width:520px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:#F0F4F8;text-decoration:none}
+.logo span{color:#2ECC71}
+.back{color:#7A9BB5;font-size:14px;text-decoration:none}
+.back:hover{color:#F0F4F8}
+main{width:100%;max-width:520px;margin-top:32px}
+h1{font-size:28px;font-weight:700;letter-spacing:-.5px}
+.lead{color:#7A9BB5;margin-top:6px;font-size:15px}
+form{margin-top:24px;display:grid;gap:16px}
+label{display:block;font-size:13px;font-weight:700;color:#9DB4C8;margin-bottom:6px;letter-spacing:.02em}
+label small{font-weight:400;color:#7A9BB5}
+input,select,textarea{width:100%;font:inherit;font-size:16px;color:#F0F4F8;background:#1A2B3C;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 14px;outline:none;-webkit-appearance:none;appearance:none}
+textarea{min-height:140px;resize:vertical;line-height:1.45}
+select{background-image:linear-gradient(45deg,transparent 50%,#7A9BB5 50%),linear-gradient(135deg,#7A9BB5 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 15px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:36px}
+input:focus,select:focus,textarea:focus{border-color:#2ECC71;box-shadow:0 0 0 3px rgba(46,204,113,.18)}
+.row{display:grid;gap:16px}
+@media (min-width:520px){.row{grid-template-columns:1fr 1fr}}
+.hp{position:absolute;left:-5000px;width:1px;height:1px;overflow:hidden}
+button{font:inherit;font-weight:700;font-size:16px;color:#0D1B2A;background:#2ECC71;border:0;border-radius:12px;padding:14px;cursor:pointer}
+button:disabled{opacity:.6;cursor:default}
+.note{font-size:13px;color:#7A9BB5}
+.msg{border-radius:12px;padding:14px 16px;font-size:15px;display:none}
+.msg.ok{display:block;background:rgba(46,204,113,.12);border:1px solid rgba(46,204,113,.4)}
+.msg.err{display:block;background:rgba(247,91,91,.1);border:1px solid rgba(247,91,91,.4)}
+.msg a{color:#2ECC71}
+footer{margin-top:auto;padding-top:40px;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px;font-size:13px;color:#7A9BB5}
+footer a{color:#7A9BB5;text-decoration:none}
+footer a:hover{color:#F0F4F8;text-decoration:underline}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="/" aria-label="PickleConnect home">Pickle<span>Connect</span></a>
+  <a class="back" href="/">‹ Home</a>
+</header>
+
+<main>
+  <h1>Contact &amp; feedback</h1>
+  <p class="lead">Ideas, bugs or questions about the weather or leagues. We read every message.</p>
+
+  <form id="f" novalidate>
+    <div class="row">
+      <div><label for="name">Name <small>(optional)</small></label><input id="name" name="name" autocomplete="name" maxlength="80"></div>
+      <div><label for="email">Email <small>(so we can reply)</small></label><input id="email" name="email" type="email" autocomplete="email" maxlength="120" inputmode="email"></div>
+    </div>
+    <div>
+      <label for="topic">Topic</label>
+      <select id="topic" name="topic">
+        <option>Feedback</option>
+        <option>Bug report</option>
+        <option>Feature idea</option>
+        <option>League or tournament help</option>
+        <option>Weather</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div>
+      <label for="message">Message</label>
+      <textarea id="message" name="message" maxlength="4000" required placeholder="Tell us what's on your mind…"></textarea>
+    </div>
+    <div class="hp" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="_honey" tabindex="-1" autocomplete="off"></div>
+    <button id="send" type="submit">Send message</button>
+    <p class="note">Your message is emailed to contact@pickleconnect.live. We only use your email to reply.</p>
+    <div id="msg" class="msg" role="status" aria-live="polite"></div>
+  </form>
+</main>
+
+<footer>
+  <a href="/support.html">Support</a>
+  <a href="/privacy.html">Privacy</a>
+  <a href="https://apps.apple.com/app/id6760803557" rel="noopener">iPhone app</a>
+  <span>© <span id="yr">2026</span> PickleConnect</span>
+</footer>
+
+<script>
+(function(){
+  var TO='contact@pickleconnect.live';
+  var $=function(id){return document.getElementById(id)};
+  $('yr').textContent=new Date().getFullYear();
+  // Pre-select a topic from the link, e.g. contact.html?topic=Bug%20report
+  try{var t=new URLSearchParams(location.search).get('topic');if(t){[].forEach.call($('topic').options,function(o){if(o.text.toLowerCase()===t.toLowerCase())o.selected=true;});}}catch(e){}
+  function show(cls,html){var m=$('msg');m.className='msg '+cls;m.innerHTML=html;}
+  $('f').addEventListener('submit',function(e){
+    e.preventDefault();
+    var msg=$('message').value.trim(), email=$('email').value.trim();
+    if(msg.length<3){show('err','Please write a message first.');$('message').focus();return;}
+    if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){show('err','That email address doesn’t look right.');$('email').focus();return;}
+    if($('website').value){show('ok','Thanks! Your message was sent.');return;} // bot trap
+    var topic=$('topic').value, name=$('name').value.trim();
+    var body={
+      _subject:'PickleConnect '+topic+(name?' from '+name:''),
+      _template:'table', _captcha:'false',
+      Topic:topic, Name:name||'(not given)', Email:email||'(not given)', Message:msg,
+      Page:document.referrer||'(direct)', Device:navigator.userAgent
+    };
+    if(email) body._replyto=email;
+    $('send').disabled=true;$('send').textContent='Sending…';
+    fetch('https://formsubmit.co/ajax/'+TO,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body)})
+      .then(function(r){return r.json().catch(function(){return{};}).then(function(j){return{ok:r.ok,j:j};});})
+      .then(function(res){
+        if(res.ok&&String(res.j.success)!=='false'){
+          $('f').reset();show('ok','Thanks'+(name?', '+name.replace(/[<>&]/g,''):'')+'! Your message was sent.'+(email?' We’ll reply to '+email.replace(/[<>&]/g,'')+'.':''));
+        }else throw new Error('send failed');
+      })
+      .catch(function(){
+        var mail='mailto:'+TO+'?subject='+encodeURIComponent('PickleConnect '+topic)+'&body='+encodeURIComponent(msg);
+        show('err','Sorry, that didn’t send. Please <a href="'+mail+'">email us instead</a>.');
+      })
+      .then(function(){$('send').disabled=false;$('send').textContent='Send message';});
+  });
+})();
+</script>
+</body>
+</html>
