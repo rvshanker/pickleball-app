@@ -28,5 +28,10 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
+      - name: Precompile JSX pages (faster loading)
+        run: |
+          npm install --prefix /tmp/precompile @babel/standalone@7.29.7 --no-save --silent
+          NODE_PATH=/tmp/precompile/node_modules node tools/precompile.js
+
       - name: Deploy Firebase Functions
         run: firebase deploy --only functions,hosting --project pickleball-app-1bba7 --force

@@ -21,7 +21,8 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**",
-      "functions/**"
+      "functions/**",
+      "tools/**"
     ],
     "redirects": [
       {
