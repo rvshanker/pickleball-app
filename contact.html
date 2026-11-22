@@ -92,6 +92,7 @@ footer a:hover{color:#F0F4F8;text-decoration:underline}
 <script>
 (function(){
   var TO='contact@pickleconnect.live';
+  var FORM_ID='636b0055c14da4f8e45efb89862dc115'; // FormSubmit alias for contact@ (keeps the address away from spam bots)
   var $=function(id){return document.getElementById(id)};
   $('yr').textContent=new Date().getFullYear();
   // Pre-select a topic from the link, e.g. contact.html?topic=Bug%20report
@@ -112,7 +113,7 @@ footer a:hover{color:#F0F4F8;text-decoration:underline}
     };
     if(email) body._replyto=email;
     $('send').disabled=true;$('send').textContent='Sending…';
-    fetch('https://formsubmit.co/ajax/'+TO,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body)})
+    fetch('https://formsubmit.co/ajax/'+FORM_ID,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body)})
       .then(function(r){return r.json().catch(function(){return{};}).then(function(j){return{ok:r.ok,j:j};});})
       .then(function(res){
         if(res.ok&&String(res.j.success)!=='false'){
