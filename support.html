@@ -86,7 +86,7 @@ body{font-family:'Instrument Sans',system-ui,sans-serif;background:var(--bg);col
     <div class="status-dot"></div>
     <div>
       <div class="status-text">All Systems Operational</div>
-      <div class="status-sub">Courts, games, messaging, and notifications are running normally.</div>
+      <div class="status-sub">Weather, leagues, scores and notifications are running normally.</div>
     </div>
   </div>
 
@@ -126,6 +126,27 @@ body{font-family:'Instrument Sans',system-ui,sans-serif;background:var(--bg);col
   <!-- FAQ -->
   <div class="section-title">Frequently Asked Questions</div>
   <div class="faq">
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <div class="faq-q-text">How does the weather rating work?</div>
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">Open <a href="/weather/" style="color:var(--green)">Weather</a> and allow location access or search for a city or ZIP code. Each hour is rated Great, Okay, Marginal or Skip it. Wind and gusts count the most, then rain (and courts that may still be wet after rain), then heat and cold. Thunderstorms are always rated Skip it. The page also shows the best 2-hour window to play each day.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <div class="faq-q-text">How do I create a league or tournament?</div>
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">Open <a href="/events.html" style="color:var(--green)">Leagues &amp; Tournaments</a>, sign in, and tap "+ New." Choose singles, fixed-partner doubles or rotating-partner doubles, add your players or teams and your courts, then tap "Make the schedule." Share the league link with your group so everyone can see who plays on which court.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <div class="faq-q-text">How are standings worked out?</div>
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">Standings update as soon as scores are entered. Open the league and tap "How ranking works" under the standings for the exact rules your league uses.</div>
+    </div>
 
     <div class="faq-item">
       <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
@@ -204,7 +225,7 @@ body{font-family:'Instrument Sans',system-ui,sans-serif;background:var(--bg);col
         <div class="faq-q-text">What devices are supported?</div>
         <div class="faq-arrow">▼</div>
       </div>
-      <div class="faq-a">PickleConnect works on any modern web browser (Chrome, Safari, Firefox, Edge) on desktop and mobile. A native iOS app is available via the App Store. An Android app is coming soon.</div>
+      <div class="faq-a">PickleConnect works on any modern web browser (Chrome, Safari, Firefox, Edge) on desktop and mobile. Get the iPhone app on the <a href="https://apps.apple.com/app/id6760803557" style="color:var(--green)">App Store</a>. On Android, open pickleconnect.live in Chrome and choose "Add to Home screen."</div>
     </div>
 
   </div>
@@ -213,9 +234,10 @@ body{font-family:'Instrument Sans',system-ui,sans-serif;background:var(--bg);col
 
 <div class="footer">
   <p>🏓 <strong>PickleConnect</strong></p>
-  <p style="margin-top:4px"><a href="/privacy">Privacy Policy</a> · <a href="mailto:contact@pickleconnect.live">contact@pickleconnect.live</a></p>
-  <p style="margin-top:4px">© 2025 PickleConnect. All rights reserved.</p>
+  <p style="margin-top:4px"><a href="/privacy">Privacy Policy</a> · <a href="mailto:contact@pickleconnect.live">contact@pickleconnect.live</a> · <a href="https://apps.apple.com/app/id6760803557">App Store</a></p>
+  <p style="margin-top:4px">© <span id="yr">2026</span> PickleConnect. All rights reserved.</p>
 </div>
 
+<script>document.getElementById('yr').textContent=new Date().getFullYear();</script>
 </body>
 </html>

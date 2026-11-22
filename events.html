@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PickleConnect – Leagues & Tournaments</title>
     <meta name="description" content="Run a pickleball league or tournament: singles, fixed-partner doubles or rotating-partner doubles, any number of courts and games, live scores and standings.">
 
@@ -30,7 +30,9 @@
 /* Inside the PickleConnect iPhone app (or ?app=1 for testing): hide website-only chrome */
 (function(){try{var w=window,c=w.Capacitor||(w.parent!==w&&w.parent.Capacitor)||null;var q=/[?&]app=1/.test(location.search);if(q)sessionStorage.setItem('pcApp','1');
 w.PC_CAP=c;w.PC_APP=!!((c&&c.isNativePlatform&&c.isNativePlatform())||q||sessionStorage.getItem('pcApp'));
-if(w.PC_APP)document.documentElement.classList.add('app');}catch(e){}})();
+if(w.PC_APP)document.documentElement.classList.add('app');
+/* Pinch-zoom stays on for the website; the iPhone app keeps its native no-zoom feel */
+if(w.PC_APP){var vp=document.querySelector('meta[name=viewport]');if(vp)vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');}}catch(e){}})();
 </script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;}

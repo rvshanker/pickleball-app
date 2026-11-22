@@ -6,10 +6,18 @@
 <title>PickleConnect – Pickleball Weather & Leagues</title>
 <meta name="description" content="Check if it's good pickleball weather, and run leagues and tournaments with fair rotating schedules.">
 <meta name="theme-color" content="#0D1B2A">
-<meta property="og:title" content="PickleConnect">
-<meta property="og:description" content="Pickleball weather and leagues & tournaments.">
+<link rel="canonical" href="https://pickleconnect.live/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PickleConnect">
+<meta property="og:title" content="PickleConnect – Know when to play. Run your league.">
+<meta property="og:description" content="Pickleball weather with the best hours to play, plus leagues and tournaments with live scores and standings.">
 <meta property="og:image" content="https://pickleconnect.live/weather/weather-og.png">
 <meta property="og:url" content="https://pickleconnect.live/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PickleConnect – Know when to play. Run your league.">
+<meta name="twitter:description" content="Pickleball weather with the best hours to play, plus leagues and tournaments with live scores and standings.">
+<meta name="twitter:image" content="https://pickleconnect.live/weather/weather-og.png">
+<meta name="apple-itunes-app" content="app-id=6760803557">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -17,38 +25,185 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{min-height:100vh;background:#0D1B2A;color:#F0F4F8;font-family:'DM Sans',-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center;padding:56px 20px 28px}
-.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:34px;letter-spacing:-.5px}
+body{min-height:100vh;background:#0D1B2A;color:#F0F4F8;font-family:'DM Sans',-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center;padding:calc(20px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))}
+.wrap{width:100%;max-width:460px}
+header{width:100%;max-width:460px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.5px;color:#F0F4F8;text-decoration:none}
 .logo span{color:#2ECC71}
-.tag{color:#7A9BB5;margin-top:8px;font-size:16px;text-align:center}
-.cards{width:100%;max-width:460px;margin-top:36px;display:grid;gap:14px}
-a.card{display:flex;align-items:center;gap:16px;text-decoration:none;color:inherit;background:#1A2B3C;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:20px;transition:transform .12s,border-color .12s}
+.loc{display:inline-flex;align-items:center;gap:6px;max-width:60%;color:#7A9BB5;font-size:13px;text-decoration:none;background:#1A2B3C;border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:6px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.loc:hover{color:#F0F4F8;border-color:rgba(46,204,113,.5)}
+.hero{margin-top:36px}
+h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(30px,8vw,38px);line-height:1.1;letter-spacing:-.5px}
+h1 span{color:#2ECC71}
+.lead{color:#7A9BB5;margin-top:10px;font-size:16px;line-height:1.45}
+.cards{margin-top:28px;display:grid;gap:14px}
+a.card{display:block;text-decoration:none;color:inherit;background:#1A2B3C;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:20px;transition:transform .12s,border-color .12s}
 a.card:hover{border-color:#2ECC71;transform:translateY(-1px)}
 a.card:active{transform:scale(.98)}
+a.card:focus-visible{outline:2px solid #2ECC71;outline-offset:2px}
+.row{display:flex;align-items:center;gap:16px}
 .ic{width:56px;height:56px;border-radius:14px;background:rgba(46,204,113,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .ic svg{width:30px;height:30px;stroke:#2ECC71}
 .card h2{font-size:20px;font-weight:700}
 .card p{color:#7A9BB5;font-size:14.5px;margin-top:3px;line-height:1.35}
 .go{margin-left:auto;color:#7A9BB5;font-size:24px}
-footer{margin-top:auto;padding-top:48px;font-size:13px;color:#7A9BB5}
+.live{display:flex;align-items:center;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);font-size:14.5px;min-height:44px}
+.dot{width:12px;height:12px;border-radius:50%;background:#3A4F63;flex-shrink:0}
+.live b{font-weight:700}
+.live small{display:block;color:#7A9BB5;font-size:13px;margin-top:1px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.tags span{font-size:12px;color:#7A9BB5;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:3px 10px}
+.how{margin-top:32px}
+.how h2{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#7A9BB5;margin-bottom:12px}
+.steps{list-style:none;display:grid;gap:12px;counter-reset:s}
+.steps li{counter-increment:s;display:flex;gap:12px;font-size:15px;line-height:1.4}
+.steps li::before{content:counter(s);flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#2ECC71;color:#0D1B2A;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center}
+.steps b{display:block}
+.steps span{color:#7A9BB5;font-size:14px}
+.app{margin-top:32px;display:flex;align-items:center;justify-content:space-between;gap:14px;background:#1A2B3C;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px 18px}
+.app p{font-size:15px;font-weight:500}
+.app p span{display:block;color:#7A9BB5;font-size:13px;font-weight:400}
+.badge{flex-shrink:0;display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:#000;color:#fff;border:1px solid #555;border-radius:10px;padding:7px 12px;font-size:11px;line-height:1.15}
+.badge svg{width:18px;height:18px;fill:#fff}
+.badge b{display:block;font-size:15px}
+footer{margin-top:auto;padding-top:44px;width:100%;max-width:460px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:13px;color:#7A9BB5}
+footer nav{display:flex;gap:14px;flex-wrap:wrap}
 footer a{color:#7A9BB5}
+footer a:hover{color:#F0F4F8}
+@media (prefers-reduced-motion:reduce){a.card{transition:none}a.card:hover,a.card:active{transform:none}}
 </style>
 </head>
 <body>
-<div class="logo">Pickle<span>Connect</span></div>
-<div class="tag">Good weather to play? Who's on which court?</div>
-<div class="cards">
-  <a class="card" href="/weather/beta.html">
-    <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M19.1 4.9l-1.4 1.4"/><path d="M8 12a4 4 0 0 1 7.5-2"/><path d="M17 20H8a4 4 0 1 1 1-7.9A5 5 0 0 1 18.5 14 3 3 0 0 1 17 20z"/></svg></div>
-    <div><h2>Weather</h2><p>Is it a good time to play? Wind, rain and the best hours today.</p></div>
-    <div class="go">›</div>
-  </a>
-  <a class="card" href="/events.html">
-    <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></div>
-    <div><h2>Leagues &amp; Tournaments</h2><p>Singles or doubles, rotating partners, any courts. Live scores and standings.</p></div>
-    <div class="go">›</div>
-  </a>
-</div>
-<footer><a href="/support.html">Support</a> · <a href="/privacy.html">Privacy</a></footer>
+<header>
+  <a class="logo" href="/" aria-label="PickleConnect home">Pickle<span>Connect</span></a>
+  <a class="loc" id="loc" href="/weather/" aria-label="Change location"><span aria-hidden="true">📍</span> <span id="locName">Set location</span></a>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1>Know when to play.<br><span>Run your league.</span></h1>
+    <p class="lead">Pickleball weather with the best hours to play, plus leagues and tournaments with live scores and standings. Free, no ads.</p>
+  </section>
+
+  <section class="cards" aria-label="Features">
+    <a class="card" href="/weather/">
+      <div class="row">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M19.1 4.9l-1.4 1.4"/><path d="M8 12a4 4 0 0 1 7.5-2"/><path d="M17 20H8a4 4 0 1 1 1-7.9A5 5 0 0 1 18.5 14 3 3 0 0 1 17 20z"/></svg></div>
+        <div><h2>Weather</h2><p>Is it a good time to play? Wind, rain and the best hours today.</p></div>
+        <div class="go" aria-hidden="true">›</div>
+      </div>
+      <div class="live" aria-live="polite">
+        <span class="dot" id="wxDot" aria-hidden="true"></span>
+        <div><b id="wxLine">Check the weather near you</b><small id="wxSub">Tap to set your location</small></div>
+      </div>
+    </a>
+
+    <a class="card" href="/events.html">
+      <div class="row">
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></div>
+        <div><h2>Leagues &amp; Tournaments</h2><p>Create a league in minutes. Fair rotating schedules, live scores and standings.</p></div>
+        <div class="go" aria-hidden="true">›</div>
+      </div>
+      <div class="tags" aria-label="Formats supported">
+        <span>Singles</span><span>Fixed-partner doubles</span><span>Rotating partners</span><span>Any number of courts</span>
+      </div>
+    </a>
+  </section>
+
+  <section class="how" aria-labelledby="howTitle">
+    <h2 id="howTitle">How leagues work</h2>
+    <ol class="steps">
+      <li><div><b>Create</b><span>Pick the format, players, courts and number of games.</span></div></li>
+      <li><div><b>Share</b><span>Send the link to your group. Everyone sees who plays on which court.</span></div></li>
+      <li><div><b>Play &amp; score</b><span>Enter scores from your phone. Standings update live.</span></div></li>
+    </ol>
+  </section>
+
+  <section class="app" aria-label="Get the iPhone app">
+    <p>Get PickleConnect on iPhone<span>Weather and leagues in your pocket.</span></p>
+    <a class="badge" href="https://apps.apple.com/app/id6760803557" rel="noopener">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-2.99-.79-1.54.02-2.96.9-3.75 2.27-1.6 2.78-.41 6.89 1.15 9.14.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.77-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.39-.92-2.41-3.66zM14.1 5.86c.63-.77 1.06-1.83.94-2.89-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.28z"/></svg>
+      <span>Download on the<b>App Store</b></span>
+    </a>
+  </section>
+</main>
+
+<footer>
+  <span>© <span id="yr">2026</span> PickleConnect</span>
+  <nav aria-label="Footer">
+    <a href="/support.html">Support</a>
+    <a href="/privacy.html">Privacy</a>
+    <a href="mailto:contact@pickleconnect.live">Contact</a>
+  </nav>
+</footer>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  $('yr').textContent=new Date().getFullYear();
+
+  // Same location the weather page saves: {name, lat, lng}
+  var place=null;
+  try{place=JSON.parse(localStorage.getItem('wx:last'))}catch(e){}
+  if(!place||place.lat==null)return;
+  $('locName').textContent=place.name||'Your location';
+
+  // Same playability model and levels as /weather/ (keep in sync)
+  var LEVELS=[{min:80,l:'Great',c:'#2ECC71'},{min:60,l:'Okay',c:'#F7C948'},{min:40,l:'Marginal',c:'#F7943E'},{min:-1,l:'Skip it',c:'#F75B5B'}];
+  function levelOf(s){for(var i=0;i<LEVELS.length;i++)if(s>=LEVELS[i].min)return LEVELS[i]}
+  function rate(h){
+    var s=100;
+    s-=Math.max(0,h.wind-6)*4;
+    s-=Math.max(0,h.gust-14)*2.5;
+    if(h.storm)s-=100;
+    if(h.precip>=0.01)s-=50;
+    else{s-=Math.max(0,h.rain-15)*0.7;if(h.wet)s-=25;}
+    if(h.feels>=105)s-=50;else if(h.feels>=95)s-=20;else if(h.feels>=88)s-=5;
+    if(h.feels<32)s-=45;else if(h.feels<42)s-=20;else if(h.feels<50)s-=6;
+    return Math.max(0,Math.min(100,Math.round(s)));
+  }
+  function fmtHr(hr){return(((hr+11)%12)+1)+(hr%24<12?' AM':' PM')}
+
+  $('wxLine').textContent='Checking today’s conditions…';
+  $('wxSub').textContent=place.name||'';
+  var url='https://api.open-meteo.com/v1/forecast?latitude='+place.lat+'&longitude='+place.lng+
+    '&hourly=temperature_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,precipitation_probability,precipitation,weather_code'+
+    '&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&forecast_days=1&past_days=1';
+  fetch(url).then(function(r){return r.json()}).then(function(d){
+    var H=d.hourly;
+    var nowKey=new Date(Date.now()+(d.utc_offset_seconds||0)*1000).toISOString().slice(0,13);
+    var all=H.time.map(function(t,i){return{t:t,day:t.slice(0,10),hr:+t.slice(11,13),
+      temp:Math.round(H.temperature_2m[i]),feels:Math.round(H.apparent_temperature[i]!=null?H.apparent_temperature[i]:H.temperature_2m[i]),
+      wind:Math.round(H.wind_speed_10m[i]),gust:Math.round(H.wind_gusts_10m[i]||0),
+      rain:H.precipitation_probability[i]||0,precip:H.precipitation[i]||0,storm:(H.weather_code[i]||0)>=95}});
+    all.forEach(function(h,i){
+      h.wet=all.slice(Math.max(0,i-3),i).reduce(function(n,x){return n+x.precip},0)>=0.02;
+      h.score=rate(h);
+    });
+    var nowIdx=-1;
+    for(var i=0;i<all.length;i++){if(all[i].t.slice(0,13)>=nowKey){nowIdx=i;break}}
+    if(nowIdx<0)throw 0;
+    var now=all[nowIdx],today=nowKey.slice(0,10);
+    var rest=all.slice(nowIdx).filter(function(h){return h.day===today});
+    // Best 2 straight hours left today between 6 AM and 10 PM
+    var best=null;
+    for(var j=0;j+1<rest.length;j++){
+      var a=rest[j],b=rest[j+1];
+      if(a.hr<6||b.hr>21||b.hr!==a.hr+1)continue;
+      var avg=Math.round((a.score+b.score)/2);
+      if(!best||avg>best.score)best={start:a.hr,end:b.hr+1,score:avg};
+    }
+    var lv=levelOf(now.score);
+    $('wxDot').style.background=lv.c;
+    $('wxLine').textContent='Now: '+lv.l+' · '+now.temp+'°F, wind '+now.wind+' mph';
+    $('wxSub').textContent=best&&best.score>=40
+      ? 'Best today: '+fmtHr(best.start)+'–'+fmtHr(best.end%24)+' ('+levelOf(best.score).l+')'
+      : (rest.length>2?'No good window left today':'Check tomorrow’s forecast');
+  }).catch(function(){
+    $('wxLine').textContent='Check the weather';
+    $('wxSub').textContent='Tap for the full forecast';
+  });
+})();
+</script>
 </body>
 </html>

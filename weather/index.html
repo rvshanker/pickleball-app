@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PickleConnect – Pickleball Weather</title>
 <meta name="description" content="Real-time pickleball weather and playability forecast. Check wind, gusts, rain, and court conditions before you play.">
 <meta name="keywords" content="pickleball weather, pickleball wind, pickleball conditions, pickleball forecast, court weather, outdoor pickleball">
@@ -33,127 +33,185 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%232ECC71'/><circle cx='50' cy='50' r='28' fill='white' opacity='0.15'/><circle cx='50' cy='50' r='6' fill='white'/></svg>" type="image/svg+xml">
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="../apptabs.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.7/babel.min.js"></script>
 <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script>
+/* Inside the PickleConnect iPhone app (or ?app=1 for testing): hide website-only chrome */
+(function(){try{var w=window,c=w.Capacitor||(w.parent!==w&&w.parent.Capacitor)||null;var q=/[?&]app=1/.test(location.search);if(q)sessionStorage.setItem('pcApp','1');
+w.PC_CAP=c;w.PC_APP=!!((c&&c.isNativePlatform&&c.isNativePlatform())||q||sessionStorage.getItem('pcApp'));
+if(w.PC_APP)document.documentElement.classList.add('app');
+/* Pinch-zoom stays on for the website; the iPhone app keeps its native no-zoom feel */
+if(w.PC_APP){var vp=document.querySelector('meta[name=viewport]');if(vp)vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');}}catch(e){}})();
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --green:#2ECC71;--green-dark:#27AE60;--green-dim:rgba(46,204,113,0.12);
-  --navy:#0D1B2A;--navy2:#142232;--card:#1A2B3C;--card2:#1F3347;
+  --green:#2ECC71;--green-dim:rgba(46,204,113,0.12);
+  --navy:#0D1B2A;--card:#1A2B3C;
   --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
-  --text:#F0F4F8;--muted:#7A9BB5;--muted2:rgba(122,155,181,0.5);
-  --accent:#F7C948;--blue:#5B9BF7;--red:#F75B5B;
+  --text:#F0F4F8;--muted:#8FAEC6;--muted2:rgba(122,155,181,0.5);
+  --accent:#F7C948;--red:#F75B5B;
 }
-html{height:100%;}
 body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);font-size:15px;-webkit-text-size-adjust:100%;min-height:100vh;}
-
-/* 3D background layer */
+button{font-family:inherit;color:inherit;}
 #wx3d{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity 1.2s ease;}
 #wx3d.on{opacity:1;}
 #root{position:relative;z-index:1;}
+.muted{color:var(--muted);font-size:.8rem;}
 
-/* Nav — title left, search right */
-.nav{position:sticky;top:0;z-index:100;background:rgba(13,27,42,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-.nav-logo{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;color:var(--green);letter-spacing:-0.02em;cursor:pointer;text-decoration:none;white-space:nowrap;}
+.nav{position:sticky;top:0;z-index:100;background:rgba(13,27,42,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.nav-logo{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;color:var(--green);text-decoration:none;white-space:nowrap;}
 .nav-logo span{color:var(--text);}
-.nav-logo em{font-style:normal;color:var(--muted);font-weight:700;font-size:0.85rem;margin-left:6px;}
+.nav-logo em{font-style:normal;color:var(--muted);font-weight:700;font-size:.85rem;margin-left:6px;}
 .nav-search{display:flex;gap:8px;margin-left:auto;flex:0 1 380px;min-width:230px;align-items:center;}
-@media (max-width:680px){
-  .nav-search{flex:1 1 100%;order:3;margin-left:0;}
-}
-
-/* Search (lives in the nav, top right) */
-.search-input{flex:1;min-width:0;padding:9px 12px 9px 34px;background:rgba(26,43,60,0.85);border:1.5px solid var(--border2);border-radius:11px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;transition:border-color .15s;backdrop-filter:blur(8px);}
+@media (max-width:680px){.nav-search{flex:1 1 100%;order:3;margin-left:0;}}
+.search-input{width:100%;padding:9px 12px 9px 34px;background:rgba(26,43,60,0.85);border:1.5px solid var(--border2);border-radius:11px;color:var(--text);font-family:inherit;font-size:16px;outline:none;}
 .search-input:focus{border-color:rgba(46,204,113,0.5);}
 .search-input::placeholder{color:var(--muted2);}
-.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:0.85rem;}
-.loc-btn{width:38px;height:38px;border-radius:11px;background:rgba(26,43,60,0.85);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;color:var(--text);transition:all .15s;flex-shrink:0;backdrop-filter:blur(8px);}
-.loc-btn:hover{border-color:rgba(46,204,113,0.5);background:var(--green-dim);}
-.loc-btn.active{border-color:var(--green);background:var(--green-dim);color:var(--green);}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:.85rem;}
+.loc-btn{width:40px;height:40px;flex-shrink:0;border-radius:11px;background:rgba(26,43,60,0.85);border:1.5px solid var(--border2);font-size:1rem;cursor:pointer;}
+.loc-btn.active{border-color:var(--green);background:var(--green-dim);}
 
-/* ============ 3D STAT CAROUSEL (poll-page style ring) ============ */
-:root{--stat-w:200px;--stat-h:258px;--stat-ring:265px;--ball-size:215px;}
-.stage{height:400px;display:flex;align-items:center;justify-content:center;perspective:1250px;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab;margin:2px 0 0;}
-.stage:active{cursor:grabbing;}
-.world{position:relative;width:var(--stat-w);height:var(--stat-h);transform-style:preserve-3d;}
-.ball-holder{position:absolute;left:50%;top:50%;width:var(--ball-size);height:var(--ball-size);transform:translate(-50%,-50%) translateZ(0);pointer-events:none;display:flex;align-items:center;justify-content:center;}
-.mascot-img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 22px 30px rgba(0,0,0,.5));animation:mascotIn .4s cubic-bezier(.34,1.56,.64,1), bobble 3.4s ease-in-out .4s infinite;user-select:none;-webkit-user-drag:none;}
-@keyframes mascotIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
-@keyframes bobble{0%,100%{transform:translateY(-5px)}50%{transform:translateY(5px)}}
-.carousel3d{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform;}
-.stat-card{
-  position:absolute;inset:0;border-radius:18px;
-  background:linear-gradient(165deg, rgba(255,255,255,.10), rgba(255,255,255,.02) 45%), #16273A;
-  border:1px solid var(--border2);
-  box-shadow:0 26px 52px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.12);
-  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
-  padding:20px 16px 18px;backface-visibility:hidden;
-}
-.stat-card::before{
-  content:'';position:absolute;inset:-1px;border-radius:18px;padding:1px;pointer-events:none;
-  background:linear-gradient(180deg, var(--stat) 0%, transparent 65%);
-  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite:xor;mask-composite:exclude;opacity:.85;
-}
-.stat-card .ico{font-size:44px;line-height:1;filter:drop-shadow(0 8px 16px rgba(0,0,0,.45));}
-.stat-card .lbl{font-size:0.62rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}
-.stat-card .val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;letter-spacing:-0.02em;color:var(--text);line-height:1;}
-.stat-card .val small{font-size:0.95rem;font-weight:700;color:var(--muted);margin-left:2px;}
-.stat-card .sub{font-size:0.7rem;font-weight:600;color:var(--stat);min-height:1em;}
-.stage-hint{text-align:center;color:var(--muted2);font-size:0.7rem;margin:-4px 0 12px;letter-spacing:.05em;}
-@media (max-width:640px){
-  :root{--stat-w:162px;--stat-h:220px;--stat-ring:205px;--ball-size:165px;}
-  .stage{height:330px;}
-  .stat-card .ico{font-size:36px;}
-  .stat-card .val{font-size:1.6rem;}
-}
-@media (prefers-reduced-motion: reduce){
-  .mascot-img{animation:none;}
-}
+.content{max-width:560px;margin:0 auto;padding:14px 14px 0;scroll-margin-top:70px;}
+@media (max-width:680px){.content{scroll-margin-top:118px;}}
+.place-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.place{font-weight:700;font-size:1rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.star{background:none;border:1px solid var(--border2);border-radius:99px;padding:6px 12px;font-size:.78rem;font-weight:700;cursor:pointer;color:var(--muted);white-space:nowrap;}
+.star.on{color:var(--accent);border-color:rgba(247,201,72,.4);}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{background:rgba(26,43,60,.8);border:1px solid var(--border2);border-radius:99px;padding:7px 13px;font-size:.8rem;font-weight:600;cursor:pointer;white-space:nowrap;}
+.chip.on{background:var(--green);border-color:var(--green);color:#06210f;}
 
-/* Content */
-.content{max-width:520px;margin:0 auto;padding:16px;}
+.center{text-align:center;padding:60px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;}
+.spin{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;}
+.err{background:rgba(247,91,91,.1);border:1px solid rgba(247,91,91,.25);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:.85rem;color:#FF8A80;}
+.dim{opacity:.55;transition:opacity .2s;}
 
-/* Cards — semi-transparent glass so the 3D layer shows through */
-.wx-card{background:rgba(26,43,60,0.74);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;box-shadow:0 8px 28px rgba(0,0,0,0.22);transition:box-shadow .25s ease;}
-.wx-card-header{padding:14px 16px;font-size:0.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.hero{position:relative;background:linear-gradient(160deg,color-mix(in srgb,var(--lv) 16%,transparent),rgba(26,43,60,.82) 55%);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid color-mix(in srgb,var(--lv) 35%,transparent);border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:0 12px 36px rgba(0,0,0,.35);}
+.hero-top{display:flex;align-items:center;gap:12px;}
+.mascot{width:74px;height:74px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 10px 16px rgba(0,0,0,.45));animation:bobble 3.4s ease-in-out infinite;}
+@keyframes bobble{0%,100%{transform:translateY(-3px)}50%{transform:translateY(3px)}}
+.hero-when{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+.hero-verdict{font-family:'DM Sans',sans-serif;font-weight:700;font-size:1.75rem;letter-spacing:-.01em;line-height:1.1;margin:3px 0 4px;}
+.meter{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:12px;}
+.meter-s{display:flex;flex-direction:column;align-items:center;gap:4px;opacity:.45;}
+.meter-s i{display:block;width:100%;height:6px;border-radius:4px;background:var(--c);}
+.meter-s span{font-size:.62rem;font-weight:700;color:var(--muted);white-space:nowrap;}
+.meter-s.on{opacity:1;}
+.meter-s.on i{height:9px;box-shadow:0 0 12px var(--c);}
+.meter-s.on span{color:var(--c);font-size:.7rem;}
+.hero-why{font-size:.8rem;color:var(--text);opacity:.85;line-height:1.35;}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:14px;}
+.stat{background:rgba(13,27,42,.55);border:1px solid var(--border);border-radius:12px;padding:8px 4px;text-align:center;}
+.stat-l{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.stat-v{font-family:'DM Sans',sans-serif;font-weight:700;font-size:1.35rem;line-height:1.3;}
+.stat-v .sl{color:var(--muted);font-weight:500;margin:0 2px;}
+.stat-v small{font-size:.65rem;font-family:'DM Sans',sans-serif;color:var(--muted);font-weight:700;}
+.stat-s{font-size:.65rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.best{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:12px;padding:10px 12px;border-radius:12px;background:rgba(13,27,42,.55);font-size:.85rem;font-weight:600;}
+.best-btn{background:none;border:none;font-weight:800;font-size:.9rem;cursor:pointer;padding:0;}
+.ts{position:relative;height:72px;margin:12px 0 4px;touch-action:pan-y;}
+.ts-bubble{position:absolute;top:0;transform:translateX(-50%);color:#0b1622;font-weight:800;font-size:.8rem;padding:3px 9px;border-radius:99px;white-space:nowrap;pointer-events:none;transition:background .15s;}
+.ts-bubble::after{content:'';position:absolute;left:50%;bottom:-4px;transform:translateX(-50%) rotate(45deg);width:8px;height:8px;background:inherit;}
+.ts-track{position:absolute;top:36px;height:10px;display:flex;gap:2px;border-radius:6px;overflow:hidden;pointer-events:none;}
+.ts-track i{flex:1;}
+.ts input{position:absolute;left:0;right:0;top:27px;width:100%;height:28px;margin:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer;touch-action:none;}
+.ts input:focus{outline:none;}
+.ts input::-webkit-slider-runnable-track{height:28px;background:transparent;}
+.ts input::-moz-range-track{height:28px;background:transparent;}
+.ts input::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;border:3px solid #0b1622;box-shadow:0 2px 10px rgba(0,0,0,.5);}
+.ts input::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid #0b1622;box-shadow:0 2px 10px rgba(0,0,0,.5);}
+.ts-ticks{position:absolute;left:0;right:0;top:58px;height:14px;}
+.ts-ticks span{position:absolute;transform:translateX(-50%);font-size:.66rem;font-weight:600;color:var(--muted);white-space:nowrap;}
+.share{width:100%;margin-top:10px;background:none;color:var(--green);border:1.5px solid rgba(46,204,113,.45);border-radius:12px;padding:9px;font-weight:700;font-size:.88rem;cursor:pointer;}
+.toast{text-align:center;font-size:.78rem;color:var(--green);margin-top:8px;}
 
-/* Responsive layout: ordered stack on mobile, two columns on desktop */
+.days{display:flex;gap:6px;margin:0 -14px 12px;padding:0 14px 2px;overflow-x:auto;scrollbar-width:none;}
+.days::-webkit-scrollbar{display:none;}
+.days .day{flex:0 0 74px;}
+@media (min-width:600px){.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));margin:0 0 12px;padding:0;overflow:visible;}.days .day{flex:none;}}
+.day{background:rgba(26,43,60,.78);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:12px;padding:7px 2px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.day.on{border-color:var(--green);background:rgba(46,204,113,.14);}
+.day-n{font-size:.66rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+.day-i{font-size:1.05rem;}
+.day-dot{border-radius:99px;font-size:.62rem;font-weight:800;color:#0b1622;padding:2px 7px;white-space:nowrap;}
+
+.wx-card{background:rgba(26,43,60,0.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:12px;}
+.wx-card-header{padding:13px 16px 10px;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between;gap:8px;}
+.wx-card-header span{text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted2);}
 .wx-grid{display:flex;flex-direction:column;}
 .wx-col{display:contents;}
-.o1{order:1}.o2{order:2}.o3{order:3}.o4{order:4}.o5{order:5}
-@media (min-width:960px){
-  .content{max-width:1020px;}
-  .search-wrap{max-width:1020px;}
-  .search-row{max-width:560px;}
-  .wx-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;align-items:start;}
-  .wx-col{display:flex;flex-direction:column;min-width:0;}
-  .o1,.o2,.o3,.o4,.o5{order:0;}
-}
 
-/* 3D tilt wrapper */
-.tilt{transform-style:preserve-3d;will-change:transform;transition:transform .18s ease-out;}
 
-/* Graph-specific */
-.graph-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(140,160,196,.3) transparent;}
-.graph-svg{display:block;height:auto;touch-action:pan-y;cursor:crosshair;user-select:none;-webkit-user-select:none;}
+.hours{display:flex;gap:4px;overflow-x:auto;padding:0 10px 10px;scrollbar-width:thin;scrollbar-color:rgba(140,160,196,.3) transparent;}
+.hr{flex:0 0 50px;background:rgba(13,27,42,.35);border:1px solid transparent;border-radius:12px;padding:7px 2px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.hr.night{background:#0b1622;}
+.hr.on{border-color:var(--text);background:rgba(255,255,255,.08);}
+.hr-t{font-size:.68rem;font-weight:700;color:var(--muted);}
+.hr.on .hr-t{color:var(--text);}
+.hr-i{font-size:1rem;}
+.hr-bar{width:14px;height:52px;border-radius:6px;background:rgba(255,255,255,.06);display:flex;align-items:flex-end;overflow:hidden;}
+.hr-bar div{width:100%;border-radius:6px;}
+.hr-s{font-size:.72rem;font-weight:800;}
+.hr-x{font-size:.7rem;font-weight:600;}
+.hr-x small{font-size:.55rem;color:var(--muted);}
+.legend{display:flex;flex-wrap:wrap;gap:10px;padding:0 16px 12px;font-size:.66rem;color:var(--muted);}
+.legend span{display:flex;align-items:center;gap:4px;}
+.legend i{width:9px;height:9px;border-radius:3px;display:inline-block;}
 
-/* Footer */
-.footer{text-align:center;padding:24px 16px 32px;font-size:0.72rem;color:var(--muted);}
+.note{display:flex;gap:10px;padding:10px 16px;border-top:1px solid var(--border);font-size:.85rem;line-height:1.4;}
+.note-i{font-size:1.15rem;flex-shrink:0;width:24px;text-align:center;}
+
+.week-row{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;border-top:1px solid var(--border);padding:10px 16px;cursor:pointer;text-align:left;}
+.week-row.on{background:rgba(46,204,113,.08);}
+.wk-d{width:74px;flex-shrink:0;font-weight:700;font-size:.85rem;}
+.wk-i{font-size:1.1rem;width:24px;text-align:center;}
+.wk-b{flex:1;min-width:0;font-size:.82rem;}
+.wk-b span{color:var(--text);opacity:.85;}
+.wk-t{font-weight:700;font-size:.85rem;text-align:right;white-space:nowrap;}
+.wk-t span{color:var(--muted);font-weight:500;margin-left:5px;}
+.guide summary{list-style:none;}
+.guide summary::-webkit-details-marker{display:none;}
+.guide summary::after{content:'＋';color:var(--muted);}
+.guide[open] summary::after{content:'－';}
+.guide-lv{display:flex;flex-direction:column;gap:5px;margin-top:10px;}
+.cta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.cta a{display:block;text-align:center;padding:12px;border-radius:12px;background:var(--green-dim);border:1px solid rgba(46,204,113,.25);color:var(--text);text-decoration:none;font-weight:700;font-size:.85rem;}
+
+.footer{text-align:center;padding:18px 16px 32px;font-size:.72rem;color:var(--muted);}
 .footer a{color:var(--green);text-decoration:none;font-weight:600;}
-
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
-.fade-in{animation:fadeIn .25s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .fade-up{animation:fadeUp .35s ease;}
-
-@media (prefers-reduced-motion: reduce){
-  #wx3d{display:none !important;}
-  .tilt{transition:none;}
+@media (max-width:420px){
+  .content{padding:12px 12px 0;}
+  .days{margin:0 -12px 12px;padding:0 12px 2px;}
+  .hero{padding:14px;border-radius:18px;}
+  .mascot{width:62px;height:62px;}
+  .hero-verdict{font-size:1.5rem;}
+  .stats{gap:5px;}
+  .stat-v{font-size:1.1rem;}
+  .best{font-size:.8rem;padding:9px 10px;}
+  .best-btn{font-size:.85rem;}
+  .wk-d{width:62px;font-size:.8rem;}
+  .week-row{padding:10px 12px;gap:8px;}
+  .wx-card-header{padding:12px 14px 8px;}
+  .note{padding:10px 14px;}
 }
+@media (prefers-reduced-motion: reduce){#wx3d{display:none !important;}.mascot{animation:none;}}
+
+/* app mode: no website header, links or footer; feels like a native screen */
+.app body{-webkit-user-select:none;-webkit-touch-callout:none;}
+.app input{-webkit-user-select:text;}
+.app *{-webkit-tap-highlight-color:transparent;}
+.app .nav-logo,.app .cta,.app .footer{display:none;}
+.app .nav{padding:10px 14px;}
+.app .nav-search{margin-left:0;flex:1 1 100%;min-width:0;}
+.app .content{padding-bottom:24px;}
 </style>
 </head>
 <body>
@@ -484,665 +542,444 @@ window.WX3D = (function () {
 </script>
 
 <script type="text/babel">
-const {useState, useEffect, useRef} = React;
+const {useState, useEffect, useMemo, useRef} = React;
 
-const wxIcon = (temp, wind) => wind > 20 ? '🌬️' : temp < 32 ? '🥶' : temp < 50 ? '🧥' : temp > 88 ? '☀️' : '⛅';
-const getPlayability = (wind, gust, rain) => {
-  let s = 0;
-  if (wind >= 15) s += 3; else if (wind >= 10) s += 1;
-  if (gust >= 25) s += 3; else if (gust >= 15) s += 1;
-  if (rain >= 50) s += 3; else if (rain >= 20) s += 1;
-  if (s === 0) return { l: 'Great', c: '#2ECC71', e: '🟢', tip: 'Perfect conditions — get out there!' };
-  if (s <= 2) return { l: 'Okay', c: '#F7C948', e: '🟡', tip: 'Playable, but expect some wind on dinks.' };
-  if (s <= 4) return { l: 'Marginal', c: '#F7943E', e: '🟠', tip: 'Tough conditions — lobs will drift.' };
-  return { l: 'Skip It', c: '#F75B5B', e: '🔴', tip: 'Not worth it today.' };
-};
-const windDir = deg => { const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW']; return dirs[Math.round(deg / 22.5) % 16]; };
-const windArrow = deg => {
-  if (deg == null) return '↑';
-  const d = (deg + 180) % 360;
-  const arrows = ['↑','↗','→','↘','↓','↙','←','↖'];
-  return arrows[Math.round(d / 45) % 8];
-};
-
-// 3D perspective tilt on pointer (desktop); inert on touch so mobile stays smooth
-function TiltCard({ children, className = '', style = {}, ...rest }) {
-  const ref = useRef(null);
-  const onMove = (e) => {
-    const el = ref.current;
-    if (!el || e.pointerType === 'touch') return;
-    const r = el.getBoundingClientRect();
-    const x = (e.clientX - r.left) / r.width - 0.5;
-    const y = (e.clientY - r.top) / r.height - 0.5;
-    el.style.transform = `perspective(900px) rotateX(${(-y * 4).toFixed(2)}deg) rotateY(${(x * 6).toFixed(2)}deg) translateZ(4px)`;
-    el.style.boxShadow = '0 18px 44px rgba(0,0,0,0.38)';
-  };
-  const onLeave = () => {
-    const el = ref.current;
-    if (!el) return;
-    el.style.transform = '';
-    el.style.boxShadow = '';
-  };
-  return (
-    <div ref={ref} className={`tilt ${className}`} style={style} {...rest} onPointerMove={onMove} onPointerLeave={onLeave}>
-      {children}
-    </div>
-  );
-}
-
-/* Mascot floating in the middle of the stat ring.
-   Every time a card sweeps across the front (each 90 degrees of ring
-   rotation), a new random mascot pops in. */
-const ALL_MASCOTS = [
-  'mascot-great.png',
-  'mascot-okay.png',
-  'mascot-marginal.png',
-  'mascot-rain.png',
-  'mascot-hello.png',
+// ── Playability model ────────────────────────────────────────────────
+// Score 0–100 per hour. Wind and gusts matter most for pickleball, then rain (and wet courts after rain),
+// then temperature. Thunderstorms are always "Skip it".
+const LEVELS = [
+  { min: 80, l: 'Great',    c: '#2ECC71', e: '🟢', m: 'mascot-great.png' },
+  { min: 60, l: 'Okay',     c: '#F7C948', e: '🟡', m: 'mascot-okay.png' },
+  { min: 40, l: 'Marginal', c: '#F7943E', e: '🟠', m: 'mascot-marginal.png' },
+  { min: -1, l: 'Skip it',  c: '#F75B5B', e: '🔴', m: 'mascot-marginal.png' },
 ];
-function CenterMascot({ src }) {
-  // preload every mascot once so swaps are instant
-  useEffect(() => {
-    ALL_MASCOTS.forEach(s => { const i = new window.Image(); i.src = s; });
-  }, []);
+const levelOf = s => LEVELS.find(x => s >= x.min);
+
+function rate(h) {
+  let s = 100; const why = [];
+  s -= Math.max(0, h.wind - 6) * 4;
+  if (h.wind >= 15) why.push(`windy (${h.wind} mph)`); else if (h.wind >= 10) why.push(`breezy (${h.wind} mph)`);
+  s -= Math.max(0, h.gust - 14) * 2.5;
+  if (h.gust >= 20) why.push(`gusts to ${h.gust}`);
+  if (h.storm) { s -= 100; why.push('thunderstorms'); }
+  if (h.precip >= 0.01) { s -= 50; why.push('raining'); }
+  else {
+    s -= Math.max(0, h.rain - 15) * 0.7;
+    if (h.rain >= 40) why.push(`${h.rain}% chance of rain`);
+    if (h.wet) { s -= 25; why.push('courts may be wet'); }
+  }
+  if (h.feels >= 105) { s -= 50; why.push('dangerous heat'); }
+  else if (h.feels >= 95) { s -= 20; why.push(`very hot (feels ${h.feels}°)`); }
+  else if (h.feels >= 88) s -= 5;
+  if (h.feels < 32) { s -= 45; why.push(`freezing (feels ${h.feels}°)`); }
+  else if (h.feels < 42) { s -= 20; why.push(`cold (feels ${h.feels}°)`); }
+  else if (h.feels < 50) s -= 6;
+  return { score: Math.max(0, Math.min(100, Math.round(s))), why };
+}
+
+const DIRS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+const windDir = deg => deg == null ? '' : DIRS[Math.round(deg / 22.5) % 16];
+const windArrow = deg => deg == null ? '' : ['↓','↙','←','↖','↑','↗','→','↘'][Math.round(deg / 45) % 8]; // points where the wind blows TO
+const fmtHr = hr => { const h = ((hr + 11) % 12) + 1; return h + (hr % 24 < 12 ? ' AM' : ' PM'); };
+const fmtHrShort = hr => { const h = ((hr + 11) % 12) + 1; return h + (hr % 24 < 12 ? 'a' : 'p'); };
+const fmtWin = w => `${fmtHr(w.start).replace(/ (AM|PM)$/, (w.start < 12) === (w.end % 24 < 12) ? '' : ' $1')}–${fmtHr(w.end % 24)}`;
+const fmtClock = iso => { if (!iso) return ''; const hr = +iso.slice(11, 13), mi = iso.slice(14, 16); return `${((hr + 11) % 12) + 1}:${mi} ${hr < 12 ? 'AM' : 'PM'}`; };
+const dayName = (key, todayKey, long) => {
+  if (key === todayKey) return 'Today';
+  const [y, m, d] = key.split('-').map(Number), dt = new Date(y, m - 1, d);
+  const [ty, tm, td] = todayKey.split('-').map(Number);
+  if (Math.round((dt - new Date(ty, tm - 1, td)) / 864e5) === 1) return long ? 'Tomorrow' : 'Tmrw';
+  return dt.toLocaleDateString('en-US', long ? { weekday: 'long', month: 'short', day: 'numeric' } : { weekday: 'short' });
+};
+function codeIcon(code, isDay) {
+  if (code >= 95) return '⛈️';
+  if (code >= 71 && code <= 86 && code !== 80 && code !== 81 && code !== 82) return '🌨️';
+  if (code >= 51) return '🌧️';
+  if (code >= 45) return '🌫️';
+  if (code >= 3) return '☁️';
+  if (code >= 1) return isDay ? '⛅' : '☁️';
+  return isDay ? '☀️' : '🌙';
+}
+
+// Best playing window: highest average score over `len` straight hours between 6 AM and 10 PM.
+function bestWindow(hours, len = 2) {
+  let best = null;
+  for (let i = 0; i + len <= hours.length; i++) {
+    const run = hours.slice(i, i + len);
+    if (run[0].hr < 6 || run[len - 1].hr > 21) continue;
+    if (run.some((h, k) => k && h.hr !== run[k - 1].hr + 1)) continue;
+    const avg = Math.round(run.reduce((n, h) => n + h.score, 0) / len);
+    if (!best || avg > best.score) best = { start: run[0].hr, end: run[len - 1].hr + 1, score: avg, i };
+  }
+  return best;
+}
+
+// ── Data ──────────────────────────────────────────────────────────────
+async function loadForecast(lat, lng) {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
+    `&hourly=temperature_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,wind_direction_10m,precipitation_probability,precipitation,uv_index,is_day,weather_code` +
+    `&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min` +
+    `&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&forecast_days=7&past_days=1`;
+  const d = await (await fetch(url)).json();
+  if (!d.hourly) throw new Error('no data');
+  const H = d.hourly;
+  // Hours come in the location's own time zone, so "now" is worked out there too.
+  const nowKey = new Date(Date.now() + (d.utc_offset_seconds || 0) * 1000).toISOString().slice(0, 13);
+  const all = H.time.map((t, i) => ({
+    t, day: t.slice(0, 10), hr: +t.slice(11, 13),
+    temp: Math.round(H.temperature_2m[i]), feels: Math.round(H.apparent_temperature[i] ?? H.temperature_2m[i]),
+    wind: Math.round(H.wind_speed_10m[i]), gust: Math.round(H.wind_gusts_10m[i] || 0), deg: H.wind_direction_10m[i],
+    rain: H.precipitation_probability[i] || 0, precip: H.precipitation[i] || 0, uv: H.uv_index[i] || 0,
+    isDay: !!H.is_day[i], code: H.weather_code[i] || 0,
+  }));
+  all.forEach((h, i) => {
+    h.storm = h.code >= 95;
+    h.wet = all.slice(Math.max(0, i - 3), i).reduce((n, x) => n + x.precip, 0) >= 0.02;
+    Object.assign(h, rate(h));
+  });
+  let nowIdx = all.findIndex(h => h.t.slice(0, 13) === nowKey);
+  if (nowIdx < 0) nowIdx = Math.max(0, all.findIndex(h => h.t.slice(0, 13) > nowKey));
+  const todayKey = nowKey.slice(0, 10);
+  const future = all.slice(nowIdx);
+  const days = d.daily.time.filter(k => k >= todayKey).map(k => {
+    const di = d.daily.time.indexOf(k);
+    const hours = future.filter(h => h.day === k && ((h.hr >= 6 && h.hr <= 23) || h === future[0]));
+    return {
+      key: k, hours,
+      sunrise: d.daily.sunrise[di], sunset: d.daily.sunset[di],
+      hi: Math.round(d.daily.temperature_2m_max[di]), lo: Math.round(d.daily.temperature_2m_min[di]),
+      best: bestWindow(hours),
+      maxWind: Math.max(0, ...hours.filter(h => h.hr >= 6 && h.hr <= 21).map(h => h.wind)),
+      maxRain: Math.max(0, ...hours.filter(h => h.hr >= 6 && h.hr <= 21).map(h => h.rain)),
+      icon: (() => { const mid = hours.find(h => h.hr === 14) || hours[Math.floor(hours.length / 2)]; return mid ? codeIcon(mid.code, true) : '—'; })(),
+    };
+  }).filter(x => x.hours.length);
+  return { now: all[nowIdx], todayKey, days, nextHours: future.slice(0, 24) };
+}
+
+const store = {
+  get(k, def) { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? def; } catch (e) { return def; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+
+// ── Pieces ────────────────────────────────────────────────────────────
+// Four-step verdict meter: Skip it → Marginal → Okay → Great (words and colour, no numbers)
+function Meter({ level }) {
+  const steps = LEVELS.slice().reverse();
   return (
-    <div className="ball-holder">
-      <img key={src} className="mascot-img" src={src} alt="PickleConnect mascot" draggable="false" />
+    <div className="meter" role="img" aria-label={'Playability: ' + level.l}>
+      {steps.map(x => (
+        <div key={x.l} className={'meter-s' + (x.l === level.l ? ' on' : '')} style={{ '--c': x.c }}>
+          <i /><span>{x.l}</span>
+        </div>
+      ))}
     </div>
   );
 }
 
-/* Poll-style 3D ring of stat cards — drag to spin, auto-rotates,
-   pickleball floats at the center of the ring. */
-function StatCarousel({ stats }) {
-  const carRef = useRef(null);
-  const s = useRef({ rot: 0, target: 0, drag: false, lastX: 0, auto: true, timer: null });
-  const [mascot, setMascot] = useState(ALL_MASCOTS[0]);
-  const lastSeg = useRef(0);
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  useEffect(() => {
-    let raf;
-    const tick = () => {
-      raf = requestAnimationFrame(tick);
-      const st = s.current;
-      if (!st.drag) {
-        if (st.auto && !reduced) st.target += 0.3;
-        st.rot += (st.target - st.rot) * 0.08;
-      }
-      if (carRef.current) carRef.current.style.transform = `rotateY(${st.rot}deg)`;
-      // a card crosses the front every 90° — swap in a new random mascot
-      const seg = Math.floor(Math.abs(st.rot) / 90);
-      if (seg !== lastSeg.current) {
-        lastSeg.current = seg;
-        setMascot(prev => {
-          let next;
-          do { next = ALL_MASCOTS[Math.floor(Math.random() * ALL_MASCOTS.length)]; } while (next === prev);
-          return next;
-        });
-      }
-    };
-    tick();
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
-  const onDown = (e) => {
-    const st = s.current;
-    st.drag = true; st.auto = false; st.lastX = e.clientX;
-    if (st.timer) clearTimeout(st.timer);
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
-  const onMove = (e) => {
-    const st = s.current;
-    if (!st.drag) return;
-    st.target += (e.clientX - st.lastX) * 0.45;
-    st.rot = st.target;
-    st.lastX = e.clientX;
-  };
-  const onUp = () => {
-    const st = s.current;
-    st.drag = false;
-    st.timer = setTimeout(() => { st.auto = true; }, 5000);
-  };
-
+// Drag left/right through the day's hours. The track is coloured by each hour's verdict.
+const THUMB = 28;
+function TimeSlider({ hours, selected, onSelect }) {
+  const n = hours.length;
+  const idx = Math.max(0, hours.findIndex(h => h.t === selected));
+  const at = i => `calc(${THUMB / 2}px + (100% - ${THUMB}px) * ${n > 1 ? i / (n - 1) : .5})`;
+  const h = hours[idx], lv = levelOf(h.score);
+  const label = h.isNow ? 'Now' : fmtHr(h.hr);
+  const ticks = hours.map((x, i) => ({ x, i })).filter(({ x, i }) => i === 0 || i === n - 1 || x.hr % 3 === 0)
+    .filter(({ i }, k, arr) => k === 0 || i - arr[k - 1].i >= 2); // keep labels from crowding
   return (
-    <div className="stage" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
-      <div className="world">
-        <CenterMascot src={mascot} />
-        <div className="carousel3d" ref={carRef}>
-          {stats.map((st, i) => (
-            <div
-              key={st.lbl}
-              className="stat-card"
-              style={{ '--stat': st.color, transform: `rotateY(${i * 90}deg) translateZ(var(--stat-ring))` }}
-            >
-              <div className="ico">{st.ico}</div>
-              <div className="lbl">{st.lbl}</div>
-              <div className="val">{st.val}<small>{st.unit}</small></div>
-              <div className="sub">{st.sub || '\u00A0'}</div>
-            </div>
-          ))}
-        </div>
+    <div className="ts">
+      <div className="ts-bubble" style={{ left: at(idx), background: lv.c }}>{label}</div>
+      <div className="ts-track" style={{ left: THUMB / 2, right: THUMB / 2 }}>
+        {hours.map(x => <i key={x.t} style={{ background: levelOf(x.score).c }} />)}
+      </div>
+      <input type="range" min="0" max={n - 1} step="1" value={idx} aria-label="Time of day" aria-valuetext={label}
+        onChange={e => onSelect(hours[+e.target.value].t)} />
+      <div className="ts-ticks">
+        {ticks.map(({ x, i }) => <span key={x.t} style={{ left: at(i) }}>{x.isNow ? 'Now' : fmtHrShort(x.hr)}</span>)}
       </div>
     </div>
   );
 }
 
+function Stat({ label, value, sub, warn }) {
+  return (
+    <div className="stat">
+      <div className="stat-l">{label}</div>
+      <div className="stat-v" style={warn ? { color: warn } : null}>{value}</div>
+      <div className="stat-s">{sub || ' '}</div>
+    </div>
+  );
+}
+
+function HourStrip({ hours, selected, onSelect, sunset }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current && ref.current.querySelector('.hr.on');
+    if (el) el.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+  }, [selected]);
+  return (
+    <div className="hours" ref={ref}>
+      {hours.map((h, i) => {
+        const lv = levelOf(h.score);
+        return (
+          <button key={h.t} className={'hr' + (h.t === selected ? ' on' : '') + (h.isDay ? '' : ' night')} onClick={() => onSelect(h.t)}>
+            <div className="hr-t">{i === 0 && h.t === hours[0].t && h.isNow ? 'Now' : fmtHrShort(h.hr)}</div>
+            <div className="hr-i">{codeIcon(h.code, h.isDay)}</div>
+            <div className="hr-bar" title={lv.l}><div style={{ height: Math.max(12, h.score) + '%', background: lv.c }} /></div>
+            <div className="hr-x">{h.temp}°</div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function courtNotes(day, focus, todayKey) {
+  const out = [];
+  const hrs = day.hours;
+  const ss = day.sunset;
+  if (ss) out.push(['🌇', `Sunset ${fmtClock(ss)}`, 'You\'ll need court lights after that.']);
+  const peakUv = Math.max(0, ...hrs.map(h => h.uv));
+  if (peakUv >= 6) out.push(['🧴', `UV peaks at ${Math.round(peakUv)}`, 'Sunscreen and a hat, especially midday.']);
+  if (focus.wet && focus.precip < 0.01) out.push(['💧', 'Courts may still be wet', 'It rained in the last few hours. Check for puddles and bring a squeegee or towel.']);
+  const soon = hrs.slice(hrs.indexOf(focus), hrs.indexOf(focus) + 4).find(h => h !== focus && (h.rain >= 50 || h.precip >= 0.01));
+  if (soon && focus.precip < 0.01) out.push(['☔', `Rain likely around ${fmtHr(soon.hr)}`, 'Get your games in early.']);
+  if (hrs.some(h => h.storm)) out.push(['⚡', 'Thunderstorms in the forecast', 'Get off the court at the first thunder.']);
+  if (focus.feels >= 92) out.push(['🥵', `Feels like ${focus.feels}°`, 'Drink water between every game and take shade breaks.']);
+  if (focus.feels < 45) out.push(['🥶', `Feels like ${focus.feels}°`, 'Outdoor balls crack more in the cold. Bring a spare and warm up longer.']);
+  if (focus.wind >= 10) out.push(['💨', `Wind from the ${windDir(focus.deg)}`, 'Switch sides every game to keep it fair. Keep lobs low and dink with more margin.']);
+  if (!out.length) out.push(['👌', 'Nothing to worry about', 'Just bring water.']);
+  return out;
+}
+
+// ── App ───────────────────────────────────────────────────────────────
 function App() {
-  const [weather, setWeather] = useState(null);
-  const [forecast, setForecast] = useState([]);
-  const [locationName, setLocationName] = useState('');
+  const [place, setPlace] = useState(() => store.get('wx:last', null)); // {name, lat, lng, gps}
+  const [favs, setFavs] = useState(() => store.get('wx:favs', []));
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [searchVal, setSearchVal] = useState('');
-  const [usingGps, setUsingGps] = useState(false);
-  const [coords, setCoords] = useState(null);
-  const [scrubX, setScrubX] = useState(null);
-  const graphScrollRef = useRef(null);
-  const edgeScroll = useRef({ raf: null, dir: 0, clientX: 0, svg: null });
-  const inputRef = useRef(null);
+  const [q, setQ] = useState('');
+  const [dayKey, setDayKey] = useState(null);
+  const [hourKey, setHourKey] = useState(null);
+  const [toast, setToast] = useState('');
+  const topRef = useRef(null);
 
-  const fetchWeather = async (lat, lng) => {
+  const load = async p => {
     setLoading(true); setError(null);
     try {
-      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,precipitation&hourly=temperature_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,winddirection_10m,precipitation_probability&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_hours=25&timezone=auto`);
-      const d = await r.json();
-      const now = new Date();
-      const hourly = d.hourly.time.map((t, i) => ({
-        dt: new Date(t),
-        temp: Math.round(d.hourly.temperature_2m[i]),
-        feels: Math.round(d.hourly.apparent_temperature?.[i] ?? d.hourly.temperature_2m[i]),
-        wind: Math.round(d.hourly.wind_speed_10m[i]),
-        gust: Math.round(d.hourly.wind_gusts_10m?.[i] || 0),
-        windDeg: d.hourly.winddirection_10m?.[i],
-        rain: d.hourly.precipitation_probability?.[i] || 0
-      })).filter(h => h.dt >= new Date(now.getTime() - 60 * 60 * 1000)).slice(0, 24);
-      setForecast(hourly);
-      const cur = hourly[0] || { temp: Math.round(d.current.temperature_2m), feels: Math.round(d.current.apparent_temperature ?? d.current.temperature_2m), wind: Math.round(d.current.wind_speed_10m), gust: Math.round(d.current.wind_gusts_10m || 0) };
-      setWeather({
-        temp: cur.temp,
-        feels: cur.feels ?? cur.temp,
-        wind: cur.wind,
-        gust: cur.gust,
-        rain: cur.rain || 0
-      });
-      setCoords({ lat, lng });
-    } catch (e) {
-      setError('Failed to fetch weather data. Please try again.');
-    }
+      const d = await loadForecast(p.lat, p.lng);
+      d.now.isNow = true;
+      setData(d); setDayKey(d.todayKey); setHourKey(d.now.t);
+      setPlace(p); store.set('wx:last', p);
+    } catch (e) { setError('Couldn\'t load the forecast. Check your connection and try again.'); }
     setLoading(false);
   };
 
-  const geocodeSearch = async (query) => {
-    if (!query.trim()) return;
-    setLoading(true); setError(null); setUsingGps(false);
-    try {
-      const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`);
-      const d = await r.json();
-      if (d.results?.length > 0) {
-        const loc = d.results[0];
-        setLocationName(`${loc.name}${loc.admin1 ? ', ' + loc.admin1 : ''}${loc.country_code ? ' ' + loc.country_code : ''}`);
-        await fetchWeather(loc.latitude, loc.longitude);
-      } else {
-        const r2 = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=us`);
-        const d2 = await r2.json();
-        if (d2.length > 0) {
-          setLocationName(d2[0].display_name.split(',').slice(0, 2).join(','));
-          await fetchWeather(parseFloat(d2[0].lat), parseFloat(d2[0].lon));
-        } else {
-          setError('Location not found. Try a city name or US zip code.');
-          setLoading(false);
-        }
-      }
-    } catch (e) {
-      setError('Search failed. Please try again.');
-      setLoading(false);
-    }
-  };
-
-  const useMyLocation = () => {
-    if (!navigator.geolocation) { setError('Geolocation not supported by your browser.'); return; }
-    setLoading(true); setError(null); setUsingGps(true); setSearchVal('');
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
+  const useGps = () => {
+    // In the iPhone app use the native location service (works inside the app's tab view)
+    const capGeo = window.PC_CAP && window.PC_CAP.Plugins && window.PC_CAP.Plugins.Geolocation;
+    if (capGeo) {
+      setLoading(true); setError(null);
+      capGeo.getCurrentPosition({ timeout: 10000 }).then(async pos => {
         const { latitude: lat, longitude: lng } = pos.coords;
+        let name = 'Your location';
         try {
-          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`);
-          const d = await r.json();
-          const parts = [d.address?.city || d.address?.town || d.address?.village, d.address?.state];
-          setLocationName(parts.filter(Boolean).join(', ') || 'Your Location');
-        } catch { setLocationName('Your Location'); }
-        await fetchWeather(lat, lng);
-      },
-      () => { setError('Location access denied. Try searching by zip code.'); setLoading(false); setUsingGps(false); },
-      { timeout: 10000 }
-    );
-  };
-
-  useEffect(() => { useMyLocation(); }, []);
-
-  // 3D background layer — always on (respects reduced-motion internally)
-  useEffect(() => {
-    window.WX3D?.setEnabled(true);
-  }, []);
-
-  const handleSearch = (e) => {
-    e?.preventDefault();
-    if (searchVal.trim()) geocodeSearch(searchVal.trim());
-  };
-
-  // Computed
-  const p = weather ? getPlayability(weather.wind, weather.gust, forecast[0]?.rain || 0) : null;
-
-  // Feed live conditions to the 3D layer (direction, speed, rain, playability tint)
-  useEffect(() => {
-    if (weather && window.WX3D) {
-      window.WX3D.update({
-        wind: weather.wind,
-        deg: forecast[0]?.windDeg,
-        rain: forecast[0]?.rain || 0,
-        temp: weather.temp,
-        color: p?.c
-      });
+          const r = await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`)).json();
+          name = [r.address?.city || r.address?.town || r.address?.village, r.address?.state].filter(Boolean).join(', ') || name;
+        } catch (e) {}
+        load({ name, lat, lng, gps: true });
+      }).catch(() => { setLoading(false); setError(place ? null : 'Location access is off. Search a city or zip code above.'); });
+      return;
     }
-  }, [weather, forecast]);
-
-  // === GRAPH SETUP (Apple Weather-style responsive) ===
-  // Y-axis in increments of 5
-  const rawMax = forecast.length > 0 ? Math.max(...forecast.map(h => Math.max(h.wind, h.gust)), 20) : 20;
-  const maxWind = Math.ceil(rawMax / 5) * 5;
-  const yTicks = [];
-  for (let v = 0; v <= maxWind; v += 5) yTicks.push(v);
-
-  // 12 hours fill the visible width; the rest scrolls horizontally.
-  // viewBox width grows with data so on-screen point spacing stays constant.
-  const HOURS_VISIBLE = 12;
-  const viewScale = Math.max(1, (forecast.length - 1) / (HOURS_VISIBLE - 1));
-  const GRAPH_W = Math.round(400 * viewScale);
-  const GRAPH_H = 220;
-  const padL = 26, padR = 14, padT = 36, padB = 30;
-  const plotW = GRAPH_W - padL - padR;
-  const plotH = GRAPH_H - padT - padB;
-
-  const px = (i) => padL + (forecast.length > 1 ? i * (plotW / (forecast.length - 1)) : plotW / 2);
-  const py = (val) => padT + plotH - (val / maxWind) * plotH;
-
-  const windPts = forecast.map((h, i) => ({ x: px(i), y: py(h.wind) }));
-  const gustPts = forecast.map((h, i) => ({ x: px(i), y: py(h.gust) }));
-
-  // Smooth curve helper (catmull-rom to bezier)
-  const toSmoothPath = (pts) => {
-    if (pts.length < 2) return '';
-    if (pts.length === 2) return `M${pts[0].x},${pts[0].y} L${pts[1].x},${pts[1].y}`;
-    let d = `M${pts[0].x},${pts[0].y}`;
-    for (let i = 0; i < pts.length - 1; i++) {
-      const p0 = pts[i === 0 ? 0 : i - 1];
-      const p1 = pts[i];
-      const p2 = pts[i + 1];
-      const p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
-      const tension = 0.3;
-      const cp1x = p1.x + (p2.x - p0.x) * tension;
-      const cp1y = p1.y + (p2.y - p0.y) * tension;
-      const cp2x = p2.x - (p3.x - p1.x) * tension;
-      const cp2y = p2.y - (p3.y - p1.y) * tension;
-      d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
-    }
-    return d;
-  };
-  const toSmoothArea = (pts) => {
-    if (!pts.length) return '';
-    const baseline = padT + plotH;
-    return toSmoothPath(pts) + ` L${pts[pts.length - 1].x},${baseline} L${pts[0].x},${baseline} Z`;
+    if (!navigator.geolocation) { setError('Location isn\'t available on this device. Search a city or zip instead.'); return; }
+    setLoading(true); setError(null);
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const { latitude: lat, longitude: lng } = pos.coords;
+      let name = 'Your location';
+      try {
+        const r = await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`)).json();
+        name = [r.address?.city || r.address?.town || r.address?.village, r.address?.state].filter(Boolean).join(', ') || name;
+      } catch (e) {}
+      load({ name, lat, lng, gps: true });
+    }, () => { setLoading(false); setError(place ? null : 'Location access is off. Search a city or zip code above.'); }, { timeout: 10000 });
   };
 
-  // Which indices get x-axis labels / arrows (every 6 hours)
-  const tickIndices = forecast.reduce((acc, h, i) => {
-    if (i === 0) acc.push(i);
-    else if (h.dt.getHours() % 3 === 0) acc.push(i);
-    return acc;
-  }, []);
-
-  // === SCRUBBER: interpolate wind/gust/temp at any x-position ===
-  const scrubData = (() => {
-    if (scrubX == null || forecast.length < 2) return null;
-    const frac = ((scrubX - padL) / plotW) * (forecast.length - 1);
-    const clamped = Math.max(0, Math.min(frac, forecast.length - 1));
-    const i0 = Math.floor(clamped);
-    const i1 = Math.min(i0 + 1, forecast.length - 1);
-    const t = clamped - i0;
-    const a = forecast[i0], b = forecast[i1];
-    const lerp = (x, y) => x + (y - x) * t;
-    const wind = lerp(a.wind, b.wind);
-    const gust = lerp(a.gust, b.gust);
-    const temp = lerp(a.temp, b.temp);
-    const rain = lerp(a.rain, b.rain);
-    const time = new Date(a.dt.getTime() + (b.dt.getTime() - a.dt.getTime()) * t);
-    return {
-      x: padL + (clamped / (forecast.length - 1)) * plotW,
-      wind: Math.round(wind),
-      gust: Math.round(gust),
-      temp: Math.round(temp),
-      rain: Math.round(rain),
-      time,
-      windY: py(wind),
-      gustY: py(gust),
-      playability: getPlayability(wind, gust, rain)
-    };
-  })();
-
-  // Convert pointer event → SVG viewBox x-coordinate
-  const handleScrubMove = (e) => {
-    const svg = e.currentTarget;
-    const rect = svg.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    setScrubX((clientX - rect.left) * (GRAPH_W / rect.width));
-
-    // While scrubbing with a finger, auto-scroll the chart when the
-    // finger nears the visible left/right edge to reveal more hours.
-    if (e.touches && graphScrollRef.current) {
-      const es = edgeScroll.current;
-      es.clientX = clientX;
-      es.svg = svg;
-      const c = graphScrollRef.current.getBoundingClientRect();
-      const EDGE = 52;
-      es.dir = clientX > c.right - EDGE ? 1 : (clientX < c.left + EDGE ? -1 : 0);
-      if (es.dir && !es.raf) {
-        const step = () => {
-          const s2 = edgeScroll.current;
-          const box = graphScrollRef.current;
-          if (!s2.dir || !box) { s2.raf = null; return; }
-          box.scrollLeft += s2.dir * 6;
-          // keep the tooltip under the (possibly stationary) finger as content slides
-          const r = s2.svg.getBoundingClientRect();
-          setScrubX((s2.clientX - r.left) * (GRAPH_W / r.width));
-          s2.raf = requestAnimationFrame(step);
-        };
-        es.raf = requestAnimationFrame(step);
+  const search = async e => {
+    e && e.preventDefault();
+    const term = q.trim(); if (!term) return;
+    setLoading(true); setError(null);
+    try {
+      const r = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(term)}&count=1&language=en&format=json`)).json();
+      if (r.results?.length) {
+        const x = r.results[0];
+        setQ(''); document.activeElement?.blur();
+        return load({ name: `${x.name}${x.admin1 ? ', ' + x.admin1 : ''}`, lat: x.latitude, lng: x.longitude });
       }
-    }
+      const r2 = await (await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(term)}&limit=1&countrycodes=us`)).json();
+      if (r2.length) { setQ(''); return load({ name: r2[0].display_name.split(',').slice(0, 2).join(','), lat: +r2[0].lat, lng: +r2[0].lon }); }
+      setError('Couldn\'t find that place. Try a city name or a US zip code.');
+    } catch (e) { setError('Search failed. Please try again.'); }
+    setLoading(false);
   };
-  const handleScrubEnd = () => { setScrubX(null); edgeScroll.current.dir = 0; };
+
+  useEffect(() => { if (place) load(place); else useGps(); }, []);
+  useEffect(() => { window.WX3D?.setEnabled(true); }, []);
+
+  const isFav = place && favs.some(f => Math.abs(f.lat - place.lat) < .01 && Math.abs(f.lng - place.lng) < .01);
+  const toggleFav = () => {
+    const next = isFav ? favs.filter(f => !(Math.abs(f.lat - place.lat) < .01 && Math.abs(f.lng - place.lng) < .01))
+      : [...favs, { name: place.name, lat: place.lat, lng: place.lng }].slice(-6);
+    setFavs(next); store.set('wx:favs', next);
+  };
+
+  const day = data && (data.days.find(x => x.key === dayKey) || data.days[0]);
+  const focus = day && (day.hours.find(h => h.t === hourKey) || (day.best ? day.hours[day.best.i] : day.hours[0]));
+  const lv = focus && levelOf(focus.score);
+  const isToday = day && day.key === data.todayKey;
+  const viewingNow = focus && focus.isNow;
+
+  useEffect(() => {
+    if (focus && window.WX3D) window.WX3D.update({ wind: focus.wind, deg: focus.deg, rain: focus.precip >= 0.01 ? 90 : focus.rain, temp: focus.temp, color: lv.c });
+  }, [focus && focus.t, data]);
+
+  const pickDay = k => {
+    const d = data.days.find(x => x.key === k);
+    setDayKey(k);
+    setHourKey(k === data.todayKey ? data.now.t : (d.best ? d.hours[d.best.i].t : d.hours[0].t));
+    topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const share = async () => {
+    const w = day.best;
+    const when = w ? `${dayName(day.key, data.todayKey)} best time: ${fmtWin(w)} ${levelOf(w.score).e} ${levelOf(w.score).l}` : '';
+    const bw = w ? day.hours[w.i] : focus;
+    const text = `🏓 Pickleball weather · ${place.name}\n${when}\n💨 Wind ${bw.wind} mph, gusts ${bw.gust} · ☔ ${bw.rain}% · 🌡️ ${bw.temp}°F\n`;
+    const url = 'https://pickleconnect.live/weather/';
+    if (navigator.share) { try { await navigator.share({ title: 'Pickleball weather', text, url }); return; } catch (e) { return; } }
+    try { await navigator.clipboard.writeText(text + url); setToast('Copied. Paste it in your group chat.'); }
+    catch (e) { prompt('Copy this', text + url); }
+    setTimeout(() => setToast(''), 2500);
+  };
 
   return (
     <div>
-      {/* Nav — title top-left, search top-right */}
       <div className="nav">
-        <a href="https://pickleconnect.live" className="nav-logo"><span>Pickle</span>Connect<em>🏓 Weather</em></a>
-        <form className="nav-search" onSubmit={handleSearch}>
+        <a href="https://pickleconnect.live" className="nav-logo"><span>Pickle</span>Connect<em>Weather</em></a>
+        <form className="nav-search" onSubmit={search}>
           <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
             <span className="search-icon">🔍</span>
-            <input
-              ref={inputRef}
-              className="search-input"
-              value={searchVal}
-              onChange={e => setSearchVal(e.target.value)}
-              placeholder="City or zip code…"
-              onKeyDown={e => e.key === 'Enter' && handleSearch()}
-            />
+            <input className="search-input" value={q} onChange={e => setQ(e.target.value)} placeholder="City or zip code" enterKeyHint="search" />
           </div>
-          <button type="button" onClick={useMyLocation} className={`loc-btn ${usingGps ? 'active' : ''}`} title="Use my location">📍</button>
+          <button type="button" onClick={useGps} className={'loc-btn' + (place?.gps ? ' active' : '')} title="Use my location" aria-label="Use my location">📍</button>
         </form>
       </div>
 
-      <div className="content">
-        {/* Loading */}
-        {loading && (
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <div style={{ width: 36, height: 36, border: '3px solid var(--border)', borderTop: '3px solid var(--green)', borderRadius: '50%', animation: 'spin .7s linear infinite', margin: '0 auto 12px' }} />
-            <div style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>Fetching weather…</div>
+      <div className="content" ref={topRef}>
+        {place && (
+          <div className="place-row">
+            <div className="place">{place.gps ? '📍 ' : ''}{place.name}</div>
+            {data && <button className={'star' + (isFav ? ' on' : '')} onClick={toggleFav} aria-label={isFav ? 'Remove from my spots' : 'Save to my spots'}>{isFav ? '★ Saved' : '☆ Save spot'}</button>}
+          </div>
+        )}
+        {favs.length > 0 && (
+          <div className="chips" style={{ marginBottom: 12 }}>
+            {favs.map(f => {
+              const on = place && Math.abs(f.lat - place.lat) < .01 && Math.abs(f.lng - place.lng) < .01;
+              return <button key={f.name + f.lat} className={'chip' + (on ? ' on' : '')} onClick={() => !on && load(f)}>{f.name.split(',')[0]}</button>;
+            })}
           </div>
         )}
 
-        {/* Error */}
-        {error && !loading && (
-          <div style={{ background: 'rgba(247,91,91,0.1)', border: '1px solid rgba(247,91,91,0.25)', borderRadius: 12, padding: '14px 16px', marginBottom: 14, fontSize: '0.82rem', color: '#FF8A80' }}>
-            ⚠️ {error}
-          </div>
+        {loading && !data && <div className="center"><div className="spin" /><div className="muted">Checking the courts…</div></div>}
+        {error && <div className="err">⚠️ {error}</div>}
+        {!data && !loading && !error && (
+          <div className="center"><div style={{ fontSize: '3rem' }}>🌤️</div><div style={{ fontWeight: 700 }}>Pickleball Weather</div>
+            <div className="muted">Search a city or zip code, or tap 📍, to see when it's good to play.</div></div>
         )}
 
-        {/* Weather content */}
-        {weather && !loading && (
-          <div className="fade-up">
-
-{/* Section 1 · Location + playability strip */}
-            <div className="wx-card" style={{ marginBottom: 6 }}>
-              <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '1.2rem' }}>{wxIcon(weather.temp, weather.wind)}</span>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>
-                  {usingGps && '📍 '}{locationName || 'Current conditions'}
-                </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
-                  <span style={{ fontSize: '1rem' }}>{p.e}</span>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: p.c }}>{p.l}</span>
-                </span>
-                <span style={{ flexBasis: '100%', fontSize: '0.72rem', color: 'var(--muted)' }}>💡 {p.tip}</span>
-              </div>
-            </div>
-
-{/* Section 2 · 3D stat ring with floating pickleball */}
-            <StatCarousel
-              stats={[
-                { lbl: 'Temperature', ico: wxIcon(weather.temp, 0), val: weather.temp + '°', unit: 'F', color: '#F75B5B', sub: '\u00A0' },
-                { lbl: 'Feels Like', ico: '🌡️', val: weather.feels + '°', unit: 'F', color: '#F7943E', sub: weather.feels !== weather.temp ? (weather.feels > weather.temp ? 'warmer than actual' : 'cooler than actual') : 'same as actual' },
-                { lbl: 'Wind', ico: '💨', val: weather.wind, unit: ' mph', color: '#2ECC71', sub: forecast[0]?.windDeg != null ? `${windArrow(forecast[0].windDeg)} from ${windDir(forecast[0].windDeg)}` : '' },
-                { lbl: 'Gusts', ico: '🌪️', val: weather.gust, unit: ' mph', color: '#F7C948', sub: weather.gust >= 20 ? 'lobs will drift' : weather.gust >= 15 ? 'noticeable on dinks' : 'barely a factor' },
-              ]}
-            />
-            <div className="stage-hint">Drag to spin the stats</div>
-
-            <div className="wx-grid">
-            <div className="wx-col">
-{/* Section 3 · Wind & Gusts 24h Graph */}
-            {forecast.length > 1 && (
-              <div className="wx-card o2">
-                <div className="wx-card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>💨 Wind & Gusts · Next 24h</span>
-                  <span style={{ fontSize: '0.6rem', color: 'var(--muted2)', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>Drag to scrub · edges reveal 24h</span>
-                </div>
-                <div className="graph-scroll" ref={graphScrollRef} style={{ padding: '0 10px 10px' }}>
-                  <svg
-                    viewBox={`0 0 ${GRAPH_W} ${GRAPH_H}`}
-                    className="graph-svg"
-                    style={{ width: (viewScale * 100) + '%' }}
-                    onMouseMove={handleScrubMove}
-                    onMouseLeave={handleScrubEnd}
-                    onTouchStart={handleScrubMove}
-                    onTouchMove={handleScrubMove}
-                    onTouchEnd={handleScrubEnd}
-                    onTouchCancel={handleScrubEnd}
-                  >
-                    <defs>
-                      <linearGradient id="windFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#2ECC71" stopOpacity="0.35" />
-                        <stop offset="100%" stopColor="#2ECC71" stopOpacity="0.05" />
-                      </linearGradient>
-                      <linearGradient id="gustFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#F7C948" stopOpacity="0.18" />
-                        <stop offset="100%" stopColor="#F7C948" stopOpacity="0.02" />
-                      </linearGradient>
-                    </defs>
-
-                    {/* Wind direction arrows — every 6h only */}
-                    {tickIndices.map(i => (
-                      <text key={'arr'+i} x={px(i)} y={18} fill="var(--muted)" fontSize="12" textAnchor="middle" fontFamily="DM Sans">
-                        {windArrow(forecast[i].windDeg)}
-                      </text>
-                    ))}
-
-                    {/* Grid lines at every 5 mph */}
-                    {yTicks.map((val, i) => {
-                      const y = py(val);
-                      return <g key={i}>
-                        <line x1={padL - 3} y1={y} x2={GRAPH_W - padR} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
-                        <text x={padL - 6} y={y + 3.5} fill="var(--muted)" fontSize="10" textAnchor="end" fontFamily="DM Sans">{val}</text>
-                      </g>;
-                    })}
-
-                    {/* 15mph threshold */}
-                    {maxWind >= 15 && (
-                      <line x1={padL} y1={py(15)} x2={GRAPH_W - padR} y2={py(15)} stroke="rgba(247,91,91,0.3)" strokeWidth={1} strokeDasharray="3,3" />
-                    )}
-
-                    {/* Gust area + line (behind wind) */}
-                    <path d={toSmoothArea(gustPts)} fill="url(#gustFill)" />
-                    <path d={toSmoothPath(gustPts)} fill="none" stroke="var(--accent)" strokeWidth={1.6} strokeOpacity={0.75} />
-
-                    {/* Wind area + line */}
-                    <path d={toSmoothArea(windPts)} fill="url(#windFill)" />
-                    <path d={toSmoothPath(windPts)} fill="none" stroke="var(--green)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-
-                    {/* X-axis labels — every 6h only */}
-                    {tickIndices.map(i => {
-                      const lbl = i === 0 ? 'Now' : forecast[i].dt.toLocaleTimeString([], { hour: 'numeric' });
-                      return <text key={'lbl'+i} x={px(i)} y={GRAPH_H - 10} fill="var(--muted)" fontSize="11" textAnchor="middle" fontWeight="600" fontFamily="DM Sans">{lbl}</text>;
-                    })}
-
-                    {/* Tick marks for label positions */}
-                    {tickIndices.map(i => (
-                      <circle key={'tick'+i} cx={px(i)} cy={padT + plotH} r={1.5} fill="var(--muted)" opacity={0.5} />
-                    ))}
-
-                    {/* === SCRUBBER === */}
-                    {scrubData && (
-                      <g style={{ pointerEvents: 'none' }}>
-                        {/* Vertical line */}
-                        <line
-                          x1={scrubData.x} y1={padT}
-                          x2={scrubData.x} y2={padT + plotH}
-                          stroke="rgba(255,255,255,0.5)" strokeWidth={1} strokeDasharray="2,2"
-                        />
-                        {/* Dots at scrub position */}
-                        <circle cx={scrubData.x} cy={scrubData.gustY} r={3} fill="var(--accent)" stroke="var(--card)" strokeWidth={1.5} />
-                        <circle cx={scrubData.x} cy={scrubData.windY} r={3.5} fill="var(--green)" stroke="var(--card)" strokeWidth={1.5} />
-
-                        {/* Tooltip bubble */}
-                        {(() => {
-                          const tw = 150, th = 62;
-                          // Keep tooltip inside plot area
-                          let tx = scrubData.x - tw / 2;
-                          if (tx < padL - 4) tx = padL - 4;
-                          if (tx + tw > GRAPH_W - padR + 4) tx = GRAPH_W - padR + 4 - tw;
-                          const ty = padT - 4;
-                          const timeLbl = scrubData.time.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-                          return (
-                            <g>
-                              <rect x={tx} y={ty} width={tw} height={th} rx={7} fill="rgba(13,27,42,0.96)" stroke="var(--border2)" strokeWidth={1} />
-                              <text x={tx + 10} y={ty + 18} fill="var(--text)" fontSize="13" fontWeight="700" fontFamily="DM Sans">{timeLbl}</text>
-                              <text x={tx + tw - 10} y={ty + 18} fill={scrubData.playability.c} fontSize="12" fontWeight="700" textAnchor="end" fontFamily="DM Sans">{scrubData.playability.l}</text>
-                              <text x={tx + 10} y={ty + 37} fill="var(--green)" fontSize="12" fontFamily="DM Sans">● Wind</text>
-                              <text x={tx + tw - 10} y={ty + 37} fill="var(--text)" fontSize="12" fontWeight="700" textAnchor="end" fontFamily="DM Sans">{scrubData.wind} mph</text>
-                              <text x={tx + 10} y={ty + 54} fill="var(--accent)" fontSize="12" fontFamily="DM Sans">● Gusts</text>
-                              <text x={tx + tw - 10} y={ty + 54} fill="var(--text)" fontSize="12" fontWeight="700" textAnchor="end" fontFamily="DM Sans">{scrubData.gust} mph</text>
-                            </g>
-                          );
-                        })()}
-                      </g>
-                    )}
-                  </svg>
-                </div>
-                <div style={{ padding: '0 16px 12px', display: 'flex', gap: 14, fontSize: '0.65rem', color: 'var(--muted)', flexWrap: 'wrap' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 14, height: 3, background: 'var(--green)', borderRadius: 2, display: 'inline-block' }} />Wind</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 14, height: 2, background: 'var(--accent)', borderRadius: 2, display: 'inline-block' }} />Gusts</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 14, height: 1, background: 'rgba(247,91,91,0.5)', display: 'inline-block' }} />15 mph</span>
+        {data && day && focus && (
+          <div className={'fade-up' + (loading ? ' dim' : '')}>
+            {/* Hero */}
+            <div className="hero" style={{ '--lv': lv.c }}>
+              <div className="hero-top">
+                <img className="mascot" src={focus.precip >= 0.01 || focus.storm ? 'mascot-rain.png' : lv.m} alt="" />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="hero-when">{viewingNow ? 'Right now' : `${dayName(day.key, data.todayKey, true)} · ${fmtHr(focus.hr)}`}</div>
+                  <div className="hero-verdict" style={{ color: lv.c }}>{lv.e} {lv.l}</div>
+                  <div className="hero-why">{focus.why.length ? focus.why.slice(0, 3).join(' · ') : focus.wind <= 6 ? 'Calm air, dry courts. Perfect.' : 'Light wind, dry courts. Get out there!'}</div>
                 </div>
               </div>
-            )}
+              <div className="stats">
+                <Stat label="Temp" value={`${focus.temp}°`} sub={focus.feels !== focus.temp ? `feels ${focus.feels}°` : '\u00A0'} />
+                <Stat label="Wind / Gusts" value={<>{focus.wind}<span className="sl">/</span>{focus.gust}</>} sub="mph" warn={focus.wind >= 15 || focus.gust >= 25 ? 'var(--red)' : focus.wind >= 10 || focus.gust >= 15 ? 'var(--accent)' : null} />
+                <Stat label="Rain" value={`${focus.rain}%`} sub={focus.precip >= 0.01 ? 'raining now' : focus.wet ? 'wet courts' : 'chance'} warn={focus.rain >= 50 || focus.precip >= .01 ? '#60a5fa' : null} />
+              </div>
+              {day.hours.length > 1 && <TimeSlider hours={day.hours} selected={focus.t} onSelect={setHourKey} />}
+              <div className="best">
+                {day.best && day.best.score < 40 ? <span>😕 No good window {isToday ? 'left today' : 'on ' + dayName(day.key, data.todayKey)}. The least bad is {fmtWin(day.best)}.</span>
+                : day.best ? <>
+                  <span>⏰ Best time {isToday ? 'today' : dayName(day.key, data.todayKey).replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)$/, 'on $1')}</span>
+                  <button className="best-btn" onClick={() => setHourKey(day.hours[day.best.i].t)} style={{ color: levelOf(day.best.score).c }}>
+                    {fmtWin(day.best)} · {levelOf(day.best.score).l}{day.hours[day.best.i].isDay ? '' : ' 🌙'}
+                  </button>
+                </> : <span>🌙 Late for today. Tap tomorrow below to plan ahead.</span>}
+              </div>
 
-{/* CTA */}
-            <TiltCard className="o5" style={{ background: 'var(--green-dim)', border: '1px solid rgba(46,204,113,0.25)', borderRadius: 14, padding: '18px', textAlign: 'center', marginBottom: 14, backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
-              <div style={{ fontSize: '1.1rem', marginBottom: 4 }}>🏓</div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 700, marginBottom: 4 }}>Check in & find players</div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--muted)', marginBottom: 12 }}>See who's playing at courts near you</div>
-              <a href="https://pickleconnect.live" style={{
-                display: 'inline-block', background: 'linear-gradient(135deg,#2ECC71,#27AE60)', color: 'white',
-                padding: '10px 24px', borderRadius: 10, fontSize: '0.82rem', fontWeight: 700, textDecoration: 'none',
-                boxShadow: '0 4px 14px rgba(46,204,113,0.35)'
-              }}>Open PickleConnect</a>
-            </TiltCard>
             </div>
-            <div className="wx-col">
-{/* Hourly Forecast — next 12h */}
-            <div className="wx-card o3">
-              <div className="wx-card-header">🕐 Hourly Forecast · Next 12h</div>
-              {forecast.slice(0, 12).map((h, i) => {
-                const hp = getPlayability(h.wind, h.gust, h.rain);
-                const t = h.dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-                const dir = h.windDeg != null ? windDir(h.windDeg) : '';
+
+            {/* Day picker */}
+            <div className="days">
+              {data.days.map(d => {
+                const b = d.best, l = b ? levelOf(b.score) : levelOf(d.hours[0].score);
                 return (
-                  <div key={i} style={{
-                    padding: '12px 14px',
-                    borderBottom: i < 11 ? '1px solid var(--border)' : 'none',
-                    borderLeft: '4px solid ' + hp.c,
-                    background: i === 0 ? 'rgba(46,204,113,0.03)' : 'transparent'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontSize: '0.95rem' }}>{hp.e}</span>
-                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: hp.c }}>{hp.l}</span>
-                      <span style={{ fontSize: '0.78rem', color: 'var(--muted)', marginLeft: 'auto', fontWeight: 600 }}>{i === 0 ? 'Now' : t}</span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, fontSize: '0.78rem' }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.55rem', color: 'var(--muted)', fontWeight: 600, marginBottom: 2 }}>Temp</div>
-                        <div style={{ fontWeight: 700 }}>{h.temp}°F</div>
-                      </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.55rem', color: 'var(--muted)', fontWeight: 600, marginBottom: 2 }}>Wind</div>
-                        <div style={{ fontWeight: 700, color: h.wind >= 15 ? 'var(--accent)' : 'var(--text)' }}>{h.wind} mph</div>
-                        {dir && <div style={{ fontSize: '0.55rem', color: 'var(--muted)' }}>{dir}</div>}
-                      </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.55rem', color: 'var(--muted)', fontWeight: 600, marginBottom: 2 }}>Gusts</div>
-                        <div style={{ fontWeight: 700, color: h.gust >= 20 ? 'var(--red)' : h.gust >= 15 ? 'var(--accent)' : 'var(--text)' }}>{h.gust} mph</div>
-                      </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.55rem', color: 'var(--muted)', fontWeight: 600, marginBottom: 2 }}>Rain</div>
-                        <div style={{ fontWeight: 700, color: h.rain >= 30 ? '#60a5fa' : 'var(--text)' }}>{h.rain}%</div>
-                      </div>
-                    </div>
-                  </div>
+                  <button key={d.key} className={'day' + (d.key === day.key ? ' on' : '')} onClick={() => pickDay(d.key)}>
+                    <div className="day-n">{dayName(d.key, data.todayKey)}</div>
+                    <div className="day-i">{d.icon}</div>
+                    <div className="day-dot" style={{ background: l.c }}>{l.l}</div>
+                  </button>
                 );
               })}
             </div>
 
-{/* Playability Guide */}
-            <div className="wx-card o4">
-              <div className="wx-card-header">Playability Guide</div>
-              <div style={{ padding: '0 16px 14px' }}>
-                {[
-                  { e: '🟢', l: 'Great', tip: 'Wind < 10, Gusts < 15, Rain < 20%', c: '#2ECC71' },
-                  { e: '🟡', l: 'Okay', tip: 'Wind 10–14, Gusts 15–24, Rain 20–49%', c: '#F7C948' },
-                  { e: '🟠', l: 'Marginal', tip: 'Wind 15+, Gusts 25+, or Rain 50%+', c: '#F7943E' },
-                  { e: '🔴', l: 'Skip It', tip: 'Multiple bad conditions at once', c: '#F75B5B' },
-                ].map((r, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < 3 ? '1px solid var(--border)' : 'none' }}>
-                    <span style={{ fontSize: '1rem' }}>{r.e}</span>
-                    <div>
-                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: r.c }}>{r.l}</div>
-                      <div style={{ fontSize: '0.68rem', color: 'var(--muted)' }}>{r.tip}</div>
+            <div className="wx-grid">
+              <div className="wx-col">
+                <div className="wx-card">
+                  <div className="wx-card-header">Court notes</div>
+                  {courtNotes(day, focus, data.todayKey).slice(0, 2).map(([ic, t, s], i) => (
+                    <div key={i} className="note"><span className="note-i">{ic}</span><div><b>{t}</b><div className="muted">{s}</div></div></div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="wx-col">
+                <details className="wx-card guide">
+                  <summary className="wx-card-header" style={{ cursor: 'pointer' }}>How we rate the weather</summary>
+                  <div style={{ padding: '0 16px 14px', fontSize: '.8rem', lineHeight: 1.55, color: 'var(--muted)' }}>
+                    Wind matters most: anything over about 10 mph, or gusts over 15, pushes lobs and dinks around. Then rain (and wet courts after rain), heat and cold. Thunderstorms are always "Skip it".
+                    <div className="guide-lv">
+                      <div><b style={{ color: LEVELS[0].c }}>🟢 Great</b> calm and dry, play anything</div>
+                      <div><b style={{ color: LEVELS[1].c }}>🟡 Okay</b> some breeze, play it safer</div>
+                      <div><b style={{ color: LEVELS[2].c }}>🟠 Marginal</b> windy, wet or cold, expect a scrappy game</div>
+                      <div><b style={{ color: LEVELS[3].c }}>🔴 Skip it</b> not worth it, or not safe</div>
                     </div>
                   </div>
-                ))}
+                </details>
+
+                <div className="cta">
+                  <a href="https://pickleconnect.live/league.html">🏆 My league</a>
+                  <a href="https://pickleconnect.live">🏓 Find a game</a>
+                </div>
               </div>
             </div>
-            </div>
-            </div>
-          </div>
-        )}
-
-        {/* Empty state before load */}
-        {!weather && !loading && !error && (
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <div style={{ fontSize: '3rem', marginBottom: 12 }}>🌤️</div>
-            <div style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: 6 }}>Pickleball Weather</div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--muted)', lineHeight: 1.5 }}>Search a location or use GPS to see<br />if conditions are good for playing</div>
           </div>
         )}
       </div>
 
-      {/* Footer */}
       <div className="footer">
         <a href="https://pickleconnect.live">pickleconnect.live</a> · Pickleball Weather<br />
-        Data from <a href="https://open-meteo.com" target="_blank" rel="noopener noreferrer">Open-Meteo</a>
+        Forecast from <a href="https://open-meteo.com" target="_blank" rel="noopener noreferrer">Open-Meteo</a>
       </div>
     </div>
   );

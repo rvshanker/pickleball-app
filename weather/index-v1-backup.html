@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PickleConnect – Pickleball Weather</title>
+<meta name="description" content="Real-time pickleball weather and playability forecast. Check wind, gusts, rain, and court conditions before you play.">
+<meta name="keywords" content="pickleball weather, pickleball wind, pickleball conditions, pickleball forecast, court weather, outdoor pickleball">
+<meta name="author" content="PickleConnect">
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PickleConnect – Pickleball Weather">
+<meta property="og:description" content="Real-time pickleball weather and playability forecast. Check wind, gusts, rain, and court conditions before you play.">
+<meta property="og:image" content="https://pickleconnect.live/weather/weather-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:url" content="https://pickleconnect.live/weather/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://pickleconnect.live/weather/weather-og.png">
+<link rel="canonical" href="https://pickleconnect.live/weather/">
+<meta name="theme-color" content="#0D1B2A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-8VE2FTD711"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-8VE2FTD711');
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%232ECC71'/><circle cx='50' cy='50' r='28' fill='white' opacity='0.15'/><circle cx='50' cy='50' r='6' fill='white'/></svg>" type="image/svg+xml">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.7/babel.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --green:#2ECC71;--green-dark:#27AE60;--green-dim:rgba(46,204,113,0.12);
+  --navy:#0D1B2A;--navy2:#142232;--card:#1A2B3C;--card2:#1F3347;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#F0F4F8;--muted:#7A9BB5;--muted2:rgba(122,155,181,0.5);
+  --accent:#F7C948;--blue:#5B9BF7;--red:#F75B5B;
+}
+html{height:100%;}
+body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);font-size:15px;-webkit-text-size-adjust:100%;min-height:100vh;}
+
+/* 3D background layer */
+#wx3d{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity 1.2s ease;}
+#wx3d.on{opacity:1;}
+#root{position:relative;z-index:1;}
+
+/* Nav — title left, search right */
+.nav{position:sticky;top:0;z-index:100;background:rgba(13,27,42,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.nav-logo{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;color:var(--green);letter-spacing:-0.02em;cursor:pointer;text-decoration:none;white-space:nowrap;}
+.nav-logo span{color:var(--text);}
+.nav-logo em{font-style:normal;color:var(--muted);font-weight:700;font-size:0.85rem;margin-left:6px;}
+.nav-search{display:flex;gap:8px;margin-left:auto;flex:0 1 380px;min-width:230px;align-items:center;}
+@media (max-width:680px){
+  .nav-search{flex:1 1 100%;order:3;margin-left:0;}
+}
+
+/* Search (lives in the nav, top right) */
+.search-input{flex:1;min-width:0;padding:9px 12px 9px 34px;background:rgba(26,43,60,0.85);border:1.5px solid var(--border2);border-radius:11px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;transition:border-color .15s;backdrop-filter:blur(8px);}
+.search-input:focus{border-color:rgba(46,204,113,0.5);}
+.search-input::placeholder{color:var(--muted2);}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:0.85rem;}
+.loc-btn{width:38px;height:38px;border-radius:11px;background:rgba(26,43,60,0.85);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;color:var(--text);transition:all .15s;flex-shrink:0;backdrop-filter:blur(8px);}
+.loc-btn:hover{border-color:rgba(46,204,113,0.5);background:var(--green-dim);}
+.loc-btn.active{border-color:var(--green);background:var(--green-dim);color:var(--green);}
+
+/* ============ 3D STAT CAROUSEL (poll-page style ring) ============ */
+:root{--stat-w:200px;--stat-h:258px;--stat-ring:265px;--ball-size:215px;}
+.stage{height:400px;display:flex;align-items:center;justify-content:center;perspective:1250px;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab;margin:2px 0 0;}
+.stage:active{cursor:grabbing;}
+.world{position:relative;width:var(--stat-w);height:var(--stat-h);transform-style:preserve-3d;}
+.ball-holder{position:absolute;left:50%;top:50%;width:var(--ball-size);height:var(--ball-size);transform:translate(-50%,-50%) translateZ(0);pointer-events:none;display:flex;align-items:center;justify-content:center;}
+.mascot-img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 22px 30px rgba(0,0,0,.5));animation:mascotIn .4s cubic-bezier(.34,1.56,.64,1), bobble 3.4s ease-in-out .4s infinite;user-select:none;-webkit-user-drag:none;}
+@keyframes mascotIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+@keyframes bobble{0%,100%{transform:translateY(-5px)}50%{transform:translateY(5px)}}
+.carousel3d{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform;}
+.stat-card{
+  position:absolute;inset:0;border-radius:18px;
+  background:linear-gradient(165deg, rgba(255,255,255,.10), rgba(255,255,255,.02) 45%), #16273A;
+  border:1px solid var(--border2);
+  box-shadow:0 26px 52px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.12);
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  padding:20px 16px 18px;backface-visibility:hidden;
+}
+.stat-card::before{
+  content:'';position:absolute;inset:-1px;border-radius:18px;padding:1px;pointer-events:none;
+  background:linear-gradient(180deg, var(--stat) 0%, transparent 65%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;opacity:.85;
+}
+.stat-card .ico{font-size:44px;line-height:1;filter:drop-shadow(0 8px 16px rgba(0,0,0,.45));}
+.stat-card .lbl{font-size:0.62rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}
+.stat-card .val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;letter-spacing:-0.02em;color:var(--text);line-height:1;}
+.stat-card .val small{font-size:0.95rem;font-weight:700;color:var(--muted);margin-left:2px;}
+.stat-card .sub{font-size:0.7rem;font-weight:600;color:var(--stat);min-height:1em;}
+.stage-hint{text-align:center;color:var(--muted2);font-size:0.7rem;margin:-4px 0 12px;letter-spacing:.05em;}
+@media (max-width:640px){
+  :root{--stat-w:162px;--stat-h:220px;--stat-ring:205px;--ball-size:165px;}
+  .stage{height:330px;}
+  .stat-card .ico{font-size:36px;}
+  .stat-card .val{font-size:1.6rem;}
+}
+@media (prefers-reduced-motion: reduce){
+  .mascot-img{animation:none;}
+}
+
+/* Content */
+.content{max-width:520px;margin:0 auto;padding:16px;}
+
+/* Cards — semi-transparent glass so the 3D layer shows through */
+.wx-card{background:rgba(26,43,60,0.74);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;box-shadow:0 8px 28px rgba(0,0,0,0.22);transition:box-shadow .25s ease;}
+.wx-card-header{padding:14px 16px;font-size:0.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+
+/* Responsive layout: ordered stack on mobile, two columns on desktop */
+.wx-grid{display:flex;flex-direction:column;}
+.wx-col{display:contents;}
+.o1{order:1}.o2{order:2}.o3{order:3}.o4{order:4}.o5{order:5}
+@media (min-width:960px){
+  .content{max-width:1020px;}
+  .search-wrap{max-width:1020px;}
+  .search-row{max-width:560px;}
+  .wx-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;align-items:start;}
+  .wx-col{display:flex;flex-direction:column;min-width:0;}
+  .o1,.o2,.o3,.o4,.o5{order:0;}
+}
+
+/* 3D tilt wrapper */
+.tilt{transform-style:preserve-3d;will-change:transform;transition:transform .18s ease-out;}
+
+/* Graph-specific */
+.graph-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(140,160,196,.3) transparent;}
+.graph-svg{display:block;height:auto;touch-action:pan-y;cursor:crosshair;user-select:none;-webkit-user-select:none;}
+
+/* Footer */
+.footer{text-align:center;padding:24px 16px 32px;font-size:0.72rem;color:var(--muted);}
+.footer a{color:var(--green);text-decoration:none;font-weight:600;}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fade-in{animation:fadeIn .25s ease;}
+.fade-up{animation:fadeUp .35s ease;}
+
+@media (prefers-reduced-motion: reduce){
+  #wx3d{display:none !important;}
+  .tilt{transition:none;}
+}
+</style>
+</head>
+<body>
+<div id="wx3d"></div>
+<div id="root"></div>
+
+<script>
+/* ============================================================
+   WX3D — wind-reactive 3D background (Three.js)
+   Particles flow in the real wind direction at real wind speed,
+   tinted by playability. A slow-spinning pickleball floats in
+   the depth; its spin rate scales with wind speed. Rain pulls
+   particles downward with a blue tint.
+   ============================================================ */
+window.WX3D = (function () {
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var container = document.getElementById('wx3d');
+  var inited = false, enabled = false, raf = null;
+  var renderer, scene, camera, points, geo, ball, ballWrap;
+  var rain, rainGeo, rainMat, drops = [];
+  var positions, seeds, count, baseSize;
+  var isMobile = window.innerWidth < 700;
+  var B = { x: 46, y: 30, z: 34 };            // particle bounds
+  var pointer = { x: 0, y: 0 };
+  var clock = null;
+  var halfH = 24.2, halfW = 24.2;             // visible world size at z=0
+
+  // live weather state (lerped each frame toward targets)
+  var cur = { speed: 5, dirX: 0.4, dirY: 0.1, rain: 0, snow: 0, heat: 0, spin: 0.2 };
+  var tgt = { speed: 5, dirX: 0.4, dirY: 0.1, rain: 0, snow: 0, heat: 0 };
+  var curColor = new THREE.Color('#2ECC71');
+  var tgtColor = new THREE.Color('#2ECC71');
+  var rainBlue = new THREE.Color('#7FB4FF');
+  var snowWhite = new THREE.Color('#EAF6FF');
+  var heatOrange = new THREE.Color('#F7943E');
+
+  // pickleball flight state: perches in a visible spot, periodically flies across
+  var flight = { mode: 'perch', t: 0, wait: 5 + Math.random() * 5, dur: 3, arc: 3, from: null, to: null };
+
+  function computeView() {
+    isMobile = window.innerWidth < 700;
+    halfH = Math.tan(Math.PI / 6) * 42;                       // fov 60, camera z 42
+    halfW = halfH * (window.innerWidth / Math.max(window.innerHeight, 1));
+    if (ball) ball.scale.setScalar(isMobile ? 0.55 : 0.85);
+  }
+
+  function perchPos() {
+    return isMobile
+      ? new THREE.Vector3(halfW * 0.5, halfH * 0.58, -4)      // top strip: visible around search area
+      : new THREE.Vector3(halfW * 0.72, halfH * 0.25, -8);    // empty right gutter on desktop
+  }
+
+  function startFly() {
+    var dir = Math.abs(cur.dirX) < 0.15 ? (Math.random() < 0.5 ? -1 : 1) : (cur.dirX >= 0 ? 1 : -1);
+    var y = isMobile ? halfH * (0.45 + Math.random() * 0.3)
+                     : halfH * (-0.25 + Math.random() * 0.7);
+    var z = isMobile ? 0 : -4;
+    flight.from = new THREE.Vector3(-dir * (halfW + 9), y, z);
+    flight.to = new THREE.Vector3(dir * (halfW + 9), y, z);
+    flight.arc = 1.5 + Math.random() * 3;
+    flight.dur = Math.max(2.0, 5.0 - cur.speed * 0.3);        // windier = faster fly-by
+    flight.t = 0;
+    flight.mode = 'fly';
+  }
+
+  function makeBallTexture() {
+    var c = document.createElement('canvas');
+    c.width = c.height = 512;
+    var g = c.getContext('2d');
+    var grad = g.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0, '#3ee085');
+    grad.addColorStop(1, '#24a45c');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 512, 512);
+    g.fillStyle = 'rgba(9,38,24,0.9)';
+    for (var y = 40; y < 512; y += 88) {
+      var off = (Math.floor(y / 88) % 2) ? 44 : 0;
+      for (var x = 40 + off; x < 512; x += 88) {
+        g.beginPath();
+        g.arc(x, y, 15, 0, Math.PI * 2);
+        g.fill();
+      }
+    }
+    var t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    return t;
+  }
+
+  function makeDotSprite() {
+    var c = document.createElement('canvas');
+    c.width = c.height = 64;
+    var g = c.getContext('2d');
+    var grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.35, 'rgba(255,255,255,0.6)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 64, 64);
+    return new THREE.CanvasTexture(c);
+  }
+
+  function init() {
+    if (inited || reduced || !window.THREE) return;
+    inited = true;
+    clock = new THREE.Clock();
+    computeView();
+
+    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false, powerPreference: 'low-power' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    container.appendChild(renderer.domElement);
+
+    scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x0d1b2a, 40, 90);
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+    camera.position.set(0, 0, 42);
+
+    // Particles
+    count = isMobile ? 340 : 650;
+    positions = new Float32Array(count * 3);
+    seeds = new Float32Array(count);
+    for (var i = 0; i < count; i++) {
+      positions[i * 3] = (Math.random() * 2 - 1) * B.x;
+      positions[i * 3 + 1] = (Math.random() * 2 - 1) * B.y;
+      positions[i * 3 + 2] = (Math.random() * 2 - 1) * B.z;
+      seeds[i] = Math.random() * Math.PI * 2;
+    }
+    geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    baseSize = isMobile ? 0.7 : 0.5;
+    var mat = new THREE.PointsMaterial({
+      size: baseSize,
+      map: makeDotSprite(),
+      color: curColor,
+      transparent: true,
+      opacity: isMobile ? 0.7 : 0.55,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    points = new THREE.Points(geo, mat);
+    scene.add(points);
+
+    // Rain: line segments, hidden until rain probability is high
+    var RAIN_N = isMobile ? 80 : 140;
+    drops = [];
+    var rp = new Float32Array(RAIN_N * 6);
+    for (var r = 0; r < RAIN_N; r++) {
+      drops.push({
+        x: (Math.random() * 2 - 1) * B.x,
+        y: (Math.random() * 2 - 1) * B.y,
+        z: (Math.random() * 2 - 1) * 20,
+        len: 1.2 + Math.random() * 0.9,
+        sp: 16 + Math.random() * 9
+      });
+    }
+    rainGeo = new THREE.BufferGeometry();
+    rainGeo.setAttribute('position', new THREE.BufferAttribute(rp, 3));
+    rainMat = new THREE.LineBasicMaterial({ color: 0x7fb4ff, transparent: true, opacity: 0 });
+    rain = new THREE.LineSegments(rainGeo, rainMat);
+    scene.add(rain);
+
+    // Pickleball
+    var ballGeo = new THREE.SphereGeometry(5.2, 40, 40);
+    var ballMat = new THREE.MeshStandardMaterial({
+      map: makeBallTexture(),
+      roughness: 0.55,
+      metalness: 0.05
+    });
+    ball = new THREE.Mesh(ballGeo, ballMat);
+    ball.scale.setScalar(isMobile ? 0.55 : 0.85);
+    ballWrap = new THREE.Group();
+    ballWrap.add(ball);
+    ballWrap.position.copy(perchPos());
+    ballWrap.visible = false; /* ball now lives in the stat carousel center */
+    scene.add(ballWrap);
+
+    scene.add(new THREE.AmbientLight(0x9fd8ff, 0.4));
+    var key = new THREE.DirectionalLight(0xffffff, 0.95);
+    key.position.set(-8, 14, 20);
+    scene.add(key);
+    var rim = new THREE.PointLight(0x2ecc71, 0.6, 60);
+    rim.position.set(14, -6, 4);
+    scene.add(rim);
+
+    window.addEventListener('resize', onResize);
+    window.addEventListener('pointermove', function (e) {
+      pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+      pointer.y = (e.clientY / window.innerHeight) * 2 - 1;
+    }, { passive: true });
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) stopLoop(); else if (enabled) startLoop();
+    });
+  }
+
+  function onResize() {
+    if (!inited) return;
+    computeView();
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  function frame() {
+    raf = requestAnimationFrame(frame);
+    var dt = Math.min(clock.getDelta(), 0.05);
+    var t = clock.elapsedTime;
+
+    // Ease toward target weather state
+    var k = 1 - Math.pow(0.02, dt);
+    cur.speed += (tgt.speed - cur.speed) * k;
+    cur.dirX += (tgt.dirX - cur.dirX) * k;
+    cur.dirY += (tgt.dirY - cur.dirY) * k;
+    cur.rain += (tgt.rain - cur.rain) * k;
+    cur.snow += (tgt.snow - cur.snow) * k;
+    cur.heat += (tgt.heat - cur.heat) * k;
+    curColor.lerp(tgtColor, k);
+
+    // Particle tint: playability color, shifted by weather mode
+    var pc = curColor.clone();
+    if (cur.rain > 0.01) pc.lerp(rainBlue, Math.min(cur.rain * 0.7, 0.7));
+    if (cur.snow > 0.01) pc.lerp(snowWhite, cur.snow * 0.85);
+    if (cur.heat > 0.01) pc.lerp(heatOrange, cur.heat * 0.5);
+    points.material.color.copy(pc);
+    points.material.size = baseSize * (1 + cur.snow * 0.5);
+
+    // Particle motion: wind flow + rain pull-down + snow drift-down + heat rise
+    var flow = 0.6 + cur.speed * 0.5;
+    var slow = 1 - cur.snow * 0.55;
+    var vx = cur.dirX * flow * slow;
+    var vy = cur.dirY * flow * slow - cur.rain * 5 - cur.snow * 2.4 + cur.heat * 1.8;
+    var amp = 0.35 + cur.snow * 1.1 + cur.heat * 0.7;         // flutter for snow, shimmer for heat
+    var pos = geo.attributes.position.array;
+    for (var i = 0; i < count; i++) {
+      var j = i * 3;
+      var wob = Math.sin(t * (1.4 + cur.heat * 1.2) + seeds[i]) * amp;
+      pos[j] += (vx + wob * (cur.dirY + cur.snow + cur.heat * 0.6)) * dt;
+      pos[j + 1] += (vy - wob * cur.dirX) * dt;
+      if (pos[j] > B.x) pos[j] = -B.x; else if (pos[j] < -B.x) pos[j] = B.x;
+      if (pos[j + 1] > B.y) pos[j + 1] = -B.y; else if (pos[j + 1] < -B.y) pos[j + 1] = B.y;
+    }
+    geo.attributes.position.needsUpdate = true;
+
+    // Rain streaks
+    var rTarget = cur.rain > 0.03 ? 0.45 : 0;
+    rainMat.opacity += (rTarget - rainMat.opacity) * k;
+    if (rainMat.opacity > 0.01) {
+      var rp = rainGeo.attributes.position.array;
+      for (var r = 0; r < drops.length; r++) {
+        var d = drops[r];
+        d.y -= d.sp * (0.5 + cur.rain) * dt;
+        d.x += cur.dirX * cur.speed * 1.5 * dt;
+        if (d.y < -B.y) { d.y = B.y; d.x = (Math.random() * 2 - 1) * B.x; }
+        if (d.x > B.x) d.x = -B.x; else if (d.x < -B.x) d.x = B.x;
+        var q = r * 6;
+        rp[q] = d.x; rp[q + 1] = d.y; rp[q + 2] = d.z;
+        rp[q + 3] = d.x - cur.dirX * 0.4; rp[q + 4] = d.y + d.len; rp[q + 5] = d.z;
+      }
+      rainGeo.attributes.position.needsUpdate = true;
+    }
+
+    // Pickleball: perch → periodic wind-driven fly-by → perch
+    cur.spin = 0.15 + cur.speed * 0.05;
+    var spinMul = flight.mode === 'fly' ? 4.5 : 1;
+    ball.rotation.y += cur.spin * spinMul * dt;
+    ball.rotation.x += cur.spin * 0.35 * spinMul * dt;
+    if (flight.mode === 'perch') {
+      var pp = perchPos();
+      ballWrap.position.x += (pp.x - ballWrap.position.x) * 0.05;
+      ballWrap.position.z += (pp.z - ballWrap.position.z) * 0.05;
+      var ty = pp.y + Math.sin(t * 0.6) * 1.2;
+      ballWrap.position.y += (ty - ballWrap.position.y) * 0.05;
+      flight.wait -= dt;
+      if (flight.wait <= 0) startFly();
+    } else {
+      flight.t += dt;
+      var f = Math.min(flight.t / flight.dur, 1);
+      ballWrap.position.lerpVectors(flight.from, flight.to, f);
+      ballWrap.position.y += Math.sin(f * Math.PI) * flight.arc;
+      if (f >= 1) {
+        flight.mode = 'perch';
+        flight.wait = 12 + Math.random() * 14;
+        var back = perchPos();
+        ballWrap.position.set(back.x, halfH + 10, back.z);  // re-enter from above, ease down to perch
+      }
+    }
+
+    // Camera parallax
+    camera.position.x += (pointer.x * 3 - camera.position.x) * 0.03;
+    camera.position.y += (-pointer.y * 2 - camera.position.y) * 0.03;
+    camera.lookAt(0, 0, 0);
+
+    renderer.render(scene, camera);
+  }
+
+  function startLoop() { if (!raf && inited) { clock.getDelta(); raf = requestAnimationFrame(frame); } }
+  function stopLoop() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+
+  return {
+    supported: !reduced && !!window.THREE,
+    setEnabled: function (on) {
+      enabled = !!on && !reduced && !!window.THREE;
+      if (enabled) {
+        init();
+        container.classList.add('on');
+        if (!document.hidden) startLoop();
+      } else {
+        container.classList.remove('on');
+        stopLoop();
+      }
+    },
+    flyNow: function () {
+      if (inited && enabled && flight.mode === 'perch') startFly();
+    },
+    update: function (o) {
+      // o: { wind (mph), deg (meteorological FROM), rain (0-100), temp (°F), color (hex) }
+      if (!o) return;
+      tgt.speed = Math.max(0.5, Math.min((o.wind || 0) / 4, 8));
+      var toward = (((o.deg == null ? 200 : o.deg) + 180) % 360) * Math.PI / 180;
+      tgt.dirX = Math.sin(toward);   // east = +x
+      tgt.dirY = Math.cos(toward);   // north = +y
+      tgt.rain = (o.rain || 0) >= 40 ? Math.min((o.rain - 20) / 80, 1) : 0;
+      tgt.snow = (o.temp != null && o.temp <= 34) ? 1 : 0;
+      tgt.heat = (o.temp != null && o.temp >= 88) ? Math.min((o.temp - 85) / 15, 1) : 0;
+      if (o.color) tgtColor.set(o.color);
+    }
+  };
+})();
+</script>
+
+<script type="text/babel">
+const {useState, useEffect, useRef} = React;
+
+const wxIcon = (temp, wind) => wind > 20 ? '🌬️' : temp < 32 ? '🥶' : temp < 50 ? '🧥' : temp > 88 ? '☀️' : '⛅';
+const getPlayability = (wind, gust, rain) => {
+  let s = 0;
+  if (wind >= 15) s += 3; else if (wind >= 10) s += 1;
+  if (gust >= 25) s += 3; else if (gust >= 15) s += 1;
+  if (rain >= 50) s += 3; else if (rain >= 20) s += 1;
+  if (s === 0) return { l: 'Great', c: '#2ECC71', e: '🟢', tip: 'Perfect conditions — get out there!' };
+  if (s <= 2) return { l: 'Okay', c: '#F7C948', e: '🟡', tip: 'Playable, but expect some wind on dinks.' };
+  if (s <= 4) return { l: 'Marginal', c: '#F7943E', e: '🟠', tip: 'Tough conditions — lobs will drift.' };
+  return { l: 'Skip It', c: '#F75B5B', e: '🔴', tip: 'Not worth it today.' };
+};
+const windDir = deg => { const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW']; return dirs[Math.round(deg / 22.5) % 16]; };
+const windArrow = deg => {
+  if (deg == null) return '↑';
+  const d = (deg + 180) % 360;
+  const arrows = ['↑','↗','→','↘','↓','↙','←','↖'];
+  return arrows[Math.round(d / 45) % 8];
+};
+
+// 3D perspective tilt on pointer (desktop); inert on touch so mobile stays smooth
+function TiltCard({ children, className = '', style = {}, ...rest }) {
+  const ref = useRef(null);
+  const onMove = (e) => {
+    const el = ref.current;
+    if (!el || e.pointerType === 'touch') return;
+    const r = el.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5;
+    const y = (e.clientY - r.top) / r.height - 0.5;
+    el.style.transform = `perspective(900px) rotateX(${(-y * 4).toFixed(2)}deg) rotateY(${(x * 6).toFixed(2)}deg) translateZ(4px)`;
+    el.style.boxShadow = '0 18px 44px rgba(0,0,0,0.38)';
+  };
+  const onLeave = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.transform = '';
+    el.style.boxShadow = '';
+  };
+  return (
+    <div ref={ref} className={`tilt ${className}`} style={style} {...rest} onPointerMove={onMove} onPointerLeave={onLeave}>
+      {children}
+    </div>
+  );
+}
+
+/* Mascot floating in the middle of the stat ring.
+   Every time a card sweeps across the front (each 90 degrees of ring
+   rotation), a new random mascot pops in. */
+const ALL_MASCOTS = [
+  'mascot-great.png',
+  'mascot-okay.png',
+  'mascot-marginal.png',
+  'mascot-rain.png',
+  'mascot-hello.png',
+];
+function CenterMascot({ src }) {
+  // preload every mascot once so swaps are instant
+  useEffect(() => {
+    ALL_MASCOTS.forEach(s => { const i = new window.Image(); i.src = s; });
+  }, []);
+  return (
+    <div className="ball-holder">
+      <img key={src} className="mascot-img" src={src} alt="PickleConnect mascot" draggable="false" />
+    </div>
+  );
+}
+
+/* Poll-style 3D ring of stat cards — drag to spin, auto-rotates,
+   pickleball floats at the center of the ring. */
+function StatCarousel({ stats }) {
+  const carRef = useRef(null);
+  const s = useRef({ rot: 0, target: 0, drag: false, lastX: 0, auto: true, timer: null });
+  const [mascot, setMascot] = useState(ALL_MASCOTS[0]);
+  const lastSeg = useRef(0);
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  useEffect(() => {
+    let raf;
+    const tick = () => {
+      raf = requestAnimationFrame(tick);
+      const st = s.current;
+      if (!st.drag) {
+        if (st.auto && !reduced) st.target += 0.3;
+        st.rot += (st.target - st.rot) * 0.08;
+      }
+      if (carRef.current) carRef.current.style.transform = `rotateY(${st.rot}deg)`;
+      // a card crosses the front every 90° — swap in a new random mascot
+      const seg = Math.floor(Math.abs(st.rot) / 90);
+      if (seg !== lastSeg.current) {
+        lastSeg.current = seg;
+        setMascot(prev => {
+          let next;
+          do { next = ALL_MASCOTS[Math.floor(Math.random() * ALL_MASCOTS.length)]; } while (next === prev);
+          return next;
+        });
+      }
+    };
+    tick();
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const onDown = (e) => {
+    const st = s.current;
+    st.drag = true; st.auto = false; st.lastX = e.clientX;
+    if (st.timer) clearTimeout(st.timer);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onMove = (e) => {
+    const st = s.current;
+    if (!st.drag) return;
+    st.target += (e.clientX - st.lastX) * 0.45;
+    st.rot = st.target;
+    st.lastX = e.clientX;
+  };
+  const onUp = () => {
+    const st = s.current;
+    st.drag = false;
+    st.timer = setTimeout(() => { st.auto = true; }, 5000);
+  };
+
+  return (
+    <div className="stage" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
+      <div className="world">
+        <CenterMascot src={mascot} />
+        <div className="carousel3d" ref={carRef}>
+          {stats.map((st, i) => (
+            <div
+              key={st.lbl}
+              className="stat-card"
+              style={{ '--stat': st.color, transform: `rotateY(${i * 90}deg) translateZ(var(--stat-ring))` }}
+            >
+              <div className="ico">{st.ico}</div>
+              <div className="lbl">{st.lbl}</div>
+              <div className="val">{st.val}<small>{st.unit}</small></div>
+              <div className="sub">{st.sub || '\u00A0'}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [weather, setWeather] = useState(null);
+  const [forecast, setForecast] = useState([]);
+  const [locationName, setLocationName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [searchVal, setSearchVal] = useState('');
+  const [usingGps, setUsingGps] = useState(false);
+  const [coords, setCoords] = useState(null);
+  const [scrubX, setScrubX] = useState(null);
+  const graphScrollRef = useRef(null);
+  const edgeScroll = useRef({ raf: null, dir: 0, clientX: 0, svg: null });
+  const inputRef = useRef(null);
+
+  const fetchWeather = async (lat, lng) => {
+    setLoading(true); setError(null);
+    try {
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,precipitation&hourly=temperature_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,winddirection_10m,precipitation_probability&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_hours=25&timezone=auto`);
+      const d = await r.json();
+      const now = new Date();
+      const hourly = d.hourly.time.map((t, i) => ({
+        dt: new Date(t),
+        temp: Math.round(d.hourly.temperature_2m[i]),
+        feels: Math.round(d.hourly.apparent_temperature?.[i] ?? d.hourly.temperature_2m[i]),
+        wind: Math.round(d.hourly.wind_speed_10m[i]),
+        gust: Math.round(d.hourly.wind_gusts_10m?.[i] || 0),
+        windDeg: d.hourly.winddirection_10m?.[i],
+        rain: d.hourly.precipitation_probability?.[i] || 0
+      })).filter(h => h.dt >= new Date(now.getTime() - 60 * 60 * 1000)).slice(0, 24);
+      setForecast(hourly);
+      const cur = hourly[0] || { temp: Math.round(d.current.temperature_2m), feels: Math.round(d.current.apparent_temperature ?? d.current.temperature_2m), wind: Math.round(d.current.wind_speed_10m), gust: Math.round(d.current.wind_gusts_10m || 0) };
+      setWeather({
+        temp: cur.temp,
+        feels: cur.feels ?? cur.temp,
+        wind: cur.wind,
+        gust: cur.gust,
+        rain: cur.rain || 0
+      });
+      setCoords({ lat, lng });
+    } catch (e) {
+      setError('Failed to fetch weather data. Please try again.');
+    }
+    setLoading(false);
+  };
+
+  const geocodeSearch = async (query) => {
+    if (!query.trim()) return;
+    setLoading(true); setError(null); setUsingGps(false);
+    try {
+      const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`);
+      const d = await r.json();
+      if (d.results?.length > 0) {
+        const loc = d.results[0];
+        setLocationName(`${loc.name}${loc.admin1 ? ', ' + loc.admin1 : ''}${loc.country_code ? ' ' + loc.country_code : ''}`);
+        await fetchWeather(loc.latitude, loc.longitude);
+      } else {
+        const r2 = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=us`);
+        const d2 = await r2.json();
+        if (d2.length > 0) {
+          setLocationName(d2[0].display_name.split(',').slice(0, 2).join(','));
+          await fetchWeather(parseFloat(d2[0].lat), parseFloat(d2[0].lon));
+        } else {
+          setError('Location not found. Try a city name or US zip code.');
+          setLoading(false);
+        }
+      }
+    } catch (e) {
+      setError('Search failed. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const useMyLocation = () => {
+    if (!navigator.geolocation) { setError('Geolocation not supported by your browser.'); return; }
+    setLoading(true); setError(null); setUsingGps(true); setSearchVal('');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        try {
+          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`);
+          const d = await r.json();
+          const parts = [d.address?.city || d.address?.town || d.address?.village, d.address?.state];
+          setLocationName(parts.filter(Boolean).join(', ') || 'Your Location');
+        } catch { setLocationName('Your Location'); }
+        await fetchWeather(lat, lng);
+      },
+      () => { setError('Location access denied. Try searching by zip code.'); setLoading(false); setUsingGps(false); },
+      { timeout: 10000 }
+    );
+  };
+
+  useEffect(() => { useMyLocation(); }, []);
+
+  // 3D background layer — always on (respects reduced-motion internally)
+  useEffect(() => {
+    window.WX3D?.setEnabled(true);
+  }, []);
+
+  const handleSearch = (e) => {
+    e?.preventDefault();
+    if (searchVal.trim()) geocodeSearch(searchVal.trim());
+  };
+
+  // Computed
+  const p = weather ? getPlayability(weather.wind, weather.gust, forecast[0]?.rain || 0) : null;
+
+  // Feed live conditions to the 3D layer (direction, speed, rain, playability tint)
+  useEffect(() => {
+    if (weather && window.WX3D) {
+      window.WX3D.update({
+        wind: weather.wind,
+        deg: forecast[0]?.windDeg,
+        rain: forecast[0]?.rain || 0,
+        temp: weather.temp,
+        color: p?.c
+      });
+    }
+  }, [weather, forecast]);
+
+  // === GRAPH SETUP (Apple Weather-style responsive) ===
+  // Y-axis in increments of 5
+  const rawMax = forecast.length > 0 ? Math.max(...forecast.map(h => Math.max(h.wind, h.gust)), 20) : 20;
+  const maxWind = Math.ceil(rawMax / 5) * 5;
+  const yTicks = [];
+  for (let v = 0; v <= maxWind; v += 5) yTicks.push(v);
+
+  // 12 hours fill the visible width; the rest scrolls horizontally.
+  // viewBox width grows with data so on-screen point spacing stays constant.
+  const HOURS_VISIBLE = 12;
+  const viewScale = Math.max(1, (forecast.length - 1) / (HOURS_VISIBLE - 1));
+  const GRAPH_W = Math.round(400 * viewScale);
+  const GRAPH_H = 220;
+  const padL = 26, padR = 14, padT = 36, padB = 30;
+  const plotW = GRAPH_W - padL - padR;
+  const plotH = GRAPH_H - padT - padB;
+
+  const px = (i) => padL + (forecast.length > 1 ? i * (plotW / (forecast.length - 1)) : plotW / 2);
+  const py = (val) => padT + plotH - (val / maxWind) * plotH;
+
+  const windPts = forecast.map((h, i) => ({ x: px(i), y: py(h.wind) }));
+  const gustPts = forecast.map((h, i) => ({ x: px(i), y: py(h.gust) }));
+
+  // Smooth curve helper (catmull-rom to bezier)
+  const toSmoothPath = (pts) => {
+    if (pts.length < 2) return '';
+    if (pts.length === 2) return `M${pts[0].x},${pts[0].y} L${pts[1].x},${pts[1].y}`;
+    let d = `M${pts[0].x},${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i === 0 ? 0 : i - 1];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+      const tension = 0.3;
+      const cp1x = p1.x + (p2.x - p0.x) * tension;
+      const cp1y = p1.y + (p2.y - p0.y) * tension;
+      const cp2x = p2.x - (p3.x - p1.x) * tension;
+      const cp2y = p2.y - (p3.y - p1.y) * tension;
+      d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+    }
+    return d;
+  };
+  const toSmoothArea = (pts) => {
+    if (!pts.length) return '';
+    const baseline = padT + plotH;
+    return toSmoothPath(pts) + ` L${pts[pts.length - 1].x},${baseline} L${pts[0].x},${baseline} Z`;
+  };
+
+  // Which indices get x-axis labels / arrows (every 6 hours)
+  const tickIndices = forecast.reduce((acc, h, i) => {
+    if (i === 0) acc.push(i);
+    else if (h.dt.getHours() % 3 === 0) acc.push(i);
+    return acc;
+  }, []);
+
+  // === SCRUBBER: interpolate wind/gust/temp at any x-position ===
+  const scrubData = (() => {
+    if (scrubX == null || forecast.length < 2) return null;
+    const frac = ((scrubX - padL) / plotW) * (forecast.length - 1);
+    const clamped = Math.max(0, Math.min(frac, forecast.length - 1));
+    const i0 = Math.floor(clamped);
+    const i1 = Math.min(i0 + 1, forecast.length - 1);
+    const t = clamped - i0;
+    const a = forecast[i0], b = forecast[i1];
+    const lerp = (x, y) => x + (y - x) * t;
+    const wind = lerp(a.wind, b.wind);
+    const gust = lerp(a.gust, b.gust);
+    const temp = lerp(a.temp, b.temp);
+    const rain = lerp(a.rain, b.rain);
+    const time = new Date(a.dt.getTime() + (b.dt.getTime() - a.dt.getTime()) * t);
+    return {
+      x: padL + (clamped / (forecast.length - 1)) * plotW,
+      wind: Math.round(wind),
+      gust: Math.round(gust),
+      temp: Math.round(temp),
+      rain: Math.round(rain),
+      time,
+      windY: py(wind),
+      gustY: py(gust),
+      playability: getPlayability(wind, gust, rain)
+    };
+  })();
+
+  // Convert pointer event → SVG viewBox x-coordinate
+  const handleScrubMove = (e) => {
+    const svg = e.currentTarget;
+    const rect = svg.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    setScrubX((clientX - rect.left) * (GRAPH_W / rect.width));
+
+    // While scrubbing with a finger, auto-scroll the chart when the
+    // finger nears the visible left/right edge to reveal more hours.
+    if (e.touches && graphScrollRef.current) {
+      const es = edgeScroll.current;
+      es.clientX = clientX;
+      es.svg = svg;
+      const c = graphScrollRef.current.getBoundingClientRect();
+      const EDGE = 52;
+      es.dir = clientX > c.right - EDGE ? 1 : (clientX < c.left + EDGE ? -1 : 0);
+      if (es.dir && !es.raf) {
+        const step = () => {
+          const s2 = edgeScroll.current;
+          const box = graphScrollRef.current;
+          if (!s2.dir || !box) { s2.raf = null; return; }
+          box.scrollLeft += s2.dir * 6;
+          // keep the tooltip under the (possibly stationary) finger as content slides
+          const r = s2.svg.getBoundingClientRect();
+          setScrubX((s2.clientX - r.left) * (GRAPH_W / r.width));
+          s2.raf = requestAnimationFrame(step);
+        };
+        es.raf = requestAnimationFrame(step);
+      }
+    }
+  };
+  const handleScrubEnd = () => { setScrubX(null); edgeScroll.current.dir = 0; };
+
+  return (
+    <div>
+      {/* Nav — title top-left, search top-right */}
+      <div className="nav">
+        <a href="https://pickleconnect.live" className="nav-logo"><span>Pickle</span>Connect<em>🏓 Weather</em></a>
+        <form className="nav-search" onSubmit={handleSearch}>
+          <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+            <span className="search-icon">🔍</span>
+            <input
+              ref={inputRef}
+              className="search-input"
+              value={searchVal}
+              onChange={e => setSearchVal(e.target.value)}
+              placeholder="City or zip code…"
+              onKeyDown={e => e.key === 'Enter' && handleSearch()}
+            />
+          </div>
+          <button type="button" onClick={useMyLocation} className={`loc-btn ${usingGps ? 'active' : ''}`} title="Use my location">📍</button>
+        </form>
+      </div>
+
+      <div className="content">
+        {/* Loading */}
+        {loading && (
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ width: 36, height: 36, border: '3px solid var(--border)', borderTop: '3px solid var(--green)', borderRadius: '50%', animation: 'spin .7s linear infinite', margin: '0 auto 12px' }} />
+            <div style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>Fetching weather…</div>
+          </div>
+        )}
+
+        {/* Error */}
+        {error && !loading && (
+          <div style={{ background: 'rgba(247,91,91,0.1)', border: '1px solid rgba(247,91,91,0.25)', borderRadius: 12, padding: '14px 16px', marginBottom: 14, fontSize: '0.82rem', color: '#FF8A80' }}>
+            ⚠️ {error}
+          </div>
+        )}
+
+        {/* Weather content */}
+        {weather && !loading && (
+          <div className="fade-up">
+
+{/* Section 1 · Location + playability strip */}
+            <div className="wx-card" style={{ marginBottom: 6 }}>
+              <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '1.2rem' }}>{wxIcon(weather.temp, weather.wind)}</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>
+                  {usingGps && '📍 '}{locationName || 'Current conditions'}
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
+                  <span style={{ fontSize: '1rem' }}>{p.e}</span>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: p.c }}>{p.l}</span>
+                </span>
+                <span style={{ flexBasis: '100%', fontSize: '0.72rem', color: 'var(--muted)' }}>💡 {p.tip}</span>
+              </div>
+            </div>
+
+{/* Section 2 · 3D stat ring with floating pickleball */}
+            <StatCarousel
+              stats={[
+                { lbl: 'Temperature', ico: wxIcon(weather.temp, 0), val: weather.temp + '°', unit: 'F', color: '#F75B5B', sub: '\u00A0' },
+                { lbl: 'Feels Like', ico: '🌡️', val: weather.feels + '°', unit: 'F', color: '#F7943E', sub: weather.feels !== weather.temp ? (weather.feels > weather.temp ? 'warmer than actual' : 'cooler than actual') : 'same as actual' },
+                { lbl: 'Wind', ico: '💨', val: weather.wind, unit: ' mph', color: '#2ECC71', sub: forecast[0]?.windDeg != null ? `${windArrow(forecast[0].windDeg)} from ${windDir(forecast[0].windDeg)}` : '' },
+                { lbl: 'Gusts', ico: '🌪️', val: weather.gust, unit: ' mph', color: '#F7C948', sub: weather.gust >= 20 ? 'lobs will drift' : weather.gust >= 15 ? 'noticeable on dinks' : 'barely a factor' },
+              ]}
+            />
+            <div className="stage-hint">Drag to spin the stats</div>
+
+            <div className="wx-grid">
+            <div className="wx-col">
+{/* Section 3 · Wind & Gusts 24h Graph */}
+            {forecast.length > 1 && (
+              <div className="wx-card o2">
+                <div className="wx-card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>💨 Wind & Gusts · Next 24h</span>
+                  <span style={{ fontSize: '0.6rem', color: 'var(--muted2)', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>Drag to scrub · edges reveal 24h</span>
+                </div>
+                <div className="graph-scroll" ref={graphScrollRef} style={{ padding: '0 10px 10px' }}>
+                  <svg
+                    viewBox={`0 0 ${GRAPH_W} ${GRAPH_H}`}
+                    className="graph-svg"
+                    style={{ width: (viewScale * 100) + '%' }}
+                    onMouseMove={handleScrubMove}
+                    onMouseLeave={handleScrubEnd}
+                    onTouchStart={handleScrubMove}
+                    onTouchMove={handleScrubMove}
+                    onTouchEnd={handleScrubEnd}
+                    onTouchCancel={handleScrubEnd}
+                  >
+                    <defs>
+                      <linearGradient id="windFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#2ECC71" stopOpacity="0.35" />
+                        <stop offset="100%" stopColor="#2ECC71" stopOpacity="0.05" />
+                      </linearGradient>
+                      <linearGradient id="gustFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#F7C948" stopOpacity="0.18" />
+                        <stop offset="100%" stopColor="#F7C948" stopOpacity="0.02" />
+                      </linearGradient>
+                    </defs>
+
+                    {/* Wind direction arrows — every 6h only */}
+                    {tickIndices.map(i => (
+                      <text key={'arr'+i} x={px(i)} y={18} fill="var(--muted)" fontSize="12" textAnchor="middle" fontFamily="DM Sans">
+                        {windArrow(forecast[i].windDeg)}
+                      </text>
+                    ))}
+
+                    {/* Grid lines at every 5 mph */}
+                    {yTicks.map((val, i) => {
+                      const y = py(val);
+                      return <g key={i}>
+                        <line x1={padL - 3} y1={y} x2={GRAPH_W - padR} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
+                        <text x={padL - 6} y={y + 3.5} fill="var(--muted)" fontSize="10" textAnchor="end" fontFamily="DM Sans">{val}</text>
+                      </g>;
+                    })}
+
+                    {/* 15mph threshold */}
+                    {maxWind >= 15 && (
+                      <line x1={padL} y1={py(15)} x2={GRAPH_W - padR} y2={py(15)} stroke="rgba(247,91,91,0.3)" strokeWidth={1} strokeDasharray="3,3" />
+                    )}
+
+                    {/* Gust area + line (behind wind) */}
+                    <path d={toSmoothArea(gustPts)} fill="url(#gustFill)" />
+                    <path d={toSmoothPath(gustPts)} fill="none" stroke="var(--accent)" strokeWidth={1.6} strokeOpacity={0.75} />
+
+                    {/* Wind area + line */}
+                    <path d={toSmoothArea(windPts)} fill="url(#windFill)" />
+                    <path d={toSmoothPath(windPts)} fill="none" stroke="var(--green)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+
+                    {/* X-axis labels — every 6h only */}
+                    {tickIndices.map(i => {
+                      const lbl = i === 0 ? 'Now' : forecast[i].dt.toLocaleTimeString([], { hour: 'numeric' });
+                      return <text key={'lbl'+i} x={px(i)} y={GRAPH_H - 10} fill="var(--muted)" fontSize="11" textAnchor="middle" fontWeight="600" fontFamily="DM Sans">{lbl}</text>;
+                    })}
+
+                    {/* Tick marks for label positions */}
+                    {tickIndices.map(i => (
+                      <circle key={'tick'+i} cx={px(i)} cy={padT + plotH} r={1.5} fill="var(--muted)" opacity={0.5} />
+                    ))}
+
+                    {/* === SCRUBBER === */}
+                    {scrubData && (
+                      <g style={{ pointerEvents: 'none' }}>
+                        {/* Vertical line */}
+                        <line
+                          x1={scrubData.x} y1={padT}
+                          x2={scrubData.x} y2={padT + plotH}
+                          stroke="rgba(255,255,255,0.5)" strokeWidth={1} strokeDasharray="2,2"
+                        />
+                        {/* Dots at scrub position */}
+                        <circle cx={scrubData.x} cy={scrubData.gustY} r={3} fill="var(--accent)" stroke="var(--card)" strokeWidth={1.5} />
+                        <circle cx={scrubData.x} cy={scrubData.windY} r={3.5} fill="var(--green)" stroke="var(--card)" strokeWidth={1.5} />
+
+                        {/* Tooltip bubble */}
+                        {(() => {
+                          const tw = 150, th = 62;
+                          // Keep tooltip inside plot area
+                          let tx = scrubData.x - tw / 2;
+                          if (tx < padL - 4) tx = padL - 4;
+                          if (tx + tw > GRAPH_W - padR + 4) tx = GRAPH_W - padR + 4 - tw;
+                          const ty = padT - 4;
+                          const timeLbl = scrubData.time.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                          return (
+                            <g>
+                              <rect x={tx} y={ty} width={tw} height={th} rx={7} fill="rgba(13,27,42,0.96)" stroke="var(--border2)" strokeWidth={1} />
+                              <text x={tx + 10} y={ty + 18} fill="var(--text)" fontSize="13" fontWeight="700" fontFamily="DM Sans">{timeLbl}</text>
+                              <text x={tx + tw - 10} y={ty + 18} fill={scrubData.playability.c} fontSize="12" fontWeight="700" textAnchor="end" fontFamily="DM Sans">{scrubData.playability.l}</text>
+                              <text x={tx + 10} y={ty + 37} fill="var(--green)" fontSize="12" fontFamily="DM Sans">● Wind</text>
+                              <text x={tx + tw - 10} y={ty + 37} fill="var(--text)" fontSize="12" fontWeight="700" textAnchor="end" fontFamily="DM Sans">{scrubData.wind} mph</text>
+                              <text x={tx + 10} y={ty + 54} fill="var(--accent)" fontSize="12" fontFamily="DM Sans">● Gusts</text>
+                              <text x={tx + tw - 10} y={ty + 54} fill="var(--text)" fontSize="12" fontWeight="700" textAnchor="end" fontFamily="DM Sans">{scrubData.gust} mph</text>
+                            </g>
+                          );
+                        })()}
+                      </g>
+                    )}
+                  </svg>
+                </div>
+                <div style={{ padding: '0 16px 12px', display: 'flex', gap: 14, fontSize: '0.65rem', color: 'var(--muted)', flexWrap: 'wrap' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 14, height: 3, background: 'var(--green)', borderRadius: 2, display: 'inline-block' }} />Wind</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 14, height: 2, background: 'var(--accent)', borderRadius: 2, display: 'inline-block' }} />Gusts</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 14, height: 1, background: 'rgba(247,91,91,0.5)', display: 'inline-block' }} />15 mph</span>
+                </div>
+              </div>
+            )}
+
+{/* CTA */}
+            <TiltCard className="o5" style={{ background: 'var(--green-dim)', border: '1px solid rgba(46,204,113,0.25)', borderRadius: 14, padding: '18px', textAlign: 'center', marginBottom: 14, backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
+              <div style={{ fontSize: '1.1rem', marginBottom: 4 }}>🏓</div>
+              <div style={{ fontSize: '0.88rem', fontWeight: 700, marginBottom: 4 }}>Check in & find players</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--muted)', marginBottom: 12 }}>See who's playing at courts near you</div>
+              <a href="https://pickleconnect.live" style={{
+                display: 'inline-block', background: 'linear-gradient(135deg,#2ECC71,#27AE60)', color: 'white',
+                padding: '10px 24px', borderRadius: 10, fontSize: '0.82rem', fontWeight: 700, textDecoration: 'none',
+                boxShadow: '0 4px 14px rgba(46,204,113,0.35)'
+              }}>Open PickleConnect</a>
+            </TiltCard>
+            </div>
+            <div className="wx-col">
+{/* Hourly Forecast — next 12h */}
+            <div className="wx-card o3">
+              <div className="wx-card-header">🕐 Hourly Forecast · Next 12h</div>
+              {forecast.slice(0, 12).map((h, i) => {
+                const hp = getPlayability(h.wind, h.gust, h.rain);
+                const t = h.dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                const dir = h.windDeg != null ? windDir(h.windDeg) : '';
+                return (
+                  <div key={i} style={{
+                    padding: '12px 14px',
+                    borderBottom: i < 11 ? '1px solid var(--border)' : 'none',
+                    borderLeft: '4px solid ' + hp.c,
+                    background: i === 0 ? 'rgba(46,204,113,0.03)' : 'transparent'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <span style={{ fontSize: '0.95rem' }}>{hp.e}</span>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: hp.c }}>{hp.l}</span>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--muted)', marginLeft: 'auto', fontWeight: 600 }}>{i === 0 ? 'Now' : t}</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, fontSize: '0.78rem' }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.55rem', color: 'var(--muted)', fontWeight: 600, marginBottom: 2 }}>Temp</div>
+                        <div style={{ fontWeight: 700 }}>{h.temp}°F</div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.55rem', color: 'var(--muted)', fontWeight: 600, marginBottom: 2 }}>Wind</div>
+                        <div style={{ fontWeight: 700, color: h.wind >= 15 ? 'var(--accent)' : 'var(--text)' }}>{h.wind} mph</div>
+                        {dir && <div style={{ fontSize: '0.55rem', color: 'var(--muted)' }}>{dir}</div>}
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.55rem', color: 'var(--muted)', fontWeight: 600, marginBottom: 2 }}>Gusts</div>
+                        <div style={{ fontWeight: 700, color: h.gust >= 20 ? 'var(--red)' : h.gust >= 15 ? 'var(--accent)' : 'var(--text)' }}>{h.gust} mph</div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.55rem', color: 'var(--muted)', fontWeight: 600, marginBottom: 2 }}>Rain</div>
+                        <div style={{ fontWeight: 700, color: h.rain >= 30 ? '#60a5fa' : 'var(--text)' }}>{h.rain}%</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+{/* Playability Guide */}
+            <div className="wx-card o4">
+              <div className="wx-card-header">Playability Guide</div>
+              <div style={{ padding: '0 16px 14px' }}>
+                {[
+                  { e: '🟢', l: 'Great', tip: 'Wind < 10, Gusts < 15, Rain < 20%', c: '#2ECC71' },
+                  { e: '🟡', l: 'Okay', tip: 'Wind 10–14, Gusts 15–24, Rain 20–49%', c: '#F7C948' },
+                  { e: '🟠', l: 'Marginal', tip: 'Wind 15+, Gusts 25+, or Rain 50%+', c: '#F7943E' },
+                  { e: '🔴', l: 'Skip It', tip: 'Multiple bad conditions at once', c: '#F75B5B' },
+                ].map((r, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < 3 ? '1px solid var(--border)' : 'none' }}>
+                    <span style={{ fontSize: '1rem' }}>{r.e}</span>
+                    <div>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: r.c }}>{r.l}</div>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--muted)' }}>{r.tip}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            </div>
+            </div>
+          </div>
+        )}
+
+        {/* Empty state before load */}
+        {!weather && !loading && !error && (
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ fontSize: '3rem', marginBottom: 12 }}>🌤️</div>
+            <div style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: 6 }}>Pickleball Weather</div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--muted)', lineHeight: 1.5 }}>Search a location or use GPS to see<br />if conditions are good for playing</div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="footer">
+        <a href="https://pickleconnect.live">pickleconnect.live</a> · Pickleball Weather<br />
+        Data from <a href="https://open-meteo.com" target="_blank" rel="noopener noreferrer">Open-Meteo</a>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
