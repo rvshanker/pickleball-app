@@ -94,7 +94,7 @@ if(w.PC_APP){var vp=document.querySelector('meta[name=viewport]');if(vp)vp.setAt
         .tabs{display:flex;gap:6px;background:white;border-radius:12px;padding:5px;box-shadow:0 2px 10px rgba(0,0,0,.05);margin-bottom:14px;}
         .tab{flex:1;border:none;background:none;padding:10px 6px;border-radius:9px;font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;color:#64748b;cursor:pointer;white-space:nowrap;}
         .tab.on{background:#0f172a;color:white;}
-        @media(max-width:430px){.tab{font-size:12.5px;padding:10px 3px;}.tabs{gap:3px;}}
+        @media(max-width:430px){.tab{font-size:12.5px;padding:10px 3px;}.tabs{gap:3px;}.tabs.many .tab{font-size:11.5px;padding:10px 2px;}.tabs.many .tab:not(.on) .tl{display:none}}
 
         .chip{border:1px solid #e2e8f0;background:white;border-radius:99px;padding:7px 13px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;white-space:nowrap;font-family:'Outfit',sans-serif;}
         .chip.on{background:#059669;border-color:#059669;color:white;}
@@ -146,6 +146,22 @@ if(w.PC_APP){var vp=document.querySelector('meta[name=viewport]');if(vp)vp.setAt
         @keyframes spin{to{transform:rotate(360deg)}}
         .spinner{width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#059669;border-radius:50%;animation:spin .8s linear infinite;}
 
+        .po-bracket{display:grid;gap:14px;overflow-x:auto;padding-bottom:6px}
+        .po-col{display:flex;flex-direction:column;min-width:0}
+        .po-hd{font-weight:800;font-size:13px;color:var(--muted,#64748b);margin:0 2px 8px}
+        .po-games{display:flex;flex-direction:column;justify-content:space-around;gap:12px;flex:1}
+        .po-game{background:#fff;border:1px solid #e5ebe8;border-radius:14px;padding:8px 10px}
+        .po-meta{font-size:11.5px;color:#64748b;margin-bottom:4px}
+        .po-side{display:flex;align-items:center;gap:8px;padding:5px 0}
+        .po-side+.po-side{border-top:1px solid #f0f3f1}
+        .po-side.win .po-name{font-weight:800}
+        .po-side.out{opacity:.55}
+        .po-seed{font-size:11px;font-weight:800;color:#64748b;background:#f1f4f2;border-radius:6px;min-width:22px;text-align:center;padding:2px 4px}
+        .po-name{flex:1;min-width:0;font-size:14px;line-height:1.3}
+        .po-champ{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,#0D1B2A,#17663f);color:#fff;border-radius:16px;padding:14px 18px;margin-bottom:14px}
+        .po-champ small{display:block;font-size:12px;opacity:.75}
+        .po-champ b{font-size:20px}
+        @media(max-width:700px){.po-bracket{grid-template-columns:1fr!important;overflow:visible}}
         @media print{
             .nav,.tabs,.no-print{display:none!important;}
             body{background:white;}
@@ -195,6 +211,8 @@ if(w.PC_APP){var vp=document.querySelector('meta[name=viewport]');if(vp)vp.setAt
         .score-inp.win,.score-ro.win{background:var(--green);border-color:var(--green);color:#052e16;}
         .sit{background:#f8faf9;color:var(--muted);font-size:13px;padding:7px 14px;border-top:1px solid #eef2f0;}
 
+        .pg-rounds{display:block}
+        @media(min-width:1100px){.pg.wide{max-width:1120px;padding:22px 28px}.pg-rounds{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;align-items:start}}
         .lc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px;margin-bottom:10px;}
         .lc{background:#fff;border:1px solid #e5ebe8;border-radius:14px;padding:0 12px 10px;overflow:hidden;}
         .lc-hd{display:flex;justify-content:space-between;align-items:baseline;margin:0 -12px 6px;padding:9px 12px;background:#14324f;}
@@ -417,6 +435,44 @@ const SORTS={
     w:{label:'Wins',fn:(a,b)=>b.w-a.w||b.avg-a.avg},
     diff:{label:'+/-',fn:(a,b)=>b.diff-a.diff||b.avg-a.avg},
 };
+
+// Standings in ranked order (qualified first), the same list the Standings tab shows
+function rankedRows(league){
+    const all=(fmtOf(league)==='fixed'?calcTeamBoard:calcBoard)(league,null).sort((rankOf(league)==='wins'?SORTS.win:SORTS.avg).fn);
+    return all.filter(r=>r.qualified).concat(all.filter(r=>!r.qualified));
+}
+
+// ── Playoffs (knockout after the round robin) ─────────────────────────
+// league.playoff = {id, size, courts, seeds:[{seed, players:[pid], teamId?}], createdAt}
+// Scores live in league.scores under ids PO_<id>_<round>_<slot>, so they never count toward standings.
+const PO_SIZES=[{n:2,label:'Final only',rounds:['Final']},{n:4,label:'Semifinals + final',rounds:['Semifinals','Final']},{n:8,label:'Quarterfinals, semis + final',rounds:['Quarterfinals','Semifinals','Final']}];
+const PO_ORDER={2:[1,2],4:[1,4,2,3],8:[1,8,4,5,2,7,3,6]}; // 1 v 8, 4 v 5, 2 v 7, 3 v 6, so 1 and 2 can only meet in the final
+const poMid=(po,r,i)=>`PO_${po.id}_${r}_${i}`;
+// Teams that can play a knockout: teams (fixed), players (singles), or top players paired best with worst (rotating)
+function playoffSeeds(league,n){
+    const rows=rankedRows(league).filter(r=>r.qualified&&r.gp>0);
+    if(fmtOf(league)!=='rotating'){
+        return rows.slice(0,n).map((r,i)=>({seed:i+1,players:r.players||[r.id],...(r.players?{teamId:r.id}:{})}));
+    }
+    const top=rows.slice(0,n*2);if(top.length<n*2)return[];
+    return Array.from({length:n},(_,i)=>({seed:i+1,players:[top[i].id,top[n*2-1-i].id]}));
+}
+const seedsAvailable=(league)=>{const k=rankedRows(league).filter(r=>r.qualified&&r.gp>0).length;return fmtOf(league)==='rotating'?Math.floor(k/2):k;};
+// Every game of the bracket, round by round, with who is in it (null = waiting on an earlier game)
+function bracketOf(league,po){
+    const out=[];let prev=PO_ORDER[po.size].map(n=>po.seeds.find(x=>x.seed===n)||null);
+    const rounds=PO_SIZES.find(x=>x.n===po.size).rounds;
+    rounds.forEach((label,r)=>{
+        const games=[];
+        for(let i=0;i<prev.length;i+=2){
+            const id=poMid(po,r,i/2),a=prev[i],b=prev[i+1],s=scoreOf(league,id);
+            const win=s&&a&&b&&+s.a!==+s.b?(+s.a>+s.b?a:b):null;
+            games.push({id,r,i:i/2,a,b,s,win,court:po.courts.length?po.courts[(i/2)%po.courts.length]:''});
+        }
+        out.push({label,games});prev=games.map(g=>g.win);
+    });
+    return out;
+}
 
 // ── Demo data (only on this device, never saved to the cloud) ──────────
 // events.html?demo lists one sample event for every type × format combination.
@@ -859,12 +915,12 @@ function LeagueView({id,user,onHome}){
     const onPlayer=(pid,wid)=>setPv({pid,weekId:wid});
     const weeks=league.weeks||[];
     const current=weeks[weeks.length-1];
-    const tabs=[['courts','🏓 Courts'],['schedule','📋 Schedule'],['board','🏆 Standings'],['map','🕸️ Map'],...(canManage?[['manage','⚙️']]:[])];
+    const tabs=[['courts','🏓 Courts'],['schedule','📋 Schedule'],['board','🏆 Standings'],...(league.playoff?[['playoffs','🏅 Playoffs'],['map','🕸️']]:[['map','🕸️ Map']]),...(canManage?[['manage','⚙️']]:[])];
 
     return(
         <div>
             <Nav onHome={league._demo?()=>{location.href='events.html?demo';}:user?onHome:null} user={user}/>
-            <div className="pg">
+            <div className="pg wide">
                 <div className="row no-print" style={{justifyContent:'space-between',marginBottom:10}}>
                     <div style={{minWidth:0}}>
                         <div className="fd" style={{fontSize:24,fontWeight:800,lineHeight:1.1}}>{league.name}</div>
@@ -874,18 +930,20 @@ function LeagueView({id,user,onHome}){
                 </div>
                 {league._demo&&<div className="ok no-print" style={{marginBottom:12}}>🧪 Demo data on this device · <a href="events.html?demo" style={{color:'#047857',fontWeight:700}}>All demos</a></div>}
                 {league._src==='local'&&!league._demo&&canManage&&<div className="warn no-print" style={{marginBottom:12}}>Saved on this device only — publish the <b>leagues</b> Firestore rule to sync and share.</div>}
-                <div className="tabs no-print">
-                    {tabs.map(([k,l])=><button key={k} className={'tab'+(tab===k?' on':'')} onClick={()=>setTab(k)} style={k==='manage'?{flex:'0 0 46px'}:null}>{l}</button>)}
+                <div className={'tabs no-print'+(tabs.length>5?' many':'')}>
+                    {tabs.map(([k,l])=>{const sp=l.indexOf(' ');return<button key={k} className={'tab'+(tab===k?' on':'')} onClick={()=>setTab(k)} style={k==='manage'||l==='🕸️'?{flex:'0 0 40px'}:null}>{sp<0?l:<>{l.slice(0,sp)}<span className="tl">{l.slice(sp)}</span></>}</button>;})}
                 </div>
                 {tab==='courts'&&(current
-                    ?<LiveView league={league} week={current} canScore={canScore} update={update} onPlayer={onPlayer} onAll={()=>setTab('schedule')}/>
+                    ?<LiveView league={league} week={current} canScore={canScore} update={update} onPlayer={onPlayer} onAll={()=>setTab('schedule')}
+                        canManage={canManage} onPlayoffs={()=>setTab(league.playoff?'playoffs':'manage')}/>
                     :<NoWeeks canManage={canManage} onManage={()=>setTab('manage')}/>)}
                 {tab==='schedule'&&(current
                     ?<ScheduleTab league={league} canScore={canScore} update={update} onPlayer={onPlayer}/>
                     :<NoWeeks canManage={canManage} onManage={()=>setTab('manage')}/>)}
                 {tab==='board'&&<Leaderboard league={league} onPlayer={onPlayer}/>}
                 {tab==='map'&&<MapTab league={league} focus={mapPid}/>}
-                {tab==='manage'&&canManage&&<ManageTab league={league} update={update} isOwner={isOwner} onDeleted={onHome} onScheduled={()=>setTab('courts')}/>}
+                {tab==='playoffs'&&league.playoff&&<Playoffs league={league} canScore={canScore} update={update} onPlayer={onPlayer}/>}
+                {tab==='manage'&&canManage&&<ManageTab league={league} update={update} isOwner={isOwner} onDeleted={onHome} onScheduled={()=>setTab('courts')} onPlayoffs={()=>setTab('playoffs')}/>}
                 {pv&&<PlayerGames league={league} pid={pv.pid} weekId={pv.weekId} onClose={()=>setPv(null)} onMap={()=>{setMapPid({pid:pv.pid,t:Date.now()});setPv(null);setTab('map');window.scrollTo(0,0);}}/>}
             </div>
         </div>
@@ -939,12 +997,13 @@ function ScheduleTab({league,canScore,update,onPlayer}){
 }
 
 // ── Manage tab (owner + admins) ───────────────────────────────────────
-function ManageTab({league,update,isOwner,onDeleted,onScheduled}){
+function ManageTab({league,update,isOwner,onDeleted,onScheduled,onPlayoffs}){
     const weeks=league.weeks||[];
     const [wid,setWid]=useState(weeks.length?weeks[weeks.length-1].id:null);
     const week=weeks.find(w=>w.id===wid)||weeks[weeks.length-1];
     const [showNew,setShowNew]=useState(false);
     const [change,setChange]=useState(false);
+    const [more,setMore]=useState(false);
     const [copied,setCopied]=useState(false);
     const name=id=>(league.players.find(p=>p.id===id)||{name:'?'}).name;
     const scores=league.scores||{};
@@ -964,7 +1023,7 @@ function ManageTab({league,update,isOwner,onDeleted,onScheduled}){
     const H=({children})=><div className="fd" style={{fontSize:20,fontWeight:800,margin:'18px 2px 8px'}}>{children}</div>;
     return(
         <div>
-            <button className="btn btn-g" style={{width:'100%'}} onClick={()=>setShowNew(true)}>+ Schedule a {weeks.length&&kindOf(league)==='tournament'?'another day':T.lower}</button>
+            <button className="btn btn-g" style={{width:'100%'}} onClick={()=>setShowNew(true)}>+ Schedule {weeks.length&&kindOf(league)==='tournament'?'another day':'a '+T.lower}</button>
             {week&&<>
                 <H>{T.unit.toUpperCase()}S</H>
                 <WeekChips weeks={weeks} value={week.id} onChange={setWid}/>
@@ -972,6 +1031,7 @@ function ManageTab({league,update,isOwner,onDeleted,onScheduled}){
                     <div style={{fontWeight:700}}>{T.unit} {weeks.indexOf(week)+1} · {fmtDate(week.date)}</div>
                     <div className="muted" style={{fontSize:13,marginBottom:10}}>Courts {week.courts.join(', ')} · {fmtOf(league)==='fixed'?`${(week.unitIds||[]).length} teams`:`${week.playerIds.length} players`} · {scored}/{total} games scored{week.repeatPartners?` · ${week.repeatPartners} repeat partnership${week.repeatPartners>1?'s':''}`:''}{week.repeatOpponents?` · ${week.repeatOpponents} rematch${week.repeatOpponents>1?'es':''}`:''}</div>
                     <div className="row" style={{flexWrap:'wrap'}}>
+                        <button className="btn btn-ghost btn-sm" onClick={()=>setMore(true)}>➕ Add games</button>
                         <button className="btn btn-ghost btn-sm" onClick={()=>setChange(true)}>👥 Change {fmtOf(league)==='fixed'?'teams':'players'}</button>
                         <button className="btn btn-ghost btn-sm" onClick={copyText}>{copied?'✓ Copied':'📋 Copy schedule'}</button>
                         <button className="btn btn-ghost btn-sm" onClick={()=>window.print()}>🖨️ Print</button>
@@ -979,12 +1039,15 @@ function ManageTab({league,update,isOwner,onDeleted,onScheduled}){
                     </div>
                 </div>
             </>}
+            {weeks.length>0&&<><H>PLAYOFFS</H><PlayoffSetup league={league} update={update} onStarted={onPlayoffs}/></>}
             <H>PLAYERS</H>
             <PlayersTab league={league} isOwner={true} update={update}/>
             <H>SETTINGS</H>
             <SettingsTab league={league} update={update} onDeleted={onDeleted} isOwner={isOwner}/>
             {showNew&&<NewWeekModal league={league} update={update} onClose={()=>setShowNew(false)}
                 onSave={async w=>{await update({weeks:[...weeks,w]});setShowNew(false);onScheduled();}}/>}
+            {more&&week&&<AddGamesModal league={league} week={week} onClose={()=>setMore(false)}
+                onSave={async w=>{await update({weeks:weeks.map(x=>x.id===w.id?w:x)});setMore(false);onScheduled();}}/>}
             {change&&week&&<NewWeekModal league={league} editWeek={week} update={update} onClose={()=>setChange(false)}
                 onSave={async w=>{await update({weeks:weeks.map(x=>x.id===w.id?w:x)});setChange(false);}}/>}
         </div>
@@ -1135,6 +1198,126 @@ function NewWeekModal({league,onClose,onSave,editWeek,update}){
     );
 }
 
+// Add games to the end of a session. Everything already drawn stays exactly as it is.
+function AddGamesModal({league,week,onClose,onSave}){
+    const have=week.rounds.length,room=MAX_GAMES-have;
+    const [n,setN]=useState(Math.min(2,room));
+    const [busy,setBusy]=useState(false);
+    const go=()=>{setBusy(true);setTimeout(async()=>{
+        const w=generateWeek(league,{date:week.date,courts:week.courts,rounds:have+n,unitIds:week.unitIds||week.playerIds},week,have);
+        await onSave(w);
+    },30);};
+    return(
+        <Modal onClose={onClose} title="Add games">
+            <div className="muted" style={{marginBottom:14}}>{T.unit} {(league.weeks||[]).indexOf(week)+1} has {have} game{have>1?'s':''}. New games are added after game {have} with the same {fmtOf(league)==='fixed'?'teams':'players'} and courts. Games already drawn and scored don't change.</div>
+            {room<1?<div className="warn">This {T.lower} already has the most games allowed ({MAX_GAMES}).</div>:<>
+                <label className="slbl">How many more games?</label>
+                <Stepper value={n} min={1} max={room} onChange={setN}/>
+                <div className="ok" style={{marginTop:12}}>Games {have+1}{n>1?`–${have+n}`:''} will be drawn, {have+n} games in total.</div>
+                <button className="btn btn-g" style={{width:'100%',marginTop:14}} disabled={busy} onClick={go}>{busy?'Adding…':`➕ Add ${n} game${n>1?'s':''}`}</button>
+            </>}
+        </Modal>
+    );
+}
+
+// Manage tab card: start or reset the playoffs
+function PlayoffSetup({league,update,onStarted}){
+    const po=league.playoff;
+    const avail=seedsAvailable(league);
+    const fmt=fmtOf(league);
+    const [size,setSize]=useState(PO_SIZES.filter(x=>x.n<=avail).map(x=>x.n).pop()||4);
+    const [courts,setCourts]=useState((league.defaultCourts||[]).join(', '));
+    const unit=fmt==='fixed'?'teams':fmt==='singles'?'players':'teams of two';
+    if(po){
+        const b=bracketOf(league,po),champ=b[b.length-1].games[0].win;
+        return(
+            <div className="card" style={{padding:14}}>
+                <div style={{fontWeight:700}}>{PO_SIZES.find(x=>x.n===po.size).label} · {po.size} {unit}</div>
+                <div className="muted" style={{fontSize:13,marginBottom:10}}>{champ?'Finished':'In progress'} · courts {po.courts.join(', ')||'–'}</div>
+                <div className="row" style={{flexWrap:'wrap'}}>
+                    <button className="btn btn-g btn-sm" onClick={onStarted}>🏅 Open bracket</button>
+                    <button className="btn btn-red btn-sm" onClick={()=>{if(confirm('Remove the playoff bracket and its scores? Round-robin games and standings stay.'))update({playoff:null});}}>Remove playoffs</button>
+                </div>
+            </div>
+        );
+    }
+    const seeds=playoffSeeds(league,size);
+    const nm=id=>(league.players.find(p=>p.id===id)||{name:'?'}).name;
+    const label=sd=>sd.teamId?teamName(league,(league.teams||[]).find(t=>t.id===sd.teamId)):sd.players.map(nm).join(' & ');
+    const ok=seeds.length===size;
+    const start=async()=>{
+        await update({playoff:{id:uid6(),size,courts:parseCourts(courts),seeds,createdAt:Date.now()}});
+        onStarted();
+    };
+    return(
+        <div className="card" style={{padding:14}}>
+            <div className="muted" style={{fontSize:13.5,marginBottom:10}}>Seed the top of the standings into a knockout bracket. {fmt==='rotating'?`Players are paired best with worst: #1 with #${size*2}, #2 with #${size*2-1}, and so on.`:'#1 plays the lowest seed, so the top two can only meet in the final.'}</div>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                {PO_SIZES.map(x=>{const can=x.n<=avail;return(
+                    <label key={x.n} className={'check'+(size===x.n?'':' off')} style={{opacity:can?1:.45}}>
+                        <input type="radio" name="posize" disabled={!can} checked={size===x.n} onChange={()=>setSize(x.n)}/>
+                        <span><b>{x.label}</b> · top {fmt==='rotating'?`${x.n*2} players`:`${x.n} ${unit}`}{!can?' (not enough ranked yet)':''}</span>
+                    </label>);})}
+            </div>
+            <label className="slbl" style={{marginTop:12}}>Courts for the playoffs</label>
+            <input className="inp" value={courts} onChange={e=>setCourts(e.target.value)} placeholder="e.g. 1, 2"/>
+            {ok?<div className="ok" style={{marginTop:12,lineHeight:1.7}}>
+                {PO_ORDER[size].reduce((a,n,i)=>i%2?a:[...a,[n,PO_ORDER[size][i+1]]],[]).map(([x,y])=>{
+                    const A=seeds.find(s=>s.seed===x),B=seeds.find(s=>s.seed===y);
+                    return<div key={x}>#{x} {label(A)} <span className="muted">vs</span> #{y} {label(B)}</div>;})}
+            </div>:<div className="warn" style={{marginTop:12}}>Score more games first: the bracket needs {fmt==='rotating'?size*2+' ranked players':size+' ranked '+unit}.</div>}
+            <button className="btn btn-g" style={{width:'100%',marginTop:12}} disabled={!ok} onClick={start}>🏅 Start playoffs</button>
+        </div>
+    );
+}
+
+// Playoffs tab: the bracket, with scores entered right on it
+function Playoffs({league,canScore,update,onPlayer}){
+    const po=league.playoff;
+    const b=bracketOf(league,po);
+    const champ=b[b.length-1].games[0].win;
+    const nm=id=>(league.players.find(p=>p.id===id)||{name:'?'}).name;
+    const label=sd=>sd.teamId?teamName(league,(league.teams||[]).find(t=>t.id===sd.teamId)):sd.players.map(nm).join(' & ');
+    const setScore=(mid,side,val)=>{
+        const cur=(league.scores||{})[mid]||{a:null,b:null};
+        const v=val===''?null:Math.max(0,Math.min(99,parseInt(val,10)||0));
+        update({['scores.'+mid]:{...cur,[side]:v}});
+    };
+    const Side=({g,sd,side})=>{
+        const v=g.s?g.s[side]:((league.scores||{})[g.id]||{})[side];
+        const won=g.win&&sd&&g.win===sd;
+        return(
+            <div className={'po-side'+(won?' win':'')+(g.win&&!won?' out':'')}>
+                {sd?<><span className="po-seed">{sd.seed}</span><span className="po-name">{sd.players.map((id,i)=><React.Fragment key={id}>{i>0&&' & '}<button className="pbtn" onClick={()=>onPlayer(id)}>{nm(id)}</button></React.Fragment>)}</span>
+                    <ScoreInput value={v} win={won} disabled={!canScore||!g.a||!g.b} onCommit={x=>setScore(g.id,side,x)}/></>
+                  :<span className="po-name muted">Winner of an earlier game</span>}
+            </div>
+        );
+    };
+    return(
+        <div>
+            {champ&&<div className="po-champ"><div style={{fontSize:34}}>🏆</div><div><small>Champion{champ.players.length>1?'s':''}</small><b>{label(champ)}</b></div></div>}
+            <div className="po-bracket" style={{gridTemplateColumns:`repeat(${b.length},minmax(230px,1fr))`}}>
+                {b.map(rd=>(
+                    <div key={rd.label} className="po-col">
+                        <div className="po-hd">{rd.label}</div>
+                        <div className="po-games">
+                            {rd.games.map(g=>(
+                                <div key={g.id} className="po-game">
+                                    <div className="po-meta">{rd.label==='Final'?'Final':`Game ${g.i+1}`}{g.court&&` · Court ${g.court}`}{g.a&&g.b&&g.s&&+g.s.a===+g.s.b?' · no ties, play on':''}</div>
+                                    {Side({g,sd:g.a,side:'a'})}
+                                    {Side({g,sd:g.b,side:'b'})}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <div className="muted" style={{fontSize:12.5,marginTop:10}}>Seeds come from the standings when the playoffs started. Playoff games don't change the standings.</div>
+        </div>
+    );
+}
+
 function ScheduleList({league,week,canScore,update,onPlayer}){
     const name=id=>(league.players.find(p=>p.id===id)||{name:'?'}).name;
     const scores=league.scores||{};
@@ -1147,6 +1330,7 @@ function ScheduleList({league,week,canScore,update,onPlayer}){
     return(
         <div>
             <div className="tap-hint">👆 Tap a <u>name</u> to see their games</div>
+            <div className="pg-rounds">
             {week.rounds.map((r,ri)=>(
                 <div key={ri} className="round-card">
                     <div className="round-hd">
@@ -1179,12 +1363,14 @@ function ScheduleList({league,week,canScore,update,onPlayer}){
                     {r.sitOut.length>0&&<div className="sit">🪑 {fmtOf(league)==='fixed'?'Bye':'Sitting out'}: {r.sitOut.map((id,i)=><React.Fragment key={id}>{i>0&&', '}<button className="pbtn" onClick={()=>onPlayer(id,week.id)}>{name(id)}</button></React.Fragment>)}</div>}
                 </div>
             ))}
+            </div>
         </div>
     );
 }
 
 // ── Live courts: each court shows its own next unscored game ─────────
-function LiveView({league,week,canScore,update,onPlayer,onAll}){
+function LiveView({league,week,canScore,update,onPlayer,onAll,canManage,onPlayoffs}){
+    const [more,setMore]=useState(false);
     const name=id=>(league.players.find(p=>p.id===id)||{name:'?'}).name;
     const order=c=>{const i=week.courts.indexOf(c);return i<0?99:i;};
     const courts=[...new Set(week.rounds.flatMap(r=>r.matches.map(m=>m.court)))].sort((x,y)=>order(x)-order(y));
@@ -1200,7 +1386,13 @@ function LiveView({league,week,canScore,update,onPlayer,onAll}){
             <div style={{fontSize:36}}>🎉</div>
             <div className="fd" style={{fontSize:22,fontWeight:800,margin:'6px 0'}}>ALL GAMES SCORED</div>
             <div className="muted" style={{marginBottom:12}}>Check Standings for the results.</div>
-            <button className="btn btn-out btn-sm" onClick={onAll}>See all scores</button>
+            <div className="row" style={{justifyContent:'center',flexWrap:'wrap'}}>
+                <button className="btn btn-out btn-sm" onClick={onAll}>See all scores</button>
+                {canManage&&week.rounds.length<MAX_GAMES&&<button className="btn btn-g btn-sm" onClick={()=>setMore(true)}>➕ Play more games</button>}
+                {canManage&&<button className="btn btn-out btn-sm" onClick={onPlayoffs}>🏅 {league.playoff?'Playoffs':'Start playoffs'}</button>}
+            </div>
+            {more&&<AddGamesModal league={league} week={week} onClose={()=>setMore(false)}
+                onSave={async w=>{await update({weeks:(league.weeks||[]).map(x=>x.id===w.id?w:x)});setMore(false);}}/>}
         </div>
     );
     // Players still on court in an earlier game (so a court that's ahead knows to wait)

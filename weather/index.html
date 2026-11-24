@@ -120,8 +120,7 @@ button{font-family:inherit;color:inherit;}
 .ts{position:relative;height:72px;margin:12px 0 4px;touch-action:pan-y;}
 .ts-bubble{position:absolute;top:0;transform:translateX(-50%);color:#0b1622;font-weight:800;font-size:.8rem;padding:3px 9px;border-radius:99px;white-space:nowrap;pointer-events:none;transition:background .15s;}
 .ts-bubble::after{content:'';position:absolute;left:50%;bottom:-4px;transform:translateX(-50%) rotate(45deg);width:8px;height:8px;background:inherit;}
-.ts-track{position:absolute;top:36px;height:10px;display:flex;gap:2px;border-radius:6px;overflow:hidden;pointer-events:none;}
-.ts-track i{flex:1;}
+.ts-track{position:absolute;top:36px;height:10px;border-radius:99px;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);}
 .ts input{position:absolute;left:0;right:0;top:27px;width:100%;height:28px;margin:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer;touch-action:none;}
 .ts input:focus{outline:none;}
 .ts input::-webkit-slider-runnable-track{height:28px;background:transparent;}
@@ -205,6 +204,39 @@ button{font-family:inherit;color:inherit;}
   .wx-card-header{padding:12px 14px 8px;}
   .note{padding:10px 14px;}
 }
+/* Desktop: the forecast on the left, days and notes beside it */
+.desk-only{display:none;}
+@media (min-width:960px){
+  .nav{padding:12px 28px;}
+  .content{max-width:1140px;padding:22px 28px 0;}
+  .wx-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:22px;align-items:start;}
+  .wx-main{position:sticky;top:86px;}
+  .hero{padding:26px 28px;border-radius:24px;}
+  .mascot{width:112px;height:112px;}
+  .hero-top{gap:20px;}
+  .hero-when{font-size:.78rem;}
+  .hero-verdict{font-size:2.6rem;margin:4px 0 6px;}
+  .hero-why{font-size:.95rem;}
+  .stats{gap:10px;margin-top:20px;}
+  .stat{padding:14px 6px;border-radius:14px;}
+  .stat-l{font-size:.66rem;}
+  .stat-v{font-size:1.9rem;}
+  .stat-s{font-size:.72rem;}
+  .ts{height:86px;margin:20px 0 6px;}
+  .ts-bubble{font-size:.9rem;padding:4px 12px;}
+  .ts-ticks{top:64px;}
+  .ts-ticks span{font-size:.74rem;}
+  .best{font-size:.95rem;padding:13px 16px;margin-top:16px;}
+  .best-btn{font-size:1rem;}
+  .days{grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;}
+  .day{padding:10px 2px;}
+  .day-n{font-size:.72rem;}
+  .day-i{font-size:1.3rem;}
+  .note{font-size:.9rem;padding:12px 18px;}
+  .desk-only{display:block;}
+  .hours{padding:0 12px 12px;}
+}
+@media (min-width:960px) and (max-height:760px){.wx-main{position:static;}}
 @media (prefers-reduced-motion: reduce){#wx3d{display:none !important;}.mascot{animation:none;}}
 
 /* app mode: no website header, links or footer; feels like a native screen */
@@ -686,18 +718,24 @@ function TimeSlider({ hours, selected, onSelect }) {
   const n = hours.length;
   const idx = Math.max(0, hours.findIndex(h => h.t === selected));
   const at = i => `calc(${THUMB / 2}px + (100% - ${THUMB}px) * ${n > 1 ? i / (n - 1) : .5})`;
+  // While dragging the thumb glides freely; the hour it is closest to is the one shown
+  const [pos, setPos] = useState(null);
+  const v = pos === null ? idx : pos;
+  const atV = `calc(${THUMB / 2}px + (100% - ${THUMB}px) * ${n > 1 ? v / (n - 1) : .5})`;
   const h = hours[idx], lv = levelOf(h.score);
   const label = h.isNow ? 'Now' : fmtHr(h.hr);
+  const grad = n > 1 ? `linear-gradient(90deg, ${hours.map((x, i) => `${levelOf(x.score).c} ${(i / (n - 1) * 100).toFixed(2)}%`).join(', ')})` : levelOf(hours[0].score).c;
+  const move = val => { setPos(val); const i = Math.round(val); if (hours[i] && hours[i].t !== selected) onSelect(hours[i].t); };
+  const end = () => setPos(null);
   const ticks = hours.map((x, i) => ({ x, i })).filter(({ x, i }) => i === 0 || i === n - 1 || x.hr % 3 === 0)
     .filter(({ i }, k, arr) => k === 0 || i - arr[k - 1].i >= 2); // keep labels from crowding
   return (
     <div className="ts">
-      <div className="ts-bubble" style={{ left: at(idx), background: lv.c }}>{label}</div>
-      <div className="ts-track" style={{ left: THUMB / 2, right: THUMB / 2 }}>
-        {hours.map(x => <i key={x.t} style={{ background: levelOf(x.score).c }} />)}
-      </div>
-      <input type="range" min="0" max={n - 1} step="1" value={idx} aria-label="Time of day" aria-valuetext={label}
-        onChange={e => onSelect(hours[+e.target.value].t)} />
+      <div className="ts-bubble" style={{ left: atV, background: lv.c }}>{label}</div>
+      <div className="ts-track" style={{ left: THUMB / 2, right: THUMB / 2, background: grad }} />
+      <input type="range" min="0" max={n - 1} step="0.01" value={v} aria-label="Time of day" aria-valuetext={label}
+        onChange={e => move(+e.target.value)} onPointerUp={end} onTouchEnd={end} onBlur={end}
+        onKeyDown={e => { if (['ArrowLeft', 'ArrowDown', 'ArrowRight', 'ArrowUp'].includes(e.key)) { e.preventDefault(); const d = e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -1 : 1; const i = Math.max(0, Math.min(n - 1, idx + d)); setPos(null); onSelect(hours[i].t); } }} />
       <div className="ts-ticks">
         {ticks.map(({ x, i }) => <span key={x.t} style={{ left: at(i) }}>{x.isNow ? 'Now' : fmtHrShort(x.hr)}</span>)}
       </div>
@@ -904,7 +942,8 @@ function App() {
         )}
 
         {data && day && focus && (
-          <div className={'fade-up' + (loading ? ' dim' : '')}>
+          <div className={'fade-up wx-layout' + (loading ? ' dim' : '')}>
+            <div className="wx-main">
             {/* Hero */}
             <div className="hero" style={{ '--lv': lv.c }}>
               <div className="hero-top">
@@ -933,6 +972,8 @@ function App() {
 
             </div>
 
+            </div>
+            <div className="wx-side">
             {/* Day picker */}
             <div className="days">
               {data.days.map(d => {
@@ -947,6 +988,10 @@ function App() {
               })}
             </div>
 
+            <div className="wx-card desk-only">
+              <div className="wx-card-header">Hour by hour<span>tap an hour</span></div>
+              <HourStrip hours={day.hours} selected={focus.t} onSelect={setHourKey} sunset={day.sunset} />
+            </div>
             <div className="wx-grid">
               <div className="wx-col">
                 <div className="wx-card">
@@ -976,6 +1021,7 @@ function App() {
                   <a href="/contact.html?topic=Weather">💬 Feedback</a>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         )}
