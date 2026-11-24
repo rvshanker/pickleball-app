@@ -94,7 +94,7 @@ if(w.PC_APP){var vp=document.querySelector('meta[name=viewport]');if(vp)vp.setAt
         .tabs{display:flex;gap:6px;background:white;border-radius:12px;padding:5px;box-shadow:0 2px 10px rgba(0,0,0,.05);margin-bottom:14px;}
         .tab{flex:1;border:none;background:none;padding:10px 6px;border-radius:9px;font-family:'Figtree',sans-serif;font-weight:700;font-size:14px;color:#64748b;cursor:pointer;white-space:nowrap;}
         .tab.on{background:#0f172a;color:white;}
-        @media(max-width:430px){.tab{font-size:12.5px;padding:10px 3px;}.tabs{gap:3px;}.tabs.many .tab{font-size:11.5px;padding:10px 2px;}.tabs.many .tab:not(.on) .tl{display:none}}
+        @media(max-width:430px){.tab{font-size:12.5px;padding:10px 3px;}.tabs{gap:3px;}.tabs.many .tab{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;padding:7px 1px 8px!important;line-height:1.1;}.tabs.many .tab .ti{font-size:15px}}
 
         .chip{border:1px solid #e2e8f0;background:white;border-radius:99px;padding:7px 13px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;white-space:nowrap;font-family:'Figtree',sans-serif;}
         .chip.on{background:#059669;border-color:#059669;color:white;}
@@ -957,7 +957,7 @@ function LeagueView({id,user,onHome}){
     const onPlayer=(pid,wid)=>setPv({pid,weekId:wid});
     const weeks=league.weeks||[];
     const current=weeks[weeks.length-1];
-    const tabs=[['courts','🏓 Courts'],['schedule','📋 Schedule'],['board','🏆 Standings'],...(league.playoff?[['playoffs','🏅 Playoffs'],['map','🕸️']]:[['map','🕸️ Map']]),...(canManage?[['manage','⚙️']]:[])];
+    const tabs=[['courts','🏓 Courts'],['schedule','📋 Schedule'],['board','🏆 Standings'],...(league.playoff?[['playoffs','🏅 Playoffs']]:[]),['map','🕸️ Map'],...(canManage?[['manage','⚙️']]:[])];
 
     return(
         <div>
@@ -972,7 +972,7 @@ function LeagueView({id,user,onHome}){
                         <ShareButton league={league}/>
                     </div>
                     <div className={'tabs'+(tabs.length>5?' many':'')}>
-                        {tabs.map(([k,l])=>{const sp=l.indexOf(' ');return<button key={k} className={'tab'+(tab===k?' on':'')} onClick={()=>setTab(k)} style={k==='manage'||l==='🕸️'?{flex:'0 0 40px'}:null}>{sp<0?l:<>{l.slice(0,sp)}<span className="tl">{l.slice(sp)}</span></>}</button>;})}
+                        {tabs.map(([k,l])=>{const sp=l.indexOf(' ');return<button key={k} className={'tab'+(tab===k?' on':'')} onClick={()=>setTab(k)} style={k==='manage'?{flex:'0 0 40px'}:null}>{sp<0?l:<><span className="ti">{l.slice(0,sp)}</span> <span className="tl">{l.slice(sp+1)}</span></>}</button>;})}
                     </div>
                 </div>
             </header>

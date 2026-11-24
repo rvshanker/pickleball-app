@@ -65,7 +65,11 @@ a.card:focus-visible{outline:3px solid #E3EF3C;outline-offset:3px}
 .lg svg.court{position:absolute;right:-30px;bottom:-24px;width:78%;height:auto;opacity:.32;transform:rotate(-8deg)}
 .lg .ball{position:absolute;width:22px;height:22px;border-radius:50%;background:#E3EF3C;box-shadow:0 8px 12px rgba(0,0,0,.35);right:34%;top:34%;animation:dink 2.6s ease-in-out infinite}
 @keyframes dink{0%,100%{transform:translate(0,0)}50%{transform:translate(70px,-34px)}}
-.lg .stand{display:flex;gap:6px;margin-bottom:10px}
+.lg .c3d{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity .8s}
+.lg .c3d-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(100deg,rgba(14,34,56,.85) 0%,rgba(14,34,56,.45) 38%,transparent 62%),linear-gradient(0deg,rgba(14,34,56,.75),transparent 40%);opacity:0;transition:opacity .8s}
+.lg.has3d .c3d,.lg.has3d .c3d-shade{opacity:1}
+.lg.has3d svg.court,.lg.has3d .ball{display:none}
+.lg .stand{position:relative;flex-wrap:wrap;display:flex;gap:6px;margin-bottom:10px}
 .lg .stand span{background:rgba(14,34,56,.45);border-radius:99px;padding:3px 10px;font-size:12.5px;font-weight:700}
 @media (prefers-reduced-motion:reduce){a.card{transition:none}a.card:hover,a.card:active{transform:none}.wx .mascot,.lg .ball{animation:none}}
 footer{padding:18px 0 22px;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px;font-size:13px;color:#7A9BB5}
@@ -102,13 +106,13 @@ footer a:hover{color:#F0F4F8;text-decoration:underline}
         <line x1="250" y1="130" x2="360" y2="130" stroke="#F4F7FA" stroke-width="3"/>
       </svg>
       <span class="ball" aria-hidden="true"></span>
+      <canvas class="c3d" id="court3d" aria-hidden="true"></canvas>
+      <div class="c3d-shade" aria-hidden="true"></div>
       <div class="k" style="position:relative">Leagues &amp; tournaments</div>
       <h2 style="position:relative">Run your<br>league.</h2>
       <span class="go" aria-hidden="true">›</span>
       <div class="foot">
         <div class="stand"><span>🏓 Courts</span><span>🏆 Standings</span><span>🏅 Playoffs</span></div>
-        <b>Fair games, live scores, standings</b>
-        <small>Singles or doubles, any courts, playoffs included</small>
       </div>
     </a>
   </div>
@@ -125,6 +129,15 @@ footer a:hover{color:#F0F4F8;text-decoration:underline}
 </footer>
 
 <script>
+/* 3D court on the Leagues card: load three.js after the page is up, keep the flat court if WebGL is missing */
+addEventListener('load',function(){
+  var cv=document.getElementById('court3d');if(!cv)return;
+  var go=function(){var s=document.createElement('script');s.src='https://unpkg.com/three@0.128.0/build/three.min.js';
+    s.onload=function(){var c=document.createElement('script');c.src='/court3d.js';c.onload=function(){
+      if(window.PCCourt&&PCCourt(cv,{cam:function(w,h,cam){cam.fov=34;cam.position.set(-34,26,26);cam.lookAt(-8,-2,-2);}}))cv.parentNode.classList.add('has3d');};document.body.appendChild(c);};
+    document.body.appendChild(s);};
+  setTimeout(go,200);
+});
 (function(){
   var $=function(id){return document.getElementById(id)};
   $('yr').textContent=new Date().getFullYear();
