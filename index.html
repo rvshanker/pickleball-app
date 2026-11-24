@@ -155,7 +155,7 @@ addEventListener('load',function(){
     s-=Math.max(0,h.wind-6)*4;
     s-=Math.max(0,h.gust-14)*2.5;
     if(h.storm)s-=100;
-    if(h.precip>=0.01)s-=50;
+    if(h.snow)s-=65;else if(h.precip>=0.01)s-=50;
     else{s-=Math.max(0,h.rain-15)*0.7;if(h.wet)s-=25;}
     if(h.feels>=105)s-=50;else if(h.feels>=95)s-=20;else if(h.feels>=88)s-=5;
     if(h.feels<32)s-=50;else if(h.feels<38)s-=42;else if(h.feels<45)s-=25;else if(h.feels<52)s-=10;
@@ -166,7 +166,7 @@ addEventListener('load',function(){
   $('wxLine').textContent='Checking today’s conditions…';
   $('wxSub').textContent=place.name||'';
   var url='https://api.open-meteo.com/v1/forecast?latitude='+place.lat+'&longitude='+place.lng+
-    '&hourly=temperature_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,precipitation_probability,precipitation,weather_code'+
+    '&hourly=temperature_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,precipitation_probability,precipitation,snowfall,weather_code'+
     '&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&forecast_days=1&past_days=1';
   fetch(url).then(function(r){return r.json()}).then(function(d){
     var H=d.hourly;
@@ -174,7 +174,7 @@ addEventListener('load',function(){
     var all=H.time.map(function(t,i){return{t:t,day:t.slice(0,10),hr:+t.slice(11,13),
       temp:Math.round(H.temperature_2m[i]),feels:Math.round(H.apparent_temperature[i]!=null?H.apparent_temperature[i]:H.temperature_2m[i]),
       wind:Math.round(H.wind_speed_10m[i]),gust:Math.round(H.wind_gusts_10m[i]||0),
-      rain:H.precipitation_probability[i]||0,precip:H.precipitation[i]||0,storm:(H.weather_code[i]||0)>=95}});
+      rain:H.precipitation_probability[i]||0,precip:H.precipitation[i]||0,storm:(H.weather_code[i]||0)>=95,snow:((H.snowfall&&H.snowfall[i])||0)>0||[71,73,75,77,85,86].indexOf(H.weather_code[i])>=0}});
     all.forEach(function(h,i){
       h.wet=all.slice(Math.max(0,i-3),i).reduce(function(n,x){return n+x.precip},0)>=0.02;
       h.score=rate(h);
