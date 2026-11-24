@@ -574,9 +574,11 @@ function rate(h) {
   if (h.feels >= 105) { s -= 50; why.push('dangerous heat'); }
   else if (h.feels >= 95) { s -= 20; why.push(`very hot (feels ${h.feels}°)`); }
   else if (h.feels >= 88) s -= 5;
-  if (h.feels < 32) { s -= 45; why.push(`freezing (feels ${h.feels}°)`); }
-  else if (h.feels < 42) { s -= 20; why.push(`cold (feels ${h.feels}°)`); }
-  else if (h.feels < 50) s -= 6;
+  // Cold: below about 38° balls crack and hands go numb; below 45° it's a layers-and-warm-up day
+  if (h.feels < 32) { s -= 50; why.push(`freezing (feels ${h.feels}°)`); }
+  else if (h.feels < 38) { s -= 42; why.push(`very cold (feels ${h.feels}°)`); }
+  else if (h.feels < 45) { s -= 25; why.push(`cold (feels ${h.feels}°)`); }
+  else if (h.feels < 52) { s -= 10; why.push(`chilly (feels ${h.feels}°)`); }
   return { score: Math.max(0, Math.min(100, Math.round(s))), why };
 }
 
@@ -961,7 +963,7 @@ function App() {
                 <details className="wx-card guide">
                   <summary className="wx-card-header" style={{ cursor: 'pointer' }}>How we rate the weather</summary>
                   <div style={{ padding: '0 16px 14px', fontSize: '.8rem', lineHeight: 1.55, color: 'var(--muted)' }}>
-                    Wind matters most: anything over about 10 mph, or gusts over 15, pushes lobs and dinks around. Then rain (and wet courts after rain), heat and cold. Thunderstorms are always "Skip it".
+                    Wind matters most: anything over about 10 mph, or gusts over 15, pushes lobs and dinks around. Then rain (and wet courts after rain), heat and cold: below about 38° feels-like is Marginal at best, below 45° is Okay at best. Thunderstorms are always "Skip it".
                     <div className="guide-lv">
                       <div><b style={{ color: LEVELS[0].c }}>🟢 Great</b> calm and dry, play anything</div>
                       <div><b style={{ color: LEVELS[1].c }}>🟡 Okay</b> some breeze, play it safer</div>
