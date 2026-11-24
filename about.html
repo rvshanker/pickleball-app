@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PickleConnect – Pickleball weather and leagues in one app</title>
+<meta name="description" content="Know the best hour to play and run fair leagues and tournaments: rotating partners, live scores from players' phones and standings that update instantly. Free, no ads.">
+<meta name="theme-color" content="#0E2238">
+<link rel="canonical" href="https://pickleconnect.live/about.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PickleConnect – Know when to play. Run your league.">
+<meta property="og:description" content="Pickleball weather with the best hours to play, plus leagues and tournaments with live scores and standings. Free on the App Store.">
+<meta property="og:image" content="https://pickleconnect.live/og-home.png">
+<meta property="og:url" content="https://pickleconnect.live/about.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="apple-itunes-app" content="app-id=6760803557">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --night:#0E2238;   /* deep court blue: page */
+  --court:#2F6FB3;   /* playing surface */
+  --apron:#2E8B62;   /* outer court green */
+  --line:#F4F7FA;    /* court lines, primary text */
+  --ball:#E3EF3C;    /* optic yellow: actions */
+  --mist:#9DB6CF;    /* secondary text */
+  --brand:#2ECC71;   /* logo green */
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--night);color:var(--line);font-family:'DM Sans',-apple-system,sans-serif;font-size:18px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--ball);outline-offset:3px;border-radius:6px}
+.wrap{width:100%;max-width:1180px;margin:0 auto;padding:0 28px}
+
+/* top bar */
+.top{position:fixed;inset:0 0 auto 0;z-index:20;padding:calc(14px + env(safe-area-inset-top)) 0 14px;transition:background .3s}
+.top.solid{background:rgba(14,34,56,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.4px;text-decoration:none}
+.logo span{color:var(--brand)}
+.top nav{display:flex;gap:22px;align-items:center;font-size:15px}
+.top nav a{text-decoration:none;color:var(--mist)}
+.top nav a:hover{color:var(--line)}
+.btn{display:inline-flex;align-items:center;gap:10px;font:inherit;font-weight:700;font-size:16px;text-decoration:none;border-radius:999px;padding:13px 22px;border:0;cursor:pointer;transition:transform .15s}
+.btn:active{transform:scale(.97)}
+.btn.ball{background:var(--ball);color:var(--night)}
+.btn.ghost{color:var(--line);box-shadow:inset 0 0 0 1.5px rgba(244,247,250,.35)}
+.btn.ghost:hover{box-shadow:inset 0 0 0 1.5px var(--line)}
+.btn svg{width:18px;height:18px}
+.top .btn{padding:9px 16px;font-size:14px;white-space:nowrap}
+
+/* hero: the court */
+.hero{position:relative;height:100svh;min-height:640px;overflow:hidden}
+#court{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hero .shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(14,34,56,.92) 0%,rgba(14,34,56,.7) 34%,rgba(14,34,56,0) 62%),linear-gradient(0deg,var(--night) 0%,rgba(14,34,56,0) 22%);pointer-events:none}
+.hero .copy{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;justify-content:center}
+.hero .copy > *{max-width:600px}
+h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(40px,5vw,72px);line-height:1;letter-spacing:-.03em}
+.hero h1{max-width:none}
+h1 .l{display:block;overflow:hidden;padding-bottom:.06em}
+h1 .l > span{display:block;transform:translateY(105%);transition:transform .9s cubic-bezier(.2,.75,.15,1)}
+.ready h1 .l > span{transform:none}
+.ready h1 .l:nth-child(2) > span{transition-delay:.12s}
+.hero p.sub{margin-top:26px;font-size:20px;color:#C9D8E6;max-width:30em;opacity:0;transition:opacity .8s .5s}
+.hero .ctas{margin-top:34px;display:flex;flex-wrap:wrap;gap:12px;opacity:0;transition:opacity .8s .65s}
+.ready .hero p.sub,.ready .hero .ctas{opacity:1}
+.scrollhint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:2;font-size:13px;color:var(--mist);text-decoration:none}
+
+/* features: sticky phone */
+.features{position:relative;padding:80px 0 40px}
+.features .grid{display:grid;grid-template-columns:1fr 400px;gap:80px;align-items:start}
+.step{min-height:78vh;display:flex;flex-direction:column;justify-content:center;max-width:520px;opacity:.28;transition:opacity .45s}
+.step.on{opacity:1}
+.step h2{font-family:'Syne',sans-serif;font-weight:700;font-size:clamp(30px,3.4vw,46px);line-height:1.06;letter-spacing:-.02em}
+.step p{margin-top:16px;color:#C9D8E6;font-size:19px;max-width:30em}
+.step .inline{display:none}
+.steps{padding-bottom:12vh}
+.stick{position:sticky;top:calc(50vh - 380px);height:760px;display:flex;align-items:center;justify-content:center}
+.phone{position:relative;width:340px;aspect-ratio:394/854;border-radius:52px;background:#05080c;padding:12px;box-shadow:0 0 0 2px #2a3645,0 50px 100px rgba(0,0,0,.45)}
+.phone .screen{position:relative;width:100%;height:100%;border-radius:41px;overflow:hidden;background:#0D1B2A}
+.phone video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .5s}
+.phone video.on{opacity:1}
+.phone:after{content:'';position:absolute;top:22px;left:50%;width:96px;height:28px;margin-left:-48px;border-radius:20px;background:#000}
+
+/* formats: drawn courts */
+.formats{padding:110px 0 100px}
+.formats h2,.get h2{font-family:'Syne',sans-serif;font-weight:700;font-size:clamp(32px,3.8vw,52px);line-height:1.05;letter-spacing:-.02em;max-width:16em}
+.formats .lead,.get .lead{margin-top:14px;color:#C9D8E6;max-width:34em}
+.courts{margin-top:48px;display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.courts figure{display:flex;flex-direction:column;gap:14px}
+.courts svg{width:100%;height:auto;display:block}
+.courts figcaption{font-size:17px;font-weight:500}
+.courts figcaption small{display:block;font-size:15px;font-weight:400;color:var(--mist);margin-top:2px}
+.fine{margin-top:40px;color:var(--mist);font-size:16px;max-width:40em}
+
+/* get the app */
+.get{padding:100px 0 110px;background:var(--apron);color:var(--line);position:relative;overflow:hidden}
+.get .wrap{position:relative;display:grid;grid-template-columns:1.2fr 1fr;gap:60px;align-items:center}
+.get .lead{color:#E3F3EA}
+.get .ctas{margin-top:30px;display:flex;flex-wrap:wrap;gap:12px}
+.get .btn.ghost{box-shadow:inset 0 0 0 1.5px rgba(244,247,250,.6)}
+.qrs{display:flex;gap:26px;justify-content:center}
+.qr{text-align:center}
+.qr img{width:170px;height:170px;display:block;background:#fff;border-radius:18px;padding:10px}
+.qr span{display:block;margin-top:12px;font-size:15px;font-weight:500}
+
+footer{padding:36px 0 calc(36px + env(safe-area-inset-bottom));font-size:14px;color:var(--mist)}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+footer nav{display:flex;gap:18px;flex-wrap:wrap}
+footer a{text-decoration:none}
+footer a:hover{color:var(--line);text-decoration:underline}
+
+@media (max-width:900px){
+  body{font-size:17px}
+  .top nav a:not(.btn){display:none}
+  .logo{font-size:18px}
+  .top .btn{padding:8px 13px;font-size:13px}
+  .wrap{padding:0 20px}
+  .hero .shade{background:linear-gradient(0deg,var(--night) 8%,rgba(14,34,56,.78) 52%,rgba(14,34,56,.35) 100%)}
+  .hero .copy{justify-content:flex-end;padding-bottom:90px}
+  .features{padding-top:40px}
+  .features .grid{grid-template-columns:1fr}
+  .stick{display:none}
+  .step{min-height:0;opacity:1;padding:46px 0;max-width:none}
+  .step .inline{display:block;margin-top:28px;width:min(64vw,250px);border-radius:40px;padding:9px}
+  .step .inline .screen{border-radius:32px}
+  .step .inline video{opacity:1}
+  .step .inline:after{top:16px;width:70px;height:20px;margin-left:-35px}
+  .steps{padding-bottom:0}
+  .courts{grid-template-columns:repeat(2,1fr)}
+  .get .wrap{grid-template-columns:1fr}
+  .qrs{justify-content:flex-start}
+  .qr img{width:140px;height:140px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  h1 .l > span{transform:none;transition:none}
+  .hero p.sub,.hero .ctas{opacity:1;transition:none}
+  .step{transition:none}
+}
+</style>
+</head>
+<body>
+
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="logo" href="/" aria-label="PickleConnect home">Pickle<span>Connect</span></a>
+    <nav aria-label="Main">
+      <a href="#features">How it works</a>
+      <a href="#formats">Formats</a>
+      <a href="/weather/">Weather</a>
+      <a href="/events.html">Leagues</a>
+      <a class="btn ball" href="https://apps.apple.com/app/id6760803557" rel="noopener">Get the app</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero" aria-label="Introduction">
+    <canvas id="court" aria-hidden="true"></canvas>
+    <div class="shade"></div>
+    <div class="wrap copy">
+      <h1><span class="l"><span>Know when to play.</span></span><span class="l"><span>Run your league.</span></span></h1>
+      <p class="sub">Pickleball weather that tells you the best hour to play, and leagues where everyone knows their court and every score counts.</p>
+      <div class="ctas">
+        <a class="btn ball" href="https://apps.apple.com/app/id6760803557" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-2.99-.79-1.54.02-2.96.9-3.75 2.27-1.6 2.78-.41 6.89 1.15 9.14.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.77-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.39-.92-2.41-3.66zM14.1 5.86c.63-.77 1.06-1.83.94-2.89-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.28z"/></svg>
+          Get the iPhone app</a>
+        <a class="btn ghost" href="/">Open in your browser</a>
+      </div>
+    </div>
+    <a class="scrollhint" href="#features">See how it works</a>
+  </section>
+
+  <section class="features" id="features" aria-label="How it works">
+    <div class="wrap grid">
+      <div class="steps">
+        <article class="step" data-v="weather">
+          <h2>Is it worth heading to the courts?</h2>
+          <p>Every hour gets a plain verdict, from Great to Skip it, based on wind, gusts, rain, wet courts, heat and cold. Slide through the day and it shows you the best window to play.</p>
+          <div class="inline phone"><div class="screen"><video muted loop playsinline preload="none" poster="/media/weather.jpg" data-src="/media/weather.mp4"></video></div></div>
+        </article>
+        <article class="step" data-v="matchups">
+          <h2>Fair matchups in one tap</h2>
+          <p>Add your players and your courts. PickleConnect draws every game and fills every court, with new partners each round when you play rotating doubles.</p>
+          <div class="inline phone"><div class="screen"><video muted loop playsinline preload="none" poster="/media/matchups.jpg" data-src="/media/matchups.mp4"></video></div></div>
+        </article>
+        <article class="step" data-v="scores">
+          <h2>Scores from the court, not a clipboard</h2>
+          <p>Players open the league link and enter scores on their own phones between games. Nobody has to chase results at the end of the night.</p>
+          <div class="inline phone"><div class="screen"><video muted loop playsinline preload="none" poster="/media/scores.jpg" data-src="/media/scores.mp4"></video></div></div>
+        </article>
+        <article class="step" data-v="standings">
+          <h2>Standings that settle the debate</h2>
+          <p>The table updates the moment a score goes in, with win %, points difference and a map of who you win with, and who you don't.</p>
+          <div class="inline phone"><div class="screen"><video muted loop playsinline preload="none" poster="/media/standings.jpg" data-src="/media/standings.mp4"></video></div></div>
+        </article>
+      </div>
+      <div class="stick" aria-hidden="true">
+        <div class="phone"><div class="screen">
+          <video class="on" id="v-weather" muted loop playsinline preload="auto" poster="/media/weather.jpg" src="/media/weather.mp4"></video>
+          <video id="v-matchups" muted loop playsinline preload="none" poster="/media/matchups.jpg" data-src="/media/matchups.mp4"></video>
+          <video id="v-scores" muted loop playsinline preload="none" poster="/media/scores.jpg" data-src="/media/scores.mp4"></video>
+          <video id="v-standings" muted loop playsinline preload="none" poster="/media/standings.jpg" data-src="/media/standings.mp4"></video>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="formats" id="formats" aria-labelledby="fh">
+    <div class="wrap">
+      <h2 id="fh">Any way your group plays</h2>
+      <p class="lead">Run a weekly league that builds a season of standings, or a one-day tournament where you decide whether games won or points scored crowns the winner.</p>
+      <div class="courts">
+        <figure>
+          <svg viewBox="0 0 120 200" role="img" aria-label="Singles: one player each side">
+            <rect x="6" y="6" width="108" height="188" rx="4" fill="#2F6FB3" stroke="#F4F7FA" stroke-width="2"/>
+            <line x1="6" y1="100" x2="114" y2="100" stroke="#F4F7FA" stroke-width="3"/>
+            <line x1="6" y1="70" x2="114" y2="70" stroke="#F4F7FA" stroke-width="1.5"/><line x1="6" y1="130" x2="114" y2="130" stroke="#F4F7FA" stroke-width="1.5"/>
+            <line x1="60" y1="6" x2="60" y2="70" stroke="#F4F7FA" stroke-width="1.5"/><line x1="60" y1="130" x2="60" y2="194" stroke="#F4F7FA" stroke-width="1.5"/>
+            <circle cx="40" cy="40" r="9" fill="#E3EF3C"/><circle cx="80" cy="160" r="9" fill="#F4F7FA"/>
+          </svg>
+          <figcaption>Singles<small>One against one</small></figcaption>
+        </figure>
+        <figure>
+          <svg viewBox="0 0 120 200" role="img" aria-label="Doubles with fixed partners: same two teams">
+            <rect x="6" y="6" width="108" height="188" rx="4" fill="#2F6FB3" stroke="#F4F7FA" stroke-width="2"/>
+            <line x1="6" y1="100" x2="114" y2="100" stroke="#F4F7FA" stroke-width="3"/>
+            <line x1="6" y1="70" x2="114" y2="70" stroke="#F4F7FA" stroke-width="1.5"/><line x1="6" y1="130" x2="114" y2="130" stroke="#F4F7FA" stroke-width="1.5"/>
+            <line x1="60" y1="6" x2="60" y2="70" stroke="#F4F7FA" stroke-width="1.5"/><line x1="60" y1="130" x2="60" y2="194" stroke="#F4F7FA" stroke-width="1.5"/>
+            <circle cx="33" cy="40" r="9" fill="#E3EF3C"/><circle cx="87" cy="40" r="9" fill="#E3EF3C"/>
+            <circle cx="33" cy="160" r="9" fill="#F4F7FA"/><circle cx="87" cy="160" r="9" fill="#F4F7FA"/>
+          </svg>
+          <figcaption>Doubles, fixed partners<small>Same teams all season</small></figcaption>
+        </figure>
+        <figure>
+          <svg viewBox="0 0 120 200" role="img" aria-label="Doubles with rotating partners: partners change every game">
+            <rect x="6" y="6" width="108" height="188" rx="4" fill="#2F6FB3" stroke="#F4F7FA" stroke-width="2"/>
+            <line x1="6" y1="100" x2="114" y2="100" stroke="#F4F7FA" stroke-width="3"/>
+            <line x1="6" y1="70" x2="114" y2="70" stroke="#F4F7FA" stroke-width="1.5"/><line x1="6" y1="130" x2="114" y2="130" stroke="#F4F7FA" stroke-width="1.5"/>
+            <line x1="60" y1="6" x2="60" y2="70" stroke="#F4F7FA" stroke-width="1.5"/><line x1="60" y1="130" x2="60" y2="194" stroke="#F4F7FA" stroke-width="1.5"/>
+            <circle cx="33" cy="40" r="9" fill="#E3EF3C"/><circle cx="87" cy="40" r="9" fill="#F4F7FA"/>
+            <circle cx="33" cy="160" r="9" fill="#F4F7FA"/><circle cx="87" cy="160" r="9" fill="#E3EF3C"/>
+            <path d="M33 56 C 20 100, 20 110, 31 146" fill="none" stroke="#E3EF3C" stroke-width="2" stroke-dasharray="4 4"/>
+            <path d="M87 144 C 100 100, 100 90, 89 54" fill="none" stroke="#F4F7FA" stroke-width="2" stroke-dasharray="4 4"/>
+          </svg>
+          <figcaption>Doubles, rotating partners<small>A new partner each game</small></figcaption>
+        </figure>
+        <figure>
+          <svg viewBox="0 0 120 200" role="img" aria-label="Any number of courts">
+            <g><rect x="6" y="6" width="50" height="88" rx="3" fill="#2F6FB3" stroke="#F4F7FA" stroke-width="1.5"/><line x1="6" y1="50" x2="56" y2="50" stroke="#F4F7FA" stroke-width="2"/></g>
+            <g><rect x="64" y="6" width="50" height="88" rx="3" fill="#2F6FB3" stroke="#F4F7FA" stroke-width="1.5"/><line x1="64" y1="50" x2="114" y2="50" stroke="#F4F7FA" stroke-width="2"/></g>
+            <g><rect x="6" y="106" width="50" height="88" rx="3" fill="#2F6FB3" stroke="#F4F7FA" stroke-width="1.5"/><line x1="6" y1="150" x2="56" y2="150" stroke="#F4F7FA" stroke-width="2"/></g>
+            <g><rect x="64" y="106" width="50" height="88" rx="3" fill="none" stroke="#F4F7FA" stroke-width="1.5" stroke-dasharray="4 4"/><path d="M89 140v20M79 150h20" stroke="#F4F7FA" stroke-width="2"/></g>
+          </svg>
+          <figcaption>As many courts as you have<small>Two or twenty, every court gets filled</small></figcaption>
+        </figure>
+      </div>
+      <p class="fine">Everything is free with no ads. Players don't need an account to follow their league; only the organizer signs up.</p>
+    </div>
+  </section>
+
+  <section class="get" id="get" aria-labelledby="gh">
+    <div class="wrap">
+      <div>
+        <h2 id="gh">Bring your crew</h2>
+        <p class="lead">Get PickleConnect on your iPhone, or open it in any browser. Scan a code to start on your phone.</p>
+        <div class="ctas">
+          <a class="btn ball" href="https://apps.apple.com/app/id6760803557" rel="noopener">Get the iPhone app</a>
+          <a class="btn ghost" href="/events.html">Start a league</a>
+        </div>
+      </div>
+      <div class="qrs">
+        <div class="qr"><img src="/media/qr_app.png" alt="QR code for PickleConnect on the App Store" width="170" height="170" loading="lazy"><span>iPhone app</span></div>
+        <div class="qr"><img src="/media/qr_web.png" alt="QR code for pickleconnect.live" width="170" height="170" loading="lazy"><span>pickleconnect.live</span></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© <span id="yr">2026</span> PickleConnect</span>
+    <nav aria-label="Footer">
+      <a href="/support.html">Support</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script>
+(function(){
+  document.getElementById('yr').textContent=new Date().getFullYear();
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  requestAnimationFrame(function(){document.body.classList.add('ready');});
+
+  // solid top bar after the hero
+  var top=document.getElementById('top');
+  addEventListener('scroll',function(){top.classList.toggle('solid',scrollY>innerHeight*0.6);},{passive:true});
+
+  // ---------- Hero: a pickleball court with a dink rally over the net ----------
+  var canvas=document.getElementById('court');
+  if(window.THREE){(function(){
+    var renderer;
+    try{renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});}catch(e){return;}
+    renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+    var scene=new THREE.Scene();
+    var cam=new THREE.PerspectiveCamera(38,1,0.1,200);
+    var C={court:0x2F6FB3,apron:0x2E8B62,line:0xF4F7FA,ball:0xE3EF3C};
+
+    // court: 20 x 44 ft, net across the middle (z = 0)
+    var apron=new THREE.Mesh(new THREE.PlaneGeometry(34,62),new THREE.MeshLambertMaterial({color:C.apron}));
+    apron.rotation.x=-Math.PI/2;scene.add(apron);
+    var surf=new THREE.Mesh(new THREE.PlaneGeometry(20,44),new THREE.MeshLambertMaterial({color:C.court}));
+    surf.rotation.x=-Math.PI/2;surf.position.y=0.01;scene.add(surf);
+    var lineMat=new THREE.MeshBasicMaterial({color:C.line});
+    var lines=[];
+    function line(w,d,x,z,delay){
+      var m=new THREE.Mesh(new THREE.BoxGeometry(w,0.02,d),lineMat);
+      m.position.set(x,0.03,z);m.userData={delay:delay,full:w>d?'x':'z'};scene.add(m);lines.push(m);
+    }
+    var T=0.17;
+    line(20+T,T,0,-22,0);line(20+T,T,0,22,0.05);           // baselines
+    line(T,44,-10,0,0.1);line(T,44,10,0,0.15);              // sidelines
+    line(20,T,0,-7,0.35);line(20,T,0,7,0.4);                // kitchen lines
+    line(T,15,0,-14.5,0.55);line(T,15,0,14.5,0.6);          // centre lines
+    // net
+    var net=new THREE.Mesh(new THREE.BoxGeometry(22,1,0.06),new THREE.MeshLambertMaterial({color:0x0b1a2b,transparent:true,opacity:.85}));
+    net.position.set(0,1.5,0);scene.add(net);
+    var tape=new THREE.Mesh(new THREE.BoxGeometry(22,0.16,0.1),lineMat);tape.position.set(0,3.05,0);scene.add(tape);
+    var meshNet=new THREE.Mesh(new THREE.BoxGeometry(22,2.9,0.03),new THREE.MeshLambertMaterial({color:0x0b1a2b,transparent:true,opacity:.55}));
+    meshNet.position.set(0,1.55,0);scene.add(meshNet);net.visible=false;
+    [-11,11].forEach(function(x){var p=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,3.2,12),new THREE.MeshLambertMaterial({color:0x1c2b3b}));p.position.set(x,1.6,0);scene.add(p);});
+
+    // ball with holes
+    var tc=document.createElement('canvas');tc.width=512;tc.height=256;var g=tc.getContext('2d');
+    g.fillStyle='#E3EF3C';g.fillRect(0,0,512,256);g.fillStyle='#B9C424';
+    for(var r=0;r<5;r++){var y=30+r*49,n=[4,7,8,7,4][r];for(var k=0;k<n;k++){var x=(k+0.5+(r%2)*0.5)*512/n;g.beginPath();g.ellipse(x%512,y,12,9,0,0,Math.PI*2);g.fill();}}
+    var ball=new THREE.Mesh(new THREE.SphereGeometry(0.55,40,28),new THREE.MeshLambertMaterial({map:new THREE.CanvasTexture(tc)}));
+    scene.add(ball);
+    var shadow=new THREE.Mesh(new THREE.CircleGeometry(0.6,32),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.28}));
+    shadow.rotation.x=-Math.PI/2;shadow.position.y=0.04;scene.add(shadow);
+
+    scene.add(new THREE.HemisphereLight(0xffffff,0x334455,0.55));
+    var sun=new THREE.DirectionalLight(0xfff4dd,0.45);sun.position.set(-10,20,8);scene.add(sun);
+
+    function size(){
+      var w=canvas.clientWidth,h=canvas.clientHeight;renderer.setSize(w,h,false);cam.aspect=w/h;
+      var narrow=w<900;
+      cam.fov=narrow?50:30;
+      if(narrow){cam.fov=48;cam.position.set(-26,34,30);cam.lookAt(-4,-10,2);}
+      else{cam.position.set(-40,30,40);cam.lookAt(-15,6,4);}
+      cam.updateProjectionMatrix();
+    }
+    size();addEventListener('resize',size);
+
+    // dink rally: kitchen to kitchen, alternating sides
+    var shots=[[-4,5.2,3.5,-5.0],[3.5,-5.0,-2.5,4.6],[-2.5,4.6,4.5,-5.6],[4.5,-5.6,-4,5.2]];
+    var DUR=1.25, t0=performance.now();
+    function lerp(a,b,t){return a+(b-a)*t;}
+    function frame(now){
+      var t=(now-t0)/1000;
+      lines.forEach(function(m){var k=Math.min(1,Math.max(0,(t-m.userData.delay)/0.9));k=1-Math.pow(1-k,3);
+        if(m.userData.full==='x')m.scale.x=Math.max(k,0.001);else m.scale.z=Math.max(k,0.001);});
+      var rally=Math.max(0,t-1.3), i=Math.floor(rally/DUR)%shots.length, f=(rally%DUR)/DUR, s=shots[i];
+      var x=lerp(s[0],s[2],f), z=lerp(s[1],s[3],f), y=0.55+Math.sin(Math.PI*f)*4.4;
+      if(t<1.3){var d=Math.min(1,t/1.3);x=s[0];z=s[1];y=0.55+(1-d*d)*14;}
+      ball.position.set(x,y,z);ball.rotation.x+=0.09;ball.rotation.z+=0.03;
+      shadow.position.set(x,0.04,z);var sc=1-(y-0.55)/16;shadow.scale.set(sc,sc,sc);shadow.material.opacity=.3*sc;
+      renderer.render(scene,cam);
+      if(!reduce&&!document.hidden)requestAnimationFrame(frame);
+    }
+    if(reduce){t0=performance.now()-3000;frame(performance.now());}
+    else{requestAnimationFrame(frame);document.addEventListener('visibilitychange',function(){if(!document.hidden)requestAnimationFrame(frame);});}
+  })();}
+
+  // ---------- Features: the phone follows the step you're reading ----------
+  function load(v){if(v&&!v.src&&v.dataset.src){v.src=v.dataset.src;}}
+  var steps=[].slice.call(document.querySelectorAll('.step'));
+  var desktop=matchMedia('(min-width:901px)');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(!e.isIntersecting)return;
+      var key=e.target.dataset.v;
+      steps.forEach(function(s){s.classList.toggle('on',s===e.target);});
+      if(desktop.matches){
+        document.querySelectorAll('.stick video').forEach(function(v){
+          var on=v.id==='v-'+key; if(on){load(v);if(!reduce)v.play().catch(function(){});} else v.pause();
+          v.classList.toggle('on',on);
+        });
+      }else{
+        var iv=e.target.querySelector('.inline video');load(iv);if(!reduce&&iv)iv.play().catch(function(){});
+      }
+    });
+  },{rootMargin:'-45% 0px -45% 0px'});
+  steps.forEach(function(s){io.observe(s);});
+  if(!reduce){var hv=document.getElementById('v-weather');if(desktop.matches)hv.play().catch(function(){});}
+})();
+</script>
+</body>
+</html>
