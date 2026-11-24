@@ -17,7 +17,7 @@
 
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23059669'/><ellipse cx='50' cy='50' rx='20' ry='20' fill='none' stroke='white' stroke-width='3'/><line x1='30' y1='50' x2='70' y2='50' stroke='white' stroke-width='3'/><line x1='50' y1='30' x2='50' y2='70' stroke='white' stroke-width='3'/><circle cx='50' cy='50' r='6' fill='white'/></svg>" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone@7.29.7/babel.min.js"></script>
@@ -36,17 +36,17 @@ if(w.PC_APP){var vp=document.querySelector('meta[name=viewport]');if(vp)vp.setAt
 </script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;}
-        body{font-family:'Outfit',sans-serif;background:#f1f5f9;font-size:16px;color:#1e293b;-webkit-text-size-adjust:100%;}
-        .fd{font-family:'Barlow Condensed',sans-serif;}
+        body{font-family:'Figtree',sans-serif;background:#f1f5f9;font-size:16px;color:#1e293b;-webkit-text-size-adjust:100%;}
+        .fd{font-family:'Bricolage Grotesque',sans-serif;}
         .hero-bg{background:linear-gradient(135deg,#0f172a 0%,#1e3a2f 50%,#052e16 100%);}
         .pg{padding:16px;max-width:760px;width:100%;margin:0 auto;}
         .card{background:white;border-radius:14px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.06);}
         .slbl{font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:8px;}
         .muted{color:#64748b;font-size:14px;}
 
-        .inp{width:100%;background:#f1f5f9;border:2px solid transparent;border-radius:10px;padding:11px 14px;font-size:16px;font-family:'Outfit',sans-serif;transition:all .15s;outline:none;color:#1e293b;}
+        .inp{width:100%;background:#f1f5f9;border:2px solid transparent;border-radius:10px;padding:11px 14px;font-size:16px;font-family:'Figtree',sans-serif;transition:all .15s;outline:none;color:#1e293b;}
         .inp:focus{border-color:#059669;background:white;box-shadow:0 0 0 3px rgba(5,150,105,.1);}
-        .score-inp{width:48px;text-align:center;border:2px solid #e2e8f0;border-radius:8px;padding:4px 2px;font-size:17px;font-weight:700;font-family:'Outfit',sans-serif;outline:none;background:white;color:#0f172a;}
+        .score-inp{width:48px;text-align:center;border:2px solid #e2e8f0;border-radius:8px;padding:4px 2px;font-size:17px;font-weight:700;font-family:'Figtree',sans-serif;outline:none;background:white;color:#0f172a;}
         .score-inp:focus{border-color:#059669;}
         .score-inp:disabled{background:#f8fafc;color:#0f172a;border-color:#f1f5f9;}
         .score-inp.win{color:#047857;border-color:#6ee7b7;background:#ecfdf5;}
@@ -78,7 +78,7 @@ if(w.PC_APP){var vp=document.querySelector('meta[name=viewport]');if(vp)vp.setAt
         input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
         input[type=number]{-moz-appearance:textfield;}
 
-        .btn{border:none;border-radius:10px;padding:11px 18px;font-weight:700;font-size:15px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .15s;}
+        .btn{border:none;border-radius:10px;padding:11px 18px;font-weight:700;font-size:15px;cursor:pointer;font-family:'Figtree',sans-serif;transition:all .15s;}
         .btn-g{background:linear-gradient(135deg,#059669,#10b981);color:white;box-shadow:0 4px 12px rgba(5,150,105,.25);}
         .btn-g:hover{background:linear-gradient(135deg,#047857,#059669);}
         .btn-g:disabled{background:#a7f3d0;box-shadow:none;cursor:not-allowed;}
@@ -89,14 +89,14 @@ if(w.PC_APP){var vp=document.querySelector('meta[name=viewport]');if(vp)vp.setAt
         .btn-sm{padding:7px 12px;font-size:13px;}
 
         .nav{background:#0f172a;padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20;}
-        .nav a,.nav button.link{white-space:nowrap;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:600;background:none;border:none;cursor:pointer;font-family:'Outfit',sans-serif;}
+        .nav a,.nav button.link{white-space:nowrap;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:600;background:none;border:none;cursor:pointer;font-family:'Figtree',sans-serif;}
 
         .tabs{display:flex;gap:6px;background:white;border-radius:12px;padding:5px;box-shadow:0 2px 10px rgba(0,0,0,.05);margin-bottom:14px;}
-        .tab{flex:1;border:none;background:none;padding:10px 6px;border-radius:9px;font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;color:#64748b;cursor:pointer;white-space:nowrap;}
+        .tab{flex:1;border:none;background:none;padding:10px 6px;border-radius:9px;font-family:'Figtree',sans-serif;font-weight:700;font-size:14px;color:#64748b;cursor:pointer;white-space:nowrap;}
         .tab.on{background:#0f172a;color:white;}
         @media(max-width:430px){.tab{font-size:12.5px;padding:10px 3px;}.tabs{gap:3px;}.tabs.many .tab{font-size:11.5px;padding:10px 2px;}.tabs.many .tab:not(.on) .tl{display:none}}
 
-        .chip{border:1px solid #e2e8f0;background:white;border-radius:99px;padding:7px 13px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;white-space:nowrap;font-family:'Outfit',sans-serif;}
+        .chip{border:1px solid #e2e8f0;background:white;border-radius:99px;padding:7px 13px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;white-space:nowrap;font-family:'Figtree',sans-serif;}
         .chip.on{background:#059669;border-color:#059669;color:white;}
         .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;}
 
@@ -106,7 +106,7 @@ if(w.PC_APP){var vp=document.querySelector('meta[name=viewport]');if(vp)vp.setAt
         .match:last-child{border-bottom:none;}
         .court{flex-shrink:0;width:44px;border-radius:10px;background:#f0fdf4;color:#047857;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid #bbf7d0;}
         .court small{font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;}
-        .court b{font-family:'Barlow Condensed',sans-serif;font-size:22px;line-height:1;}
+        .court b{font-family:'Bricolage Grotesque',sans-serif;font-size:22px;line-height:1;}
         .teams{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
         .team{display:flex;align-items:center;justify-content:space-between;gap:8px;}
         .tnames{font-size:15px;font-weight:500;line-height:1.3;word-break:break-word;}
@@ -129,7 +129,7 @@ if(w.PC_APP){var vp=document.querySelector('meta[name=viewport]');if(vp)vp.setAt
 
         .stepper{display:flex;align-items:center;border:2px solid #e2e8f0;border-radius:10px;overflow:hidden;width:max-content;}
         .stepper button{width:40px;height:42px;border:none;background:#f1f5f9;font-size:20px;font-weight:700;cursor:pointer;color:#0f172a;}
-        .stepper span{min-width:46px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;}
+        .stepper span{min-width:46px;text-align:center;font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:800;}
 
         .ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#047857;border-radius:10px;padding:9px 12px;font-size:13px;}
         .warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:10px;padding:9px 12px;font-size:13px;}
@@ -139,7 +139,7 @@ if(w.PC_APP){var vp=document.querySelector('meta[name=viewport]');if(vp)vp.setAt
         .check{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;background:#f8fafc;border:1px solid #e2e8f0;font-size:14px;cursor:pointer;min-width:0;}
         .check span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
         .check.off{opacity:.5;}
-        .opt{display:flex;align-items:center;gap:10px;text-align:left;width:100%;background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;padding:10px 12px;cursor:pointer;font-family:'Outfit',sans-serif;color:#0f172a;}
+        .opt{display:flex;align-items:center;gap:10px;text-align:left;width:100%;background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;padding:10px 12px;cursor:pointer;font-family:'Figtree',sans-serif;color:#0f172a;}
         .opt b{display:block;font-size:15px;font-weight:700;}
         .opt small{display:block;font-size:12px;color:#64748b;line-height:1.3;}
         .opt.on{border-color:#059669;background:#ecfdf5;}
@@ -171,13 +171,13 @@ if(w.PC_APP){var vp=document.querySelector('meta[name=viewport]');if(vp)vp.setAt
 
         /* ── PickleConnect theme (matches the weather page) ─────────────── */
         :root{--navy:#0D1B2A;--navy2:#162a3d;--green:#22c55e;--green-d:#15803d;--court:#17663f;--ball:#F7C948;--ta:#3b82f6;--tb:#f97316;--bg:#eef3f0;--ink:#0f172a;--muted:#64748b;}
-        body,.inp,.score-inp,.btn,.tab,.chip,.nav a,.nav button.link,.opt{font-family:'DM Sans',sans-serif;}
+        body,.inp,.score-inp,.btn,.tab,.chip,.nav a,.nav button.link,.opt{font-family:'Figtree',sans-serif;}
         body{background:var(--bg);color:var(--ink);}
-        .fd{font-family:'DM Sans',sans-serif;letter-spacing:-.01em;}
+        .fd{font-family:'Figtree',sans-serif;letter-spacing:-.01em;}
         .card{border-radius:18px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 6px 20px rgba(15,23,42,.06);}
         .nav{background:var(--navy);padding:12px 16px;}
         .brand{flex:1;text-align:center;white-space:nowrap;line-height:1;}
-        .brand b{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#fff;letter-spacing:-.02em;}
+        .brand b{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:17px;color:#fff;letter-spacing:-.02em;}
         .brand b span{color:var(--green);}
         .brand em{font-style:normal;color:#8FAEC6;font-weight:700;font-size:13px;margin-left:6px;}
         .hero-bg{background:linear-gradient(135deg,var(--navy) 0%,#123524 60%,var(--court) 100%);}
@@ -237,6 +237,48 @@ if(w.PC_APP){var vp=document.querySelector('meta[name=viewport]');if(vp)vp.setAt
         .ok{background:#ecfdf3;border-color:#bbf7d0;color:#166534;}
         .opt.on{border-color:var(--green);background:#ecfdf3;}
         @media(max-width:430px){.brand b{font-size:15px;}.brand em{font-size:12px;}}
+        /* ── Premium layer: night navy + court blue, same fonts as the rest of pickleconnect.live ── */
+        :root{--night:#0E2238;--courtb:#2F6FB3;--ballc:#E3EF3C;--brand:#2ECC71;--bg:#EDF1F5;}
+        body{background:var(--bg);}
+        .fd{font-family:'Bricolage Grotesque',sans-serif;letter-spacing:-.015em;}
+        .nav{background:var(--night);border-bottom:1px solid rgba(255,255,255,.06);}
+        .brand b span{color:var(--brand);}
+        .print-only{display:none;}
+        .lv-hero{position:relative;color:#fff;background:radial-gradient(120% 140% at 85% 0%,rgba(47,111,179,.55),transparent 60%),linear-gradient(160deg,var(--night) 0%,#13355a 70%,#1d4b7d 100%);padding:22px 16px 0;overflow:hidden;}
+        .lv-in{max-width:760px;margin:0 auto;position:relative;z-index:1;}
+        .lv-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;}
+        .lv-kind{font-size:13px;font-weight:600;color:#9DB6CF;}
+        .lv-name{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(26px,4.4vw,40px);line-height:1.05;letter-spacing:-.02em;margin-top:4px;}
+        .lv-sub{color:#9DB6CF;font-size:15px;margin-top:6px;max-width:36em;}
+        .lv-hero .btn-out{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.18);}
+        .lv-hero .btn-out:hover{background:rgba(255,255,255,.14);}
+        .lv-hero .tabs{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);border-bottom:none;box-shadow:none;border-radius:16px 16px 0 0;padding:6px 6px 0;margin:0;gap:4px;}
+        .lv-hero .tab{color:#B9CBDD;border-radius:12px 12px 0 0;padding:12px 6px 13px;}
+        .lv-hero .tab:hover{color:#fff;}
+        .lv-hero .tab.on{background:var(--bg);color:var(--night);box-shadow:none;}
+        .pg.wide{padding-top:18px;}
+        @media(min-width:1100px){.lv-in{max-width:1064px;}.lv-hero{padding:34px 28px 0;}}
+        .dash-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;color:#fff;border-radius:22px;padding:26px 24px;margin-bottom:16px;background:radial-gradient(120% 140% at 90% 0%,rgba(47,111,179,.6),transparent 60%),linear-gradient(160deg,var(--night),#13355a);}
+        .btn-ball{background:var(--ballc);color:var(--night);box-shadow:0 6px 18px rgba(227,239,60,.25);border-radius:99px;padding:11px 20px;}
+        .btn-ball:hover{filter:brightness(1.05);}
+        .lr-ic{width:48px;height:48px;border-radius:14px;background:#EAF1F8;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+        .lr-go{color:#94a3b8;font-size:26px;line-height:1;}
+        .card{border:1px solid #E1E8EF;box-shadow:0 1px 2px rgba(14,34,56,.04),0 8px 24px rgba(14,34,56,.05);}
+        .lc,.round-card,.po-game{border-color:#E1E8EF;box-shadow:0 1px 2px rgba(14,34,56,.03),0 6px 18px rgba(14,34,56,.04);}
+        .lc-hd{background:linear-gradient(90deg,var(--courtb),#3b7fc4);}
+        .lc-hd b{font-family:'Bricolage Grotesque',sans-serif;font-size:17px;letter-spacing:-.01em;}
+        .lc-hd span{color:#DCE8F4;}
+        .round-hd{background:#F4F7FA;border-bottom-color:#E1E8EF;}
+        .round-hd span:first-child{font-family:'Bricolage Grotesque',sans-serif;}
+        .score-inp.win,.score-ro.win{background:var(--brand);border-color:var(--brand);color:#06210f;}
+        .chip.on{background:var(--night);border-color:var(--night);}
+        .btn-g{background:var(--brand);color:#06210f;box-shadow:0 4px 14px rgba(46,204,113,.3);}
+        .btn-g:hover{background:#27b863;color:#06210f;}
+        .rank.g1{background:var(--ballc);color:var(--night);}
+        .po-champ{background:radial-gradient(120% 160% at 90% 0%,rgba(227,239,60,.25),transparent 55%),linear-gradient(135deg,var(--night),#13355a);}
+        .po-champ b{font-family:'Bricolage Grotesque',sans-serif;font-size:24px;}
+        @media(max-width:430px){.lv-hero{padding:18px 12px 0;}.lv-hero .tabs{padding:5px 4px 0;gap:2px;}.lv-hero .tab{padding:11px 3px 12px;}}
+        @media print{.lv-hero{display:none!important;}.print-only{display:block;}}
         /* app mode (inside the iPhone app) */
         .app body{-webkit-user-select:none;-webkit-touch-callout:none;}
         .app input,.app textarea{-webkit-user-select:text;}
@@ -655,11 +697,11 @@ function LoginView(){
                         <button className="btn btn-g" disabled={busy}>{busy?'Please wait…':signup?'Create account':'Log in'}</button>
                     </form>
                     <div style={{marginTop:14,display:'flex',flexDirection:'column',gap:8,alignItems:'center'}}>
-                        <button onClick={toggle} style={{background:'none',border:'none',color:'#059669',fontWeight:600,cursor:'pointer',fontFamily:"'Outfit',sans-serif",fontSize:15}}>
+                        <button onClick={toggle} style={{background:'none',border:'none',color:'#059669',fontWeight:600,cursor:'pointer',fontFamily:"'Figtree',sans-serif",fontSize:15}}>
                             {signup?'Already have an account? Log in':"Don't have an account? Sign up"}
                         </button>
                         <a href="events.html?demo" style={{color:'#059669',fontWeight:600,fontSize:15,textDecoration:'none'}}>👀 Look around with demo events</a>
-                        {!signup&&<button onClick={reset} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontFamily:"'Outfit',sans-serif",fontSize:14}}>Forgot password?</button>}
+                        {!signup&&<button onClick={reset} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontFamily:"'Figtree',sans-serif",fontSize:14}}>Forgot password?</button>}
                     </div>
                 </div>
                 <HowItWorks style={{marginBottom:28}}/>
@@ -697,12 +739,12 @@ function Dashboard({user,onOpen}){
         <div>
             <Nav user={user}/>
             <div className="pg">
-                <div className="hero-bg" style={{borderRadius:16,padding:'20px 22px',marginBottom:14,color:'white',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
+                <div className="dash-hero">
                     <div>
-                        <div className="fd" style={{fontSize:28,fontWeight:800}}>LEAGUES & TOURNAMENTS</div>
-                        <div style={{color:'#6ee7b7',fontSize:14}}>Singles or doubles · any courts, any games</div>
+                        <h1 className="lv-name">Leagues &amp; tournaments</h1>
+                        <div className="lv-sub">Singles or doubles, any courts. Fair games, live scores, standings everyone can see.</div>
                     </div>
-                    <button className="btn btn-g" onClick={()=>setCreating(true)}>+ New</button>
+                    <button className="btn btn-ball" onClick={()=>setCreating(true)}>+ New event</button>
                 </div>
                 {list===null?<Center><div className="spinner"/></Center>:
                  list.length===0?
@@ -730,13 +772,13 @@ function Dashboard({user,onOpen}){
 function LeagueRow({l,onOpen}){
     return(
         <div className="card" onClick={()=>onOpen(l.id)} style={{cursor:'pointer',display:'flex',alignItems:'center',gap:12}}>
-            <div style={{fontSize:28}}>{kindOf(l)==='tournament'?'🏆':'🏅'}</div>
+            <div className="lr-ic">{kindOf(l)==='tournament'?'🏆':'🏅'}</div>
             <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:700,fontSize:17}}>{l.name}</div>
                 <div style={{fontSize:12,fontWeight:700,color:'#047857',margin:'1px 0 2px'}}>{kindOf(l)==='tournament'?'Tournament':'League'} · {FORMATS[fmtOf(l)].short}</div>
                 {l.players&&<div className="muted">{fmtOf(l)==='fixed'?`${(l.teams||[]).filter(t=>t.active!==false).length} teams`:`${l.players.filter(p=>p.active!==false).length} players`} · {(l.weeks||[]).length} {termsOf(l).lower}{(l.weeks||[]).length===1?'':'s'} · courts {(l.defaultCourts||[]).join(', ')}{l._src==='local'?' · this device only':''}{l._coAdmin?' · you\'re an admin':''}</div>}
             </div>
-            <div style={{color:'#059669',fontWeight:700}}>Open →</div>
+            <div className="lr-go" aria-hidden="true">›</div>
         </div>
     );
 }
@@ -920,19 +962,24 @@ function LeagueView({id,user,onHome}){
     return(
         <div>
             <Nav onHome={league._demo?()=>{location.href='events.html?demo';}:user?onHome:null} user={user}/>
-            <div className="pg wide">
-                <div className="row no-print" style={{justifyContent:'space-between',marginBottom:10}}>
-                    <div style={{minWidth:0}}>
-                        <div className="fd" style={{fontSize:24,fontWeight:800,lineHeight:1.1}}>{league.name}</div>
-                        <div className="muted" style={{fontSize:13}}>{kindOf(league)==='tournament'?'Tournament':'League'} · {FORMATS[fmtOf(league)].short}{current?` · ${fmtDate(current.date)}`:''}</div>
+            <header className="lv-hero no-print">
+                <div className="lv-in">
+                    <div className="lv-top">
+                        <div style={{minWidth:0}}>
+                            <div className="lv-kind">{kindOf(league)==='tournament'?'Tournament':'League'} · {FORMATS[fmtOf(league)].short}{current?` · ${fmtDate(current.date)}`:''}</div>
+                            <h1 className="lv-name">{league.name}</h1>
+                        </div>
+                        <ShareButton league={league}/>
                     </div>
-                    <ShareButton league={league}/>
+                    <div className={'tabs'+(tabs.length>5?' many':'')}>
+                        {tabs.map(([k,l])=>{const sp=l.indexOf(' ');return<button key={k} className={'tab'+(tab===k?' on':'')} onClick={()=>setTab(k)} style={k==='manage'||l==='🕸️'?{flex:'0 0 40px'}:null}>{sp<0?l:<>{l.slice(0,sp)}<span className="tl">{l.slice(sp)}</span></>}</button>;})}
+                    </div>
                 </div>
+            </header>
+            <div className="pg wide">
+                <div className="print-only fd" style={{fontSize:22,fontWeight:800,marginBottom:8}}>{league.name}</div>
                 {league._demo&&<div className="ok no-print" style={{marginBottom:12}}>🧪 Demo data on this device · <a href="events.html?demo" style={{color:'#047857',fontWeight:700}}>All demos</a></div>}
                 {league._src==='local'&&!league._demo&&canManage&&<div className="warn no-print" style={{marginBottom:12}}>Saved on this device only — publish the <b>leagues</b> Firestore rule to sync and share.</div>}
-                <div className={'tabs no-print'+(tabs.length>5?' many':'')}>
-                    {tabs.map(([k,l])=>{const sp=l.indexOf(' ');return<button key={k} className={'tab'+(tab===k?' on':'')} onClick={()=>setTab(k)} style={k==='manage'||l==='🕸️'?{flex:'0 0 40px'}:null}>{sp<0?l:<>{l.slice(0,sp)}<span className="tl">{l.slice(sp)}</span></>}</button>;})}
-                </div>
                 {tab==='courts'&&(current
                     ?<LiveView league={league} week={current} canScore={canScore} update={update} onPlayer={onPlayer} onAll={()=>setTab('schedule')}
                         canManage={canManage} onPlayoffs={()=>setTab(league.playoff?'playoffs':'manage')}/>

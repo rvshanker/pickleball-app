@@ -31,36 +31,46 @@ location.replace(localStorage.getItem('pcTab')==='leagues'?'/events.html':'/weat
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{min-height:100vh;background:#0D1B2A;color:#F0F4F8;font-family:'DM Sans',-apple-system,sans-serif;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom)}
+body{min-height:100vh;background:#0D1B2A;color:#F0F4F8;font-family:'Figtree',-apple-system,sans-serif;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom)}
 main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 0 24px}
-.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(24px,6.8vw,52px);white-space:nowrap;letter-spacing:-.5px}
+.logo{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(34px,7vw,60px);white-space:nowrap;letter-spacing:-.03em}
 .logo span{color:#2ECC71}
 .tag{color:#7A9BB5;margin-top:6px;font-size:15px;text-align:center}
-.cards{width:100%;max-width:760px;margin-top:32px;display:grid;gap:14px}
-@media (min-width:720px){.cards{grid-template-columns:1fr 1fr}}
-a.card{display:flex;flex-direction:column;text-decoration:none;color:inherit;background:#1A2B3C;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:20px;transition:transform .12s,border-color .12s}
-a.card:hover{border-color:#2ECC71;transform:translateY(-1px)}
-a.card:active{transform:scale(.98)}
-a.card:focus-visible{outline:2px solid #2ECC71;outline-offset:2px}
-.row{display:flex;align-items:center;gap:16px}
-.ic{width:52px;height:52px;border-radius:14px;background:rgba(46,204,113,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.ic svg{width:28px;height:28px;stroke:#2ECC71}
-.card h2{font-size:19px;font-weight:700}
-.card p{color:#7A9BB5;font-size:14px;margin-top:2px;line-height:1.35}
-.go{margin-left:auto;color:#7A9BB5;font-size:24px}
-.live{display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);font-size:14px;min-height:58px}
-.row+.live{margin-top:16px}
-.dot{width:12px;height:12px;border-radius:50%;background:#3A4F63;flex-shrink:0}
-.live b{font-weight:700}
-.live small{display:block;color:#7A9BB5;font-size:13px;margin-top:1px}
+.cards{width:100%;max-width:860px;margin-top:34px;display:grid;gap:16px}
+@media (min-width:760px){.cards{grid-template-columns:1fr 1fr}}
+a.card{position:relative;overflow:hidden;display:flex;flex-direction:column;min-height:300px;text-decoration:none;color:#fff;border-radius:24px;padding:24px;border:1px solid rgba(255,255,255,.10);transition:transform .15s,box-shadow .15s}
+a.card:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(0,0,0,.35)}
+a.card:active{transform:scale(.985)}
+a.card:focus-visible{outline:3px solid #E3EF3C;outline-offset:3px}
+.card .k{font-size:13px;font-weight:600;color:rgba(255,255,255,.72)}
+.card h2{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:34px;line-height:1;letter-spacing:-.02em;margin-top:6px}
+.card .go{position:absolute;top:22px;right:22px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1}
+.card .foot{margin-top:auto;position:relative;z-index:1}
+.card .foot b{display:block;font-size:17px;font-weight:700;line-height:1.3}
+.card .foot small{display:block;max-width:30em;color:rgba(255,255,255,.75);font-size:14px;margin-top:3px}
+/* Weather: sky tinted by how good it is to play right now */
+.wx{--lv:#2ECC71;background:radial-gradient(120% 120% at 100% 0%,color-mix(in srgb,var(--lv) 55%,transparent),transparent 60%),linear-gradient(160deg,#123a5e,#0E2238 75%)}
+.wx .mascot{position:absolute;right:12px;top:70px;width:104px;height:104px;object-fit:contain;filter:drop-shadow(0 12px 18px rgba(0,0,0,.4));animation:bob 3.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(-3px)}50%{transform:translateY(3px)}}
+.wx .bar{height:8px;border-radius:99px;margin:14px 0 6px;background:linear-gradient(90deg,#2ECC71,#2ECC71);opacity:.95}
+.wx .ticks{display:flex;justify-content:space-between;font-size:11.5px;color:rgba(255,255,255,.6)}
+.wx .foot b,.wx .foot small{max-width:calc(100% - 96px)}
+.wx .pill{display:inline-block;color:#0b1622;background:var(--lv);border-radius:99px;padding:3px 10px;font-weight:800;font-size:13px;margin-bottom:8px}
+/* Leagues: a court seen from above */
+.lg{background:radial-gradient(120% 120% at 100% 0%,rgba(227,239,60,.16),transparent 55%),linear-gradient(160deg,#2F6FB3,#1d4b7d 80%)}
+.lg svg.court{position:absolute;right:-30px;bottom:-24px;width:78%;height:auto;opacity:.32;transform:rotate(-8deg)}
+.lg .ball{position:absolute;width:22px;height:22px;border-radius:50%;background:#E3EF3C;box-shadow:0 8px 12px rgba(0,0,0,.35);right:34%;top:34%;animation:dink 2.6s ease-in-out infinite}
+@keyframes dink{0%,100%{transform:translate(0,0)}50%{transform:translate(70px,-34px)}}
+.lg .stand{display:flex;gap:6px;margin-bottom:10px}
+.lg .stand span{background:rgba(14,34,56,.45);border-radius:99px;padding:3px 10px;font-size:12.5px;font-weight:700}
+@media (prefers-reduced-motion:reduce){a.card{transition:none}a.card:hover,a.card:active{transform:none}.wx .mascot,.lg .ball{animation:none}}
 footer{padding:18px 0 22px;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px;font-size:13px;color:#7A9BB5}
 footer a{color:#7A9BB5;text-decoration:none}
 footer a:hover{color:#F0F4F8;text-decoration:underline}
-@media (prefers-reduced-motion:reduce){a.card{transition:none}a.card:hover,a.card:active{transform:none}}
 </style>
 </head>
 <body>
@@ -69,27 +79,36 @@ footer a:hover{color:#F0F4F8;text-decoration:underline}
   <p class="tag">Pickleball weather and leagues</p>
 
   <div class="cards">
-    <a class="card" href="/weather/">
-      <div class="row">
-        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M19.1 4.9l-1.4 1.4"/><path d="M8 12a4 4 0 0 1 7.5-2"/><path d="M17 20H8a4 4 0 1 1 1-7.9A5 5 0 0 1 18.5 14 3 3 0 0 1 17 20z"/></svg></div>
-        <div><h2>Weather</h2><p>Is it a good time to play?</p></div>
-        <div class="go" aria-hidden="true">›</div>
-      </div>
-      <div class="live" aria-live="polite">
-        <span class="dot" id="wxDot" aria-hidden="true"></span>
-        <div><b id="wxLine">Check the weather near you</b><small id="wxSub">Tap to set your location</small></div>
+    <a class="card wx" id="wxCard" href="/weather/">
+      <div class="k">Pickleball weather</div>
+      <h2>Is it a good<br>time to play?</h2>
+      <span class="go" aria-hidden="true">›</span>
+      <img class="mascot" id="wxImg" src="/weather/mascot-hello.png" alt="">
+      <div class="foot" aria-live="polite">
+        <span class="pill" id="wxPill" hidden></span>
+        <b id="wxLine">Check the weather near you</b>
+        <small id="wxSub">Wind, rain and heat, rated for pickleball</small>
+        <div id="wxBar" hidden><div class="bar" id="wxGrad"></div><div class="ticks" id="wxTicks"></div></div>
       </div>
     </a>
 
-    <a class="card" href="/events.html">
-      <div class="row">
-        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></div>
-        <div><h2>Leagues &amp; Tournaments</h2><p>Schedules, live scores and standings.</p></div>
-        <div class="go" aria-hidden="true">›</div>
-      </div>
-      <div class="live">
-        <span class="dot" style="background:#2ECC71" aria-hidden="true"></span>
-        <div><b>Singles or doubles, any courts</b><small>Fixed or rotating partners</small></div>
+    <a class="card lg" href="/events.html">
+      <svg class="court" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect x="40" y="40" width="320" height="180" fill="none" stroke="#F4F7FA" stroke-width="4"/>
+        <line x1="200" y1="30" x2="200" y2="230" stroke="#F4F7FA" stroke-width="6"/>
+        <line x1="150" y1="40" x2="150" y2="220" stroke="#F4F7FA" stroke-width="3"/>
+        <line x1="250" y1="40" x2="250" y2="220" stroke="#F4F7FA" stroke-width="3"/>
+        <line x1="40" y1="130" x2="150" y2="130" stroke="#F4F7FA" stroke-width="3"/>
+        <line x1="250" y1="130" x2="360" y2="130" stroke="#F4F7FA" stroke-width="3"/>
+      </svg>
+      <span class="ball" aria-hidden="true"></span>
+      <div class="k" style="position:relative">Leagues &amp; tournaments</div>
+      <h2 style="position:relative">Run your<br>league.</h2>
+      <span class="go" aria-hidden="true">›</span>
+      <div class="foot">
+        <div class="stand"><span>🏓 Courts</span><span>🏆 Standings</span><span>🏅 Playoffs</span></div>
+        <b>Fair games, live scores, standings</b>
+        <small>Singles or doubles, any courts, playoffs included</small>
       </div>
     </a>
   </div>
@@ -161,8 +180,16 @@ footer a:hover{color:#F0F4F8;text-decoration:underline}
       if(!best||avg>best.score)best={start:a.hr,end:b.hr+1,score:avg};
     }
     var lv=levelOf(now.score);
-    $('wxDot').style.background=lv.c;
-    $('wxLine').textContent='Now: '+lv.l+' · '+now.temp+'°F, wind '+now.wind+' mph';
+    $('wxCard').style.setProperty('--lv',lv.c);
+    $('wxPill').hidden=false;$('wxPill').textContent=lv.l+' now';
+    $('wxImg').src='/weather/mascot-'+({'Great':'great','Okay':'okay','Marginal':'marginal','Skip it':'rain'})[lv.l]+'.png';
+    $('wxLine').textContent=now.temp+'°F, wind '+now.wind+' mph';
+    if(rest.length>2){
+      $('wxGrad').style.background='linear-gradient(90deg,'+rest.map(function(h,i){return levelOf(h.score).c+' '+(i/(rest.length-1)*100).toFixed(1)+'%'}).join(',')+')';
+      var t=[rest[0],rest[Math.floor(rest.length/2)],rest[rest.length-1]];
+      $('wxTicks').innerHTML=t.map(function(h,i){return'<span>'+(i===0?'Now':fmtHr(h.hr))+'</span>'}).join('');
+      $('wxBar').hidden=false;
+    }
     $('wxSub').textContent=(place.name?place.name+' \u00b7 ':'')+(best&&best.score>=40
       ? 'Best today: '+fmtHr(best.start)+'–'+fmtHr(best.end%24)+' ('+levelOf(best.score).l+')'
       : (rest.length>2?'No good window left today':'Check tomorrow’s forecast'));
