@@ -297,6 +297,10 @@ if(w.PC_APP){var vp=document.querySelector('meta[name=viewport]');if(vp)vp.setAt
             .tour-row::-webkit-scrollbar{display:none}
             .tour-item{flex:0 0 62%;scroll-snap-align:center}
         }
+.login-hero{text-align:center;color:#fff;padding:22px 20px 38px;background:radial-gradient(120% 140% at 85% 0%,rgba(47,111,179,.55),transparent 60%),linear-gradient(160deg,#0E2238,#13355a)}
+        .login-hero h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(26px,5vw,36px);line-height:1.1;letter-spacing:-.02em}
+        .login-hero p{color:#9DB6CF;font-size:15px;margin-top:6px}
+        .login-hero b{color:#E3EF3C}
         /* app mode (inside the iPhone app) */
         .app body{-webkit-user-select:none;-webkit-touch-callout:none;}
         .app input,.app textarea{-webkit-user-select:text;}
@@ -697,12 +701,11 @@ function LoginView(){
     const toggle=()=>{setSignup(!signup);setErr('');setMsg('');setPwc('');};
     return(
         <div style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
-            <div className="hero-bg" style={{padding:'44px 20px 56px',textAlign:'center'}}>
-                <div style={{color:'#6ee7b7',fontSize:12,fontWeight:700,letterSpacing:1.4,marginBottom:12}}>PICKLECONNECT</div>
-                <h1 className="fd" style={{fontSize:'clamp(40px,10vw,68px)',color:'white',lineHeight:1,fontWeight:800}}>LEAGUES<span style={{color:'#34d399'}}> & TOURNEYS</span></h1>
-                <p style={{color:'#94a3b8',maxWidth:460,margin:'14px auto 0',lineHeight:1.6}}>Weekly leagues or one-day tournaments. Singles, fixed-partner doubles or rotating partners, on as many courts and for as many games as you like, with live scores and standings.</p>
+            <div className="login-hero">
+                <h1>Leagues &amp; tournaments</h1>
+                <p>Fair games, live scores and standings for your group. <b>Free.</b></p>
             </div>
-            <div className="pg" style={{marginTop:-30}}>
+            <div className="pg" style={{marginTop:-22}}>
                 <div className="card" style={{maxWidth:420,margin:'0 auto'}}>
                     <div className="fd" style={{fontSize:26,fontWeight:800,marginBottom:4}}>{signup?'CREATE ACCOUNT':'LOG IN'}</div>
                     <div className="muted" style={{marginBottom:16}}>{signup?'Create an account to run a league or tournament, or to join one as an admin (use the email the organizer added).':'Organizers and admins log in here. Players can view a shared link without an account.'}</div>
