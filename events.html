@@ -279,6 +279,24 @@ if(w.PC_APP){var vp=document.querySelector('meta[name=viewport]');if(vp)vp.setAt
         .po-champ b{font-family:'Bricolage Grotesque',sans-serif;font-size:24px;}
         @media(max-width:430px){.lv-hero{padding:18px 12px 0;}.lv-hero .tabs{padding:5px 4px 0;gap:2px;}.lv-hero .tab{padding:11px 3px 12px;}}
         @media print{.lv-hero{display:none!important;}.print-only{display:block;}}
+.tour{background:linear-gradient(160deg,#0E2238,#13355a);color:#fff;border-radius:22px;padding:22px 18px 20px}
+        .tour-hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 4px 16px}
+        .tour-hd h2{font-family:'Bricolage Grotesque',sans-serif;font-size:24px;font-weight:800;letter-spacing:-.01em}
+        .tour-demo{color:#E3EF3C;font-weight:700;font-size:14.5px;text-decoration:none}
+        .tour-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+        .tour-item{margin:0;display:flex;flex-direction:column;align-items:center;text-align:center}
+        .tour-phone{width:100%;max-width:210px;aspect-ratio:394/854;border-radius:30px;padding:7px;background:#05101c;box-shadow:0 0 0 1.5px rgba(255,255,255,.14),0 18px 40px rgba(0,0,0,.45);overflow:hidden}
+        .tour-phone video{width:100%;height:100%;object-fit:cover;border-radius:24px;display:block;background:#0b1a2b}
+        .tour-item figcaption{margin-top:12px;max-width:240px}
+        .tour-item b{display:block;font-size:16px}
+        .tour-item span{display:block;color:#9DB6CF;font-size:14px;line-height:1.45;margin-top:2px}
+        @media(max-width:640px){
+            .tour{padding:20px 0 18px;border-radius:20px}
+            .tour-hd{margin:0 18px 14px}
+            .tour-row{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:14px;padding:0 18px 4px;scrollbar-width:none}
+            .tour-row::-webkit-scrollbar{display:none}
+            .tour-item{flex:0 0 62%;scroll-snap-align:center}
+        }
         /* app mode (inside the iPhone app) */
         .app body{-webkit-user-select:none;-webkit-touch-callout:none;}
         .app input,.app textarea{-webkit-user-select:text;}
@@ -704,28 +722,54 @@ function LoginView(){
                         {!signup&&<button onClick={reset} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',fontFamily:"'Figtree',sans-serif",fontSize:14}}>Forgot password?</button>}
                     </div>
                 </div>
-                <HowItWorks style={{marginBottom:28}}/>
+                <HowItWorks style={{marginTop:22,marginBottom:28}}/>
             </div>
         </div>
     );
 }
 
-// ── How leagues work (shown on the log-in screen and the dashboard) ─────
-function HowItWorks({style}){
-    const steps=[['Create','Pick the format, players, courts and number of games.'],
-                 ['Share','Send the link to your group. Everyone sees who plays on which court.'],
-                 ['Play & score','Enter scores from your phone. Standings update live.']];
+// ── How leagues work: a short tour with real recordings of the app (log-in screen and empty dashboard) ─────
+// In the iPhone app the page is bundled without /media, so the clips come from the website there.
+const MEDIA=location.protocol.indexOf('http')===0?'/media/':'https://pickleconnect.live/media/';
+const TOUR=[
+    ['matchups','1. Create','Pick the format, players and courts. Fair matchups are drawn in one tap.'],
+    ['scores','2. Play & score','Share the link. Everyone sees their court, and scores go in from any phone.'],
+    ['standings','3. Standings','Rankings update live after every game, with playoffs at the end.'],
+];
+function TourClip({name}){
+    const ref=useRef(null);
+    const [on,setOn]=useState(false);
+    useEffect(()=>{
+        const v=ref.current;if(!v||!('IntersectionObserver' in window))return;
+        if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+        const io=new IntersectionObserver(([e])=>{
+            if(e.isIntersecting){if(!v.src)v.src=MEDIA+name+'.mp4';v.play().then(()=>setOn(true)).catch(()=>{});}
+            else v.pause();
+        },{threshold:.5});
+        io.observe(v);return()=>io.disconnect();
+    },[]);
     return(
-        <div className="card" style={{maxWidth:420,margin:'14px auto 0',...style}}>
-            <div className="slbl" style={{marginBottom:10}}>How leagues work</div>
-            <ol style={{listStyle:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:10}}>
-                {steps.map(([t,d],i)=>(
-                    <li key={t} style={{display:'flex',gap:12,alignItems:'flex-start'}}>
-                        <span aria-hidden="true" style={{flex:'none',width:26,height:26,borderRadius:'50%',background:'#059669',color:'white',fontWeight:700,fontSize:14,display:'flex',alignItems:'center',justifyContent:'center'}}>{i+1}</span>
-                        <div><div style={{fontWeight:700}}>{t}</div><div className="muted" style={{fontSize:14}}>{d}</div></div>
-                    </li>))}
-            </ol>
+        <div className="tour-phone">
+            <video ref={ref} poster={MEDIA+name+'.jpg'} muted loop playsInline preload="none" aria-hidden="true" className={on?'on':''}/>
         </div>
+    );
+}
+function HowItWorks({style}){
+    return(
+        <section className="tour" style={style} aria-labelledby="tour-h">
+            <div className="tour-hd">
+                <h2 id="tour-h" className="fd">See how it works</h2>
+                <a href="events.html?demo" className="tour-demo">👀 Try a demo event</a>
+            </div>
+            <div className="tour-row">
+                {TOUR.map(([name,t,d])=>(
+                    <figure key={name} className="tour-item">
+                        <TourClip name={name}/>
+                        <figcaption><b>{t}</b><span>{d}</span></figcaption>
+                    </figure>
+                ))}
+            </div>
+        </section>
     );
 }
 
@@ -758,7 +802,7 @@ function Dashboard({user,onOpen}){
                     <div style={{display:'flex',flexDirection:'column',gap:10}}>
                         {list.map(l=><LeagueRow key={l.id} l={l} onOpen={onOpen}/>)}
                     </div>}
-                {list!==null&&<HowItWorks style={{maxWidth:'none',marginTop:18}}/>}
+                {list!==null&&list.length===0&&<HowItWorks style={{marginTop:18}}/>}
                 <div style={{textAlign:'center',margin:'22px 0 8px',fontSize:13}}>
                     <span className="muted">Signed in as {user.email}</span>
                     {' · '}<button onClick={()=>setDeleting(true)} style={{background:'none',border:'none',color:'#dc2626',fontWeight:600,cursor:'pointer',fontFamily:'inherit',fontSize:13,padding:0}}>Delete my account</button>
